@@ -26,25 +26,25 @@ export default defineSchema({
   profiles: defineTable({
     ownerId: v.id("users"),
     name: v.string(), // e.g., "Luxury Portfolio 2026"
-    
+
     // Core Agent Data
     agentInfo: v.object({
-        fullName: v.string(),
-        title: v.string(), // e.g. "Senior Broker"
-        company: v.string(),
-        phone: v.string(),
-        email: v.string(),
-        website: v.optional(v.string()),
-        avatarUrl: v.optional(v.string()),
-        socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
+      fullName: v.string(),
+      title: v.string(), // e.g. "Senior Broker"
+      company: v.string(),
+      phone: v.string(),
+      email: v.string(),
+      website: v.optional(v.string()),
+      avatarUrl: v.optional(v.string()),
+      socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
     }),
 
     // The AI Configuration (JSON Recipe)
     layoutConfig: v.object({
-        themeId: v.string(), // "gold-standard", "modern-minimal"
-        colorPalette: v.object({ primary: v.string(), background: v.string() }),
-        componentOrder: v.array(v.string()), // ["Hero", "Properties", "LeadForm"]
-        heroStyle: v.string(),
+      themeId: v.string(), // "gold-standard", "modern-minimal"
+      colorPalette: v.object({ primary: v.string(), background: v.string(), text: v.string() }),
+      componentOrder: v.array(v.string()), // ["Hero", "Properties", "LeadForm"]
+      heroStyle: v.string(),
     }),
 
     // Linked Property Listings
