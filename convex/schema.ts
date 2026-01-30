@@ -34,7 +34,9 @@ export default defineSchema({
       company: v.string(),
       phone: v.string(),
       email: v.string(),
+      address: v.optional(v.string()),
       website: v.optional(v.string()),
+      about: v.optional(v.string()),
       avatarUrl: v.optional(v.string()),
       socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
     }),
@@ -55,10 +57,24 @@ export default defineSchema({
   properties: defineTable({
     ownerId: v.id("users"),
     title: v.string(),
+    description: v.optional(v.string()),
     price: v.number(),
     status: v.union(v.literal("for-sale"), v.literal("for-rent"), v.literal("sold")),
-    imageUrl: v.string(),
-    detailsUrl: v.string(),
+    type: v.union(
+      v.literal("lot-only"),
+      v.literal("house-lot"),
+      v.literal("townhouse"),
+      v.literal("condo"),
+      v.literal("commercial")
+    ),
+    images: v.array(v.string()), // Multiple images
+    floorArea: v.optional(v.number()),
+    lotArea: v.optional(v.number()),
+    floors: v.optional(v.number()),
+    bedrooms: v.optional(v.number()),
+    bathrooms: v.optional(v.number()),
+    location: v.optional(v.string()),
+    detailsUrl: v.optional(v.string()),
   }).index("by_owner", ["ownerId"]),
 
   // 5. Leads (Analytics)

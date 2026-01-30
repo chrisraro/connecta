@@ -4,7 +4,9 @@ export interface AgentInfo {
     company: string;
     phone: string;
     email: string;
+    address?: string;
     website?: string;
+    about?: string;
     avatarUrl?: string; // URL to image
     socialLinks: { platform: string; url: string }[];
 }
@@ -14,11 +16,16 @@ export interface Property {
     title: string;
     price: number;
     status: "for-sale" | "for-rent" | "sold";
-    imageUrl: string;
-    detailsUrl: string;
+    type?: "lot-only" | "house-lot" | "townhouse" | "condo" | "commercial";
+    description?: string;
+    images: string[];
+    detailsUrl?: string; // Made optional as we might just show details in-app
     location?: string;
-    beds?: number;
-    baths?: number;
+    lotArea?: number;
+    floorArea?: number;
+    floors?: number;
+    bedrooms?: number;
+    bathrooms?: number;
 }
 
 export interface ProfileData {

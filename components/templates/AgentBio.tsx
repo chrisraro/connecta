@@ -15,7 +15,7 @@ export default function AgentBio({ data }: TemplateProps) {
                 className="leading-relaxed opacity-90"
                 style={{ color: theme.textColor }}
             >
-                Drawing from years of experience in the {agent.company} market, I specialize in connecting clients with their dream properties. My approach is built on transparency, dedication, and a deep understanding of market trends. Whether you are buying your first home or seeking a luxury investment, I am here to guide you every step of the way.
+                {agent.about || `Drawing from years of experience in the ${agent.company} market, I specialize in connecting clients with their dream properties. My approach is built on transparency, dedication, and a deep understanding of market trends. Whether you are buying your first home or seeking a luxury investment, I am here to guide you every step of the way.`}
             </p>
         </div>
     );
