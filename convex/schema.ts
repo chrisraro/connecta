@@ -75,14 +75,19 @@ export default defineSchema({
     bathrooms: v.optional(v.number()),
     location: v.optional(v.string()),
     detailsUrl: v.optional(v.string()),
+    dateSold: v.optional(v.string()), // New field for sold properties
   }).index("by_owner", ["ownerId"]),
 
   // 5. Leads (Analytics)
   leads: defineTable({
-    cardId: v.id("cards"),
-    profileId: v.id("profiles"),
-    visitorName: v.optional(v.string()),
-    visitorPhone: v.optional(v.string()), // Captured via "Share Info" form
-    capturedAt: v.number(),
-  }),
+    ownerId: v.id("users"), // Agent who owns the property
+    propertyId: v.id("properties"),
+    propertyName: v.string(), // De-normalized for easier display
+    inquirerName: v.string(),
+    inquirerContact: v.string(), // Email or Phone
+    message: v.optional(v.string()), // Initial message
+    status: v.union(v.literal("new"), v.literal("contacted"), v.literal("closed")),
+    lastContactedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
 });

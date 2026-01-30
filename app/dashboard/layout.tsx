@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, Menu } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, Menu, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -17,6 +17,7 @@ function DashboardSidebar({ className, onLinkClick }: { className?: string, onLi
     const menuItems = [
         { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
         { title: "My Profiles", url: "/dashboard/profiles", icon: Users },
+        { title: "Leads", url: "/dashboard/leads", icon: MessageSquare },
         { title: "NFC Cards", url: "/dashboard/cards", icon: SmartphoneNfc },
         { title: "Billings", url: "/dashboard/billing", icon: CreditCard },
         { title: "Settings", url: "/dashboard/settings", icon: Settings },

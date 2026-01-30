@@ -26,6 +26,7 @@ export interface Property {
     floors?: number;
     bedrooms?: number;
     bathrooms?: number;
+    dateSold?: string;
 }
 
 export interface ProfileData {

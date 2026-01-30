@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import {
-    Loader2, Save, Plus, Trash2, Smartphone, Monitor,
+    Loader2, Save, Plus, Trash2, Smartphone, Monitor, X,
     Palette, LayoutTemplate, User, List, GripVertical as DragHandleIcon
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -41,6 +41,7 @@ import AgentBio from "@/components/templates/AgentBio";
 import PropertyGrid from "@/components/templates/PropertyGrid";
 import ContactForm from "@/components/templates/ContactForm";
 import { ProfileData, AgentInfo } from "@/types/profile";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 // --- Types & Defaults ---
 
@@ -114,6 +115,7 @@ export default function BuilderPage() {
     // UI State
     const [activeTab, setActiveTab] = useState("blocks");
     const [isSaving, setIsSaving] = useState(false);
+    const [mobileView, setMobileView] = useState<"editor" | "preview">("editor");
 
     // Config State
     const [selectedThemeId, setSelectedThemeId] = useState("modern");
@@ -136,7 +138,8 @@ export default function BuilderPage() {
         bathrooms: "",
         floorArea: "",
         lotArea: "",
-        floors: ""
+        floors: "",
+        dateSold: ""
     });
 
     // Dnd Sensors
@@ -192,12 +195,6 @@ export default function BuilderPage() {
         }
     };
 
-    // Properties Logic
-    const addImage = () => {
-        if (newProp.currentImageInput) {
-            setNewProp({ ...newProp, images: [...newProp.images, newProp.currentImageInput], currentImageInput: "" });
-        }
-    };
 
     const addProperty = () => {
         if (!newProp.title) return;
@@ -220,10 +217,16 @@ export default function BuilderPage() {
         setNewProp({
             title: "", price: "", status: "for-sale", type: "house-lot", description: "",
             images: [], currentImageInput: "", location: "",
-            bedrooms: "", bathrooms: "", floorArea: "", lotArea: "", floors: ""
+            bedrooms: "", bathrooms: "", floorArea: "", lotArea: "", floors: "", dateSold: ""
         });
     };
     const removeProperty = (id: string) => setProperties(properties.filter(p => p.id !== id));
+
+    const addImage = (base64: string) => {
+        if (base64) {
+            setNewProp({ ...newProp, images: [...newProp.images, base64] });
+        }
+    };
 
     // Render Preview
     const renderComponent = (componentId: string) => {
@@ -243,8 +246,28 @@ export default function BuilderPage() {
 
     return (
         <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-background text-foreground">
+            {/* --- MOBILE PREVIEW TOGGLE --- */}
+            <div className="lg:hidden p-2 border-b bg-muted/40 flex justify-center gap-2">
+                <Button
+                    variant={mobileView === "editor" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setMobileView("editor")}
+                    className="w-32"
+                >
+                    <List className="w-4 h-4 mr-2" /> Editor
+                </Button>
+                <Button
+                    variant={mobileView === "preview" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setMobileView("preview")}
+                    className="w-32"
+                >
+                    <Smartphone className="w-4 h-4 mr-2" /> Preview
+                </Button>
+            </div>
+
             {/* --- LEFT PANEL: CONFIGURATOR --- */}
-            <div className="w-full lg:w-4/12 p-4 flex flex-col border-r border-border bg-card h-full overflow-y-auto">
+            <div className={`w-full lg:w-4/12 p-4 flex flex-col border-r border-border bg-card h-full overflow-y-auto ${mobileView === "preview" ? "hidden lg:flex" : "flex"}`}>
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-xl font-bold flex items-center gap-2">
                         <LayoutTemplate className="w-5 h-5 text-primary" />
@@ -342,9 +365,19 @@ export default function BuilderPage() {
                             <Input placeholder="Email Address" value={agentInfo.email} onChange={e => setAgentInfo({ ...agentInfo, email: e.target.value })} />
                             <Input placeholder="Physical Address" value={agentInfo.address || ""} onChange={e => setAgentInfo({ ...agentInfo, address: e.target.value })} />
                             <Input placeholder="Website URL" value={agentInfo.website || ""} onChange={e => setAgentInfo({ ...agentInfo, website: e.target.value })} />
-                            <Input placeholder="Avatar (Image URL)" value={agentInfo.avatarUrl || ""} onChange={e => setAgentInfo({ ...agentInfo, avatarUrl: e.target.value })} />
 
-                            <div className="space-y-2 pt-2">
+                            <div className="space-y-2">
+                                <Label>Profile Picture</Label>
+                                <ImageUploader
+                                    value={agentInfo.avatarUrl || ""}
+                                    onChange={(val) => setAgentInfo({ ...agentInfo, avatarUrl: val })}
+                                    onRemove={() => setAgentInfo({ ...agentInfo, avatarUrl: "" })}
+                                    placeholder="Upload Photo"
+                                />
+                            </div>
+
+
+                            <div className="space-y-2">
                                 <Label>About Me</Label>
                                 <textarea
                                     className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -449,31 +482,51 @@ export default function BuilderPage() {
                                     </select>
                                 </div>
 
-                                <Input placeholder="Price (PHP)" type="number" value={newProp.price} onChange={e => setNewProp({ ...newProp, price: e.target.value })} className="bg-background" />
-
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Images</Label>
-                                    <div className="flex gap-2">
+                                {newProp.status === "sold" && (
+                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
+                                        <Label className="text-xs">Date Sold</Label>
                                         <Input
-                                            placeholder="Image URL"
-                                            value={newProp.currentImageInput}
-                                            onChange={e => setNewProp({ ...newProp, currentImageInput: e.target.value })}
+                                            type="date"
+                                            value={newProp.dateSold || ""}
+                                            onChange={e => setNewProp({ ...newProp, dateSold: e.target.value })}
                                             className="bg-background"
                                         />
-                                        <Button size="sm" variant="secondary" onClick={addImage}><Plus className="w-4 h-4" /></Button>
                                     </div>
-                                    <div className="flex gap-2 overflow-x-auto pb-2">
-                                        {newProp.images.map((img, i) => (
-                                            <div key={i} className="relative w-16 h-16 shrink-0 rounded overflow-hidden border">
-                                                <img src={img} alt="thumb" className="w-full h-full object-cover" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                )}
+
+                                <Input placeholder="Price (PHP)" type="number" value={newProp.price} onChange={e => setNewProp({ ...newProp, price: e.target.value })} className="bg-background" />
 
                                 <div className="grid grid-cols-2 gap-2">
                                     <Input placeholder="Floor Area (sqm)" type="number" value={newProp.floorArea} onChange={e => setNewProp({ ...newProp, floorArea: e.target.value })} className="bg-background" />
                                     <Input placeholder="Lot Area (sqm)" type="number" value={newProp.lotArea} onChange={e => setNewProp({ ...newProp, lotArea: e.target.value })} className="bg-background" />
+                                </div>
+
+                                <div className="space-y-2 mb-6">
+                                    <Label className="text-xs">Property Images</Label>
+                                    <div className="flex gap-2 items-start flex-wrap">
+                                        <div className="w-24 h-24 shrink-0">
+                                            <ImageUploader
+                                                onChange={addImage}
+                                                placeholder="Add Photo"
+                                                className="w-full h-full"
+                                            />
+                                        </div>
+                                        {newProp.images.map((img, i) => (
+                                            <div key={i} className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border group">
+                                                <img src={img} alt="thumb" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <Button
+                                                        size="icon"
+                                                        variant="destructive"
+                                                        className="h-6 w-6 rounded-full"
+                                                        onClick={() => setNewProp({ ...newProp, images: newProp.images.filter((_, idx) => idx !== i) })}
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-3 gap-2">
@@ -508,7 +561,7 @@ export default function BuilderPage() {
             </div>
 
             {/* --- RIGHT PANEL: PREVIEW --- */}
-            <div className="flex-1 bg-muted/20 flex flex-col h-full overflow-hidden">
+            <div className={`flex-1 bg-muted/20 flex flex-col h-full overflow-hidden ${mobileView === "editor" ? "hidden lg:flex" : "flex"}`}>
                 <div className="bg-card border-b border-border p-2 flex justify-between items-center text-xs text-muted-foreground shadow-sm z-10">
                     <div className="flex gap-2 items-center px-4"><Monitor className="w-4 h-4" /> Live Preview</div>
                     <div className="px-4">Auto-updating</div>
@@ -524,6 +577,6 @@ export default function BuilderPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
