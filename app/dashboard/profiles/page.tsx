@@ -31,16 +31,16 @@ export default function ProfilesPage() {
             </div>
 
             {profiles.length === 0 ? (
-                <div className="text-center py-20 border border-dashed border-zinc-800 rounded-xl">
-                    <p className="text-zinc-500 mb-4">You haven't created any profiles yet.</p>
+                <div className="text-center py-20 border border-dashed border-border rounded-xl bg-card">
+                    <p className="text-muted-foreground mb-4">You haven't created any profiles yet.</p>
                     <Link href="/dashboard/builder">
-                        <Button variant="outline">Create your first profile</Button>
+                        <Button>Create your first profile</Button>
                     </Link>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {profiles.map((profile) => (
-                        <Card key={profile._id} className="bg-zinc-900 border-zinc-800 text-white overflow-hidden">
+                        <Card key={profile._id} className="overflow-hidden">
                             <div
                                 className="h-24 w-full"
                                 style={{ backgroundColor: profile.layoutConfig.colorPalette.primary }}
@@ -50,18 +50,18 @@ export default function ProfilesPage() {
                                 <CardDescription>Theme: <span className="uppercase">{profile.layoutConfig.themeId}</span></CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-sm text-zinc-400">
+                                <div className="text-sm text-muted-foreground">
                                     Agent: {profile.agentInfo.fullName}
                                 </div>
                             </CardContent>
                             <CardFooter className="flex gap-2">
                                 <Link href={`/p/${profile._id}`} target="_blank" className="flex-1">
-                                    <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-800 hover:text-white">
+                                    <Button variant="outline" className="w-full">
                                         <ExternalLink className="w-4 h-4 mr-2" />
                                         View
                                     </Button>
                                 </Link>
-                                <Button variant="secondary" className="bg-zinc-800 hover:bg-zinc-700" disabled>
+                                <Button variant="secondary" disabled>
                                     <Edit className="w-4 h-4" />
                                 </Button>
                             </CardFooter>
