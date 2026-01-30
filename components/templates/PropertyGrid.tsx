@@ -27,10 +27,10 @@ export default function PropertyGrid({ data }: TemplateProps) {
                         {/* Image Carousel */}
                         <div className="relative h-64 bg-gray-200 w-full group">
                             <div className="flex overflow-x-auto snap-x snap-mandatory h-full w-full scrollbar-hide">
-                                {(prop.images?.length > 0 ? prop.images : [prop.imageUrl /* fallback */]).map((img, idx) => (
+                                {(prop.images && prop.images.length > 0 ? prop.images : ["/placeholder-property.jpg"]).map((img, idx) => (
                                     <img
                                         key={idx}
-                                        src={img || "/placeholder-property.jpg"}
+                                        src={img}
                                         alt={`${prop.title} - ${idx + 1}`}
                                         className="w-full h-full object-cover flex-shrink-0 snap-center"
                                     />
@@ -89,14 +89,14 @@ export default function PropertyGrid({ data }: TemplateProps) {
                                         <Layers className="w-3.5 h-3.5" /> {prop.floors} Floors
                                     </div>
                                 )}
-                                {(prop.bedrooms || prop.beds) && (
+                                {prop.bedrooms && (
                                     <div className="flex items-center gap-1.5">
-                                        <Bed className="w-3.5 h-3.5" /> {prop.bedrooms || prop.beds} Beds
+                                        <Bed className="w-3.5 h-3.5" /> {prop.bedrooms} Beds
                                     </div>
                                 )}
-                                {(prop.bathrooms || prop.baths) && (
+                                {prop.bathrooms && (
                                     <div className="flex items-center gap-1.5">
-                                        <Bath className="w-3.5 h-3.5" /> {prop.bathrooms || prop.baths} CRs
+                                        <Bath className="w-3.5 h-3.5" /> {prop.bathrooms} CRs
                                     </div>
                                 )}
                             </div>
