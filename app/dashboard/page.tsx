@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function DashboardPage() {
     return (
         <div>
@@ -20,12 +22,14 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="mt-12 p-12 border border-dashed border-zinc-800 rounded-xl flex flex-col items-center justify-center text-center">
+            <div className="mt-12 p-12 border border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center bg-card">
                 <h2 className="text-xl font-semibold mb-2">No Profiles Created Yet</h2>
-                <p className="text-zinc-500 max-w-md mb-6">Create your first digital business card using our AI designer.</p>
-                <button className="bg-white text-black px-6 py-2 rounded-lg font-bold hover:bg-gray-200">
-                    Create New Profile
-                </button>
+                <p className="text-muted-foreground max-w-md mb-6">Create your first digital business card using our AI designer.</p>
+                <Link href="/dashboard/builder">
+                    <button className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                        Create New Profile
+                    </button>
+                </Link>
             </div>
         </div>
     );
