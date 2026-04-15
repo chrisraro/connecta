@@ -10,6 +10,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function LandingPage() {
   return (
@@ -21,10 +22,11 @@ export default function LandingPage() {
           <span>TapFolio</span>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
           <SignedIn>
             <Link href="/dashboard">
-              <Button variant="outline" className="border-border text-foreground hover:bg-muted">
+              <Button variant="outline" className="border-border text-foreground hover:bg-muted hidden sm:flex">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Button>
@@ -49,7 +51,7 @@ export default function LandingPage() {
           Powered by Next-Gen AI & NFC
         </div>
 
-        <h1 className="text-6xl md:text-8xl font-black tracking-tighter max-w-5xl mb-8 leading-[0.9] bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
+        <h1 className="text-6xl md:text-8xl font-black tracking-tighter max-w-5xl mb-8 leading-[1.1] pb-2 bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
           Close Deals with <br />
           a Single Tap.
         </h1>
@@ -83,17 +85,6 @@ export default function LandingPage() {
             </Button>
           </Link>
         </div>
-
-        {/* Social Proof */}
-        <div className="mt-20 flex flex-col items-center gap-6">
-            <p className="text-xs uppercase tracking-[0.3em] font-bold text-muted-foreground">Trusted by Top Brokers</p>
-            <div className="flex flex-wrap justify-center gap-8 opacity-40 grayscale contrast-125">
-                <span className="text-2xl font-black italic">RE/MAX</span>
-                <span className="text-2xl font-black">KW</span>
-                <span className="text-2xl font-black tracking-tighter">CENTURY 21</span>
-                <span className="text-2xl font-black">Exp</span>
-            </div>
-        </div>
       </main>
 
       {/* Features Grid */}
@@ -121,7 +112,7 @@ export default function LandingPage() {
       <section className="bg-muted/30 py-32">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div>
-                <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-8">
+                <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-8 text-foreground">
                     Your entire business <br />
                     in one card.
                 </h2>
@@ -204,7 +195,7 @@ function FeatureCard({ icon: Icon, title, desc }: { icon: React.ElementType, tit
             <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                 <Icon className="w-8 h-8" strokeWidth={2.5} />
             </div>
-            <h3 className="text-2xl font-black tracking-tight">{title}</h3>
+            <h3 className="text-2xl font-black tracking-tight text-foreground">{title}</h3>
             <p className="text-muted-foreground leading-relaxed font-medium">{desc}</p>
         </div>
     );
@@ -212,7 +203,7 @@ function FeatureCard({ icon: Icon, title, desc }: { icon: React.ElementType, tit
 
 function BenefitItem({ text }: { text: string }) {
     return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 text-foreground">
             <CheckCircle2 className="w-6 h-6 text-yellow-500" />
             <span className="text-lg font-bold tracking-tight">{text}</span>
         </div>
