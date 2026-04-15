@@ -25,16 +25,8 @@ export function ProfileButton({ icon: Icon, label, value, href, color, bgColor }
         setTimeout(() => setIsCopied(false), 2000);
     };
 
-    const Wrapper = ({ children }: { children: React.ReactNode }) => {
-        if (href) {
-            return <a href={href} target="_blank" rel="noopener noreferrer" className="block">{children}</a>;
-        }
-        return <div className="cursor-pointer">{children}</div>;
-    };
-
-    return (
-        <Wrapper>
-            <div
+    const innerContent = (
+        <div
                 className="group relative flex items-center justify-center h-12 rounded-full transition-all duration-300 ease-out overflow-hidden shadow-sm hover:shadow-md"
                 style={{
                     backgroundColor: bgColor,
@@ -66,7 +58,11 @@ export function ProfileButton({ icon: Icon, label, value, href, color, bgColor }
                         </div>
                     </div>
                 )}
-            </div>
-        </Wrapper>
+        </div>
     );
+
+    if (href) {
+        return <a href={href} target="_blank" rel="noopener noreferrer" className="block">{innerContent}</a>;
+    }
+    return <div className="cursor-pointer">{innerContent}</div>;
 }

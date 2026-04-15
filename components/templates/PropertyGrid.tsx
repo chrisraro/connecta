@@ -1,8 +1,8 @@
 "use client";
 
 import { ProfileData } from "@/types/profile";
-import { Bed, Bath, AlertCircle, Home, Maximize2, Layers, MapPin, ChevronLeft, ChevronRight, MessageSquare, Info, Calendar, Send, Mail, Phone, User, CheckCircle2, Box } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Bed, Bath, Home, Maximize2, Layers, MapPin, MessageSquare, Info, Calendar, Mail, User, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
@@ -12,6 +12,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+
+/**
+ * Returns #000000 or #ffffff — whichever has better contrast against `hexColor`.
+ * Uses the WCAG relative luminance formula (W3C 2.0).
+ */
+function getContrastColor(hexColor: string): string {
+    const hex = hexColor.replace("#", "");
+    if (hex.length !== 6) return "#ffffff";
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    const toLinear = (c: number) => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+    // Against white (L=1): contrast = (1+0.05)/(L+0.05); against black (L=0): (L+0.05)/0.05
+    return L > 0.179 ? "#000000" : "#ffffff";
+}
 
 export default function PropertyGrid({ data }: { data: ProfileData }) {
     const { properties, theme } = data;
@@ -203,7 +219,13 @@ function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
                             {!isSold && (
                                 <div className="p-4 border-t bg-background shrink-0 pb-8">
                                     <InquiryDialog prop={prop} theme={theme} trigger={
-                                        <Button className="w-full size-lg text-lg h-12" style={{ backgroundColor: theme.primaryColor }}>
+                                        <Button
+                                            className="w-full size-lg text-lg h-12 font-semibold"
+                                            style={{
+                                                backgroundColor: theme.primaryColor,
+                                                color: getContrastColor(theme.primaryColor),
+                                            }}
+                                        >
                                             Inquire Now
                                         </Button>
                                     } />
@@ -215,9 +237,12 @@ function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
                     <InquiryDialog prop={prop} theme={theme} trigger={
                         <Button
                             size="sm"
-                            className={`w-full ${isSold ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`w-full font-semibold ${isSold ? 'opacity-60 cursor-not-allowed' : ''}`}
                             disabled={isSold}
-                            style={{ backgroundColor: isSold ? undefined : theme.primaryColor, color: theme.textColor === '#FFFFFF' ? '#000' : '#FFF' }}
+                            style={isSold ? undefined : {
+                                backgroundColor: theme.primaryColor,
+                                color: getContrastColor(theme.primaryColor),
+                            }}
                         >
                             <MessageSquare className="w-4 h-4 mr-2" />
                             {isSold ? "Sold" : "Inquire"}
@@ -318,7 +343,15 @@ function InquiryDialog({ prop, theme, trigger, isSold }: { prop: any, theme: any
                         </div>
 
                         <DialogFooter className="pt-2">
-                            <Button type="submit" className="w-full" disabled={isSubmitting} style={{ backgroundColor: theme.primaryColor }}>
+                            <Button
+                                type="submit"
+                                className="w-full font-semibold"
+                                disabled={isSubmitting}
+                                style={{
+                                    backgroundColor: theme.primaryColor,
+                                    color: getContrastColor(theme.primaryColor),
+                                }}
+                            >
                                 {isSubmitting ? "Sending..." : "Send Inquiry"}
                             </Button>
                         </DialogFooter>

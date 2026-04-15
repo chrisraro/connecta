@@ -7,6 +7,7 @@ import HeroModern from "@/components/templates/HeroModern";
 import HeroLuxury from "@/components/templates/HeroLuxury";
 import AgentBio from "@/components/templates/AgentBio";
 import PropertyGrid from "@/components/templates/PropertyGrid";
+import ProjectGrid from "@/components/templates/ProjectGrid";
 import ContactForm from "@/components/templates/ContactForm";
 import { ProfileData } from "@/types/profile";
 import { Loader2 } from "lucide-react";
@@ -54,6 +55,7 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
     const data: ProfileData = {
         agent: agentInfo,
         properties: MOCK_PROPERTIES, // In future: fetch via featuredProperties IDs
+        projects: profile.featuredProjects ? [] : [], // In future: fetch via featuredProjects IDs
         theme: {
             primaryColor: layoutConfig.colorPalette.primary,
             backgroundColor: layoutConfig.colorPalette.background,
@@ -70,6 +72,8 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
                 return <AgentBio key="bio" data={data} />;
             case "Properties":
                 return <PropertyGrid key="prop" data={data} />;
+            case "Projects":
+                return <ProjectGrid key="proj" data={data} />;
             case "Contact":
                 return <ContactForm key="contact" data={data} />;
             default:

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,8 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 
 export default function LeadsPage() {
-    const leads = useQuery(api.leads.getLeads);
+    const { user } = useUser();
+    const leads = useQuery(api.leads.getLeads, user?.id ? { clerkId: user.id } : "skip");
     const markContacted = useMutation(api.leads.markContacted);
 
     const [selectedLead, setSelectedLead] = useState<any>(null);

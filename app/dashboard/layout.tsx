@@ -1,11 +1,11 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, Menu, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, Menu, MessageSquare, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 
 function DashboardSidebar({ className, onLinkClick }: { className?: string, onLinkClick?: () => void }) {
     const pathname = usePathname();
+    const { user } = useUser();
+    const onboarding = useQuery(api.users.getOnboardingStatus, user?.id ? { clerkId: user.id } : "skip");
+    const isOnboardingIncomplete = onboarding !== undefined && !onboarding.completed;
 
     const menuItems = [
         { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
@@ -21,6 +24,7 @@ function DashboardSidebar({ className, onLinkClick }: { className?: string, onLi
         { title: "NFC Cards", url: "/dashboard/cards", icon: SmartphoneNfc },
         { title: "Billings", url: "/dashboard/billing", icon: CreditCard },
         { title: "Settings", url: "/dashboard/settings", icon: Settings },
+        { title: "Profile Setup", url: "/dashboard/onboarding", icon: Sparkles, badge: isOnboardingIncomplete },
     ];
 
     return (
@@ -31,12 +35,15 @@ function DashboardSidebar({ className, onLinkClick }: { className?: string, onLi
             </div>
             <nav className="flex-1 px-4 space-y-2 py-4">
                 {menuItems.map((item) => {
-                    const isActive = pathname === item.url;
+                    const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
                     return (
                         <Link key={item.url} href={item.url} onClick={onLinkClick}>
                             <div className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"}`}>
-                                <item.icon className="h-5 w-5" />
-                                {item.title}
+                                <item.icon className="h-5 w-5 shrink-0" />
+                                <span className="flex-1">{item.title}</span>
+                                {(item as { badge?: boolean }).badge && (
+                                    <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Incomplete" />
+                                )}
                             </div>
                         </Link>
                     );

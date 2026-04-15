@@ -10,8 +10,11 @@ export const createProfile = mutation({
             company: v.string(),
             phone: v.string(),
             email: v.string(),
+            address: v.optional(v.string()),
             website: v.optional(v.string()),
+            about: v.optional(v.string()),
             avatarUrl: v.optional(v.string()),
+            services: v.optional(v.array(v.string())),
             socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
         }),
         layoutConfig: v.object({
@@ -25,16 +28,12 @@ export const createProfile = mutation({
             heroStyle: v.string(),
         }),
         featuredProperties: v.array(v.id("properties")), // Can be empty initially
+        clerkId: v.string(),
     },
     handler: async (ctx, args) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) {
-            throw new Error("Not authenticated");
-        }
-
         const user = await ctx.db
             .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
             .unique();
 
         if (!user) {
@@ -62,14 +61,13 @@ export const getProfile = query({
 
 // Helper to get all profiles for the dashboard
 export const getMyProfiles = query({
-    args: {},
-    handler: async (ctx) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) return [];
+    args: { clerkId: v.optional(v.string()) },
+    handler: async (ctx, args) => {
+        if (!args.clerkId) return [];
 
         const user = await ctx.db
             .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
             .unique();
 
         if (!user) return [];

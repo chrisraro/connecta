@@ -1,36 +1,119 @@
+"use client";
+
 import Link from "next/link";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
+import { ChevronRight, Sparkles, LayoutTemplate, MessageSquare, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
+    const { user } = useUser();
+    const onboarding = useQuery(api.users.getOnboardingStatus, user?.id ? { clerkId: user.id } : "skip");
+
+    const isOnboardingComplete = onboarding?.completed ?? true; // optimistic
+
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-            <p className="text-zinc-400 mb-8">Manage your NFC cards and digital profiles.</p>
+            <h1 className="text-3xl font-bold mb-1">
+                Welcome{user?.firstName ? `, ${user.firstName}` : " Back"} 👋
+            </h1>
+            <p className="text-muted-foreground mb-8">
+                Manage your portfolio, share via NFC &amp; QR, and capture leads.
+            </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Stats Cards */}
-                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl">
-                    <h3 className="text-zinc-500 text-sm font-medium mb-2">Total Taps</h3>
-                    <div className="text-3xl font-bold">0</div>
+            {/* ─── Onboarding Banner ─────────────────────────────────────── */}
+            {!isOnboardingComplete && onboarding !== undefined && (
+                <div className="mb-8 rounded-2xl overflow-hidden border border-primary/30 bg-gradient-to-r from-primary/10 to-primary/5 p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                                <Sparkles className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                                <h2 className="font-semibold text-base">Complete your profile setup</h2>
+                                <p className="text-sm text-muted-foreground mt-0.5">
+                                    Add your contact info, services, and photo so clients know who you are.
+                                </p>
+                            </div>
+                        </div>
+                        <Link href="/dashboard/onboarding">
+                            <Button size="sm" className="shrink-0 gap-1">
+                                Continue Setup <ChevronRight className="w-4 h-4" />
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl">
-                    <h3 className="text-zinc-500 text-sm font-medium mb-2">Active Profiles</h3>
-                    <div className="text-3xl font-bold">0</div>
-                </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-xl">
-                    <h3 className="text-zinc-500 text-sm font-medium mb-2">AI Credits</h3>
-                    <div className="text-3xl font-bold text-yellow-500">5</div>
-                </div>
+            )}
+
+            {/* ─── Stats ─────────────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <StatCard label="Total Taps" value="0" color="text-foreground" />
+                <StatCard label="Active Profiles" value="0" color="text-foreground" />
+                <StatCard label="New Leads" value="0" color="text-green-500" />
             </div>
 
-            <div className="mt-12 p-12 border border-dashed border-border rounded-xl flex flex-col items-center justify-center text-center bg-card">
+            {/* ─── Quick Actions ──────────────────────────────────────────── */}
+            <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+                <QuickAction
+                    href="/dashboard/builder"
+                    icon={LayoutTemplate}
+                    label="Profile Builder"
+                    desc="Design your public portfolio page"
+                    iconBg="bg-blue-500/10 text-blue-600"
+                />
+                <QuickAction
+                    href="/dashboard/leads"
+                    icon={MessageSquare}
+                    label="Leads"
+                    desc="View and follow up on inquiries"
+                    iconBg="bg-green-500/10 text-green-600"
+                />
+                <QuickAction
+                    href="/dashboard/cards"
+                    icon={Zap}
+                    label="NFC Cards"
+                    desc="Manage your physical NFC cards"
+                    iconBg="bg-purple-500/10 text-purple-600"
+                />
+            </div>
+
+            {/* ─── Empty State ────────────────────────────────────────────── */}
+            <div className="p-10 border border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-center bg-card">
                 <h2 className="text-xl font-semibold mb-2">No Profiles Created Yet</h2>
-                <p className="text-muted-foreground max-w-md mb-6">Create your first digital business card using our AI designer.</p>
+                <p className="text-muted-foreground max-w-md mb-6 text-sm">
+                    Create your first digital portfolio card and share it via NFC tap or QR code.
+                </p>
                 <Link href="/dashboard/builder">
-                    <button className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-bold hover:bg-primary/90 transition-colors">
-                        Create New Profile
-                    </button>
+                    <Button>Create New Profile</Button>
                 </Link>
             </div>
         </div>
+    );
+}
+
+function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
+    return (
+        <div className="bg-card border border-border p-5 rounded-xl">
+            <h3 className="text-muted-foreground text-sm font-medium mb-1">{label}</h3>
+            <div className={`text-3xl font-bold ${color}`}>{value}</div>
+        </div>
+    );
+}
+
+function QuickAction({ href, icon: Icon, label, desc, iconBg }: {
+    href: string; icon: React.ElementType; label: string; desc: string; iconBg: string;
+}) {
+    return (
+        <Link href={href} className="group bg-card border border-border p-4 rounded-xl hover:border-primary/50 hover:shadow-sm transition-all flex items-start gap-3">
+            <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
+                <Icon className="w-5 h-5" />
+            </div>
+            <div>
+                <p className="font-semibold text-sm">{label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+            </div>
+        </Link>
     );
 }

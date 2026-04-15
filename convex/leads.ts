@@ -27,14 +27,15 @@ export const createLead = mutation({
 });
 
 export const getLeads = query({
-    handler: async (ctx) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Unauthenticated");
+    args: { clerkId: v.optional(v.string()) },
+    handler: async (ctx, args) => {
+        if (!args.clerkId) return [];
+
         const user = await ctx.db
             .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject)) // Using subject as Clerk ID
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
             .unique();
-        if (!user) throw new Error("User not found");
+        if (!user) return [];
 
         const leads = await ctx.db
             .query("leads")

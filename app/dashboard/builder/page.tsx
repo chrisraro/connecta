@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import {
     DndContext,
     closestCenter,
@@ -39,22 +40,24 @@ import HeroModern from "@/components/templates/HeroModern";
 import HeroLuxury from "@/components/templates/HeroLuxury";
 import AgentBio from "@/components/templates/AgentBio";
 import PropertyGrid from "@/components/templates/PropertyGrid";
+import ProjectGrid from "@/components/templates/ProjectGrid";
 import ContactForm from "@/components/templates/ContactForm";
-import { ProfileData, AgentInfo } from "@/types/profile";
+import { ProfileData, ProfileInfo, ProjectItem, ProjectCategory, PROJECT_CATEGORY_LABELS } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
 
 // --- Types & Defaults ---
 
-const INITIAL_AGENT_INFO: AgentInfo = {
+const INITIAL_AGENT_INFO: ProfileInfo = {
     fullName: "Your Name",
-    title: "Real Estate Agent",
-    company: "Agency Name",
+    title: "Your Title",
+    company: "Company Name",
     phone: "",
     email: "",
     address: "",
     about: "",
     website: "",
     avatarUrl: "",
+    services: [],
     socialLinks: [],
 };
 
@@ -66,8 +69,9 @@ type Block = {
 
 const INITIAL_BLOCKS: Block[] = [
     { id: "Hero", label: "Hero Section", isEnabled: true },
-    { id: "Bio", label: "Agent Bio", isEnabled: true },
-    { id: "Properties", label: "Featured Listings", isEnabled: true },
+    { id: "Bio", label: "About / Bio", isEnabled: true },
+    { id: "Projects", label: "Portfolio Projects", isEnabled: true },
+    { id: "Properties", label: "Property Listings", isEnabled: false },
     { id: "Contact", label: "Contact Form", isEnabled: true },
 ];
 
@@ -110,7 +114,9 @@ function SortableBlockItem({ block, onToggle }: { block: Block, onToggle: (id: s
 
 export default function BuilderPage() {
     const router = useRouter();
+    const { user } = useUser();
     const createProfile = useMutation(api.profiles.createProfile);
+    const onboarding = useQuery(api.users.getOnboardingStatus, user?.id ? { clerkId: user.id } : "skip");
 
     // UI State
     const [activeTab, setActiveTab] = useState("blocks");
@@ -123,8 +129,9 @@ export default function BuilderPage() {
     const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
 
     // Content State
-    const [agentInfo, setAgentInfo] = useState<AgentInfo>(INITIAL_AGENT_INFO);
+    const [agentInfo, setAgentInfo] = useState<ProfileInfo>(INITIAL_AGENT_INFO);
     const [properties, setProperties] = useState<any[]>([]);
+    const [projects, setProjects] = useState<ProjectItem[]>([]);
     const [newProp, setNewProp] = useState({
         title: "",
         price: "",
@@ -141,6 +148,44 @@ export default function BuilderPage() {
         floors: "",
         dateSold: ""
     });
+    const [newProject, setNewProject] = useState<{
+        title: string;
+        description: string;
+        category: ProjectCategory;
+        tags: string;
+        externalUrl: string;
+        images: string[];
+    }>({
+        title: "",
+        description: "",
+        category: "other",
+        tags: "",
+        externalUrl: "",
+        images: [],
+    });
+    const [projectImageInput, setProjectImageInput] = useState("");
+
+    // Prefill agent info from onboarding
+    const [hasPrefilled, setHasPrefilled] = useState(false);
+    useEffect(() => {
+        const data = onboarding?.data;
+        if (!hasPrefilled && data) {
+            setAgentInfo(prev => ({
+                ...prev,
+                fullName: data.fullName || prev.fullName,
+                title: data.title || prev.title,
+                phone: data.phone || prev.phone,
+                email: data.email || user?.primaryEmailAddress?.emailAddress || prev.email,
+                company: data.company || prev.company,
+                website: data.website || prev.website,
+                about: data.about || prev.about,
+                avatarUrl: data.avatarUrl || prev.avatarUrl,
+                services: data.services || prev.services,
+                socialLinks: data.socialLinks || prev.socialLinks,
+            }));
+            setHasPrefilled(true);
+        }
+    }, [onboarding, hasPrefilled, user]);
 
     // Dnd Sensors
     const sensors = useSensors(
@@ -173,11 +218,17 @@ export default function BuilderPage() {
     };
 
     const handleSave = async () => {
+        if (!user?.id) return;
         setIsSaving(true);
         try {
             const profileId = await createProfile({
+                clerkId: user.id,
                 name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
-                agentInfo: agentInfo,
+                agentInfo: {
+                    ...agentInfo,
+                    company: agentInfo.company ?? "",
+                    services: agentInfo.services ?? [],
+                },
                 layoutConfig: {
                     themeId: selectedThemeId,
                     colorPalette: customColors,
@@ -228,17 +279,42 @@ export default function BuilderPage() {
         }
     };
 
+    // Handlers
+    const addProjectImage = (base64: string) => {
+        if (base64) setNewProject(p => ({ ...p, images: [...p.images, base64] }));
+    };
+
+    const addProject = () => {
+        if (!newProject.title) return;
+        const proj: ProjectItem = {
+            id: Date.now().toString(),
+            title: newProject.title,
+            description: newProject.description,
+            category: newProject.category,
+            tags: newProject.tags.split(",").map(t => t.trim()).filter(Boolean),
+            images: newProject.images,
+            externalUrl: newProject.externalUrl || undefined,
+            featured: false,
+        };
+        setProjects(prev => [...prev, proj]);
+        setNewProject({ title: "", description: "", category: "other", tags: "", externalUrl: "", images: [] });
+    };
+
+    const removeProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
+
     // Render Preview
     const renderComponent = (componentId: string) => {
         const data: ProfileData = {
             agent: agentInfo,
             properties: properties,
+            projects: projects,
             theme: { primaryColor: customColors.primary, backgroundColor: customColors.background, textColor: customColors.text }
         };
         switch (componentId) {
             case "Hero": return selectedThemeId === "luxury" ? <HeroLuxury key="hero" data={data} /> : <HeroModern key="hero" data={data} />;
             case "Bio": return <AgentBio key="bio" data={data} />;
             case "Properties": return <PropertyGrid key="prop" data={data} />;
+            case "Projects": return <ProjectGrid key="projects" data={data} />;
             case "Contact": return <ContactForm key="contact" data={data} />;
             default: return null;
         }
@@ -283,7 +359,7 @@ export default function BuilderPage() {
                     <TabsList className="grid grid-cols-3 mb-6">
                         <TabsTrigger value="blocks"><List className="w-4 h-4 mr-2" /> Blocks</TabsTrigger>
                         <TabsTrigger value="design"><Palette className="w-4 h-4 mr-2" /> Design</TabsTrigger>
-                        <TabsTrigger value="content"><User className="w-4 h-4 mr-2" /> Content</TabsTrigger>
+                        <TabsTrigger value="content"><User className="w-4 h-4 mr-2" /> Profile</TabsTrigger>
                     </TabsList>
 
                     {/* TAB: BLOCKS (Ordering & Toggles) */}
@@ -552,6 +628,86 @@ export default function BuilderPage() {
                                             <span className="text-xs text-muted-foreground">{p.type} • {p.price.toLocaleString()}</span>
                                         </div>
                                         <Trash2 className="w-4 h-4 text-destructive cursor-pointer" onClick={() => removeProperty(p.id)} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        {/* Projects Section in Content Tab */}
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <h3 className="font-semibold text-sm">Portfolio Projects</h3>
+                            <div className="bg-muted p-3 rounded-lg space-y-3">
+                                <Input
+                                    placeholder="Project Title"
+                                    value={newProject.title}
+                                    onChange={e => setNewProject(p => ({ ...p, title: e.target.value }))}
+                                    className="bg-background"
+                                />
+                                <select
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={newProject.category}
+                                    onChange={e => setNewProject(p => ({ ...p, category: e.target.value as ProjectCategory }))}
+                                >
+                                    {Object.entries(PROJECT_CATEGORY_LABELS).map(([val, label]) => (
+                                        <option key={val} value={val}>{label}</option>
+                                    ))}
+                                </select>
+                                <Input
+                                    placeholder="Tags (comma-separated): React, Figma, Branding"
+                                    value={newProject.tags}
+                                    onChange={e => setNewProject(p => ({ ...p, tags: e.target.value }))}
+                                    className="bg-background"
+                                />
+                                <Input
+                                    placeholder="External URL (optional)"
+                                    value={newProject.externalUrl}
+                                    onChange={e => setNewProject(p => ({ ...p, externalUrl: e.target.value }))}
+                                    className="bg-background"
+                                />
+                                <textarea
+                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    placeholder="Description..."
+                                    value={newProject.description}
+                                    onChange={e => setNewProject(p => ({ ...p, description: e.target.value }))}
+                                />
+
+                                {/* Project Images */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Project Images</Label>
+                                    <div className="flex gap-2 items-start flex-wrap">
+                                        <div className="w-24 h-24 shrink-0">
+                                            <ImageUploader
+                                                onChange={addProjectImage}
+                                                placeholder="Add Photo"
+                                                className="w-full h-full"
+                                            />
+                                        </div>
+                                        {newProject.images.map((img, i) => (
+                                            <div key={i} className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border group">
+                                                <img src={img} alt="thumb" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <Button size="icon" variant="destructive" className="h-6 w-6 rounded-full"
+                                                        onClick={() => setNewProject(p => ({ ...p, images: p.images.filter((_, idx) => idx !== i) }))}
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <Button size="sm" onClick={addProject} className="w-full">
+                                    <Plus className="w-4 h-4 mr-2" /> Add Project
+                                </Button>
+                            </div>
+                            <div className="space-y-2">
+                                {projects.map(proj => (
+                                    <div key={proj.id} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded border">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">{proj.title}</span>
+                                            <span className="text-xs text-muted-foreground">{PROJECT_CATEGORY_LABELS[proj.category]}</span>
+                                        </div>
+                                        <Trash2 className="w-4 h-4 text-destructive cursor-pointer" onClick={() => removeProject(proj.id)} />
                                     </div>
                                 ))}
                             </div>

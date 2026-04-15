@@ -10,6 +10,7 @@
 
 import type * as leads from "../leads.js";
 import type * as profiles from "../profiles.js";
+import type * as projects from "../projects.js";
 import type * as users from "../users.js";
 
 import type {
@@ -21,6 +22,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   leads: typeof leads;
   profiles: typeof profiles;
+  projects: typeof projects;
   users: typeof users;
 }>;
 

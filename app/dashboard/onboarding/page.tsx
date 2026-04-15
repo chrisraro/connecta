@@ -1,0 +1,515 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ImageUploader } from "@/components/ui/image-uploader";
+import {
+    User, Phone, Globe, Briefcase, Image as ImageIcon,
+    ChevronRight, ChevronLeft, CheckCircle2, Sparkles, X,
+    Building2, Store, Edit, ArrowRight
+} from "lucide-react";
+
+type ProfileCategory = "individual" | "company" | "business";
+
+const PROFILE_CATEGORIES: { id: ProfileCategory; label: string; desc: string; icon: React.ElementType; emoji: string }[] = [
+    { id: "individual", label: "Individual", desc: "Freelancer, Creator, Professional", icon: User, emoji: "🧑" },
+    { id: "company",    label: "Company / Agency", desc: "Team, Studio, Agency", icon: Building2, emoji: "🏢" },
+    { id: "business",   label: "Business", desc: "Store, Brand, Service Provider", icon: Store, emoji: "🏪" },
+];
+
+const CATEGORY_FIELDS: Record<ProfileCategory, { nameLabel: string; namePlaceholder: string; titleLabel: string; titlePlaceholder: string; companyLabel: string; companyPlaceholder: string; companyRequired: boolean }> = {
+    individual: {
+        nameLabel: "Full Name *",
+        namePlaceholder: "e.g. Maria Santos",
+        titleLabel: "Job Title / Role *",
+        titlePlaceholder: "e.g. Brand Designer, Real Estate Broker",
+        companyLabel: "Company / Organization",
+        companyPlaceholder: "e.g. Freelance, Acme Corp.",
+        companyRequired: false,
+    },
+    company: {
+        nameLabel: "Company / Agency Name *",
+        namePlaceholder: "e.g. Santos Creative Studio",
+        titleLabel: "Industry *",
+        titlePlaceholder: "e.g. Design Agency, Marketing Firm",
+        companyLabel: "Team Size",
+        companyPlaceholder: "e.g. 5-10, 50+",
+        companyRequired: false,
+    },
+    business: {
+        nameLabel: "Business Name *",
+        namePlaceholder: "e.g. Santos Coffee Co.",
+        titleLabel: "Business Type *",
+        titlePlaceholder: "e.g. Coffee Shop, Boutique, Clinic",
+        companyLabel: "Location *",
+        companyPlaceholder: "e.g. Makati City, Philippines",
+        companyRequired: true,
+    },
+};
+
+const STEPS = [
+    { id: "welcome",  title: "Welcome to Tapfolio",    icon: Sparkles },
+    { id: "type",     title: "Profile Type",            icon: Building2 },
+    { id: "identity", title: "Your Identity",           icon: User },
+    { id: "contact",  title: "Contact Details",         icon: Phone },
+    { id: "work",     title: "Your Work & Services",    icon: Briefcase },
+    { id: "photo",    title: "Profile Picture",         icon: ImageIcon },
+    { id: "done",     title: "You're All Set!",         icon: CheckCircle2 },
+];
+
+const SUGGESTED_SERVICES = [
+    "Logo Design", "Brand Identity", "Web Design", "Mobile App Design",
+    "UI/UX Design", "Graphic Design", "Photography", "Videography",
+    "Social Media Marketing", "Content Writing", "Real Estate",
+    "Web Development", "SEO", "Illustration", "Animation",
+    "Interior Design", "Architecture", "Consulting",
+];
+
+export default function OnboardingPage() {
+    const router = useRouter();
+    const { user: clerkUser } = useUser();
+    const updateOnboarding = useMutation(api.users.updateOnboarding);
+    const onboarding = useQuery(api.users.getOnboardingStatus, clerkUser?.id ? { clerkId: clerkUser.id } : "skip");
+
+    const [step, setStep] = useState(0);
+    const [saving, setSaving] = useState(false);
+    const [hasPrefilled, setHasPrefilled] = useState(false);
+
+    // Form state
+    const [profileCategory, setProfileCategory] = useState<ProfileCategory>("individual");
+    const [fullName, setFullName] = useState(clerkUser?.fullName ?? "");
+    const [title, setTitle] = useState("");
+    const [company, setCompany] = useState("");
+    const [phone, setPhone] = useState("");
+    const [website, setWebsite] = useState("");
+    const [about, setAbout] = useState("");
+    const [avatarUrl, setAvatarUrl] = useState(clerkUser?.imageUrl ?? "");
+    const [services, setServices] = useState<string[]>([]);
+    const [serviceInput, setServiceInput] = useState("");
+
+    const email = clerkUser?.primaryEmailAddress?.emailAddress ?? "";
+
+    // Prefill from existing onboarding data when revisiting
+    useEffect(() => {
+        const data = onboarding?.data;
+        if (!hasPrefilled && data) {
+            setProfileCategory(data.profileCategory ?? "individual");
+            setFullName(data.fullName || clerkUser?.fullName || "");
+            setTitle(data.title || "");
+            setCompany(data.company || "");
+            setPhone(data.phone || "");
+            setWebsite(data.website || "");
+            setAbout(data.about || "");
+            setAvatarUrl(data.avatarUrl || clerkUser?.imageUrl || "");
+            setServices(data.services || []);
+            setHasPrefilled(true);
+        }
+    }, [onboarding, hasPrefilled, clerkUser]);
+
+    const progress = (step / (STEPS.length - 1)) * 100;
+
+    const addService = (s: string) => {
+        const trimmed = s.trim();
+        if (trimmed && !services.includes(trimmed)) {
+            setServices(prev => [...prev, trimmed]);
+        }
+        setServiceInput("");
+    };
+
+    const removeService = (s: string) => setServices(prev => prev.filter(x => x !== s));
+
+    const saveProgress = async (completed: boolean) => {
+        if (!clerkUser?.id) return;
+        setSaving(true);
+        try {
+            await updateOnboarding({
+                clerkId: clerkUser.id,
+                profileCategory,
+                email,
+                fullName: fullName || (clerkUser?.fullName ?? ""),
+                title: title || "Professional",
+                company: company || undefined,
+                phone: phone || "",
+                website: website || undefined,
+                about: about || undefined,
+                avatarUrl: avatarUrl || undefined,
+                services,
+                markCompleted: completed,
+            });
+        } catch (err) {
+            console.error("Failed to save onboarding:", err);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleNext = async () => {
+        if (step < STEPS.length - 1) {
+            // Only save on steps that have data (skip welcome)
+            if (step > 0) {
+                await saveProgress(false);
+            }
+            setStep(s => s + 1);
+        }
+    };
+
+    const handleFinish = async () => {
+        await saveProgress(true);
+        router.push("/dashboard/builder");
+    };
+
+    const handleSkip = async () => {
+        if (step > 0) await saveProgress(false);
+        router.push("/dashboard");
+    };
+
+    const categoryFields = CATEGORY_FIELDS[profileCategory];
+
+    // ─── COMPLETED STATE ─────────────────────────────────────────────
+    if (onboarding?.completed) {
+        const d = onboarding.data;
+        const cat = PROFILE_CATEGORIES.find(c => c.id === d?.profileCategory);
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">
+                <div className="w-full max-w-lg">
+                    <div className="bg-card rounded-3xl shadow-xl border border-border/50 overflow-hidden">
+                        <div className="p-6 md:p-8 space-y-6">
+                            {/* Header */}
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold">Profile Setup Complete</h1>
+                                    <p className="text-sm text-muted-foreground">Your profile is ready to use.</p>
+                                </div>
+                            </div>
+
+                            {/* Summary */}
+                            <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+                                {d?.avatarUrl && (
+                                    <div className="flex justify-center">
+                                        <img src={d.avatarUrl} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
+                                    </div>
+                                )}
+                                <div className="text-center space-y-1">
+                                    <h2 className="text-lg font-semibold">{d?.fullName}</h2>
+                                    <p className="text-sm text-muted-foreground">{d?.title}</p>
+                                    {cat && (
+                                        <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
+                                            {cat.emoji} {cat.label}
+                                        </span>
+                                    )}
+                                </div>
+                                {d?.email && (
+                                    <div className="text-sm text-muted-foreground text-center">{d.email}</div>
+                                )}
+                                {d?.services && d.services.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 justify-center pt-2 border-t border-border/50">
+                                        {d.services.map(s => (
+                                            <span key={s} className="text-xs bg-muted px-2.5 py-1 rounded-full font-medium">{s}</span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="space-y-2">
+                                <Button className="w-full" size="lg" onClick={() => router.push("/dashboard/builder")}>
+                                    <ArrowRight className="w-4 h-4 mr-2" /> Go to Profile Builder
+                                </Button>
+                                <Button variant="outline" className="w-full" onClick={() => {
+                                    // Reset to edit mode
+                                    setHasPrefilled(false);
+                                    setStep(1);
+                                    // Force refetch will trigger prefill
+                                    setTimeout(() => setHasPrefilled(false), 100);
+                                    // We need to trick the component into wizard mode
+                                    // by navigating with a query param
+                                    router.push("/dashboard/onboarding?edit=true");
+                                }}>
+                                    <Edit className="w-4 h-4 mr-2" /> Edit Profile Setup
+                                </Button>
+                                <Button variant="ghost" className="w-full" onClick={() => router.push("/dashboard")}>
+                                    Back to Dashboard
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ─── WIZARD MODE ─────────────────────────────────────────────────
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg">
+                {/* Progress Bar */}
+                <div className="mb-8">
+                    <div className="flex justify-between text-xs text-muted-foreground mb-2">
+                        <span>Step {step + 1} of {STEPS.length}</span>
+                        <button onClick={handleSkip} className="hover:text-foreground transition-colors flex items-center gap-1">
+                            Skip for now <ChevronRight className="w-3 h-3" />
+                        </button>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${progress}%`, backgroundColor: "hsl(var(--primary))" }}
+                        />
+                    </div>
+                    {/* Step dots */}
+                    <div className="flex justify-between mt-2">
+                        {STEPS.map((s, i) => {
+                            const Icon = s.icon;
+                            return (
+                                <div key={s.id} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                                    <Icon className="w-3.5 h-3.5" />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Card */}
+                <div className="bg-card rounded-3xl shadow-xl border border-border/50 overflow-hidden">
+                    {/* Step Content */}
+                    <div className="p-6 md:p-8 min-h-[360px] flex flex-col">
+                        <h1 className="text-2xl font-bold mb-1">{STEPS[step].title}</h1>
+
+                        {/* STEP 0: Welcome */}
+                        {step === 0 && (
+                            <div className="flex-1 flex flex-col justify-center space-y-4">
+                                <p className="text-muted-foreground leading-relaxed">
+                                    Tapfolio turns your professional profile into a shareable digital card — accessible via <strong>NFC tap</strong> or <strong>QR code</strong>.
+                                </p>
+                                <div className="grid grid-cols-2 gap-3 mt-4">
+                                    {[
+                                        { emoji: "🎨", label: "Showcase your work" },
+                                        { emoji: "📇", label: "Share via NFC & QR" },
+                                        { emoji: "📥", label: "Capture leads" },
+                                        { emoji: "✨", label: "Built for any profession" },
+                                    ].map(({ emoji, label }) => (
+                                        <div key={label} className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl text-sm font-medium">
+                                            <span className="text-xl">{emoji}</span> {label}
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-sm text-muted-foreground mt-4">
+                                    Let&apos;s take 2 minutes to set up your profile. You can always edit it later.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* STEP 1: Profile Type */}
+                        {step === 1 && (
+                            <div className="flex-1 space-y-4 pt-4">
+                                <p className="text-sm text-muted-foreground">What best describes your profile?</p>
+                                <div className="grid gap-3">
+                                    {PROFILE_CATEGORIES.map(cat => {
+                                        const isSelected = profileCategory === cat.id;
+                                        return (
+                                            <button
+                                                key={cat.id}
+                                                onClick={() => setProfileCategory(cat.id)}
+                                                className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                                                    isSelected
+                                                        ? "border-primary bg-primary/5 shadow-sm"
+                                                        : "border-border hover:border-primary/40 hover:bg-muted/30"
+                                                }`}
+                                            >
+                                                <span className="text-3xl">{cat.emoji}</span>
+                                                <div>
+                                                    <div className="font-semibold">{cat.label}</div>
+                                                    <div className="text-xs text-muted-foreground">{cat.desc}</div>
+                                                </div>
+                                                {isSelected && (
+                                                    <CheckCircle2 className="w-5 h-5 text-primary ml-auto shrink-0" />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 2: Identity (Dynamic based on category) */}
+                        {step === 2 && (
+                            <div className="flex-1 space-y-4 pt-4">
+                                <div className="space-y-2">
+                                    <Label>{categoryFields.nameLabel}</Label>
+                                    <Input
+                                        placeholder={categoryFields.namePlaceholder}
+                                        value={fullName}
+                                        onChange={e => setFullName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{categoryFields.titleLabel}</Label>
+                                    <Input
+                                        placeholder={categoryFields.titlePlaceholder}
+                                        value={title}
+                                        onChange={e => setTitle(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>
+                                        {categoryFields.companyLabel}
+                                        {!categoryFields.companyRequired && <span className="text-muted-foreground text-xs ml-1">(optional)</span>}
+                                    </Label>
+                                    <Input
+                                        placeholder={categoryFields.companyPlaceholder}
+                                        value={company}
+                                        onChange={e => setCompany(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 3: Contact */}
+                        {step === 3 && (
+                            <div className="flex-1 space-y-4 pt-4">
+                                <div className="space-y-2">
+                                    <Label>Email</Label>
+                                    <Input value={email} disabled className="opacity-60" />
+                                    <p className="text-xs text-muted-foreground">From your account. Change via account settings.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Phone *</Label>
+                                    <Input
+                                        placeholder="+63 917 123 4567"
+                                        value={phone}
+                                        onChange={e => setPhone(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Website <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                                    <Input
+                                        placeholder="https://yoursite.com"
+                                        value={website}
+                                        onChange={e => setWebsite(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 4: Work & Services */}
+                        {step === 4 && (
+                            <div className="flex-1 space-y-4 pt-4">
+                                <div className="space-y-2">
+                                    <Label>About / Bio</Label>
+                                    <textarea
+                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        placeholder="Tell clients what you do and what makes you unique..."
+                                        value={about}
+                                        onChange={e => setAbout(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Services Offered</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="Type a service, press Enter"
+                                            value={serviceInput}
+                                            onChange={e => setServiceInput(e.target.value)}
+                                            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addService(serviceInput); } }}
+                                        />
+                                        <Button type="button" variant="outline" onClick={() => addService(serviceInput)}>Add</Button>
+                                    </div>
+                                    {/* Suggestions */}
+                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                        {SUGGESTED_SERVICES.filter(s => !services.includes(s)).slice(0, 8).map(s => (
+                                            <button
+                                                key={s}
+                                                onClick={() => addService(s)}
+                                                className="text-xs px-2.5 py-1 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                                            >
+                                                + {s}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {/* Selected tags */}
+                                    {services.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border/50">
+                                            {services.map(s => (
+                                                <span key={s} className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
+                                                    {s}
+                                                    <button onClick={() => removeService(s)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 5: Photo */}
+                        {step === 5 && (
+                            <div className="flex-1 flex flex-col items-center justify-center pt-4 gap-4">
+                                <p className="text-sm text-muted-foreground text-center">
+                                    Upload a professional photo. This will appear on your public profile page.
+                                </p>
+                                <div className="w-40 h-40">
+                                    <ImageUploader
+                                        value={avatarUrl}
+                                        onChange={setAvatarUrl}
+                                        onRemove={() => setAvatarUrl("")}
+                                        placeholder="Upload Photo"
+                                        className="w-full h-full rounded-full"
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground">You can skip this — add later in the builder.</p>
+                            </div>
+                        )}
+
+                        {/* STEP 6: Done */}
+                        {step === 6 && (
+                            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center pt-4">
+                                <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                    <CheckCircle2 className="w-10 h-10 text-green-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold">Profile Ready!</h2>
+                                    <p className="text-muted-foreground mt-1 text-sm">
+                                        Your profile is set up. Now customize your public page in the Profile Builder.
+                                    </p>
+                                </div>
+                                <div className="w-full space-y-2 mt-2">
+                                    <Button className="w-full" size="lg" onClick={handleFinish} disabled={saving}>
+                                        {saving ? "Saving..." : "Go to Profile Builder →"}
+                                    </Button>
+                                    <Button variant="ghost" className="w-full" onClick={() => router.push("/dashboard")}>
+                                        Back to Dashboard
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Navigation Footer */}
+                    {step < STEPS.length - 1 && (
+                        <div className="px-6 md:px-8 pb-6 md:pb-8 flex justify-between items-center border-t border-border/50 pt-4">
+                            <Button
+                                variant="ghost"
+                                onClick={() => setStep(s => Math.max(0, s - 1))}
+                                disabled={step === 0}
+                            >
+                                <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                            </Button>
+                            <Button onClick={handleNext} disabled={saving}>
+                                {saving ? "Saving..." : step === STEPS.length - 2 ? "Finish →" : "Next →"}
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
