@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import { ChevronRight, Sparkles, LayoutTemplate, MessageSquare, Zap } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
@@ -47,36 +47,10 @@ export default function DashboardPage() {
             )}
 
             {/* ─── Stats ─────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
                 <StatCard label="Total Taps" value="0" color="text-foreground" />
                 <StatCard label="Active Profiles" value="0" color="text-foreground" />
                 <StatCard label="New Leads" value="0" color="text-green-500" />
-            </div>
-
-            {/* ─── Quick Actions ──────────────────────────────────────────── */}
-            <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-                <QuickAction
-                    href="/dashboard/builder"
-                    icon={LayoutTemplate}
-                    label="Profile Builder"
-                    desc="Design your public portfolio page"
-                    iconBg="bg-blue-500/10 text-blue-600"
-                />
-                <QuickAction
-                    href="/dashboard/leads"
-                    icon={MessageSquare}
-                    label="Leads"
-                    desc="View and follow up on inquiries"
-                    iconBg="bg-green-500/10 text-green-600"
-                />
-                <QuickAction
-                    href="/dashboard/cards"
-                    icon={Zap}
-                    label="NFC Cards"
-                    desc="Manage your physical NFC cards"
-                    iconBg="bg-purple-500/10 text-purple-600"
-                />
             </div>
 
             {/* ─── Empty State ────────────────────────────────────────────── */}
@@ -102,18 +76,3 @@ function StatCard({ label, value, color }: { label: string; value: string; color
     );
 }
 
-function QuickAction({ href, icon: Icon, label, desc, iconBg }: {
-    href: string; icon: React.ElementType; label: string; desc: string; iconBg: string;
-}) {
-    return (
-        <Link href={href} className="group bg-card border border-border p-4 rounded-xl hover:border-primary/50 hover:shadow-sm transition-all flex items-start gap-3">
-            <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
-                <Icon className="w-5 h-5" />
-            </div>
-            <div>
-                <p className="font-semibold text-sm">{label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-            </div>
-        </Link>
-    );
-}

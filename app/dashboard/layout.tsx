@@ -5,10 +5,84 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Bell, Plus } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Bell, Zap, LayoutTemplate, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet";
+
+function QuickActionsToggle() {
+    return (
+        <Sheet>
+            <SheetTrigger asChild>
+                <Button size="icon" className="fixed bottom-28 right-6 z-50 h-14 w-14 rounded-2xl shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:scale-105 transition-transform md:hidden">
+                    <Sparkles className="w-7 h-7" />
+                </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-[2.5rem] border-border bg-card p-0 overflow-hidden pb-10">
+                <SheetHeader className="p-6 border-b border-border">
+                    <SheetTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-primary" />
+                        Quick Actions
+                    </SheetTitle>
+                </SheetHeader>
+                <div className="p-4 grid gap-3">
+                    <QuickActionItem 
+                        href="/dashboard/builder"
+                        icon={LayoutTemplate}
+                        label="Profile Builder"
+                        desc="Create or edit your digital card"
+                        color="bg-blue-500"
+                    />
+                    <QuickActionItem 
+                        href="/dashboard/leads"
+                        icon={MessageSquare}
+                        label="View Leads"
+                        desc="Check recent inquiries"
+                        color="bg-green-500"
+                    />
+                    <QuickActionItem 
+                        href="/dashboard/cards"
+                        icon={SmartphoneNfc}
+                        label="Activate Card"
+                        desc="Sync new physical NFC card"
+                        color="bg-purple-500"
+                    />
+                    <QuickActionItem 
+                        href="/dashboard/billing"
+                        icon={CreditCard}
+                        label="Upgrade Pro"
+                        desc="Unlock unlimited profiles"
+                        color="bg-amber-500"
+                    />
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+}
+
+function QuickActionItem({ href, icon: Icon, label, desc, color }: { href: string, icon: React.ElementType, label: string, desc: string, color: string }) {
+    return (
+        <Link href={href}>
+            <div className="flex items-center gap-4 p-4 rounded-3xl bg-muted/50 border border-border hover:bg-muted transition-colors group">
+                <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-white shadow-lg shadow-black/5`}>
+                    <Icon className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                    <div className="font-bold text-sm tracking-tight">{label}</div>
+                    <div className="text-xs text-muted-foreground">{desc}</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            </div>
+        </Link>
+    );
+}
 
 function DashboardSidebar({ className }: { className?: string }) {
     const pathname = usePathname();
@@ -156,12 +230,8 @@ export default function DashboardLayout({
                     {children}
                 </div>
 
-                {/* Mobile Floating Action Button (Optional Trend) */}
-                <Link href="/dashboard/builder" className="md:hidden fixed bottom-28 right-6 z-50">
-                    <Button size="icon" className="h-14 w-14 rounded-2xl shadow-2xl shadow-primary/40 bg-primary hover:scale-105 transition-transform">
-                        <Plus className="w-8 h-8" />
-                    </Button>
-                </Link>
+                {/* Mobile Quick Actions FAB */}
+                <QuickActionsToggle />
 
                 {/* Mobile Bottom Nav */}
                 <MobileBottomNav />
