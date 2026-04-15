@@ -4,7 +4,7 @@ import { ProfileButton } from "@/components/ui/profile-button";
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
 
-const SOCIAL_ICONS: Record<string, any> = {
+const SOCIAL_ICONS: Record<string, React.ElementType> = {
     "Instagram": Instagram,
     "Facebook": Facebook,
     "LinkedIn": Linkedin,

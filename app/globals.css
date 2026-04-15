@@ -141,3 +141,18 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .text-yellow-500 {
+    color: var(--chart-5);
+  }
+  .bg-yellow-500 {
+    background-color: var(--chart-5);
+  }
+  .bg-yellow-500\/10 {
+    background-color: color-mix(in oklch, var(--chart-5) 10%, transparent);
+  }
+  .border-yellow-500\/20 {
+    border-color: color-mix(in oklch, var(--chart-5) 20%, transparent);
+  }
+}

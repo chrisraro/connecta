@@ -22,6 +22,7 @@ export type AgentInfo = ProfileInfo;
 // ─── Real Estate Property ────────────────────────────────────────────────────
 export interface Property {
     id: string;
+    ownerId: string;
     title: string;
     price: number;
     status: "for-sale" | "for-rent" | "sold";
@@ -66,6 +67,7 @@ export const PROJECT_CATEGORY_LABELS: Record<ProjectCategory, string> = {
 
 export interface ProjectItem {
     id: string;
+    ownerId: string;
     title: string;
     description?: string;
     category: ProjectCategory;

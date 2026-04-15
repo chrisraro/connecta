@@ -32,8 +32,6 @@ import {
     Loader2, Save, Plus, Trash2, Smartphone, Monitor, X,
     Palette, LayoutTemplate, User, List, GripVertical as DragHandleIcon
 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
 
 // Templates
 import HeroModern from "@/components/templates/HeroModern";
@@ -42,8 +40,9 @@ import AgentBio from "@/components/templates/AgentBio";
 import PropertyGrid from "@/components/templates/PropertyGrid";
 import ProjectGrid from "@/components/templates/ProjectGrid";
 import ContactForm from "@/components/templates/ContactForm";
-import { ProfileData, ProfileInfo, ProjectItem, ProjectCategory, PROJECT_CATEGORY_LABELS } from "@/types/profile";
+import { ProfileData, ProfileInfo, ProjectItem, ProjectCategory, PROJECT_CATEGORY_LABELS, Property } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { Id } from "@/convex/_generated/dataModel";
 
 // --- Types & Defaults ---
 
@@ -130,7 +129,7 @@ export default function BuilderPage() {
 
     // Content State
     const [agentInfo, setAgentInfo] = useState<ProfileInfo>(INITIAL_AGENT_INFO);
-    const [properties, setProperties] = useState<any[]>([]);
+    const [properties, setProperties] = useState<Property[]>([]);
     const [projects, setProjects] = useState<ProjectItem[]>([]);
     const [newProp, setNewProp] = useState({
         title: "",
@@ -163,7 +162,6 @@ export default function BuilderPage() {
         externalUrl: "",
         images: [],
     });
-    const [projectImageInput, setProjectImageInput] = useState("");
 
     // Prefill agent info from onboarding
     const [hasPrefilled, setHasPrefilled] = useState(false);
@@ -249,12 +247,13 @@ export default function BuilderPage() {
 
     const addProperty = () => {
         if (!newProp.title) return;
-        const p = {
+        const p: Property = {
             id: Date.now().toString(),
+            ownerId: user?.id || "temp",
             title: newProp.title,
             price: Number(newProp.price) || 0,
-            status: newProp.status as any,
-            type: newProp.type as any,
+            status: newProp.status as "for-sale" | "for-rent" | "sold",
+            type: newProp.type as "lot-only" | "house-lot" | "townhouse" | "condo" | "commercial",
             description: newProp.description,
             images: newProp.images,
             location: newProp.location,
@@ -485,7 +484,7 @@ export default function BuilderPage() {
                                 const platformSelect = (document.getElementById('social-platform') as HTMLSelectElement);
                                 const usernameInput = (document.getElementById('social-username') as HTMLInputElement);
                                 const platform = platformSelect.value;
-                                let username = usernameInput.value.trim();
+                                const username = usernameInput.value.trim();
 
                                 if (platform && username) {
                                     let finalUrl = username;
@@ -723,8 +722,8 @@ export default function BuilderPage() {
                     <div className="px-4">Auto-updating</div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-8 flex justify-center bg-zinc-100 dark:bg-zinc-950/50">
-                    <div className="w-full max-w-[420px] bg-white shadow-2xl rounded-3xl overflow-hidden border-8 border-zinc-900 ring-1 ring-black/10 flex flex-col h-fit min-h-[800px]" style={{ backgroundColor: customColors.background }}>
+                <div className="flex-1 overflow-y-auto p-8 flex justify-center bg-muted/30">
+                    <div className="w-full max-w-[420px] bg-background shadow-2xl rounded-3xl overflow-hidden border-8 border-foreground/5 ring-1 ring-border flex flex-col h-fit min-h-[800px]" style={{ backgroundColor: customColors.background }}>
                         {blocks.filter(b => b.isEnabled).map(block => (
                             <div key={block.id}>
                                 {renderComponent(block.id)}

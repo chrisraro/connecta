@@ -9,7 +9,7 @@ import AgentBio from "@/components/templates/AgentBio";
 import PropertyGrid from "@/components/templates/PropertyGrid";
 import ProjectGrid from "@/components/templates/ProjectGrid";
 import ContactForm from "@/components/templates/ContactForm";
-import { ProfileData } from "@/types/profile";
+import { ProfileData, Property } from "@/types/profile";
 import { Loader2 } from "lucide-react";
 import { use } from "react";
 
@@ -44,10 +44,14 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
     const { layoutConfig, agentInfo } = profile;
 
     // Mock properties for now since we haven't built the property manager
-    const MOCK_PROPERTIES: any[] = [
+    const MOCK_PROPERTIES: Property[] = [
         {
-            id: "1", title: "Excluded Villa", price: 4500000, status: "for-sale",
-            imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750",
+            id: "1", 
+            ownerId: profile.ownerId,
+            title: "Excluded Villa", 
+            price: 4500000, 
+            status: "for-sale",
+            images: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750"],
             detailsUrl: "#",
         }
     ];

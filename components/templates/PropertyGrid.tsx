@@ -1,6 +1,6 @@
 "use client";
 
-import { ProfileData } from "@/types/profile";
+import { ProfileData, Property } from "@/types/profile";
 import { Bed, Bath, Home, Maximize2, Layers, MapPin, MessageSquare, Info, Calendar, Mail, User, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 
 /**
  * Returns #000000 or #ffffff — whichever has better contrast against `hexColor`.
@@ -43,23 +44,33 @@ export default function PropertyGrid({ data }: { data: ProfileData }) {
     );
 }
 
-function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
+interface PropertyCardProps {
+    prop: Property;
+    theme: ProfileData["theme"];
+}
+
+function PropertyCard({ prop, theme }: PropertyCardProps) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
     const images = prop.images && prop.images.length > 0 ? prop.images : ["/placeholder-property.jpg"];
 
     // Auto-cycle images on hover
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: NodeJS.Timeout | undefined;
         if (isHovering && images.length > 1) {
             interval = setInterval(() => {
                 setCurrentImageIndex(prev => (prev + 1) % images.length);
             }, 1500);
-        } else if (!isHovering) {
-            setCurrentImageIndex(0);
         }
-        return () => clearInterval(interval);
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, [isHovering, images.length]);
+
+    const handleMouseLeave = () => {
+        setIsHovering(false);
+        setCurrentImageIndex(0);
+    };
 
     const isSold = prop.status === "sold";
 
@@ -67,7 +78,7 @@ function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
         <div
             className="flex flex-col bg-card rounded-3xl overflow-hidden shadow-sm ring-1 ring-border/50 group relative"
             onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
+            onMouseLeave={handleMouseLeave}
         >
             {/* Image Area */}
             <div className="relative aspect-[4/3] bg-muted">
@@ -101,7 +112,7 @@ function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
                 {/* Image Pagination Dots (if multiple) */}
                 {images.length > 1 && (
                     <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
-                        {images.map((_: any, idx: number) => (
+                        {images.map((_, idx) => (
                             <div
                                 key={idx}
                                 className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? "w-6 bg-white" : "w-1.5 bg-white/50"}`}
@@ -139,8 +150,8 @@ function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
                 <div className="grid grid-cols-4 gap-2 py-2 border-y border-border/50">
                     <SpecItem icon={Maximize2} label="Lot" value={prop.lotArea ? `${prop.lotArea}sqm` : "-"} />
                     <SpecItem icon={Maximize2} label="Floor" value={prop.floorArea ? `${prop.floorArea}sqm` : "-"} />
-                    <SpecItem icon={Bed} label="Beds" value={prop.bedrooms || "-"} />
-                    <SpecItem icon={Bath} label="Bath" value={prop.bathrooms || "-"} />
+                    <SpecItem icon={Bed} label="Beds" value={prop.bedrooms ? String(prop.bedrooms) : "-"} />
+                    <SpecItem icon={Bath} label="Bath" value={prop.bathrooms ? String(prop.bathrooms) : "-"} />
                 </div>
 
                 {/* Actions */}
@@ -158,7 +169,7 @@ function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
                             </SheetHeader>
                             {/* Sheet Image Header */}
                             <div className="h-64 relative shrink-0">
-                                <img src={images[0]} className="w-full h-full object-cover" />
+                                <img src={images[0]} alt={prop.title} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
                                     <div>
                                         <Badge className="mb-2 bg-primary text-primary-foreground">{prop.status}</Badge>
@@ -207,8 +218,8 @@ function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
                                     <div>
                                         <h3 className="font-semibold mb-3">Gallery</h3>
                                         <div className="grid grid-cols-2 gap-2">
-                                            {images.slice(1).map((img: string, i: number) => (
-                                                <img key={i} src={img} className="rounded-lg w-full h-32 object-cover" />
+                                            {images.slice(1).map((img, i) => (
+                                                <img key={i} src={img} alt={`${prop.title} gallery ${i}`} className="rounded-lg w-full h-32 object-cover" />
                                             ))}
                                         </div>
                                     </div>
@@ -254,7 +265,14 @@ function PropertyCard({ prop, theme }: { prop: any, theme: any }) {
     );
 }
 
-function InquiryDialog({ prop, theme, trigger, isSold }: { prop: any, theme: any, trigger: React.ReactNode, isSold?: boolean }) {
+interface InquiryDialogProps {
+    prop: Property;
+    theme: ProfileData["theme"];
+    trigger: React.ReactNode;
+    isSold?: boolean;
+}
+
+function InquiryDialog({ prop, theme, trigger, isSold }: InquiryDialogProps) {
     const createLead = useMutation(api.leads.createLead);
     const [name, setName] = useState("");
     const [contact, setContact] = useState("");
@@ -263,27 +281,20 @@ function InquiryDialog({ prop, theme, trigger, isSold }: { prop: any, theme: any
     const [isSuccess, setIsSuccess] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
-    if (isSold) return trigger;
+    if (isSold) return <>{trigger}</>;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
             await createLead({
-                ownerId: prop.ownerId,
-                propertyId: prop.id, // Wait, createLead expects v.id("properties"). prop.id must be valid ID.
-                // In preview, prop.id is Date.now().toString(), which is invalid ID for backend.
-                // We should handle this gracefully for preview.
-                // For real id, it should be valid unless it's mock data.
-                // Actually in BuilderPage, prop.id is generic string for newly added.
-                // If it's a real stored property, it has a convex ID. 
-                // Creating a lead on a non-existent property (preview) will fail validation if strict.
-                // However, we can mock success if id is not 32 chars or whatever.
+                ownerId: prop.ownerId as Id<"users">,
+                propertyId: prop.id as Id<"properties">,
                 propertyName: prop.title,
                 inquirerName: name,
                 inquirerContact: contact,
                 message: message
-            } as any);
+            });
             setIsSuccess(true);
             setTimeout(() => {
                 setIsOpen(false);
@@ -362,7 +373,13 @@ function InquiryDialog({ prop, theme, trigger, isSold }: { prop: any, theme: any
     );
 }
 
-function SpecItem({ icon: Icon, label, value }: any) {
+interface SpecItemProps {
+    icon: React.ElementType;
+    label: string;
+    value: string | number;
+}
+
+function SpecItem({ icon: Icon, label, value }: SpecItemProps) {
     return (
         <div className="flex flex-col items-center justify-center p-1">
             <Icon className="w-4 h-4 text-muted-foreground mb-1" />
@@ -372,7 +389,13 @@ function SpecItem({ icon: Icon, label, value }: any) {
     )
 }
 
-function FeatureCard({ icon: Icon, label, value }: any) {
+interface FeatureCardProps {
+    icon: React.ElementType;
+    label: string;
+    value: string | number;
+}
+
+function FeatureCard({ icon: Icon, label, value }: FeatureCardProps) {
     return (
         <div className="flex flex-col items-center p-3 bg-muted/20 rounded-xl border text-center">
             <Icon className="w-5 h-5 text-primary mb-2" />

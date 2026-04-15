@@ -1,11 +1,10 @@
 import { TemplateProps } from "@/types/profile";
 import { Phone, Mail, Globe, MapPin, Download, Facebook, Instagram, Linkedin, Twitter, Youtube, Link as LinkIcon } from "lucide-react";
-import Link from "next/link";
 import { ProfileButton } from "@/components/ui/profile-button";
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
 
-const SOCIAL_ICONS: Record<string, any> = {
+const SOCIAL_ICONS: Record<string, React.ElementType> = {
     "Instagram": Instagram,
     "Facebook": Facebook,
     "LinkedIn": Linkedin,
