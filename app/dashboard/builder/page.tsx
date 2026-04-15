@@ -287,6 +287,7 @@ export default function BuilderPage() {
         if (!newProject.title) return;
         const proj: ProjectItem = {
             id: Date.now().toString(),
+            ownerId: user?.id || "temp",
             title: newProject.title,
             description: newProject.description,
             category: newProject.category,
