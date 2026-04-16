@@ -43,6 +43,7 @@ export default defineSchema({
   profiles: defineTable({
     ownerId: v.id("users"),
     name: v.string(),
+    profileType: v.union(v.literal("individual"), v.literal("company"), v.literal("business")),
 
     agentInfo: v.object({
       fullName: v.string(),
@@ -68,6 +69,21 @@ export default defineSchema({
 
     featuredProperties: v.array(v.id("properties")),
     featuredProjects: v.optional(v.array(v.string())), // project IDs (strings, not Convex IDs for local builder state)
+    
+    // Dynamic Content based on profileType
+    products: v.optional(v.array(v.object({
+      title: v.string(),
+      description: v.string(),
+      price: v.optional(v.number()),
+      image: v.optional(v.string()),
+      link: v.optional(v.string()),
+    }))),
+    services: v.optional(v.array(v.object({
+      title: v.string(),
+      description: v.string(),
+      price: v.optional(v.number()),
+      image: v.optional(v.string()),
+    }))),
   }).index("by_owner", ["ownerId"]),
 
   // 4. Real Estate Properties (kept for RE professionals)

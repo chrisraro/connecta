@@ -4,6 +4,7 @@ import { mutation, query } from "./_generated/server";
 export const createProfile = mutation({
     args: {
         name: v.string(), // e.g., "My Luxury Profile"
+        profileType: v.union(v.literal("individual"), v.literal("company"), v.literal("business")),
         agentInfo: v.object({
             fullName: v.string(),
             title: v.string(),
@@ -29,6 +30,19 @@ export const createProfile = mutation({
         }),
         featuredProperties: v.array(v.id("properties")),
         featuredProjects: v.optional(v.array(v.string())),
+        products: v.optional(v.array(v.object({
+            title: v.string(),
+            description: v.string(),
+            price: v.optional(v.number()),
+            image: v.optional(v.string()),
+            link: v.optional(v.string()),
+        }))),
+        services: v.optional(v.array(v.object({
+            title: v.string(),
+            description: v.string(),
+            price: v.optional(v.number()),
+            image: v.optional(v.string()),
+        }))),
         clerkId: v.string(),
         id: v.optional(v.id("profiles")),
     },
@@ -45,10 +59,13 @@ export const createProfile = mutation({
         const profileData = {
             ownerId: user._id,
             name: args.name,
+            profileType: args.profileType,
             agentInfo: args.agentInfo,
             layoutConfig: args.layoutConfig,
             featuredProperties: args.featuredProperties,
             featuredProjects: args.featuredProjects || [],
+            products: args.products,
+            services: args.services,
         };
 
         if (args.id) {

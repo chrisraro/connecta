@@ -9,7 +9,8 @@ import AgentBio from "@/components/templates/AgentBio";
 import PropertyGrid from "@/components/templates/PropertyGrid";
 import ProjectGrid from "@/components/templates/ProjectGrid";
 import ContactForm from "@/components/templates/ContactForm";
-import { ProfileData, Property } from "@/types/profile";
+import { ServicesGrid, ProductsGrid } from "@/components/templates/DynamicContent";
+import { ProfileData, Property, ProfileType } from "@/types/profile";
 import { Loader2 } from "lucide-react";
 import { use } from "react";
 
@@ -54,9 +55,13 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
 
     const data: ProfileData = {
         ownerId: profile.ownerId,
+        name: profile.name,
+        profileType: (profile.profileType || "individual") as ProfileType,
         agent: agentInfo,
-        properties: MOCK_PROPERTIES, // In future: fetch via featuredProperties IDs
-        projects: profile.featuredProjects ? [] : [], // In future: fetch via featuredProjects IDs
+        properties: MOCK_PROPERTIES, 
+        projects: [], 
+        products: profile.products,
+        services: profile.services,
         theme: {
             primaryColor: layoutConfig.colorPalette.primary,
             backgroundColor: layoutConfig.colorPalette.background,
@@ -75,6 +80,10 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
                 return <PropertyGrid key="prop" data={data} />;
             case "Projects":
                 return <ProjectGrid key="proj" data={data} />;
+            case "Services":
+                return <ServicesGrid key="services" data={data} />;
+            case "Products":
+                return <ProductsGrid key="products" data={data} />;
             case "Contact":
                 return <ContactForm key="contact" data={data} />;
             default:

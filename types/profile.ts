@@ -1,3 +1,5 @@
+export type ProfileType = "individual" | "company" | "business";
+
 // ─── Core Profile Info ────────────────────────────────────────────────────────
 export interface ProfileInfo {
     fullName: string;
@@ -78,12 +80,32 @@ export interface ProjectItem {
     featured?: boolean;
 }
 
+// ─── Dynamic Content ──────────────────────────────────────────────────────────
+export interface ProductItem {
+    title: string;
+    description: string;
+    price?: number;
+    image?: string;
+    link?: string;
+}
+
+export interface ServiceItem {
+    title: string;
+    description: string;
+    price?: number;
+    image?: string;
+}
+
 // ─── Profile Data (passed to all template components) ────────────────────────
 export interface ProfileData {
     ownerId: string;
+    name: string;
+    profileType: ProfileType;
     agent: ProfileInfo;
     properties: Property[];
     projects: ProjectItem[];
+    products?: ProductItem[];
+    services?: ServiceItem[];
     theme: {
         primaryColor: string;
         backgroundColor: string;

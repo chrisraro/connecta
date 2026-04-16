@@ -30,7 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import {
     Loader2, Save, Plus, Trash2, Smartphone, Monitor, X,
-    Palette, LayoutTemplate, User, List, GripVertical as DragHandleIcon
+    Palette, LayoutTemplate, User, List, GripVertical as DragHandleIcon,
+    Package, Briefcase, ChevronRight
 } from "lucide-react";
 
 // Templates
@@ -40,7 +41,10 @@ import AgentBio from "@/components/templates/AgentBio";
 import PropertyGrid from "@/components/templates/PropertyGrid";
 import ProjectGrid from "@/components/templates/ProjectGrid";
 import ContactForm from "@/components/templates/ContactForm";
-import { ProfileData, ProfileInfo, ProjectItem, ProjectCategory, PROJECT_CATEGORY_LABELS, Property } from "@/types/profile";
+import { 
+    ProfileData, ProfileInfo, ProjectItem, ProjectCategory, 
+    PROJECT_CATEGORY_LABELS, Property, ProfileType, ProductItem, ServiceItem 
+} from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -61,7 +65,7 @@ const INITIAL_AGENT_INFO: ProfileInfo = {
 };
 
 type Block = {
-    id: string; // "Hero", "Bio", "Properties", "Contact"
+    id: string; // "Hero", "Bio", "Properties", "Projects", "Products", "Services", "Contact"
     label: string;
     isEnabled: boolean;
 };
@@ -69,8 +73,10 @@ type Block = {
 const INITIAL_BLOCKS: Block[] = [
     { id: "Hero", label: "Hero Section", isEnabled: true },
     { id: "Bio", label: "About / Bio", isEnabled: true },
-    { id: "Projects", label: "Portfolio Projects", isEnabled: true },
+    { id: "Projects", label: "Portfolio Projects", isEnabled: false },
     { id: "Properties", label: "Property Listings", isEnabled: false },
+    { id: "Services", label: "Services Offered", isEnabled: false },
+    { id: "Products", label: "Product Listing", isEnabled: false },
     { id: "Contact", label: "Contact Form", isEnabled: true },
 ];
 
@@ -130,11 +136,14 @@ function BuilderContent() {
     const [selectedThemeId, setSelectedThemeId] = useState("modern");
     const [customColors, setCustomColors] = useState({ primary: "#000000", background: "#FFFFFF", text: "#000000" });
     const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
+    const [profileType, setProfileType] = useState<ProfileType>("individual");
 
     // Content State
     const [agentInfo, setAgentInfo] = useState<ProfileInfo>(INITIAL_AGENT_INFO);
     const [properties, setProperties] = useState<Property[]>([]);
     const [projects, setProjects] = useState<ProjectItem[]>([]);
+    const [products, setProducts] = useState<ProductItem[]>([]);
+    const [services, setServices] = useState<ServiceItem[]>([]);
     
     const [newProp, setNewProp] = useState({
         title: "", price: "", status: "for-sale", type: "house-lot", description: "",
@@ -149,6 +158,14 @@ function BuilderContent() {
         title: "", description: "", category: "other", tags: "", externalUrl: "", images: [],
     });
 
+    const [newProduct, setNewProduct] = useState<ProductItem>({
+        title: "", description: "", price: undefined, image: "", link: ""
+    });
+
+    const [newService, setNewService] = useState<ServiceItem>({
+        title: "", description: "", price: undefined, image: ""
+    });
+
     // Prefill logic
     const [hasPrefilled, setHasPrefilled] = useState(false);
     useEffect(() => {
@@ -156,7 +173,10 @@ function BuilderContent() {
 
         if (editingId) {
             if (existingProfile) {
+                setProfileType(existingProfile.profileType as ProfileType);
                 setAgentInfo(existingProfile.agentInfo);
+                setProducts(existingProfile.products || []);
+                setServices(existingProfile.services || []);
                 setSelectedThemeId(existingProfile.layoutConfig.themeId);
                 setCustomColors(existingProfile.layoutConfig.colorPalette);
                 const order = existingProfile.layoutConfig.componentOrder;
@@ -175,6 +195,21 @@ function BuilderContent() {
         } else {
             const data = onboarding?.data;
             if (data) {
+                const type = (data.profileCategory || "individual") as ProfileType;
+                setProfileType(type);
+                
+                // Adjust default blocks based on type
+                setBlocks(prev => prev.map(b => {
+                    if (type === "business") {
+                        if (b.id === "Products" || b.id === "Services") return { ...b, isEnabled: true };
+                    } else if (type === "company") {
+                        if (b.id === "Projects" || b.id === "Services") return { ...b, isEnabled: true };
+                    } else if (type === "individual") {
+                        if (b.id === "Projects") return { ...b, isEnabled: true };
+                    }
+                    return b;
+                }));
+
                 setAgentInfo(prev => ({
                     ...prev,
                     fullName: data.fullName || prev.fullName,
@@ -224,6 +259,7 @@ function BuilderContent() {
                 id: editingId ? (editingId as Id<"profiles">) : undefined,
                 clerkId: user.id,
                 name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
+                profileType: profileType,
                 agentInfo: { ...agentInfo, company: agentInfo.company ?? "", services: agentInfo.services ?? [] },
                 layoutConfig: {
                     themeId: selectedThemeId, colorPalette: customColors,
@@ -231,7 +267,9 @@ function BuilderContent() {
                     heroStyle: "default"
                 },
                 featuredProperties: [],
-                featuredProjects: projects.map(p => p.id)
+                featuredProjects: projects.map(p => p.id),
+                products: products,
+                services: services
             });
             router.push(`/p/${profileId}`);
         } catch (error) {
@@ -286,10 +324,28 @@ function BuilderContent() {
 
     const removeProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
 
+    const addProduct = () => {
+        if (!newProduct.title) return;
+        setProducts([...products, newProduct]);
+        setNewProduct({ title: "", description: "", price: undefined, image: "", link: "" });
+    };
+
+    const addServiceItem = () => {
+        if (!newService.title) return;
+        setServices([...services, newService]);
+        setNewService({ title: "", description: "", price: undefined, image: "" });
+    };
+
     const renderComponent = (componentId: string) => {
         const data: ProfileData = {
             ownerId: user?.id || "",
-            agent: agentInfo, properties: properties, projects: projects,
+            name: agentInfo.fullName,
+            profileType: profileType,
+            agent: agentInfo, 
+            properties: properties, 
+            projects: projects,
+            products: products,
+            services: services,
             theme: { primaryColor: customColors.primary, backgroundColor: customColors.background, textColor: customColors.text }
         };
         switch (componentId) {
@@ -297,6 +353,8 @@ function BuilderContent() {
             case "Bio": return <AgentBio key="bio" data={data} />;
             case "Properties": return <PropertyGrid key="prop" data={data} />;
             case "Projects": return <ProjectGrid key="projects" data={data} />;
+            case "Products": return <div key="products" className="p-12 text-center text-sm border-b font-bold opacity-30 bg-zinc-50">Products Section</div>;
+            case "Services": return <div key="services" className="p-12 text-center text-sm border-b font-bold opacity-30 bg-zinc-50">Services Section</div>;
             case "Contact": return <ContactForm key="contact" data={data} />;
             default: return null;
         }
@@ -326,15 +384,33 @@ function BuilderContent() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                    <TabsList className="grid grid-cols-3 mb-6">
+                    <TabsList className="grid grid-cols-4 mb-6">
                         <TabsTrigger value="blocks"><List className="w-4 h-4 mr-2" /> Blocks</TabsTrigger>
                         <TabsTrigger value="design"><Palette className="w-4 h-4 mr-2" /> Design</TabsTrigger>
                         <TabsTrigger value="content"><User className="w-4 h-4 mr-2" /> Profile</TabsTrigger>
+                        <TabsTrigger value="dynamic"><Package className="w-4 h-4 mr-2" /> Content</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="blocks" className="space-y-4">
+                        <div className="p-4 bg-muted/20 border border-border rounded-xl mb-6">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block">Profile Type</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(["individual", "company", "business"] as const).map((type) => (
+                                    <Button
+                                        key={type}
+                                        size="sm"
+                                        variant={profileType === type ? "default" : "outline"}
+                                        onClick={() => setProfileType(type)}
+                                        className="capitalize text-xs font-bold h-9"
+                                    >
+                                        {type}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="p-4 bg-muted/20 border border-border rounded-xl">
-                            <h3 className="text-sm font-semibold mb-3">Reorder & Toggle Sections</h3>
+                            <h3 className="text-xs font-bold uppercase text-muted-foreground mb-4">Reorder & Toggle Sections</h3>
                             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                 <SortableContext items={blocks} strategy={verticalListSortingStrategy}>
                                     {blocks.map(block => (
@@ -470,6 +546,69 @@ function BuilderContent() {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="dynamic" className="space-y-6">
+                        <div className="p-4 bg-muted/10 border border-zinc-200 rounded-2xl flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                                {profileType === "business" ? <Package /> : profileType === "company" ? <Briefcase /> : <User />}
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold capitalize">{profileType} Content</h4>
+                                <p className="text-[10px] text-muted-foreground">Add items specific to your profile type</p>
+                            </div>
+                        </div>
+
+                        {/* BUSINESS: Products & Services */}
+                        {profileType === "business" && (
+                            <div className="space-y-6">
+                                <div className="space-y-4">
+                                    <Label className="text-xs font-black uppercase text-primary">Add Product</Label>
+                                    <div className="space-y-2">
+                                        <Input placeholder="Product Name" value={newProduct.title} onChange={e => setNewProduct({...newProduct, title: e.target.value})} />
+                                        <Input placeholder="Description" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
+                                        <Input placeholder="Price (Optional)" type="number" value={newProduct.price || ""} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} />
+                                        <Button size="sm" className="w-full" onClick={addProduct}>Add Product</Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {products.map((p, i) => (
+                                            <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
+                                                <span>{p.title}</span>
+                                                <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setProducts(products.filter((_, idx) => idx !== i))} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* COMPANY: Projects & Services */}
+                        {(profileType === "company" || profileType === "individual") && (
+                            <div className="space-y-6">
+                                <div className="space-y-4">
+                                    <Label className="text-xs font-black uppercase text-primary">Add Service</Label>
+                                    <div className="space-y-2">
+                                        <Input placeholder="Service Name" value={newService.title} onChange={e => setNewService({...newService, title: e.target.value})} />
+                                        <Input placeholder="Description" value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} />
+                                        <Button size="sm" className="w-full" onClick={addServiceItem}>Add Service</Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {services.map((s, i) => (
+                                            <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
+                                                <span>{s.title}</span>
+                                                <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setServices(services.filter((_, idx) => idx !== i))} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="pt-4 border-t">
+                             <p className="text-[10px] text-muted-foreground italic text-center">
+                                Tip: Enable the corresponding blocks in the "Blocks" tab to show these items on your profile.
+                             </p>
                         </div>
                     </TabsContent>
                 </Tabs>
