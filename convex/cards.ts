@@ -68,11 +68,32 @@ export const linkProfile = mutation({
 export const getCardByUuid = query({
     args: { uuid: v.string() },
     handler: async (ctx, args) => {
-        const card = await ctx.db
+        // 1. Try exact match (fastest)
+        let card = await ctx.db
             .query("cards")
             .withIndex("by_uuid", (q) => q.eq("uuid", args.uuid))
             .first();
         
+        // 2. Try decoded match (handles %3A colons)
+        if (!card) {
+            const decoded = decodeURIComponent(args.uuid);
+            if (decoded !== args.uuid) {
+                card = await ctx.db
+                    .query("cards")
+                    .withIndex("by_uuid", (q) => q.eq("uuid", decoded))
+                    .first();
+            }
+        }
+
+        // 3. Try case-insensitive match (handles lowercase/uppercase hex mismatches)
+        if (!card) {
+            const normalized = decodeURIComponent(args.uuid).toLowerCase();
+            card = await ctx.db
+                .query("cards")
+                .collect()
+                .then(cards => cards.find(c => c.uuid.toLowerCase() === normalized) || null);
+        }
+
         return card;
     },
 });

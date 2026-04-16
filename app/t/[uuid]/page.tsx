@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef } from "react";
 import { Loader2, Smartphone, AlertCircle } from "lucide-react";
 
 export default function TapRedirectPage({ params }: { params: Promise<{ uuid: string }> }) {
@@ -14,6 +14,8 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
     const incrementTap = useMutation(api.cards.incrementTapCount);
     const [error, setError] = useState<string | null>(null);
 
+    const incrementedRef = useRef(false);
+
     useEffect(() => {
         if (card === null) {
             setError("This card ID was not found in our system.");
@@ -22,8 +24,9 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
                 setError("This card has not been activated yet.");
             } else if (!card.linkedProfileId) {
                 setError("This card is activated but not linked to any profile yet.");
-            } else {
-                // Success! Increment count and redirect
+            } else if (!incrementedRef.current) {
+                // Success! Increment count only once
+                incrementedRef.current = true;
                 incrementTap({ cardId: card._id });
                 router.replace(`/p/${card.linkedProfileId}`);
             }

@@ -65,6 +65,8 @@ export default function AdminFactoryPage() {
         setIsScanning(false);
     };
 
+    const [ndefStatus, setNdefStatus] = useState<string | null>(null);
+
     const startScanning = async () => {
         if (!("NDEFReader" in window)) {
             setScanError("Web NFC is not supported on this browser/device. Use Chrome on Android.");
@@ -73,6 +75,7 @@ export default function AdminFactoryPage() {
 
         setIsScanning(true);
         setScanError(null);
+        setNdefStatus(null);
         abortControllerRef.current = new AbortController();
 
         try {
@@ -92,11 +95,18 @@ export default function AdminFactoryPage() {
                 }
 
                 try {
+                    setNdefStatus("Writing NDEF URL...");
                     // 1. Write NDEF URL to the tag so phones natively redirect to the tap route
-                    const url = `${window.location.origin}/t/${serialNumber}`;
+                    // Force the production domain here. Native OS NFC background readers (especially iOS) 
+                    // will IGNORE localhost or HTTP urls. They require a valid HTTPS domain to show the notification natively.
+                    const PRODUCTION_DOMAIN = "https://tapfolio-beta.vercel.app";
+                    const url = `${PRODUCTION_DOMAIN}/t/${serialNumber}`;
+                    console.log("Writing NDEF URL:", url);
+                    
                     await ndef.write({
                         records: [{ recordType: "url", data: url }]
                     });
+                    setNdefStatus("NDEF Write Success!");
 
                     // 2. Register the card in Convex
                     const result = await registerCard({
@@ -299,6 +309,11 @@ export default function AdminFactoryPage() {
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">Ready to Scan</h2>
                     <p className="text-zinc-400 max-w-sm">Bring a physical NFC card close to your device&apos;s NFC reader to register it.</p>
+                    {ndefStatus && (
+                        <div className="mt-4 px-4 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-500 text-xs font-bold animate-pulse">
+                            {ndefStatus}
+                        </div>
+                    )}
                 </div>
             )}
 
