@@ -111,3 +111,22 @@ export const updateOnboarding = mutation({
         return user._id;
     },
 });
+
+export const getMyCards = query({
+    args: { clerkId: v.optional(v.string()) },
+    handler: async (ctx, args) => {
+        if (!args.clerkId) return [];
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
+            .unique();
+
+        if (!user) return [];
+
+        return await ctx.db
+            .query("cards")
+            .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
+            .collect();
+    },
+});
