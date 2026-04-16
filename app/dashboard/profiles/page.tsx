@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { resolveImageUrl } from "@/lib/utils";
 
 export default function ProfilesPage() {
     const { user } = useUser();
@@ -95,14 +96,25 @@ export default function ProfilesPage() {
                                     <span className="text-white font-bold text-sm uppercase tracking-wider">{profile.layoutConfig.themeId}</span>
                                 </div>
                             </div>
-                            <CardHeader className="pb-2">
+                            
+                            {profile.agentInfo.avatarUrl && (
+                                <div className="flex justify-center -mt-8 relative z-10">
+                                    <img 
+                                        src={resolveImageUrl(profile.agentInfo.avatarUrl)} 
+                                        alt="avatar" 
+                                        className="w-16 h-16 rounded-full object-cover border-4 border-card shadow-lg" 
+                                    />
+                                </div>
+                            )}
+
+                            <CardHeader className={profile.agentInfo.avatarUrl ? "pt-2 pb-2" : "pb-2"}>
                                 <CardTitle className="text-xl font-black uppercase tracking-tight text-foreground">{profile.name}</CardTitle>
                                 <CardDescription className="text-muted-foreground font-medium">
                                     {profile.agentInfo.fullName}
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="pb-6">
-                                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            <CardContent className="pb-6 text-center">
+                                <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                     Live Profile
                                 </div>

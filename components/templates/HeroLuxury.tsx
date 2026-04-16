@@ -3,6 +3,7 @@ import { Phone, Mail, Globe, MapPin, Download, Facebook, Instagram, Linkedin, Tw
 import { ProfileButton } from "@/components/ui/profile-button";
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
+import { resolveImageUrl } from "@/lib/utils";
 
 const SOCIAL_ICONS: Record<string, React.ElementType> = {
     "Instagram": Instagram,
@@ -16,99 +17,94 @@ const SOCIAL_ICONS: Record<string, React.ElementType> = {
 
 export default function HeroLuxury({ data }: TemplateProps) {
     const { agent, theme } = data;
-    // Luxury theme often overrides user colors with Gold/Black/White, but we can respect them softly or use them for accents.
-    // For this implementation, we'll respect the passed theme for structure but maintain the luxury layout.
 
     return (
         <div
-            className="py-16 px-8 text-center flex flex-col items-center"
+            className="relative pt-20 pb-12 px-8 text-center border-b shadow-2xl"
             style={{
                 backgroundColor: theme.backgroundColor,
-                color: theme.textColor
+                color: theme.textColor,
+                borderColor: `${theme.primaryColor}20`
             }}
         >
-            <div className="uppercase tracking-[0.3em] text-xs font-semibold mb-8 opacity-60">
-                Exclusive Real Estate
-            </div>
+            {/* Background Accent */}
+            <div
+                className="absolute top-0 left-0 w-full h-32 opacity-10"
+                style={{
+                    background: `linear-gradient(to bottom, ${theme.primaryColor}, transparent)`
+                }}
+            />
 
-            <div className="mb-10 w-full max-w-2xl">
-                <div className="relative inline-block mb-6">
+            <div className="relative mb-8">
+                <div
+                    className="w-36 h-36 mx-auto rounded-2xl overflow-hidden border-2 p-1 transform rotate-3 hover:rotate-0 transition-transform duration-500 shadow-2xl"
+                    style={{ borderColor: theme.primaryColor }}
+                >
                     <img
-                        src={agent.avatarUrl || `https://api.dicebear.com/7.x/miniavs/svg?seed=${agent.fullName}`}
+                        src={resolveImageUrl(agent.avatarUrl) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${agent.fullName}`}
                         alt={agent.fullName}
-                        className="w-32 h-32 rounded-full mx-auto border-2 p-1"
-                        style={{ borderColor: theme.primaryColor }}
+                        className="w-full h-full object-cover rounded-xl"
                     />
                 </div>
+            </div>
 
-                <h1 className="text-5xl font-serif mb-3 tracking-tight">{agent.fullName}</h1>
-                <p className="font-serif text-xl italic opacity-90" style={{ color: theme.primaryColor }}>{agent.title}</p>
-
-                <div className="w-16 h-[2px] mx-auto my-8" style={{ backgroundColor: theme.primaryColor }}></div>
-
-                <div className="flex flex-col items-center gap-2 opacity-80 mb-8">
-                    <p className="uppercase tracking-widest text-sm font-bold">{agent.company}</p>
-                    {agent.address && (
-                        <div className="flex items-center gap-2 text-sm font-light">
-                            <MapPin className="w-3 h-3" />
-                            <span>{agent.address}</span>
-                        </div>
-                    )}
+            <div className="space-y-3 mb-10">
+                <h1 className="text-5xl font-black tracking-tighter uppercase italic" style={{ color: theme.primaryColor }}>
+                    {agent.fullName}
+                </h1>
+                <div className="flex flex-col items-center gap-1">
+                    <p className="text-sm font-bold tracking-[0.2em] uppercase opacity-60">
+                        {agent.title}
+                    </p>
+                    <div className="h-px w-12 my-2" style={{ backgroundColor: theme.primaryColor }} />
+                    <p className="text-sm font-medium tracking-widest uppercase italic opacity-80">
+                        {agent.company}
+                    </p>
                 </div>
+            </div>
 
-                {/* Interactive Contact Buttons */}
-                <div className="flex gap-4 flex-wrap justify-center mb-10">
-                    {agent.phone && (
+            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-10">
+                {agent.phone && (
+                    <ProfileButton
+                        icon={Phone}
+                        label="Call"
+                        value={agent.phone}
+                        href={`tel:${agent.phone}`}
+                        color={theme.textColor}
+                        bgColor={`${theme.primaryColor}15`}
+                    />
+                )}
+                {agent.email && (
+                    <ProfileButton
+                        icon={Mail}
+                        label="Email"
+                        value={agent.email}
+                        href={`mailto:${agent.email}`}
+                        color={theme.textColor}
+                        bgColor={`${theme.primaryColor}15`}
+                    />
+                )}
+                {agent.socialLinks?.map((link, i) => {
+                    const Icon = SOCIAL_ICONS[link.platform] || LinkIcon;
+                    return (
                         <ProfileButton
-                            icon={Phone}
-                            label="Call"
-                            value={agent.phone}
-                            href={`tel:${agent.phone}`}
-                            color={theme.backgroundColor}
-                            bgColor={theme.primaryColor}
+                            key={i}
+                            icon={Icon}
+                            label={link.platform}
+                            value={link.url}
+                            href={link.url}
+                            color={theme.textColor}
+                            bgColor={`${theme.primaryColor}15`}
                         />
-                    )}
-                    {agent.email && (
-                        <ProfileButton
-                            icon={Mail}
-                            label="Email"
-                            value={agent.email}
-                            href={`mailto:${agent.email}`}
-                            color={theme.backgroundColor}
-                            bgColor={theme.primaryColor}
-                        />
-                    )}
-                    {agent.website && (
-                        <ProfileButton
-                            icon={Globe}
-                            label="Web"
-                            value={agent.website}
-                            href={agent.website}
-                            color={theme.backgroundColor}
-                            bgColor={theme.primaryColor}
-                        />
-                    )}
-                    {agent.socialLinks?.map((link, i) => {
-                        const Icon = SOCIAL_ICONS[link.platform] || LinkIcon;
-                        return (
-                            <ProfileButton
-                                key={i}
-                                icon={Icon}
-                                label={link.platform}
-                                value={link.url}
-                                href={link.url}
-                                color={theme.backgroundColor}
-                                bgColor={theme.primaryColor}
-                            />
-                        );
-                    })}
-                </div>
+                    );
+                })}
+            </div>
 
-                {/* Save Contact CTA */}
+            <div className="flex justify-center">
                 <Button
                     onClick={() => downloadVCard(agent)}
-                    className="border-2 uppercase tracking-widest text-xs h-12 px-8 transition-all hover:scale-105"
                     variant="outline"
+                    className="rounded-full px-10 h-14 font-black uppercase tracking-widest text-xs border-2 hover:scale-105 transition-all shadow-xl"
                     style={{
                         borderColor: theme.primaryColor,
                         color: theme.primaryColor,

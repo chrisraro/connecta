@@ -233,7 +233,8 @@ export default function BuilderPage() {
                     componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
                 },
-                featuredProperties: [] // Keeping empty as per schema/mock plan
+                featuredProperties: [], // Keeping empty as per schema/mock plan
+                featuredProjects: projects.map(p => p.id)
             });
             router.push(`/p/${profileId}`);
         } catch (error) {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
@@ -12,7 +12,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import {
     User, Phone, Globe, Briefcase, Image as ImageIcon,
     ChevronRight, ChevronLeft, CheckCircle2, Sparkles, X,
-    Building2, Store, Edit, ArrowRight
+    Building2, Store, Edit, ArrowRight, Loader2
 } from "lucide-react";
 
 type ProfileCategory = "individual" | "company" | "business";
@@ -71,8 +71,11 @@ const SUGGESTED_SERVICES = [
     "Interior Design", "Architecture", "Consulting",
 ];
 
-export default function OnboardingPage() {
+function OnboardingContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const isEditMode = searchParams.get("edit") === "true";
+    
     const { user: clerkUser } = useUser();
     const updateOnboarding = useMutation(api.users.updateOnboarding);
     const onboarding = useQuery(api.users.getOnboardingStatus, clerkUser?.id ? { clerkId: clerkUser.id } : "skip");
@@ -83,19 +86,19 @@ export default function OnboardingPage() {
 
     // Form state
     const [profileCategory, setProfileCategory] = useState<ProfileCategory>("individual");
-    const [fullName, setFullName] = useState(clerkUser?.fullName ?? "");
+    const [fullName, setFullName] = useState("");
     const [title, setTitle] = useState("");
     const [company, setCompany] = useState("");
     const [phone, setPhone] = useState("");
     const [website, setWebsite] = useState("");
     const [about, setAbout] = useState("");
-    const [avatarUrl, setAvatarUrl] = useState(clerkUser?.imageUrl ?? "");
+    const [avatarUrl, setAvatarUrl] = useState("");
     const [services, setServices] = useState<string[]>([]);
     const [serviceInput, setServiceInput] = useState("");
 
     const email = clerkUser?.primaryEmailAddress?.emailAddress ?? "";
 
-    // Prefill from existing onboarding data when revisiting
+    // Prefill from existing onboarding data
     useEffect(() => {
         const data = onboarding?.data;
         if (!hasPrefilled && data) {
@@ -108,6 +111,10 @@ export default function OnboardingPage() {
             setAbout(data.about || "");
             setAvatarUrl(data.avatarUrl || clerkUser?.imageUrl || "");
             setServices(data.services || []);
+            setHasPrefilled(true);
+        } else if (!hasPrefilled && clerkUser && !data) {
+            setFullName(clerkUser.fullName || "");
+            setAvatarUrl(clerkUser.imageUrl || "");
             setHasPrefilled(true);
         }
     }, [onboarding, hasPrefilled, clerkUser]);
@@ -151,7 +158,6 @@ export default function OnboardingPage() {
 
     const handleNext = async () => {
         if (step < STEPS.length - 1) {
-            // Only save on steps that have data (skip welcome)
             if (step > 0) {
                 await saveProgress(false);
             }
@@ -172,7 +178,7 @@ export default function OnboardingPage() {
     const categoryFields = CATEGORY_FIELDS[profileCategory];
 
     // ─── COMPLETED STATE ─────────────────────────────────────────────
-    if (onboarding?.completed) {
+    if (onboarding?.completed && !isEditMode) {
         const d = onboarding.data;
         const cat = PROFILE_CATEGORIES.find(c => c.id === d?.profileCategory);
         return (
@@ -180,7 +186,6 @@ export default function OnboardingPage() {
                 <div className="w-full max-w-lg">
                     <div className="bg-card rounded-3xl shadow-xl border border-border/50 overflow-hidden">
                         <div className="p-6 md:p-8 space-y-6">
-                            {/* Header */}
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                                     <CheckCircle2 className="w-6 h-6 text-green-600" />
@@ -191,11 +196,10 @@ export default function OnboardingPage() {
                                 </div>
                             </div>
 
-                            {/* Summary */}
                             <div className="bg-muted/50 rounded-xl p-4 space-y-3">
                                 {d?.avatarUrl && (
                                     <div className="flex justify-center">
-                                        <img src={d.avatarUrl} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
+                                        <img src={d.avatarUrl?.startsWith("http") || d.avatarUrl?.startsWith("data:") ? d.avatarUrl : `https://neat-hedgehog-331.convex.site/api/storage/${d.avatarUrl}`} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
                                     </div>
                                 )}
                                 <div className="text-center space-y-1">
@@ -219,20 +223,13 @@ export default function OnboardingPage() {
                                 )}
                             </div>
 
-                            {/* Actions */}
                             <div className="space-y-2">
                                 <Button className="w-full" size="lg" onClick={() => router.push("/dashboard/builder")}>
                                     <ArrowRight className="w-4 h-4 mr-2" /> Go to Profile Builder
                                 </Button>
                                 <Button variant="outline" className="w-full" onClick={() => {
-                                    // Reset to edit mode
-                                    setHasPrefilled(false);
-                                    setStep(1);
-                                    // Force refetch will trigger prefill
-                                    setTimeout(() => setHasPrefilled(false), 100);
-                                    // We need to trick the component into wizard mode
-                                    // by navigating with a query param
                                     router.push("/dashboard/onboarding?edit=true");
+                                    setStep(1);
                                 }}>
                                     <Edit className="w-4 h-4 mr-2" /> Edit Profile Setup
                                 </Button>
@@ -251,7 +248,6 @@ export default function OnboardingPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
-                {/* Progress Bar */}
                 <div className="mb-8">
                     <div className="flex justify-between text-xs text-muted-foreground mb-2">
                         <span>Step {step + 1} of {STEPS.length}</span>
@@ -265,7 +261,6 @@ export default function OnboardingPage() {
                             style={{ width: `${progress}%`, backgroundColor: "hsl(var(--primary))" }}
                         />
                     </div>
-                    {/* Step dots */}
                     <div className="flex justify-between mt-2">
                         {STEPS.map((s, i) => {
                             const Icon = s.icon;
@@ -278,13 +273,10 @@ export default function OnboardingPage() {
                     </div>
                 </div>
 
-                {/* Card */}
                 <div className="bg-card rounded-3xl shadow-xl border border-border/50 overflow-hidden">
-                    {/* Step Content */}
                     <div className="p-6 md:p-8 min-h-[360px] flex flex-col">
                         <h1 className="text-2xl font-bold mb-1">{STEPS[step].title}</h1>
 
-                        {/* STEP 0: Welcome */}
                         {step === 0 && (
                             <div className="flex-1 flex flex-col justify-center space-y-4">
                                 <p className="text-muted-foreground leading-relaxed">
@@ -308,7 +300,6 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
-                        {/* STEP 1: Profile Type */}
                         {step === 1 && (
                             <div className="flex-1 space-y-4 pt-4">
                                 <p className="text-sm text-muted-foreground">What best describes your profile?</p>
@@ -340,7 +331,6 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
-                        {/* STEP 2: Identity (Dynamic based on category) */}
                         {step === 2 && (
                             <div className="flex-1 space-y-4 pt-4">
                                 <div className="space-y-2">
@@ -373,7 +363,6 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
-                        {/* STEP 3: Contact */}
                         {step === 3 && (
                             <div className="flex-1 space-y-4 pt-4">
                                 <div className="space-y-2">
@@ -400,7 +389,6 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
-                        {/* STEP 4: Work & Services */}
                         {step === 4 && (
                             <div className="flex-1 space-y-4 pt-4">
                                 <div className="space-y-2">
@@ -423,7 +411,6 @@ export default function OnboardingPage() {
                                         />
                                         <Button type="button" variant="outline" onClick={() => addService(serviceInput)}>Add</Button>
                                     </div>
-                                    {/* Suggestions */}
                                     <div className="flex flex-wrap gap-1.5 mt-2">
                                         {SUGGESTED_SERVICES.filter(s => !services.includes(s)).slice(0, 8).map(s => (
                                             <button
@@ -435,7 +422,6 @@ export default function OnboardingPage() {
                                             </button>
                                         ))}
                                     </div>
-                                    {/* Selected tags */}
                                     {services.length > 0 && (
                                         <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border/50">
                                             {services.map(s => (
@@ -450,7 +436,6 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
-                        {/* STEP 5: Photo */}
                         {step === 5 && (
                             <div className="flex-1 flex flex-col items-center justify-center pt-4 gap-4">
                                 <p className="text-sm text-muted-foreground text-center">
@@ -469,7 +454,6 @@ export default function OnboardingPage() {
                             </div>
                         )}
 
-                        {/* STEP 6: Done */}
                         {step === 6 && (
                             <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center pt-4">
                                 <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -493,7 +477,6 @@ export default function OnboardingPage() {
                         )}
                     </div>
 
-                    {/* Navigation Footer */}
                     {step < STEPS.length - 1 && (
                         <div className="px-6 md:px-8 pb-6 md:pb-8 flex justify-between items-center border-t border-border/50 pt-4">
                             <Button
@@ -511,5 +494,13 @@ export default function OnboardingPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function OnboardingPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
+            <OnboardingContent />
+        </Suspense>
     );
 }

@@ -3,13 +3,14 @@ import { Phone, Mail, Globe, MapPin, Download, Facebook, Instagram, Linkedin, Tw
 import { ProfileButton } from "@/components/ui/profile-button";
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
+import { resolveImageUrl } from "@/lib/utils";
 
 const SOCIAL_ICONS: Record<string, React.ElementType> = {
     "Instagram": Instagram,
     "Facebook": Facebook,
     "LinkedIn": Linkedin,
     "Twitter": Twitter,
-    "TikTok": LinkIcon, // Lucide doesn't have TikTok yet, usually
+    "TikTok": LinkIcon,
     "YouTube": Youtube,
     "Website": Globe
 };
@@ -31,7 +32,7 @@ export default function HeroModern({ data }: TemplateProps) {
                     style={{ borderColor: theme.primaryColor }}
                 >
                     <img
-                        src={agent.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${agent.fullName}`}
+                        src={resolveImageUrl(agent.avatarUrl) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${agent.fullName}`}
                         alt={agent.fullName}
                         className="w-full h-full object-cover"
                     />
@@ -49,7 +50,6 @@ export default function HeroModern({ data }: TemplateProps) {
                 )}
             </div>
 
-            {/* Main Call-to-Actions (Phone, Email, Socials) */}
             <div className="flex gap-3 flex-wrap justify-center w-full max-w-md">
                 {agent.phone && (
                     <ProfileButton
@@ -97,7 +97,6 @@ export default function HeroModern({ data }: TemplateProps) {
                 })}
             </div>
 
-            {/* Native Save Contact */}
             <Button
                 onClick={() => downloadVCard(agent)}
                 className="w-full max-w-sm font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"

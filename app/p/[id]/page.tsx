@@ -17,6 +17,8 @@ import { use } from "react";
 // Note: In Next.js 15, params is a Promise that needs to be unwrapped.
 // However, creating a separate client component for the logic is safer.
 
+import { resolveImageUrl } from "@/lib/utils";
+
 export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params);
     return <PublicProfileContent profileId={resolvedParams.id} />;

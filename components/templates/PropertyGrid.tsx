@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { resolveImageUrl } from "@/lib/utils";
 
 /**
  * Returns #000000 or #ffffff — whichever has better contrast against `hexColor`.
@@ -26,7 +27,6 @@ function getContrastColor(hexColor: string): string {
     const b = parseInt(hex.slice(4, 6), 16) / 255;
     const toLinear = (c: number) => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-    // Against white (L=1): contrast = (1+0.05)/(L+0.05); against black (L=0): (L+0.05)/0.05
     return L > 0.179 ? "#000000" : "#ffffff";
 }
 
@@ -83,7 +83,7 @@ function PropertyCard({ prop, theme }: PropertyCardProps) {
             {/* Image Area */}
             <div className="relative aspect-[4/3] bg-muted">
                 <img
-                    src={images[currentImageIndex]}
+                    src={resolveImageUrl(images[currentImageIndex])}
                     alt={prop.title}
                     className={`w-full h-full object-cover transition-all duration-500 ${isSold ? 'grayscale' : ''}`}
                 />
@@ -169,7 +169,7 @@ function PropertyCard({ prop, theme }: PropertyCardProps) {
                             </SheetHeader>
                             {/* Sheet Image Header */}
                             <div className="h-64 relative shrink-0">
-                                <img src={images[0]} alt={prop.title} className="w-full h-full object-cover" />
+                                <img src={resolveImageUrl(images[0])} alt={prop.title} className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
                                     <div>
                                         <Badge className="mb-2 bg-primary text-primary-foreground">{prop.status}</Badge>
@@ -219,7 +219,7 @@ function PropertyCard({ prop, theme }: PropertyCardProps) {
                                         <h3 className="font-semibold mb-3">Gallery</h3>
                                         <div className="grid grid-cols-2 gap-2">
                                             {images.slice(1).map((img, i) => (
-                                                <img key={i} src={img} alt={`${prop.title} gallery ${i}`} className="rounded-lg w-full h-32 object-cover" />
+                                                <img key={i} src={resolveImageUrl(img)} alt={`${prop.title} gallery ${i}`} className="rounded-lg w-full h-32 object-cover" />
                                             ))}
                                         </div>
                                     </div>

@@ -27,7 +27,8 @@ export const createProfile = mutation({
             componentOrder: v.array(v.string()),
             heroStyle: v.string(),
         }),
-        featuredProperties: v.array(v.id("properties")), // Can be empty initially
+        featuredProperties: v.array(v.id("properties")),
+        featuredProjects: v.optional(v.array(v.string())),
         clerkId: v.string(),
     },
     handler: async (ctx, args) => {
@@ -46,6 +47,7 @@ export const createProfile = mutation({
             agentInfo: args.agentInfo,
             layoutConfig: args.layoutConfig,
             featuredProperties: args.featuredProperties,
+            featuredProjects: args.featuredProjects || [],
         });
 
         return profileId;

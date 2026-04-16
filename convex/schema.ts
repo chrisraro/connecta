@@ -57,6 +57,7 @@ export default defineSchema({
       services: v.optional(v.array(v.string())),
     }),
 
+
     layoutConfig: v.object({
       themeId: v.string(),
       colorPalette: v.object({ primary: v.string(), background: v.string(), text: v.string() }),

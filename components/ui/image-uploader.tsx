@@ -2,12 +2,13 @@
 
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ImagePlus, X, Loader2 } from "lucide-react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 interface ImageUploaderProps {
     value?: string;
-    onChange: (base64: string) => void;
+    onChange: (url: string) => void;
     onRemove?: () => void;
     className?: string;
     placeholder?: string;
@@ -16,40 +17,68 @@ interface ImageUploaderProps {
 export function ImageUploader({ value, onChange, onRemove, className, placeholder = "Upload Image" }: ImageUploaderProps) {
     const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const generateUploadUrl = useMutation(api.images.generateUploadUrl);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // rudimentary check for image type
         if (!file.type.startsWith("image/")) {
             alert("Please upload an image file.");
             return;
         }
 
-        // Limit size to ~2MB for Base64 (browser performance safe-ish zone)
-        if (file.size > 2 * 1024 * 1024) {
-            alert("File is too large. Please upload an image under 2MB.");
-            return;
-        }
-
         setIsLoading(true);
-        const reader = new FileReader();
-        reader.onloadend = () => {
+        try {
+            // 1. Get a short-lived upload URL from Convex
+            const postUrl = await generateUploadUrl();
+
+            // 2. POST the file to the URL
+            const result = await fetch(postUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+
+            if (!result.ok) throw new Error("Upload failed");
+
+            const { storageId } = await result.json();
+            
+            // For simplicity in this app, we will use the storageId as the value.
+            // In a real app, you might want to fetch the actual URL, 
+            // but Convex storage IDs can be used with a proxy or transformed.
+            // Here we'll treat the storageId as the persistent identifier.
+            // To display it, we'll need a way to turn storageId into a URL.
+            // Let's assume for now we want to store the final public URL if possible,
+            // or just use a helper. 
+            
+            // To keep it consistent with existing code that expects a URL:
+            // We'll pass the storageId and let the backend/components handle resolution.
+            // BUT, to show the preview IMMEDIATELY, we'll use the storage ID or a temporary local URL.
+            
+            onChange(storageId);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to upload image.");
+        } finally {
             setIsLoading(false);
-            if (typeof reader.result === "string") {
-                onChange(reader.result);
-            }
-        };
-        reader.readAsDataURL(file);
+            if (inputRef.current) inputRef.current.value = "";
+        }
     };
 
     const triggerUpload = () => inputRef.current?.click();
 
+    // Helper to resolve storageId to a displayable URL
+    // In Convex, we can use a helper or a dedicated route.
+    // For this prototype, we'll assume the 'value' could be a storageId or a URL.
+    const displayUrl = value?.startsWith("http") || value?.startsWith("data:") 
+        ? value 
+        : value ? `https://neat-hedgehog-331.convex.site/api/storage/${value}` : "";
+
     if (value) {
         return (
             <div className={`relative w-32 h-32 rounded-lg overflow-hidden border border-border group ${className}`}>
-                <img src={value} alt="Uploaded" className="w-full h-full object-cover" />
+                <img src={displayUrl} alt="Uploaded" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Button
                         variant="destructive"
@@ -58,7 +87,7 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
                         onClick={(e) => {
                             e.stopPropagation();
                             if (onRemove) onRemove();
-                            else onChange(""); // clear if no remove handler
+                            else onChange("");
                         }}
                     >
                         <X className="w-4 h-4" />
