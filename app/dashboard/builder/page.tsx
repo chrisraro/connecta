@@ -31,19 +31,14 @@ import { Switch } from "@/components/ui/switch";
 import {
     Loader2, Save, Plus, Trash2, Smartphone, Monitor, X,
     Palette, LayoutTemplate, User, List, GripVertical as DragHandleIcon,
-    Package, Briefcase
+    Package, Briefcase, GraduationCap, Code, Quote, Image as ImageIcon
 } from "lucide-react";
 
 // Templates
-import HeroModern from "@/components/templates/HeroModern";
-import HeroLuxury from "@/components/templates/HeroLuxury";
-import AgentBio from "@/components/templates/AgentBio";
-import PropertyGrid from "@/components/templates/PropertyGrid";
-import ProjectGrid from "@/components/templates/ProjectGrid";
-import ContactForm from "@/components/templates/ContactForm";
+import Default from "@/components/templates/Default";
 import { 
-    ProfileData, ProfileInfo, ProjectItem, ProjectCategory, 
-    PROJECT_CATEGORY_LABELS, Property, ProfileType, ProductItem, ServiceItem 
+    ProfileData, ProfileInfo, ProjectItem, 
+    PROJECT_CATEGORY_LABELS, ProfileType, ProductItem, ServiceItem 
 } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { Id } from "@/convex/_generated/dataModel";
@@ -72,18 +67,22 @@ type Block = {
 
 const INITIAL_BLOCKS: Block[] = [
     { id: "Hero", label: "Hero Section", isEnabled: true },
-    { id: "Bio", label: "About / Bio", isEnabled: true },
-    { id: "Projects", label: "Portfolio Projects", isEnabled: false },
-    { id: "Properties", label: "Property Listings", isEnabled: false },
-    { id: "Services", label: "Services Offered", isEnabled: false },
-    { id: "Products", label: "Product Listing", isEnabled: false },
+    { id: "About", label: "About", isEnabled: true },
+    { id: "Certification", label: "Certification", isEnabled: false },
+    { id: "Education", label: "Education", isEnabled: false },
+    { id: "TechStack", label: "Tech Stack", isEnabled: false },
+    { id: "Services", label: "Services", isEnabled: false },
+    { id: "Experience", label: "Experience", isEnabled: false },
+    { id: "Projects", label: "Projects", isEnabled: true },
+    { id: "Testimonials", label: "Recommendations", isEnabled: false },
+    { id: "Gallery", label: "Gallery", isEnabled: false },
     { id: "Contact", label: "Contact Form", isEnabled: true },
 ];
 
 const THEMES = [
-    { id: "modern", name: "Modern", primary: "#000000", background: "#FFFFFF", text: "#000000" },
-    { id: "luxury", name: "Luxury", primary: "#C5A059", background: "#1A1A1A", text: "#FFFFFF" },
-    { id: "minimal", name: "Minimal", primary: "#52525B", background: "#F4F4F5", text: "#18181B" },
+    { id: "modern", name: "Modern", primary: "#E91E63", background: "#FFFFFF", text: "#1a1a1a" },
+    { id: "dark", name: "Dark", primary: "#E91E63", background: "#1a1a1a", text: "#FFFFFF" },
+    { id: "minimal", name: "Minimal", primary: "#6366f1", background: "#F4F4F5", text: "#18181B" },
 ];
 
 // --- Sortable Item Component ---
@@ -124,24 +123,27 @@ function BuilderContent() {
 
     // Config State
     const [selectedThemeId, setSelectedThemeId] = useState("modern");
-    const [customColors, setCustomColors] = useState({ primary: "#000000", background: "#FFFFFF", text: "#000000" });
+    const [customColors, setCustomColors] = useState({ primary: "#E91E63", background: "#FFFFFF", text: "#1a1a1a" });
     const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
     const [profileType, setProfileType] = useState<ProfileType>("individual");
 
     // Content State
     const [agentInfo, setAgentInfo] = useState<ProfileInfo>(INITIAL_AGENT_INFO);
-    const [properties, setProperties] = useState<Property[]>([]);
     const [projects, setProjects] = useState<ProjectItem[]>([]);
-    const [products, setProducts] = useState<ProductItem[]>([]);
-    const [services, setServices] = useState<ServiceItem[]>([]);
     
-    const [newProduct, setNewProduct] = useState<ProductItem>({
-        title: "", description: "", price: undefined, image: "", link: ""
-    });
-
-    const [newService, setNewService] = useState<ServiceItem>({
-        title: "", description: "", price: undefined, image: ""
-    });
+    // New field states - use ProfileInfo types directly
+    const [certification, setCertification] = useState<{ title: string; description: string }>({ title: "", description: "" });
+    const [education, setEducation] = useState<NonNullable<ProfileInfo["education"]>>([]);
+    const [techStack, setTechStack] = useState<NonNullable<ProfileInfo["techStack"]>>([]);
+    const [experience, setExperience] = useState<NonNullable<ProfileInfo["experience"]>>([]);
+    const [testimonials, setTestimonials] = useState<NonNullable<ProfileInfo["testimonials"]>>([]);
+    const [gallery, setGallery] = useState<NonNullable<ProfileInfo["gallery"]>>([]);
+    
+    // Form inputs for new items
+    const [newEducation, setNewEducation] = useState({ degree: "", school: "", year: "" });
+    const [newTechStack, setNewTechStack] = useState({ category: "", skills: "" });
+    const [newExperience, setNewExperience] = useState({ title: "", company: "", period: "", description: "" });
+    const [newTestimonial, setNewTestimonial] = useState({ quote: "", author: "", role: "" });
 
     // Prefill logic
     const [hasPrefilled, setHasPrefilled] = useState(false);
@@ -155,14 +157,18 @@ function BuilderContent() {
                     ...INITIAL_AGENT_INFO,
                     ...existingProfile.agentInfo,
                 });
-                setProducts(existingProfile.products || []);
-                setServices(existingProfile.services || []);
+                
+                // Load new fields
+                const info = existingProfile.agentInfo;
+                if (info.certification) setCertification(info.certification);
+                if (info.education) setEducation(info.education.map(e => ({ ...e, year: e.year || "" })));
+                if (info.techStack) setTechStack(info.techStack);
+                if (info.experience) setExperience(info.experience.map(e => ({ ...e, description: e.description || "" })));
+                if (info.testimonials) setTestimonials(info.testimonials.map(t => ({ ...t, role: t.role || "" })));
+                if (info.gallery) setGallery(info.gallery);
                 
                 if (existingProfile.featuredProjects) {
-                    setProjects(existingProfile.featuredProjects.map(id => ({
-                        id, ownerId: existingProfile.ownerId, title: "Existing Project",
-                        category: "other", tags: [], images: []
-                    })));
+                    // Projects would need to be fetched separately
                 }
 
                 if (existingProfile.layoutConfig) {
@@ -183,12 +189,6 @@ function BuilderContent() {
                 const data = onboarding.data;
                 const type = (data.profileCategory || "individual") as ProfileType;
                 setProfileType(type);
-                setBlocks(prev => prev.map(b => {
-                    if (type === "business" && (b.id === "Products" || b.id === "Services")) return { ...b, isEnabled: true };
-                    if (type === "company" && (b.id === "Projects" || b.id === "Services")) return { ...b, isEnabled: true };
-                    if (type === "individual" && b.id === "Projects") return { ...b, isEnabled: true };
-                    return b;
-                }));
                 setAgentInfo(prev => ({
                     ...prev,
                     fullName: data.fullName || "",
@@ -236,7 +236,6 @@ function BuilderContent() {
         if (!user?.id) return;
         setIsSaving(true);
         try {
-            // Strict Sanitization
             const cleanAgentInfo = {
                 fullName: String(agentInfo.fullName || ""),
                 title: String(agentInfo.title || ""),
@@ -252,6 +251,12 @@ function BuilderContent() {
                     platform: String(link.platform || "Website"),
                     url: String(link.url || "")
                 })),
+                certification: certification.title ? certification : undefined,
+                education: education.length > 0 ? education : undefined,
+                techStack: techStack.length > 0 ? techStack : undefined,
+                experience: experience.length > 0 ? experience : undefined,
+                testimonials: testimonials.length > 0 ? testimonials : undefined,
+                gallery: gallery.length > 0 ? gallery : undefined,
             };
 
             const profileId = await createProfile({
@@ -266,21 +271,10 @@ function BuilderContent() {
                     componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
                 },
-                featuredProperties: existingProfile?.featuredProperties || [],
-                featuredProjects: projects.length > 0 ? projects.map(p => p.id) : (existingProfile?.featuredProjects || []),
-                products: products.map(p => ({
-                    title: String(p.title || "Untitled"),
-                    description: String(p.description || ""),
-                    price: (p.price !== undefined && !isNaN(Number(p.price))) ? Number(p.price) : undefined,
-                    image: p.image || undefined,
-                    link: p.link || undefined
-                })),
-                services: services.map(s => ({
-                    title: String(s.title || "Untitled"),
-                    description: String(s.description || ""),
-                    price: (s.price !== undefined && !isNaN(Number(s.price))) ? Number(s.price) : undefined,
-                    image: s.image || undefined
-                }))
+                featuredProperties: [],
+                featuredProjects: [],
+                products: [],
+                services: []
             });
             router.push(`/p/${profileId}`);
         } catch (error: any) {
@@ -291,16 +285,36 @@ function BuilderContent() {
         }
     };
 
-    const addProduct = () => {
-        if (!newProduct.title) return;
-        setProducts([...products, newProduct]);
-        setNewProduct({ title: "", description: "", price: undefined, image: "", link: "" });
+    // Add item handlers
+    const addEducation = () => {
+        if (!newEducation.degree || !newEducation.school) return;
+        setEducation([...education, newEducation]);
+        setNewEducation({ degree: "", school: "", year: "" });
     };
 
-    const addServiceItem = () => {
-        if (!newService.title) return;
-        setServices([...services, newService]);
-        setNewService({ title: "", description: "", price: undefined, image: "" });
+    const addTechStack = () => {
+        if (!newTechStack.category || !newTechStack.skills) return;
+        setTechStack([...techStack, { 
+            category: newTechStack.category, 
+            skills: newTechStack.skills.split(",").map(s => s.trim()) 
+        }]);
+        setNewTechStack({ category: "", skills: "" });
+    };
+
+    const addExperience = () => {
+        if (!newExperience.title || !newExperience.company) return;
+        setExperience([...experience, newExperience]);
+        setNewExperience({ title: "", company: "", period: "", description: "" });
+    };
+
+    const addTestimonial = () => {
+        if (!newTestimonial.quote || !newTestimonial.author) return;
+        setTestimonials([...testimonials, newTestimonial]);
+        setNewTestimonial({ quote: "", author: "", role: "" });
+    };
+
+    const addGalleryImage = (url: string) => {
+        if (url) setGallery([...gallery, url]);
     };
 
     const renderComponent = (componentId: string) => {
@@ -308,23 +322,19 @@ function BuilderContent() {
             ownerId: user?.id || "",
             name: agentInfo.fullName,
             profileType: profileType,
-            agent: agentInfo, 
-            properties: properties, 
+            agent: { ...agentInfo, certification, education, techStack, experience, testimonials, gallery }, 
+            properties: [], 
             projects: projects,
-            products: products,
-            services: services,
+            products: [],
+            services: [],
             theme: { primaryColor: customColors.primary, backgroundColor: customColors.background, textColor: customColors.text }
         };
-        switch (componentId) {
-            case "Hero": return selectedThemeId === "luxury" ? <HeroLuxury key="hero" data={data} /> : <HeroModern key="hero" data={data} />;
-            case "Bio": return <AgentBio key="bio" data={data} />;
-            case "Properties": return <PropertyGrid key="prop" data={data} />;
-            case "Projects": return <ProjectGrid key="projects" data={data} />;
-            case "Products": return <div key="products" className="p-12 text-center text-sm border-b font-bold opacity-30 bg-zinc-50 uppercase tracking-widest">Products Section</div>;
-            case "Services": return <div key="services" className="p-12 text-center text-sm border-b font-bold opacity-30 bg-zinc-50 uppercase tracking-widest">Services Section</div>;
-            case "Contact": return <ContactForm key="contact" data={data} />;
-            default: return null;
-        }
+        
+        // Only render if block is enabled
+        const block = blocks.find(b => b.id === componentId);
+        if (!block?.isEnabled) return null;
+        
+        return <Default key="default" data={data} />;
     };
 
     return (
@@ -517,65 +527,195 @@ function BuilderContent() {
                     </TabsContent>
 
                     <TabsContent value="dynamic" className="space-y-6">
-                        <div className="p-4 bg-muted/10 border border-zinc-200 rounded-2xl flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                                {profileType === "business" ? <Package /> : profileType === "company" ? <Briefcase /> : <User />}
+                        {/* Certification */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Briefcase className="w-4 h-4 text-primary" />
+                                <Label className="text-xs font-black uppercase text-primary">Certification</Label>
                             </div>
-                            <div>
-                                <h4 className="text-sm font-bold capitalize">{profileType} Content</h4>
-                                <p className="text-[10px] text-muted-foreground">Add items specific to your profile type</p>
+                            <Input 
+                                placeholder="Title (e.g., Software Engineer)" 
+                                value={certification.title} 
+                                onChange={e => setCertification({...certification, title: e.target.value})} 
+                            />
+                            <Input 
+                                placeholder="Description" 
+                                value={certification.description} 
+                                onChange={e => setCertification({...certification, description: e.target.value})} 
+                            />
+                        </div>
+
+                        {/* Education */}
+                        <div className="space-y-4 pt-4 border-t">
+                            <div className="flex items-center gap-2">
+                                <GraduationCap className="w-4 h-4 text-primary" />
+                                <Label className="text-xs font-black uppercase text-primary">Education</Label>
+                            </div>
+                            <div className="space-y-2">
+                                <Input placeholder="Degree" value={newEducation.degree} onChange={e => setNewEducation({...newEducation, degree: e.target.value})} />
+                                <Input placeholder="School" value={newEducation.school} onChange={e => setNewEducation({...newEducation, school: e.target.value})} />
+                                <Input placeholder="Year" value={newEducation.year} onChange={e => setNewEducation({...newEducation, year: e.target.value})} />
+                                <Button size="sm" className="w-full" onClick={addEducation}>Add Education</Button>
+                            </div>
+                            <div className="space-y-2">
+                                {education.map((edu, i) => (
+                                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
+                                        <span>{edu.degree} - {edu.school}</span>
+                                        <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setEducation(education.filter((_, idx) => idx !== i))} />
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-                        {/* BUSINESS: Products & Services */}
-                        {profileType === "business" && (
-                            <div className="space-y-6">
-                                <div className="space-y-4">
-                                    <Label className="text-xs font-black uppercase text-primary">Add Product</Label>
-                                    <div className="space-y-2">
-                                        <Input placeholder="Product Name" value={newProduct.title} onChange={e => setNewProduct({...newProduct, title: e.target.value})} />
-                                        <Input placeholder="Description" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
-                                        <Input placeholder="Price (Optional)" type="number" value={newProduct.price || ""} onChange={e => setNewProduct({...newProduct, price: e.target.value ? Number(e.target.value) : undefined})} />
-                                        <Button size="sm" className="w-full" onClick={addProduct}>Add Product</Button>
+                        {/* Tech Stack */}
+                        <div className="space-y-4 pt-4 border-t">
+                            <div className="flex items-center gap-2">
+                                <Code className="w-4 h-4 text-primary" />
+                                <Label className="text-xs font-black uppercase text-primary">Tech Stack</Label>
+                            </div>
+                            <div className="space-y-2">
+                                <Input placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={e => setNewTechStack({...newTechStack, category: e.target.value})} />
+                                <Input placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={e => setNewTechStack({...newTechStack, skills: e.target.value})} />
+                                <Button size="sm" className="w-full" onClick={addTechStack}>Add Category</Button>
+                            </div>
+                            <div className="space-y-2">
+                                {techStack.map((stack, i) => (
+                                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
+                                        <span>{stack.category}: {stack.skills.join(", ")}</span>
+                                        <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setTechStack(techStack.filter((_, idx) => idx !== i))} />
                                     </div>
-                                    <div className="space-y-2">
-                                        {products.map((p, i) => (
-                                            <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
-                                                <span>{p.title}</span>
-                                                <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setProducts(products.filter((_, idx) => idx !== i))} />
-                                            </div>
-                                        ))}
-                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Services */}
+                        <div className="space-y-4 pt-4 border-t">
+                            <div className="flex items-center gap-2">
+                                <Briefcase className="w-4 h-4 text-primary" />
+                                <Label className="text-xs font-black uppercase text-primary">Services</Label>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex gap-2">
+                                    <Input 
+                                        placeholder="Add a service (e.g., Web Design)" 
+                                        id="new-service"
+                                        onKeyDown={e => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                const input = e.target as HTMLInputElement;
+                                                if (input.value.trim()) {
+                                                    setAgentInfo({ ...agentInfo, services: [...(agentInfo.services || []), input.value.trim()] });
+                                                    input.value = "";
+                                                }
+                                            }
+                                        }}
+                                    />
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => {
+                                            const input = document.getElementById('new-service') as HTMLInputElement;
+                                            if (input.value.trim()) {
+                                                setAgentInfo({ ...agentInfo, services: [...(agentInfo.services || []), input.value.trim()] });
+                                                input.value = "";
+                                            }
+                                        }}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {agentInfo.services?.map((service, i) => (
+                                        <span key={i} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-primary/10 text-primary">
+                                            {service}
+                                            <button 
+                                                onClick={() => setAgentInfo({ ...agentInfo, services: agentInfo.services?.filter((_, idx) => idx !== i) })}
+                                                className="hover:text-destructive"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
-                        )}
+                        </div>
 
-                        {/* COMPANY: Projects & Services */}
-                        {(profileType === "company" || profileType === "individual") && (
-                            <div className="space-y-6">
-                                <div className="space-y-4">
-                                    <Label className="text-xs font-black uppercase text-primary">Add Service</Label>
-                                    <div className="space-y-2">
-                                        <Input placeholder="Service Name" value={newService.title} onChange={e => setNewService({...newService, title: e.target.value})} />
-                                        <Input placeholder="Description" value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} />
-                                        <Button size="sm" className="w-full" onClick={addServiceItem}>Add Service</Button>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {services.map((s, i) => (
-                                            <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
-                                                <span>{s.title}</span>
-                                                <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setServices(services.filter((_, idx) => idx !== i))} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                        {/* Experience */}
+                        <div className="space-y-4 pt-4 border-t">
+                            <div className="flex items-center gap-2">
+                                <Briefcase className="w-4 h-4 text-primary" />
+                                <Label className="text-xs font-black uppercase text-primary">Experience</Label>
                             </div>
-                        )}
+                            <div className="space-y-2">
+                                <Input placeholder="Job Title" value={newExperience.title} onChange={e => setNewExperience({...newExperience, title: e.target.value})} />
+                                <Input placeholder="Company" value={newExperience.company} onChange={e => setNewExperience({...newExperience, company: e.target.value})} />
+                                <Input placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={e => setNewExperience({...newExperience, period: e.target.value})} />
+                                <Input placeholder="Description" value={newExperience.description} onChange={e => setNewExperience({...newExperience, description: e.target.value})} />
+                                <Button size="sm" className="w-full" onClick={addExperience}>Add Experience</Button>
+                            </div>
+                            <div className="space-y-2">
+                                {experience.map((exp, i) => (
+                                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
+                                        <span>{exp.title} at {exp.company}</span>
+                                        <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setExperience(experience.filter((_, idx) => idx !== i))} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-                        <div className="pt-4 border-t">
-                             <p className="text-[10px] text-muted-foreground italic text-center leading-relaxed">
-                                Tip: Enable the corresponding blocks in the "Blocks" tab to show these items on your profile.
-                             </p>
+                        {/* Testimonials */}
+                        <div className="space-y-4 pt-4 border-t">
+                            <div className="flex items-center gap-2">
+                                <Quote className="w-4 h-4 text-primary" />
+                                <Label className="text-xs font-black uppercase text-primary">Recommendations</Label>
+                            </div>
+                            <div className="space-y-2">
+                                <textarea 
+                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    placeholder="Quote"
+                                    value={newTestimonial.quote}
+                                    onChange={e => setNewTestimonial({...newTestimonial, quote: e.target.value})}
+                                />
+                                <Input placeholder="Author Name" value={newTestimonial.author} onChange={e => setNewTestimonial({...newTestimonial, author: e.target.value})} />
+                                <Input placeholder="Role/Title" value={newTestimonial.role} onChange={e => setNewTestimonial({...newTestimonial, role: e.target.value})} />
+                                <Button size="sm" className="w-full" onClick={addTestimonial}>Add Recommendation</Button>
+                            </div>
+                            <div className="space-y-2">
+                                {testimonials.map((t, i) => (
+                                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
+                                        <span className="truncate max-w-[200px]">&ldquo;{t.quote.substring(0, 30)}...&rdquo; - {t.author}</span>
+                                        <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Gallery */}
+                        <div className="space-y-4 pt-4 border-t">
+                            <div className="flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4 text-primary" />
+                                <Label className="text-xs font-black uppercase text-primary">Gallery</Label>
+                            </div>
+                            <div className="space-y-2">
+                                <ImageUploader
+                                    value=""
+                                    onChange={(val) => addGalleryImage(val)}
+                                    onRemove={() => {}}
+                                    placeholder="Add Gallery Image"
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {gallery.map((img, i) => (
+                                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                                        <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
+                                        <button 
+                                            className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs"
+                                            onClick={() => setGallery(gallery.filter((_, idx) => idx !== i))}
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </TabsContent>
                 </Tabs>
@@ -588,9 +728,7 @@ function BuilderContent() {
                 </div>
                 <div className="flex-1 overflow-y-auto p-8 flex justify-center bg-muted/30">
                     <div className="w-full max-w-[420px] bg-background shadow-2xl rounded-3xl overflow-hidden border-8 border-foreground/5 ring-1 ring-border flex flex-col h-fit min-h-[800px]" style={{ backgroundColor: customColors.background }}>
-                        {blocks.filter(b => b.isEnabled).map(block => (
-                            <div key={block.id}>{renderComponent(block.id)}</div>
-                        ))}
+                        {renderComponent("Default")}
                     </div>
                 </div>
             </div>

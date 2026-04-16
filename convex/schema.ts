@@ -57,6 +57,31 @@ export default defineSchema({
       avatarUrl: v.optional(v.string()),
       socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
       services: v.optional(v.array(v.string())),
+      certification: v.optional(v.object({
+        title: v.string(),
+        description: v.string(),
+      })),
+      education: v.optional(v.array(v.object({
+        degree: v.string(),
+        school: v.string(),
+        year: v.optional(v.string()),
+      }))),
+      techStack: v.optional(v.array(v.object({
+        category: v.string(),
+        skills: v.array(v.string()),
+      }))),
+      experience: v.optional(v.array(v.object({
+        title: v.string(),
+        company: v.string(),
+        period: v.string(),
+        description: v.optional(v.string()),
+      }))),
+      testimonials: v.optional(v.array(v.object({
+        quote: v.string(),
+        author: v.string(),
+        role: v.optional(v.string()),
+      }))),
+      gallery: v.optional(v.array(v.string())),
     }),
 
 

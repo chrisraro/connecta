@@ -16,6 +16,37 @@ export interface ProfileInfo {
     /** Services offered — e.g. ["Logo Design", "Brand Identity"] */
     services?: string[];
     socialLinks: { platform: string; url: string }[];
+    /** Certification/highlight credential */
+    certification?: {
+        title: string;
+        description: string;
+    };
+    /** Education background */
+    education?: {
+        degree: string;
+        school: string;
+        year?: string;
+    }[];
+    /** Tech stack/skills organized by category */
+    techStack?: {
+        category: string;
+        skills: string[];
+    }[];
+    /** Work experience history */
+    experience?: {
+        title: string;
+        company: string;
+        period: string;
+        description?: string;
+    }[];
+    /** Testimonials/recommendations */
+    testimonials?: {
+        quote: string;
+        author: string;
+        role?: string;
+    }[];
+    /** Gallery images */
+    gallery?: string[];
 }
 
 /** @deprecated Use ProfileInfo instead */
