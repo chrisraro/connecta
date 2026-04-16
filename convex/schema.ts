@@ -36,7 +36,8 @@ export default defineSchema({
     linkedProfileId: v.optional(v.id("profiles")),
     tapCount: v.number(),
   }).index("by_uuid", ["uuid"])
-    .index("by_owner", ["ownerId"]),
+    .index("by_owner", ["ownerId"])
+    .index("by_activationCode", ["activationCode"]),
 
   // 3. Digital Profiles
   profiles: defineTable({
