@@ -288,6 +288,7 @@ function BuilderContent() {
 
     const renderComponent = (componentId: string) => {
         const data: ProfileData = {
+            ownerId: user?.id || "",
             agent: agentInfo, properties: properties, projects: projects,
             theme: { primaryColor: customColors.primary, backgroundColor: customColors.background, textColor: customColors.text }
         };
