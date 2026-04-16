@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, LayoutDashboard, Users, SmartphoneNfc, LogOut } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,25 +15,44 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     const router = useRouter();
-    const { isLoaded, isSignedIn } = useUser();
-    const userRole = useQuery(api.users.getUser); // We need to ensure this returns the role
+    const { user, isLoaded, isSignedIn } = useUser();
+    const userRole = useQuery(api.users.getUser); 
+    const syncUser = useMutation(api.users.syncUser);
+    
+    // Local override derived strictly from the sync return or fallback to Convex state
+    const [verifiedAdmin, setVerifiedAdmin] = useState<boolean | null>(null);
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
             router.push("/");
+        } else if (isLoaded && user) {
+            syncUser({
+                clerkId: user.id,
+                email: user.primaryEmailAddress?.emailAddress || "",
+                name: user.fullName || "",
+            }).then((res) => {
+                if (res.role === "admin") {
+                    setVerifiedAdmin(true);
+                } else {
+                    setVerifiedAdmin(false);
+                }
+            }).catch(() => {
+                setVerifiedAdmin(false);
+            });
         }
-    }, [isLoaded, isSignedIn, router]);
+    }, [isLoaded, isSignedIn, user, router, syncUser]);
 
     // Effect to redirect if not admin
     useEffect(() => {
-        if (userRole !== undefined) {
-            if (userRole === null || userRole.role !== "admin") {
-                router.push("/dashboard"); // Kick out non-admins
-            }
+        if (verifiedAdmin === false) {
+             router.push("/dashboard"); // Kick out non-admins
+        } else if (verifiedAdmin === null && userRole !== undefined && userRole !== null && userRole.role === "agent") {
+             // Fallback to pure Convex
+             // Wait we shouldn't rely on Convex here because of latency, we'll just wait for verifiedAdmin!
         }
-    }, [userRole, router]);
+    }, [verifiedAdmin, router]);
 
-    if (!isLoaded || userRole === undefined) {
+    if (!isLoaded || verifiedAdmin === null) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-black text-white">
                 <Loader2 className="animate-spin text-red-600 w-10 h-10" />
@@ -41,10 +60,7 @@ export default function AdminLayout({
         );
     }
 
-    // Double check before rendering children
-    if (userRole === null || userRole.role !== "admin") {
-        return null; // Will redirect via useEffect
-    }
+    // We rely purely on `verifiedAdmin` which waits for DB sync. No more white-screen blocks.
 
     return (
         <div className="flex min-h-screen bg-black text-white">

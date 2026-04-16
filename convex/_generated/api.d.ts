@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin from "../admin.js";
 import type * as email from "../email.js";
 import type * as images from "../images.js";
 import type * as leads from "../leads.js";
@@ -23,6 +24,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   email: typeof email;
   images: typeof images;
   leads: typeof leads;

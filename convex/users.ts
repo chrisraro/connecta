@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
 
 export const syncUser = mutation({
     args: {
@@ -13,24 +14,33 @@ export const syncUser = mutation({
             .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
             .first();
 
+        const isAdmin = args.email === "tapfolio.dev@gmail.com";
+
         if (existingUser) {
+            const updates: Partial<Doc<"users">> = {};
             if (existingUser.email !== args.email) {
-                await ctx.db.patch(existingUser._id, { email: args.email });
+                updates.email = args.email;
             }
-            return existingUser._id;
+            if (isAdmin && existingUser.role !== "admin") {
+                updates.role = "admin";
+            }
+            if (Object.keys(updates).length > 0) {
+                await ctx.db.patch(existingUser._id, updates);
+            }
+            return { id: existingUser._id, role: isAdmin ? "admin" : existingUser.role };
         }
 
         const newUserId = await ctx.db.insert("users", {
             clerkId: args.clerkId,
             email: args.email,
             name: args.name,
-            role: "agent",
+            role: isAdmin ? "admin" : "agent",
             subscriptionStatus: "active",
             credits: 5,
             onboardingCompleted: false,
         });
 
-        return newUserId;
+        return { id: newUserId, role: isAdmin ? "admin" : "agent" };
     },
 });
 

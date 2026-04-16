@@ -15,6 +15,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
+import { Doc } from "@/convex/_generated/dataModel";
 
 export function NotificationsPopover() {
     const { user } = useUser();
@@ -34,7 +35,7 @@ export function NotificationsPopover() {
 
     const unreadCount = notifications.filter((n) => !n.read).length;
 
-    const handleNotificationClick = (notification: any) => {
+    const handleNotificationClick = (notification: Doc<"notifications">) => {
         if (!notification.read) {
             markAsRead({ notificationId: notification._id });
         }
