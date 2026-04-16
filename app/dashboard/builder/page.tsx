@@ -31,7 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import {
     Loader2, Save, Plus, Trash2, Smartphone, Monitor, X,
     Palette, LayoutTemplate, User, List, GripVertical as DragHandleIcon,
-    Package, Briefcase, ChevronRight
+    Package, Briefcase
 } from "lucide-react";
 
 // Templates
@@ -51,9 +51,9 @@ import { Id } from "@/convex/_generated/dataModel";
 // --- Types & Defaults ---
 
 const INITIAL_AGENT_INFO: ProfileInfo = {
-    fullName: "Your Name",
-    title: "Your Title",
-    company: "Company Name",
+    fullName: "",
+    title: "",
+    company: "",
     phone: "",
     email: "",
     address: "",
@@ -65,7 +65,7 @@ const INITIAL_AGENT_INFO: ProfileInfo = {
 };
 
 type Block = {
-    id: string; // "Hero", "Bio", "Properties", "Projects", "Products", "Services", "Contact"
+    id: string; 
     label: string;
     isEnabled: boolean;
 };
@@ -89,18 +89,8 @@ const THEMES = [
 // --- Sortable Item Component ---
 
 function SortableBlockItem({ block, onToggle }: { block: Block, onToggle: (id: string) => void }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-    } = useSortable({ id: block.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
+    const style = { transform: CSS.Transform.toString(transform), transition };
 
     return (
         <div ref={setNodeRef} style={style} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg mb-2">
@@ -121,7 +111,7 @@ function BuilderContent() {
     const router = useRouter();
     const { user } = useUser();
     const searchParams = useSearchParams();
-    const editingId = searchParams.get("id");
+    const editingId = searchParams.get("id") && searchParams.get("id") !== "null" ? searchParams.get("id") : null;
 
     const createProfile = useMutation(api.profiles.createProfile);
     const onboarding = useQuery(api.users.getOnboardingStatus, user?.id ? { clerkId: user.id } : "skip");
@@ -145,19 +135,6 @@ function BuilderContent() {
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [services, setServices] = useState<ServiceItem[]>([]);
     
-    const [newProp, setNewProp] = useState({
-        title: "", price: "", status: "for-sale", type: "house-lot", description: "",
-        images: [] as string[], currentImageInput: "", location: "",
-        bedrooms: "", bathrooms: "", floorArea: "", lotArea: "", floors: "", dateSold: ""
-    });
-    
-    const [newProject, setNewProject] = useState<{
-        title: string; description: string; category: ProjectCategory;
-        tags: string; externalUrl: string; images: string[];
-    }>({
-        title: "", description: "", category: "other", tags: "", externalUrl: "", images: [],
-    });
-
     const [newProduct, setNewProduct] = useState<ProductItem>({
         title: "", description: "", price: undefined, image: "", link: ""
     });
@@ -171,8 +148,8 @@ function BuilderContent() {
     useEffect(() => {
         if (hasPrefilled) return;
 
-        if (editingId) {
-            if (existingProfile) {
+        try {
+            if (editingId && existingProfile) {
                 setProfileType((existingProfile.profileType as ProfileType) || "individual");
                 setAgentInfo({
                     ...INITIAL_AGENT_INFO,
@@ -181,66 +158,54 @@ function BuilderContent() {
                 setProducts(existingProfile.products || []);
                 setServices(existingProfile.services || []);
                 
-                // Prefill projects IDs to prevent wiping
                 if (existingProfile.featuredProjects) {
                     setProjects(existingProfile.featuredProjects.map(id => ({
-                        id,
-                        ownerId: existingProfile.ownerId,
-                        title: "Existing Project",
-                        category: "other",
-                        tags: [],
-                        images: []
+                        id, ownerId: existingProfile.ownerId, title: "Existing Project",
+                        category: "other", tags: [], images: []
                     })));
                 }
 
-                setSelectedThemeId(existingProfile.layoutConfig.themeId);
-                setCustomColors(existingProfile.layoutConfig.colorPalette);
-                const order = existingProfile.layoutConfig.componentOrder;
-                setBlocks(prev => {
-                    const updated = prev.map(b => ({ ...b, isEnabled: order.includes(b.id) }));
-                    return [...updated].sort((a, b) => {
-                        const idxA = order.indexOf(a.id);
-                        const idxB = order.indexOf(b.id);
-                        if (idxA === -1) return 1;
-                        if (idxB === -1) return -1;
-                        return idxA - idxB;
+                if (existingProfile.layoutConfig) {
+                    setSelectedThemeId(existingProfile.layoutConfig.themeId || "modern");
+                    setCustomColors(existingProfile.layoutConfig.colorPalette || THEMES[0]);
+                    const order = existingProfile.layoutConfig.componentOrder || [];
+                    setBlocks(prev => {
+                        const updated = prev.map(b => ({ ...b, isEnabled: order.includes(b.id) }));
+                        return [...updated].sort((a, b) => {
+                            const idxA = order.indexOf(a.id);
+                            const idxB = order.indexOf(b.id);
+                            return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+                        });
                     });
-                });
+                }
                 setHasPrefilled(true);
-            }
-        } else {
-            const data = onboarding?.data;
-            if (data) {
+            } else if (!editingId && onboarding?.data) {
+                const data = onboarding.data;
                 const type = (data.profileCategory || "individual") as ProfileType;
                 setProfileType(type);
-                
-                // Adjust default blocks based on type
                 setBlocks(prev => prev.map(b => {
-                    if (type === "business") {
-                        if (b.id === "Products" || b.id === "Services") return { ...b, isEnabled: true };
-                    } else if (type === "company") {
-                        if (b.id === "Projects" || b.id === "Services") return { ...b, isEnabled: true };
-                    } else if (type === "individual") {
-                        if (b.id === "Projects") return { ...b, isEnabled: true };
-                    }
+                    if (type === "business" && (b.id === "Products" || b.id === "Services")) return { ...b, isEnabled: true };
+                    if (type === "company" && (b.id === "Projects" || b.id === "Services")) return { ...b, isEnabled: true };
+                    if (type === "individual" && b.id === "Projects") return { ...b, isEnabled: true };
                     return b;
                 }));
-
                 setAgentInfo(prev => ({
                     ...prev,
-                    fullName: data.fullName || prev.fullName,
-                    title: data.title || prev.title,
-                    phone: data.phone || prev.phone,
-                    email: data.email || user?.primaryEmailAddress?.emailAddress || prev.email,
-                    company: data.company || prev.company,
-                    website: data.website || prev.website,
-                    about: data.about || prev.about,
-                    avatarUrl: data.avatarUrl || prev.avatarUrl,
-                    services: data.services || prev.services,
-                    socialLinks: data.socialLinks || prev.socialLinks,
+                    fullName: data.fullName || "",
+                    title: data.title || "",
+                    phone: data.phone || "",
+                    email: data.email || user?.primaryEmailAddress?.emailAddress || "",
+                    company: data.company || "",
+                    website: data.website || "",
+                    about: data.about || "",
+                    avatarUrl: data.avatarUrl || "",
+                    services: data.services || [],
+                    socialLinks: data.socialLinks || [],
                 }));
                 setHasPrefilled(true);
             }
+        } catch (err) {
+            console.error("Prefill error:", err);
         }
     }, [onboarding, hasPrefilled, user, existingProfile, editingId]);
 
@@ -271,21 +236,21 @@ function BuilderContent() {
         if (!user?.id) return;
         setIsSaving(true);
         try {
-            // Clean Agent Info to match schema exactly
+            // Strict Sanitization
             const cleanAgentInfo = {
-                fullName: agentInfo.fullName || "",
-                title: agentInfo.title || "",
-                company: agentInfo.company || "",
-                phone: agentInfo.phone || "",
-                email: agentInfo.email || "",
+                fullName: String(agentInfo.fullName || ""),
+                title: String(agentInfo.title || ""),
+                company: String(agentInfo.company || ""),
+                phone: String(agentInfo.phone || ""),
+                email: String(agentInfo.email || ""),
                 address: agentInfo.address || undefined,
                 website: agentInfo.website || undefined,
                 about: agentInfo.about || undefined,
                 avatarUrl: agentInfo.avatarUrl || undefined,
-                services: agentInfo.services || [],
+                services: (agentInfo.services || []).map(String),
                 socialLinks: (agentInfo.socialLinks || []).map(link => ({
-                    platform: link.platform,
-                    url: link.url
+                    platform: String(link.platform || "Website"),
+                    url: String(link.url || "")
                 })),
             };
 
@@ -302,19 +267,17 @@ function BuilderContent() {
                     heroStyle: "default"
                 },
                 featuredProperties: existingProfile?.featuredProperties || [],
-                featuredProjects: projects.length > 0 
-                    ? projects.map(p => p.id) 
-                    : (existingProfile?.featuredProjects || []),
+                featuredProjects: projects.length > 0 ? projects.map(p => p.id) : (existingProfile?.featuredProjects || []),
                 products: products.map(p => ({
-                    title: p.title,
-                    description: p.description,
+                    title: String(p.title || "Untitled"),
+                    description: String(p.description || ""),
                     price: (p.price !== undefined && !isNaN(Number(p.price))) ? Number(p.price) : undefined,
                     image: p.image || undefined,
                     link: p.link || undefined
                 })),
                 services: services.map(s => ({
-                    title: s.title,
-                    description: s.description,
+                    title: String(s.title || "Untitled"),
+                    description: String(s.description || ""),
                     price: (s.price !== undefined && !isNaN(Number(s.price))) ? Number(s.price) : undefined,
                     image: s.image || undefined
                 }))
@@ -322,55 +285,11 @@ function BuilderContent() {
             router.push(`/p/${profileId}`);
         } catch (error: any) {
             console.error("Save error:", error);
-            alert(`Failed to save profile: ${error.message || "Please check your connection."}`);
+            alert(`Failed to save: ${error.message || "Unknown error"}`);
         } finally {
             setIsSaving(false);
         }
     };
-
-    const addProperty = () => {
-        if (!newProp.title) return;
-        const p: Property = {
-            id: Date.now().toString(),
-            ownerId: user?.id || "temp",
-            title: newProp.title,
-            price: Number(newProp.price) || 0,
-            status: newProp.status as "for-sale" | "for-rent" | "sold",
-            type: newProp.type as "lot-only" | "house-lot" | "townhouse" | "condo" | "commercial",
-            description: newProp.description, images: newProp.images, location: newProp.location,
-            bedrooms: Number(newProp.bedrooms) || 0, bathrooms: Number(newProp.bathrooms) || 0,
-            floorArea: Number(newProp.floorArea) || 0, lotArea: Number(newProp.lotArea) || 0, floors: Number(newProp.floors) || 0
-        };
-        setProperties([...properties, p]);
-        setNewProp({
-            title: "", price: "", status: "for-sale", type: "house-lot", description: "",
-            images: [], currentImageInput: "", location: "",
-            bedrooms: "", bathrooms: "", floorArea: "", lotArea: "", floors: "", dateSold: ""
-        });
-    };
-    
-    const removeProperty = (id: string) => setProperties(properties.filter(p => p.id !== id));
-    const addImage = (url: string) => { if (url) setNewProp({ ...newProp, images: [...newProp.images, url] }); };
-    const addProjectImage = (url: string) => { if (url) setNewProject(p => ({ ...p, images: [...p.images, url] })); };
-
-    const addProject = () => {
-        if (!newProject.title) return;
-        const proj: ProjectItem = {
-            id: Date.now().toString(),
-            ownerId: user?.id || "temp",
-            title: newProject.title,
-            description: newProject.description,
-            category: newProject.category,
-            tags: newProject.tags.split(",").map(t => t.trim()).filter(Boolean),
-            images: newProject.images,
-            externalUrl: newProject.externalUrl || undefined,
-            featured: false,
-        };
-        setProjects(prev => [...prev, proj]);
-        setNewProject({ title: "", description: "", category: "other", tags: "", externalUrl: "", images: [] });
-    };
-
-    const removeProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
 
     const addProduct = () => {
         if (!newProduct.title) return;
@@ -401,8 +320,8 @@ function BuilderContent() {
             case "Bio": return <AgentBio key="bio" data={data} />;
             case "Properties": return <PropertyGrid key="prop" data={data} />;
             case "Projects": return <ProjectGrid key="projects" data={data} />;
-            case "Products": return <div key="products" className="p-12 text-center text-sm border-b font-bold opacity-30 bg-zinc-50">Products Section</div>;
-            case "Services": return <div key="services" className="p-12 text-center text-sm border-b font-bold opacity-30 bg-zinc-50">Services Section</div>;
+            case "Products": return <div key="products" className="p-12 text-center text-sm border-b font-bold opacity-30 bg-zinc-50 uppercase tracking-widest">Products Section</div>;
+            case "Services": return <div key="services" className="p-12 text-center text-sm border-b font-bold opacity-30 bg-zinc-50 uppercase tracking-widest">Services Section</div>;
             case "Contact": return <ContactForm key="contact" data={data} />;
             default: return null;
         }
@@ -616,7 +535,7 @@ function BuilderContent() {
                                     <div className="space-y-2">
                                         <Input placeholder="Product Name" value={newProduct.title} onChange={e => setNewProduct({...newProduct, title: e.target.value})} />
                                         <Input placeholder="Description" value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} />
-                                        <Input placeholder="Price (Optional)" type="number" value={newProduct.price || ""} onChange={e => setNewProduct({...newProduct, price: Number(e.target.value)})} />
+                                        <Input placeholder="Price (Optional)" type="number" value={newProduct.price || ""} onChange={e => setNewProduct({...newProduct, price: e.target.value ? Number(e.target.value) : undefined})} />
                                         <Button size="sm" className="w-full" onClick={addProduct}>Add Product</Button>
                                     </div>
                                     <div className="space-y-2">
@@ -654,7 +573,7 @@ function BuilderContent() {
                         )}
 
                         <div className="pt-4 border-t">
-                             <p className="text-[10px] text-muted-foreground italic text-center">
+                             <p className="text-[10px] text-muted-foreground italic text-center leading-relaxed">
                                 Tip: Enable the corresponding blocks in the "Blocks" tab to show these items on your profile.
                              </p>
                         </div>
@@ -665,7 +584,7 @@ function BuilderContent() {
             <div className={`flex-1 bg-muted/20 flex flex-col h-full overflow-hidden ${mobileView === "editor" ? "hidden lg:flex" : "flex"}`}>
                 <div className="bg-card border-b border-border p-2 flex justify-between items-center text-xs text-muted-foreground shadow-sm z-10">
                     <div className="flex gap-2 items-center px-4"><Monitor className="w-4 h-4" /> Live Preview</div>
-                    <div className="px-4">Auto-updating</div>
+                    <div className="px-4 font-mono">TapFolio v1.0</div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-8 flex justify-center bg-muted/30">
                     <div className="w-full max-w-[420px] bg-background shadow-2xl rounded-3xl overflow-hidden border-8 border-foreground/5 ring-1 ring-border flex flex-col h-fit min-h-[800px]" style={{ backgroundColor: customColors.background }}>

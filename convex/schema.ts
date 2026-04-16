@@ -43,7 +43,7 @@ export default defineSchema({
   profiles: defineTable({
     ownerId: v.id("users"),
     name: v.string(),
-    profileType: v.union(v.literal("individual"), v.literal("company"), v.literal("business")),
+    profileType: v.optional(v.union(v.literal("individual"), v.literal("company"), v.literal("business"))),
 
     agentInfo: v.object({
       fullName: v.string(),

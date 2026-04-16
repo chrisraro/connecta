@@ -4,7 +4,7 @@ import { mutation, query } from "./_generated/server";
 export const createProfile = mutation({
     args: {
         name: v.string(), // e.g., "My Luxury Profile"
-        profileType: v.union(v.literal("individual"), v.literal("company"), v.literal("business")),
+        profileType: v.optional(v.union(v.literal("individual"), v.literal("company"), v.literal("business"))),
         agentInfo: v.object({
             fullName: v.string(),
             title: v.string(),
