@@ -53,6 +53,7 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
     ];
 
     const data: ProfileData = {
+        ownerId: profile.ownerId,
         agent: agentInfo,
         properties: MOCK_PROPERTIES, // In future: fetch via featuredProperties IDs
         projects: profile.featuredProjects ? [] : [], // In future: fetch via featuredProjects IDs

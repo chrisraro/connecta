@@ -9,6 +9,7 @@ import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSqu
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { NotificationsPopover } from "@/components/ui/notifications-popover";
 import {
     Sheet,
     SheetContent,
@@ -125,9 +126,10 @@ function DashboardSidebar({ className }: { className?: string }) {
             <div className="p-6 border-t border-sidebar-border">
                 <div className="flex items-center gap-3 bg-sidebar-accent/50 p-3 rounded-2xl border border-sidebar-border">
                     <UserButton />
-                    <div className="text-xs text-muted-foreground font-medium">
+                    <div className="flex-1 text-xs text-muted-foreground font-medium">
                         Manage Account
                     </div>
+                    <NotificationsPopover />
                 </div>
             </div>
         </aside>
@@ -187,10 +189,7 @@ function MobileHeader() {
                 <h1 className="text-xl font-black tracking-tight text-foreground">{getPageTitle()}</h1>
             </div>
             <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="rounded-full bg-muted border border-border relative">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-2 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-background" />
-                </Button>
+                <NotificationsPopover />
                 <div className="p-0.5 rounded-full border-2 border-primary/20">
                     <UserButton />
                 </div>

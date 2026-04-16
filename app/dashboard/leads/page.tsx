@@ -21,8 +21,8 @@ import { Id } from "@/convex/_generated/dataModel";
 interface Lead {
     _id: Id<"leads">;
     ownerId: Id<"users">;
-    propertyId: Id<"properties">;
-    propertyName: string;
+    propertyId?: Id<"properties">;
+    propertyName?: string;
     inquirerName: string;
     inquirerContact: string;
     message?: string;
@@ -44,12 +44,13 @@ export default function LeadsPage() {
 
     const handleFollowUpClick = (lead: Lead) => {
         setSelectedLead(lead);
-        setFollowUpMsg(`Hi ${lead.inquirerName},\n\nThanks for inquiring about ${lead.propertyName}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,\n[Your Name]`);
+        const refText = lead.propertyName ? `about ${lead.propertyName}` : "from my profile";
+        setFollowUpMsg(`Hi ${lead.inquirerName},\n\nThanks for inquiring ${refText}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,\n[Your Name]`);
     };
 
     const handleSendAction = () => {
         if (!selectedLead) return;
-        const subject = `Re: Inquiry for ${selectedLead.propertyName}`;
+        const subject = `Re: Inquiry ${selectedLead.propertyName ? `for ${selectedLead.propertyName}` : ""}`;
         const body = encodeURIComponent(followUpMsg);
         window.open(`mailto:${selectedLead.inquirerContact}?subject=${subject}&body=${body}`);
         markContacted({ leadId: selectedLead._id });
@@ -136,7 +137,7 @@ export default function LeadsPage() {
                             <div className="space-y-3 mb-6">
                                 <div className="bg-muted/50 rounded-2xl p-4 border border-border">
                                     <p className="text-xs text-muted-foreground mb-1 uppercase tracking-tighter font-bold">Regarding</p>
-                                    <p className="text-sm font-bold text-foreground uppercase">{lead.propertyName}</p>
+                                    <p className="text-sm font-bold text-foreground uppercase">{lead.propertyName || "General Inquiry"}</p>
                                 </div>
                                 <p className="text-sm text-muted-foreground leading-relaxed px-1 line-clamp-2">
                                     &quot;{lead.message || "Interested in learning more about this property."}&quot;

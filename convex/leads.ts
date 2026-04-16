@@ -1,12 +1,13 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 // Leads Management
 export const createLead = mutation({
     args: {
         ownerId: v.id("users"),
-        propertyId: v.id("properties"),
-        propertyName: v.string(),
+        propertyId: v.optional(v.id("properties")),
+        propertyName: v.optional(v.string()),
         inquirerName: v.string(),
         inquirerContact: v.string(),
         message: v.optional(v.string()),
@@ -22,6 +23,31 @@ export const createLead = mutation({
             status: "new",
             createdAt: Date.now(),
         });
+
+        // Insert a notification for the profile owner
+        await ctx.db.insert("notifications", {
+            userId: args.ownerId,
+            type: "new_lead",
+            read: false,
+            title: "New Lead Inquiry",
+            message: `${args.inquirerName} has sent you a message!`,
+            link: "/dashboard/leads",
+            data: { leadId, inquirerName: args.inquirerName },
+            createdAt: Date.now(),
+        });
+
+        // Trigger email sending
+        const user = await ctx.db.get(args.ownerId);
+        if (user && user.email) {
+            await ctx.scheduler.runAfter(0, internal.email.sendLeadNotification, {
+                toEmail: user.email,
+                inquirerName: args.inquirerName,
+                inquirerContact: args.inquirerContact,
+                propertyName: args.propertyName,
+                message: args.message,
+            });
+        }
+
         return leadId;
     },
 });

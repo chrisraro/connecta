@@ -122,8 +122,8 @@ export default defineSchema({
   // 6. Leads & Inquiries
   leads: defineTable({
     ownerId: v.id("users"),
-    propertyId: v.id("properties"),
-    propertyName: v.string(),
+    propertyId: v.optional(v.id("properties")),
+    propertyName: v.optional(v.string()),
     inquirerName: v.string(),
     inquirerContact: v.string(),
     message: v.optional(v.string()),
@@ -131,4 +131,16 @@ export default defineSchema({
     lastContactedAt: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_owner", ["ownerId"]),
+
+  // 7. Notifications
+  notifications: defineTable({
+    userId: v.id("users"),
+    type: v.union(v.literal("new_lead"), v.literal("system")),
+    read: v.boolean(),
+    title: v.string(),
+    message: v.string(),
+    link: v.optional(v.string()),
+    data: v.optional(v.any()), // Extra context data
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]).index("by_user_read", ["userId", "read"]),
 });

@@ -80,6 +80,7 @@ export interface ProjectItem {
 
 // ─── Profile Data (passed to all template components) ────────────────────────
 export interface ProfileData {
+    ownerId: string;
     agent: ProfileInfo;
     properties: Property[];
     projects: ProjectItem[];
