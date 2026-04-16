@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
     DndContext,
@@ -111,11 +111,15 @@ function SortableBlockItem({ block, onToggle }: { block: Block, onToggle: (id: s
 
 // --- Main Page Component ---
 
-export default function BuilderPage() {
+function BuilderContent() {
     const router = useRouter();
     const { user } = useUser();
+    const searchParams = useSearchParams();
+    const editingId = searchParams.get("id");
+
     const createProfile = useMutation(api.profiles.createProfile);
     const onboarding = useQuery(api.users.getOnboardingStatus, user?.id ? { clerkId: user.id } : "skip");
+    const existingProfile = useQuery(api.profiles.getProfile, editingId ? { profileId: editingId as Id<"profiles"> } : "skip");
 
     // UI State
     const [activeTab, setActiveTab] = useState("blocks");
@@ -124,74 +128,73 @@ export default function BuilderPage() {
 
     // Config State
     const [selectedThemeId, setSelectedThemeId] = useState("modern");
-    const [customColors, setCustomColors] = useState({ primary: "#000000", background: "#FFFFFF", text: "#000000" }); // initialized with Modern defaults
+    const [customColors, setCustomColors] = useState({ primary: "#000000", background: "#FFFFFF", text: "#000000" });
     const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
 
     // Content State
     const [agentInfo, setAgentInfo] = useState<ProfileInfo>(INITIAL_AGENT_INFO);
     const [properties, setProperties] = useState<Property[]>([]);
     const [projects, setProjects] = useState<ProjectItem[]>([]);
+    
     const [newProp, setNewProp] = useState({
-        title: "",
-        price: "",
-        status: "for-sale",
-        type: "house-lot",
-        description: "",
-        images: [] as string[],
-        currentImageInput: "",
-        location: "",
-        bedrooms: "",
-        bathrooms: "",
-        floorArea: "",
-        lotArea: "",
-        floors: "",
-        dateSold: ""
+        title: "", price: "", status: "for-sale", type: "house-lot", description: "",
+        images: [] as string[], currentImageInput: "", location: "",
+        bedrooms: "", bathrooms: "", floorArea: "", lotArea: "", floors: "", dateSold: ""
     });
+    
     const [newProject, setNewProject] = useState<{
-        title: string;
-        description: string;
-        category: ProjectCategory;
-        tags: string;
-        externalUrl: string;
-        images: string[];
+        title: string; description: string; category: ProjectCategory;
+        tags: string; externalUrl: string; images: string[];
     }>({
-        title: "",
-        description: "",
-        category: "other",
-        tags: "",
-        externalUrl: "",
-        images: [],
+        title: "", description: "", category: "other", tags: "", externalUrl: "", images: [],
     });
 
-    // Prefill agent info from onboarding
+    // Prefill logic
     const [hasPrefilled, setHasPrefilled] = useState(false);
     useEffect(() => {
-        const data = onboarding?.data;
-        if (!hasPrefilled && data) {
-            setAgentInfo(prev => ({
-                ...prev,
-                fullName: data.fullName || prev.fullName,
-                title: data.title || prev.title,
-                phone: data.phone || prev.phone,
-                email: data.email || user?.primaryEmailAddress?.emailAddress || prev.email,
-                company: data.company || prev.company,
-                website: data.website || prev.website,
-                about: data.about || prev.about,
-                avatarUrl: data.avatarUrl || prev.avatarUrl,
-                services: data.services || prev.services,
-                socialLinks: data.socialLinks || prev.socialLinks,
-            }));
-            setHasPrefilled(true);
+        if (hasPrefilled) return;
+
+        if (editingId) {
+            if (existingProfile) {
+                setAgentInfo(existingProfile.agentInfo);
+                setSelectedThemeId(existingProfile.layoutConfig.themeId);
+                setCustomColors(existingProfile.layoutConfig.colorPalette);
+                const order = existingProfile.layoutConfig.componentOrder;
+                setBlocks(prev => {
+                    const updated = prev.map(b => ({ ...b, isEnabled: order.includes(b.id) }));
+                    return [...updated].sort((a, b) => {
+                        const idxA = order.indexOf(a.id);
+                        const idxB = order.indexOf(b.id);
+                        if (idxA === -1) return 1;
+                        if (idxB === -1) return -1;
+                        return idxA - idxB;
+                    });
+                });
+                setHasPrefilled(true);
+            }
+        } else {
+            const data = onboarding?.data;
+            if (data) {
+                setAgentInfo(prev => ({
+                    ...prev,
+                    fullName: data.fullName || prev.fullName,
+                    title: data.title || prev.title,
+                    phone: data.phone || prev.phone,
+                    email: data.email || user?.primaryEmailAddress?.emailAddress || prev.email,
+                    company: data.company || prev.company,
+                    website: data.website || prev.website,
+                    about: data.about || prev.about,
+                    avatarUrl: data.avatarUrl || prev.avatarUrl,
+                    services: data.services || prev.services,
+                    socialLinks: data.socialLinks || prev.socialLinks,
+                }));
+                setHasPrefilled(true);
+            }
         }
-    }, [onboarding, hasPrefilled, user]);
+    }, [onboarding, hasPrefilled, user, existingProfile, editingId]);
 
-    // Dnd Sensors
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    );
+    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
-    // Handlers
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         if (active.id !== over?.id) {
@@ -203,9 +206,7 @@ export default function BuilderPage() {
         }
     };
 
-    const toggleBlock = (id: string) => {
-        setBlocks(blocks.map(b => b.id === id ? { ...b, isEnabled: !b.isEnabled } : b));
-    };
+    const toggleBlock = (id: string) => setBlocks(blocks.map(b => b.id === id ? { ...b, isEnabled: !b.isEnabled } : b));
 
     const applyTheme = (themeId: string) => {
         const theme = THEMES.find(t => t.id === themeId);
@@ -220,20 +221,16 @@ export default function BuilderPage() {
         setIsSaving(true);
         try {
             const profileId = await createProfile({
+                id: editingId ? (editingId as Id<"profiles">) : undefined,
                 clerkId: user.id,
                 name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
-                agentInfo: {
-                    ...agentInfo,
-                    company: agentInfo.company ?? "",
-                    services: agentInfo.services ?? [],
-                },
+                agentInfo: { ...agentInfo, company: agentInfo.company ?? "", services: agentInfo.services ?? [] },
                 layoutConfig: {
-                    themeId: selectedThemeId,
-                    colorPalette: customColors,
+                    themeId: selectedThemeId, colorPalette: customColors,
                     componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
                 },
-                featuredProperties: [], // Keeping empty as per schema/mock plan
+                featuredProperties: [],
                 featuredProjects: projects.map(p => p.id)
             });
             router.push(`/p/${profileId}`);
@@ -245,7 +242,6 @@ export default function BuilderPage() {
         }
     };
 
-
     const addProperty = () => {
         if (!newProp.title) return;
         const p: Property = {
@@ -255,14 +251,9 @@ export default function BuilderPage() {
             price: Number(newProp.price) || 0,
             status: newProp.status as "for-sale" | "for-rent" | "sold",
             type: newProp.type as "lot-only" | "house-lot" | "townhouse" | "condo" | "commercial",
-            description: newProp.description,
-            images: newProp.images,
-            location: newProp.location,
-            bedrooms: Number(newProp.bedrooms) || 0,
-            bathrooms: Number(newProp.bathrooms) || 0,
-            floorArea: Number(newProp.floorArea) || 0,
-            lotArea: Number(newProp.lotArea) || 0,
-            floors: Number(newProp.floors) || 0
+            description: newProp.description, images: newProp.images, location: newProp.location,
+            bedrooms: Number(newProp.bedrooms) || 0, bathrooms: Number(newProp.bathrooms) || 0,
+            floorArea: Number(newProp.floorArea) || 0, lotArea: Number(newProp.lotArea) || 0, floors: Number(newProp.floors) || 0
         };
         setProperties([...properties, p]);
         setNewProp({
@@ -271,18 +262,10 @@ export default function BuilderPage() {
             bedrooms: "", bathrooms: "", floorArea: "", lotArea: "", floors: "", dateSold: ""
         });
     };
+    
     const removeProperty = (id: string) => setProperties(properties.filter(p => p.id !== id));
-
-    const addImage = (base64: string) => {
-        if (base64) {
-            setNewProp({ ...newProp, images: [...newProp.images, base64] });
-        }
-    };
-
-    // Handlers
-    const addProjectImage = (base64: string) => {
-        if (base64) setNewProject(p => ({ ...p, images: [...p.images, base64] }));
-    };
+    const addImage = (url: string) => { if (url) setNewProp({ ...newProp, images: [...newProp.images, url] }); };
+    const addProjectImage = (url: string) => { if (url) setNewProject(p => ({ ...p, images: [...p.images, url] })); };
 
     const addProject = () => {
         if (!newProject.title) return;
@@ -303,12 +286,9 @@ export default function BuilderPage() {
 
     const removeProject = (id: string) => setProjects(prev => prev.filter(p => p.id !== id));
 
-    // Render Preview
     const renderComponent = (componentId: string) => {
         const data: ProfileData = {
-            agent: agentInfo,
-            properties: properties,
-            projects: projects,
+            agent: agentInfo, properties: properties, projects: projects,
             theme: { primaryColor: customColors.primary, backgroundColor: customColors.background, textColor: customColors.text }
         };
         switch (componentId) {
@@ -323,36 +303,24 @@ export default function BuilderPage() {
 
     return (
         <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-background text-foreground">
-            {/* --- MOBILE PREVIEW TOGGLE --- */}
             <div className="lg:hidden p-2 border-b bg-muted/40 flex justify-center gap-2">
-                <Button
-                    variant={mobileView === "editor" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setMobileView("editor")}
-                    className="w-32"
-                >
+                <Button variant={mobileView === "editor" ? "default" : "outline"} size="sm" onClick={() => setMobileView("editor")} className="w-32">
                     <List className="w-4 h-4 mr-2" /> Editor
                 </Button>
-                <Button
-                    variant={mobileView === "preview" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setMobileView("preview")}
-                    className="w-32"
-                >
+                <Button variant={mobileView === "preview" ? "default" : "outline"} size="sm" onClick={() => setMobileView("preview")} className="w-32">
                     <Smartphone className="w-4 h-4 mr-2" /> Preview
                 </Button>
             </div>
 
-            {/* --- LEFT PANEL: CONFIGURATOR --- */}
             <div className={`w-full lg:w-4/12 p-4 flex flex-col border-r border-border bg-card h-full overflow-y-auto ${mobileView === "preview" ? "hidden lg:flex" : "flex"}`}>
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-xl font-bold flex items-center gap-2">
                         <LayoutTemplate className="w-5 h-5 text-primary" />
-                        Builder
+                        {editingId ? "Edit Profile" : "Builder"}
                     </h1>
                     <Button size="sm" onClick={handleSave} disabled={isSaving}>
                         {isSaving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                        Publish
+                        {editingId ? "Save Changes" : "Publish"}
                     </Button>
                 </div>
 
@@ -363,7 +331,6 @@ export default function BuilderPage() {
                         <TabsTrigger value="content"><User className="w-4 h-4 mr-2" /> Profile</TabsTrigger>
                     </TabsList>
 
-                    {/* TAB: BLOCKS (Ordering & Toggles) */}
                     <TabsContent value="blocks" className="space-y-4">
                         <div className="p-4 bg-muted/20 border border-border rounded-xl">
                             <h3 className="text-sm font-semibold mb-3">Reorder & Toggle Sections</h3>
@@ -377,7 +344,6 @@ export default function BuilderPage() {
                         </div>
                     </TabsContent>
 
-                    {/* TAB: DESIGN (Themes & Colors) */}
                     <TabsContent value="design" className="space-y-6">
                         <div className="space-y-3">
                             <Label>Preset Themes</Label>
@@ -401,27 +367,21 @@ export default function BuilderPage() {
                                 <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground">Background</Label>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded border overflow-hidden">
-                                            <input type="color" className="w-full h-full p-0 border-0 cursor-pointer" value={customColors.background} onChange={e => setCustomColors({ ...customColors, background: e.target.value })} />
-                                        </div>
+                                        <input type="color" className="w-8 h-8 rounded border overflow-hidden p-0 border-0 cursor-pointer" value={customColors.background} onChange={e => setCustomColors({ ...customColors, background: e.target.value })} />
                                         <Input className="h-8 text-xs font-mono" value={customColors.background} onChange={e => setCustomColors({ ...customColors, background: e.target.value })} />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground">Primary</Label>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded border overflow-hidden">
-                                            <input type="color" className="w-full h-full p-0 border-0 cursor-pointer" value={customColors.primary} onChange={e => setCustomColors({ ...customColors, primary: e.target.value })} />
-                                        </div>
+                                        <input type="color" className="w-8 h-8 rounded border overflow-hidden p-0 border-0 cursor-pointer" value={customColors.primary} onChange={e => setCustomColors({ ...customColors, primary: e.target.value })} />
                                         <Input className="h-8 text-xs font-mono" value={customColors.primary} onChange={e => setCustomColors({ ...customColors, primary: e.target.value })} />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-xs text-muted-foreground">Text</Label>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded border overflow-hidden">
-                                            <input type="color" className="w-full h-full p-0 border-0 cursor-pointer" value={customColors.text} onChange={e => setCustomColors({ ...customColors, text: e.target.value })} />
-                                        </div>
+                                        <input type="color" className="w-8 h-8 rounded border overflow-hidden p-0 border-0 cursor-pointer" value={customColors.text} onChange={e => setCustomColors({ ...customColors, text: e.target.value })} />
                                         <Input className="h-8 text-xs font-mono" value={customColors.text} onChange={e => setCustomColors({ ...customColors, text: e.target.value })} />
                                     </div>
                                 </div>
@@ -429,7 +389,6 @@ export default function BuilderPage() {
                         </div>
                     </TabsContent>
 
-                    {/* TAB: CONTENT (Forms) */}
                     <TabsContent value="content" className="space-y-6">
                         <div className="space-y-4">
                             <h3 className="font-semibold text-sm">Profile Details</h3>
@@ -453,11 +412,10 @@ export default function BuilderPage() {
                                 />
                             </div>
 
-
                             <div className="space-y-2">
                                 <Label>About Me</Label>
                                 <textarea
-                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     placeholder="Tell your story..."
                                     value={agentInfo.about || ""}
                                     onChange={e => setAgentInfo({ ...agentInfo, about: e.target.value })}
@@ -468,10 +426,7 @@ export default function BuilderPage() {
                         <div className="space-y-4 pt-4 border-t border-border">
                             <h3 className="font-semibold text-sm">Social Profiles</h3>
                             <div className="grid grid-cols-[1fr_2fr] gap-2">
-                                <select
-                                    id="social-platform"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
+                                <select id="social-platform" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                                     <option value="Instagram">Instagram</option>
                                     <option value="Facebook">Facebook</option>
                                     <option value="LinkedIn">LinkedIn</option>
@@ -487,38 +442,23 @@ export default function BuilderPage() {
                                 const usernameInput = (document.getElementById('social-username') as HTMLInputElement);
                                 const platform = platformSelect.value;
                                 const username = usernameInput.value.trim();
-
                                 if (platform && username) {
                                     let finalUrl = username;
-                                    // Auto-prefix logic if user didn't paste a full link
                                     if (!username.startsWith('http')) {
-                                        const prefixes: Record<string, string> = {
-                                            "Instagram": "https://instagram.com/",
-                                            "Facebook": "https://facebook.com/",
-                                            "LinkedIn": "https://linkedin.com/in/",
-                                            "Twitter": "https://x.com/",
-                                            "TikTok": "https://tiktok.com/@",
-                                            "YouTube": "https://youtube.com/@"
-                                        };
-                                        if (prefixes[platform]) {
-                                            finalUrl = prefixes[platform] + username;
-                                        }
+                                        const prefixes: Record<string, string> = { "Instagram": "https://instagram.com/", "Facebook": "https://facebook.com/", "LinkedIn": "https://linkedin.com/in/", "Twitter": "https://x.com/", "TikTok": "https://tiktok.com/@", "YouTube": "https://youtube.com/@" };
+                                        if (prefixes[platform]) finalUrl = prefixes[platform] + username;
                                     }
-
                                     setAgentInfo({ ...agentInfo, socialLinks: [...(agentInfo.socialLinks || []), { platform, url: finalUrl }] });
                                     usernameInput.value = "";
                                 }
                             }} className="w-full">
-                                <Plus className="w-4 h-4 mr-2" /> Add {agentInfo.socialLinks?.length === 0 ? "First Social" : "Another"}
+                                <Plus className="w-4 h-4 mr-2" /> Add Social
                             </Button>
-
                             <div className="space-y-2">
                                 {agentInfo.socialLinks?.map((link, idx) => (
                                     <div key={idx} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded border">
                                         <div className="flex flex-col overflow-hidden">
-                                            <span className="font-medium flex items-center gap-2">
-                                                {link.platform}
-                                            </span>
+                                            <span className="font-medium flex items-center gap-2">{link.platform}</span>
                                             <span className="text-xs text-muted-foreground truncate max-w-[200px]">{link.url}</span>
                                         </div>
                                         <Trash2 className="w-4 h-4 text-destructive cursor-pointer shrink-0" onClick={() => {
@@ -530,210 +470,31 @@ export default function BuilderPage() {
                                 ))}
                             </div>
                         </div>
-
-                        <div className="space-y-4 pt-4 border-t border-border">
-                            <h3 className="font-semibold text-sm">Listings</h3>
-                            <div className="bg-muted p-3 rounded-lg space-y-3">
-                                <Input placeholder="Property Title (e.g. Modern Villa)" value={newProp.title} onChange={e => setNewProp({ ...newProp, title: e.target.value })} className="bg-background" />
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <select
-                                        className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                        value={newProp.type}
-                                        onChange={e => setNewProp({ ...newProp, type: e.target.value })}
-                                    >
-                                        <option value="lot-only">Lot Only</option>
-                                        <option value="house-lot">House & Lot</option>
-                                        <option value="townhouse">Townhouse</option>
-                                        <option value="condo">Condo</option>
-                                        <option value="commercial">Commercial</option>
-                                    </select>
-                                    <select
-                                        className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                        value={newProp.status}
-                                        onChange={e => setNewProp({ ...newProp, status: e.target.value })}
-                                    >
-                                        <option value="for-sale">For Sale</option>
-                                        <option value="for-rent">For Rent</option>
-                                        <option value="sold">Sold</option>
-                                    </select>
-                                </div>
-
-                                {newProp.status === "sold" && (
-                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
-                                        <Label className="text-xs">Date Sold</Label>
-                                        <Input
-                                            type="date"
-                                            value={newProp.dateSold || ""}
-                                            onChange={e => setNewProp({ ...newProp, dateSold: e.target.value })}
-                                            className="bg-background"
-                                        />
-                                    </div>
-                                )}
-
-                                <Input placeholder="Price (PHP)" type="number" value={newProp.price} onChange={e => setNewProp({ ...newProp, price: e.target.value })} className="bg-background" />
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Input placeholder="Floor Area (sqm)" type="number" value={newProp.floorArea} onChange={e => setNewProp({ ...newProp, floorArea: e.target.value })} className="bg-background" />
-                                    <Input placeholder="Lot Area (sqm)" type="number" value={newProp.lotArea} onChange={e => setNewProp({ ...newProp, lotArea: e.target.value })} className="bg-background" />
-                                </div>
-
-                                <div className="space-y-2 mb-6">
-                                    <Label className="text-xs">Property Images</Label>
-                                    <div className="flex gap-2 items-start flex-wrap">
-                                        <div className="w-24 h-24 shrink-0">
-                                            <ImageUploader
-                                                onChange={addImage}
-                                                placeholder="Add Photo"
-                                                className="w-full h-full"
-                                            />
-                                        </div>
-                                        {newProp.images.map((img, i) => (
-                                            <div key={i} className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border group">
-                                                <img src={img} alt="thumb" className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <Button
-                                                        size="icon"
-                                                        variant="destructive"
-                                                        className="h-6 w-6 rounded-full"
-                                                        onClick={() => setNewProp({ ...newProp, images: newProp.images.filter((_, idx) => idx !== i) })}
-                                                    >
-                                                        <X className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-2">
-                                    <Input placeholder="Beds" type="number" value={newProp.bedrooms} onChange={e => setNewProp({ ...newProp, bedrooms: e.target.value })} className="bg-background" />
-                                    <Input placeholder="CRs" type="number" value={newProp.bathrooms} onChange={e => setNewProp({ ...newProp, bathrooms: e.target.value })} className="bg-background" />
-                                    <Input placeholder="Floors" type="number" value={newProp.floors} onChange={e => setNewProp({ ...newProp, floors: e.target.value })} className="bg-background" />
-                                </div>
-
-                                <textarea
-                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    placeholder="Description..."
-                                    value={newProp.description}
-                                    onChange={e => setNewProp({ ...newProp, description: e.target.value })}
-                                />
-
-                                <Button size="sm" onClick={addProperty} className="w-full"><Plus className="w-4 h-4 mr-2" />Add Listing</Button>
-                            </div>
-                            <div className="space-y-2">
-                                {properties.map(p => (
-                                    <div key={p.id} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded border">
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{p.title}</span>
-                                            <span className="text-xs text-muted-foreground">{p.type} • {p.price.toLocaleString()}</span>
-                                        </div>
-                                        <Trash2 className="w-4 h-4 text-destructive cursor-pointer" onClick={() => removeProperty(p.id)} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        {/* Projects Section in Content Tab */}
-                        <div className="space-y-4 pt-4 border-t border-border">
-                            <h3 className="font-semibold text-sm">Portfolio Projects</h3>
-                            <div className="bg-muted p-3 rounded-lg space-y-3">
-                                <Input
-                                    placeholder="Project Title"
-                                    value={newProject.title}
-                                    onChange={e => setNewProject(p => ({ ...p, title: e.target.value }))}
-                                    className="bg-background"
-                                />
-                                <select
-                                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    value={newProject.category}
-                                    onChange={e => setNewProject(p => ({ ...p, category: e.target.value as ProjectCategory }))}
-                                >
-                                    {Object.entries(PROJECT_CATEGORY_LABELS).map(([val, label]) => (
-                                        <option key={val} value={val}>{label}</option>
-                                    ))}
-                                </select>
-                                <Input
-                                    placeholder="Tags (comma-separated): React, Figma, Branding"
-                                    value={newProject.tags}
-                                    onChange={e => setNewProject(p => ({ ...p, tags: e.target.value }))}
-                                    className="bg-background"
-                                />
-                                <Input
-                                    placeholder="External URL (optional)"
-                                    value={newProject.externalUrl}
-                                    onChange={e => setNewProject(p => ({ ...p, externalUrl: e.target.value }))}
-                                    className="bg-background"
-                                />
-                                <textarea
-                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    placeholder="Description..."
-                                    value={newProject.description}
-                                    onChange={e => setNewProject(p => ({ ...p, description: e.target.value }))}
-                                />
-
-                                {/* Project Images */}
-                                <div className="space-y-2">
-                                    <Label className="text-xs">Project Images</Label>
-                                    <div className="flex gap-2 items-start flex-wrap">
-                                        <div className="w-24 h-24 shrink-0">
-                                            <ImageUploader
-                                                onChange={addProjectImage}
-                                                placeholder="Add Photo"
-                                                className="w-full h-full"
-                                            />
-                                        </div>
-                                        {newProject.images.map((img, i) => (
-                                            <div key={i} className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border group">
-                                                <img src={img} alt="thumb" className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <Button size="icon" variant="destructive" className="h-6 w-6 rounded-full"
-                                                        onClick={() => setNewProject(p => ({ ...p, images: p.images.filter((_, idx) => idx !== i) }))}
-                                                    >
-                                                        <X className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <Button size="sm" onClick={addProject} className="w-full">
-                                    <Plus className="w-4 h-4 mr-2" /> Add Project
-                                </Button>
-                            </div>
-                            <div className="space-y-2">
-                                {projects.map(proj => (
-                                    <div key={proj.id} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded border">
-                                        <div className="flex flex-col">
-                                            <span className="font-medium">{proj.title}</span>
-                                            <span className="text-xs text-muted-foreground">{PROJECT_CATEGORY_LABELS[proj.category]}</span>
-                                        </div>
-                                        <Trash2 className="w-4 h-4 text-destructive cursor-pointer" onClick={() => removeProject(proj.id)} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
                     </TabsContent>
                 </Tabs>
             </div>
 
-            {/* --- RIGHT PANEL: PREVIEW --- */}
             <div className={`flex-1 bg-muted/20 flex flex-col h-full overflow-hidden ${mobileView === "editor" ? "hidden lg:flex" : "flex"}`}>
                 <div className="bg-card border-b border-border p-2 flex justify-between items-center text-xs text-muted-foreground shadow-sm z-10">
                     <div className="flex gap-2 items-center px-4"><Monitor className="w-4 h-4" /> Live Preview</div>
                     <div className="px-4">Auto-updating</div>
                 </div>
-
                 <div className="flex-1 overflow-y-auto p-8 flex justify-center bg-muted/30">
                     <div className="w-full max-w-[420px] bg-background shadow-2xl rounded-3xl overflow-hidden border-8 border-foreground/5 ring-1 ring-border flex flex-col h-fit min-h-[800px]" style={{ backgroundColor: customColors.background }}>
                         {blocks.filter(b => b.isEnabled).map(block => (
-                            <div key={block.id}>
-                                {renderComponent(block.id)}
-                            </div>
+                            <div key={block.id}>{renderComponent(block.id)}</div>
                         ))}
                     </div>
                 </div>
             </div>
         </div >
+    );
+}
+
+export default function BuilderPage() {
+    return (
+        <Suspense fallback={<div className="h-screen flex items-center justify-center bg-background"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
+            <BuilderContent />
+        </Suspense>
     );
 }

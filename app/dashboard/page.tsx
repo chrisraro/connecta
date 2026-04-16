@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import { ChevronRight, Sparkles, LayoutTemplate, MessageSquare, ExternalLink, Loader2, Users } from "lucide-react";
+import { ChevronRight, Sparkles, LayoutTemplate, MessageSquare, ExternalLink, Loader2, Users, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { resolveImageUrl } from "@/lib/utils";
 
@@ -85,7 +85,7 @@ export default function DashboardPage() {
             {/* ─── Profiles Section ───────────────────────────────────────── */}
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold tracking-tight">Your Published Profiles</h2>
+                    <h2 className="text-xl font-bold tracking-tight">Recent Profiles</h2>
                     {activeProfilesCount > 0 && (
                         <Link href="/dashboard/profiles">
                             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
@@ -117,29 +117,39 @@ export default function DashboardPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {profiles.slice(0, 4).map((profile) => (
-                            <Link key={profile._id} href={`/p/${profile._id}`} target="_blank">
-                                <div className="group bg-card border border-border p-4 rounded-3xl hover:border-primary/30 transition-all duration-300 flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-2xl overflow-hidden border border-border bg-muted shrink-0">
-                                        <img 
-                                            src={resolveImageUrl(profile.agentInfo.avatarUrl) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.name}`} 
-                                            alt={profile.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-sm truncate uppercase tracking-tight">{profile.name}</h3>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[10px] font-bold uppercase py-0.5 px-2 bg-primary/10 text-primary rounded-full">
-                                                {profile.layoutConfig.themeId}
-                                            </span>
-                                            <span className="text-[10px] font-medium text-muted-foreground italic">
-                                                Published {new Date(profile._creationTime).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mr-2" />
+                            <div key={profile._id} className="group bg-card border border-border p-4 rounded-3xl hover:border-primary/30 transition-all duration-300 flex items-center gap-4 relative overflow-hidden">
+                                <div className="w-14 h-14 rounded-2xl overflow-hidden border border-border bg-muted shrink-0">
+                                    <img 
+                                        src={resolveImageUrl(profile.agentInfo.avatarUrl) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.name}`} 
+                                        alt={profile.name}
+                                        className="w-full h-full object-cover"
+                                    />
                                 </div>
-                            </Link>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-sm truncate uppercase tracking-tight">{profile.name}</h3>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-[10px] font-bold uppercase py-0.5 px-2 bg-primary/10 text-primary rounded-full">
+                                            {profile.layoutConfig.themeId}
+                                        </span>
+                                        <span className="text-[10px] font-medium text-muted-foreground italic">
+                                            {new Date(profile._creationTime).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors" asChild title="Preview">
+                                        <Link href={`/p/${profile._id}`} target="_blank">
+                                            <ExternalLink className="w-4 h-4" />
+                                        </Link>
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-blue-500/10 hover:text-blue-500 transition-colors" asChild title="Edit">
+                                        <Link href={`/dashboard/builder?id=${profile._id}`}>
+                                            <Edit2 className="w-4 h-4" />
+                                        </Link>
+                                    </Button>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}

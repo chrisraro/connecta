@@ -30,6 +30,7 @@ export const createProfile = mutation({
         featuredProperties: v.array(v.id("properties")),
         featuredProjects: v.optional(v.array(v.string())),
         clerkId: v.string(),
+        id: v.optional(v.id("profiles")),
     },
     handler: async (ctx, args) => {
         const user = await ctx.db
@@ -41,16 +42,45 @@ export const createProfile = mutation({
             throw new Error("User not found");
         }
 
-        const profileId = await ctx.db.insert("profiles", {
+        const profileData = {
             ownerId: user._id,
             name: args.name,
             agentInfo: args.agentInfo,
             layoutConfig: args.layoutConfig,
             featuredProperties: args.featuredProperties,
             featuredProjects: args.featuredProjects || [],
-        });
+        };
 
+        if (args.id) {
+            const existing = await ctx.db.get(args.id);
+            if (!existing || existing.ownerId !== user._id) {
+                throw new Error("Unauthorized or profile not found");
+            }
+            await ctx.db.patch(args.id, profileData);
+            return args.id;
+        }
+
+        const profileId = await ctx.db.insert("profiles", profileData);
         return profileId;
+    },
+});
+
+export const deleteProfile = mutation({
+    args: { profileId: v.id("profiles"), clerkId: v.string() },
+    handler: async (ctx, args) => {
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+            .unique();
+
+        if (!user) throw new Error("User not found");
+
+        const profile = await ctx.db.get(args.profileId);
+        if (!profile || profile.ownerId !== user._id) {
+            throw new Error("Unauthorized");
+        }
+
+        await ctx.db.delete(args.profileId);
     },
 });
 
