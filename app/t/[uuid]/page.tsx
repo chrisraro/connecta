@@ -16,11 +16,17 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
 
     useEffect(() => {
         if (card === null) {
-            setError("This card has not been activated yet or is not linked to a profile.");
+            setError("This card ID was not found in our system.");
         } else if (card) {
-            // Success! Increment count and redirect
-            incrementTap({ cardId: card._id });
-            router.replace(`/p/${card.linkedProfileId}`);
+            if (card.status !== "active") {
+                setError("This card has not been activated yet.");
+            } else if (!card.linkedProfileId) {
+                setError("This card is activated but not linked to any profile yet.");
+            } else {
+                // Success! Increment count and redirect
+                incrementTap({ cardId: card._id });
+                router.replace(`/p/${card.linkedProfileId}`);
+            }
         }
     }, [card, router, incrementTap]);
 

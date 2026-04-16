@@ -92,7 +92,13 @@ export default function AdminFactoryPage() {
                 }
 
                 try {
-                    // Register the card in Convex
+                    // 1. Write NDEF URL to the tag so phones natively redirect to the tap route
+                    const url = `${window.location.origin}/t/${serialNumber}`;
+                    await ndef.write({
+                        records: [{ recordType: "url", data: url }]
+                    });
+
+                    // 2. Register the card in Convex
                     const result = await registerCard({
                         clerkId: user?.id,
                         uuid: serialNumber

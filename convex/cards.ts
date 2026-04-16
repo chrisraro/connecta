@@ -73,10 +73,6 @@ export const getCardByUuid = query({
             .withIndex("by_uuid", (q) => q.eq("uuid", args.uuid))
             .first();
         
-        if (!card || card.status !== "active" || !card.linkedProfileId) {
-            return null;
-        }
-
         return card;
     },
 });
