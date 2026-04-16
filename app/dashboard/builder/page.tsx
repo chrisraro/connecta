@@ -260,21 +260,36 @@ function BuilderContent() {
                 clerkId: user.id,
                 name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
                 profileType: profileType,
-                agentInfo: { ...agentInfo, company: agentInfo.company ?? "", services: agentInfo.services ?? [] },
+                agentInfo: { 
+                    ...agentInfo, 
+                    company: agentInfo.company ?? "", 
+                    services: agentInfo.services ?? [] 
+                },
                 layoutConfig: {
-                    themeId: selectedThemeId, colorPalette: customColors,
+                    themeId: selectedThemeId, 
+                    colorPalette: customColors,
                     componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
                 },
-                featuredProperties: [],
-                featuredProjects: projects.map(p => p.id),
-                products: products,
-                services: services
+                // Use existing properties if we haven't implemented a selector yet
+                featuredProperties: existingProfile?.featuredProperties || [],
+                // Ensure we don't overwrite with empty if projects aren't loaded
+                featuredProjects: projects.length > 0 
+                    ? projects.map(p => p.id) 
+                    : (existingProfile?.featuredProjects || []),
+                products: products.map(p => ({
+                    ...p,
+                    price: p.price && !isNaN(p.price) ? p.price : undefined
+                })),
+                services: services.map(s => ({
+                    ...s,
+                    price: s.price && !isNaN(s.price) ? s.price : undefined
+                }))
             });
             router.push(`/p/${profileId}`);
         } catch (error) {
-            console.error(error);
-            alert("Failed to save profile.");
+            console.error("Save error:", error);
+            alert("Failed to save profile. Please check your connection and try again.");
         } finally {
             setIsSaving(false);
         }
