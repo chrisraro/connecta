@@ -173,10 +173,26 @@ function BuilderContent() {
 
         if (editingId) {
             if (existingProfile) {
-                setProfileType(existingProfile.profileType as ProfileType);
-                setAgentInfo(existingProfile.agentInfo);
+                setProfileType((existingProfile.profileType as ProfileType) || "individual");
+                setAgentInfo({
+                    ...INITIAL_AGENT_INFO,
+                    ...existingProfile.agentInfo,
+                });
                 setProducts(existingProfile.products || []);
                 setServices(existingProfile.services || []);
+                
+                // Prefill projects IDs to prevent wiping
+                if (existingProfile.featuredProjects) {
+                    setProjects(existingProfile.featuredProjects.map(id => ({
+                        id,
+                        ownerId: existingProfile.ownerId,
+                        title: "Existing Project",
+                        category: "other",
+                        tags: [],
+                        images: []
+                    })));
+                }
+
                 setSelectedThemeId(existingProfile.layoutConfig.themeId);
                 setCustomColors(existingProfile.layoutConfig.colorPalette);
                 const order = existingProfile.layoutConfig.componentOrder;
@@ -255,41 +271,58 @@ function BuilderContent() {
         if (!user?.id) return;
         setIsSaving(true);
         try {
+            // Clean Agent Info to match schema exactly
+            const cleanAgentInfo = {
+                fullName: agentInfo.fullName || "",
+                title: agentInfo.title || "",
+                company: agentInfo.company || "",
+                phone: agentInfo.phone || "",
+                email: agentInfo.email || "",
+                address: agentInfo.address || undefined,
+                website: agentInfo.website || undefined,
+                about: agentInfo.about || undefined,
+                avatarUrl: agentInfo.avatarUrl || undefined,
+                services: agentInfo.services || [],
+                socialLinks: (agentInfo.socialLinks || []).map(link => ({
+                    platform: link.platform,
+                    url: link.url
+                })),
+            };
+
             const profileId = await createProfile({
                 id: editingId ? (editingId as Id<"profiles">) : undefined,
                 clerkId: user.id,
                 name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
                 profileType: profileType,
-                agentInfo: { 
-                    ...agentInfo, 
-                    company: agentInfo.company ?? "", 
-                    services: agentInfo.services ?? [] 
-                },
+                agentInfo: cleanAgentInfo,
                 layoutConfig: {
                     themeId: selectedThemeId, 
                     colorPalette: customColors,
                     componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
                 },
-                // Use existing properties if we haven't implemented a selector yet
                 featuredProperties: existingProfile?.featuredProperties || [],
-                // Ensure we don't overwrite with empty if projects aren't loaded
                 featuredProjects: projects.length > 0 
                     ? projects.map(p => p.id) 
                     : (existingProfile?.featuredProjects || []),
                 products: products.map(p => ({
-                    ...p,
-                    price: p.price && !isNaN(p.price) ? p.price : undefined
+                    title: p.title,
+                    description: p.description,
+                    price: (p.price !== undefined && !isNaN(Number(p.price))) ? Number(p.price) : undefined,
+                    image: p.image || undefined,
+                    link: p.link || undefined
                 })),
                 services: services.map(s => ({
-                    ...s,
-                    price: s.price && !isNaN(s.price) ? s.price : undefined
+                    title: s.title,
+                    description: s.description,
+                    price: (s.price !== undefined && !isNaN(Number(s.price))) ? Number(s.price) : undefined,
+                    image: s.image || undefined
                 }))
             });
             router.push(`/p/${profileId}`);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Save error:", error);
-            alert("Failed to save profile. Please check your connection and try again.");
+            alert(`Failed to save profile: ${error.message || "Please check your connection."}`);
         } finally {
             setIsSaving(false);
         }
