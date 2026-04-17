@@ -93,17 +93,17 @@ function SortableBlockItem({ block, onToggle }: { block: Block; onToggle: (id: s
         <div
             ref={setNodeRef}
             style={style}
-            className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 shadow-sm"
+            className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border shadow-sm"
         >
-            <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600">
+            <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
                 <GripVertical className="w-4 h-4" />
             </div>
-            <Icon className="w-4 h-4 text-gray-500" />
-            <span className="flex-1 text-sm font-medium">{block.label}</span>
+            <Icon className="w-4 h-4 text-muted-foreground" />
+            <span className="flex-1 text-sm font-medium text-foreground">{block.label}</span>
             <Switch
                 checked={block.isEnabled}
                 onCheckedChange={() => onToggle(block.id)}
-                className="data-[state=checked]:bg-blue-600"
+                className="data-[state=checked]:bg-primary"
             />
         </div>
     );
@@ -120,7 +120,7 @@ function TemplateSelector({
 }) {
     return (
         <div className="space-y-3">
-            <Label className="text-sm font-semibold text-gray-700">Choose Template</Label>
+            <Label className="text-sm font-semibold text-foreground">Choose Template</Label>
             <div className="grid grid-cols-3 gap-3">
                 {TEMPLATES.map((template) => (
                     <button
@@ -128,7 +128,7 @@ function TemplateSelector({
                         onClick={() => onSelect(template.id)}
                         className={`relative rounded-xl overflow-hidden aspect-[3/4] transition-all ${
                             selectedTemplate === template.id
-                                ? "ring-2 ring-blue-600 ring-offset-2"
+                                ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
                                 : "hover:scale-[1.02]"
                         }`}
                     >
@@ -146,8 +146,8 @@ function TemplateSelector({
                         </div>
                         {/* Selected indicator */}
                         {selectedTemplate === template.id && (
-                            <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                                <Sparkles className="w-3 h-3 text-white" />
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                                <Sparkles className="w-3 h-3 text-primary-foreground" />
                             </div>
                         )}
                     </button>
@@ -163,27 +163,34 @@ function SectionEditor({
     isOpen,
     onClose,
     title,
-    children
+    children,
+    onSave
 }: {
     isOpen: boolean;
     onClose: () => void;
     title: string;
     children: React.ReactNode;
+    onSave?: () => void;
 }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 bg-white">
+        <div className="fixed inset-0 z-[60] bg-background">
             <div className="flex flex-col h-full">
                 {/* Header */}
-                <div className="flex items-center gap-3 p-4 border-b">
-                    <button onClick={onClose} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <h2 className="font-semibold">{title}</h2>
+                <div className="flex items-center justify-between gap-3 p-4 border-b bg-background">
+                    <div className="flex items-center gap-3">
+                        <button onClick={onClose} className="p-2 -ml-2 hover:bg-muted rounded-full">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <h2 className="font-semibold text-foreground">{title}</h2>
+                    </div>
+                    <Button size="sm" onClick={onSave || onClose} className="bg-primary text-primary-foreground">
+                        <Save className="w-4 h-4 mr-2" /> Done
+                    </Button>
                 </div>
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto p-4 bg-background">
                     {children}
                 </div>
             </div>
@@ -439,31 +446,37 @@ function BuilderContent() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background">
+            {/* Hide bottom nav on this page */}
+            <style jsx global>{`
+                .mobile-bottom-nav { display: none !important; }
+                .quick-actions-fab { display: none !important; }
+            `}</style>
+            
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-white border-b px-4 py-3">
+            <header className="sticky top-0 z-40 bg-background border-b border-border px-4 py-3">
                 <div className="max-w-lg mx-auto flex items-center justify-between">
                     <button
                         onClick={() => router.back()}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
+                        className="p-2 -ml-2 hover:bg-muted rounded-full text-foreground"
                     >
                         <ChevronLeft className="w-5 h-5" />
                     </button>
-                    <h1 className="font-semibold">
+                    <h1 className="font-semibold text-foreground">
                         {editingId ? "Edit Profile" : "Create Profile"}
                     </h1>
                     <Button
                         size="sm"
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
                     </Button>
                 </div>
             </header>
 
-            <div className="max-w-lg mx-auto pb-32">
+            <div className="max-w-lg mx-auto pb-8">
                 {/* Phone Preview */}
                 <div className="p-4">
                     <div className="bg-gray-900 rounded-[2.5rem] p-3 shadow-2xl">
@@ -486,7 +499,7 @@ function BuilderContent() {
 
                 {/* Profile Type */}
                 <div className="px-4 py-4">
-                    <Label className="text-sm font-semibold text-gray-700 mb-3 block">Profile Type</Label>
+                    <Label className="text-sm font-semibold text-foreground mb-3 block">Profile Type</Label>
                     <div className="grid grid-cols-3 gap-2">
                         {(["individual", "company", "business"] as const).map((type) => (
                             <button
@@ -494,8 +507,8 @@ function BuilderContent() {
                                 onClick={() => setProfileType(type)}
                                 className={`py-2.5 px-4 rounded-xl text-sm font-medium capitalize transition-all ${
                                     profileType === type
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-white border border-gray-200 text-gray-700"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-card border border-border text-foreground hover:bg-muted"
                                 }`}
                             >
                                 {type}
@@ -507,10 +520,10 @@ function BuilderContent() {
                 {/* Sections List */}
                 <div className="px-4 py-4">
                     <div className="flex items-center justify-between mb-3">
-                        <Label className="text-sm font-semibold text-gray-700">Sections</Label>
+                        <Label className="text-sm font-semibold text-foreground">Sections</Label>
                         <button
                             onClick={() => setShowReorderMode(!showReorderMode)}
-                            className="text-sm text-blue-600 flex items-center gap-1"
+                            className="text-sm text-primary flex items-center gap-1"
                         >
                             {showReorderMode ? "Done" : <><ArrowUpDown className="w-3 h-3" /> Reorder</>}
                         </button>
@@ -533,19 +546,19 @@ function BuilderContent() {
                                 return (
                                     <div
                                         key={block.id}
-                                        className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-100"
+                                        className="flex items-center gap-3 p-4 bg-card rounded-xl border border-border"
                                     >
-                                        <Icon className="w-5 h-5 text-gray-400" />
-                                        <span className="flex-1 font-medium text-sm">{block.label}</span>
+                                        <Icon className="w-5 h-5 text-muted-foreground" />
+                                        <span className="flex-1 font-medium text-sm text-foreground">{block.label}</span>
                                         <div className="flex items-center gap-2">
                                             {block.isEnabled ? (
-                                                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Visible</span>
+                                                <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">Visible</span>
                                             ) : (
-                                                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Hidden</span>
+                                                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">Hidden</span>
                                             )}
                                             <button
                                                 onClick={() => setActiveModal(block.id)}
-                                                className="text-sm text-blue-600 font-medium"
+                                                className="text-sm text-primary font-medium"
                                             >
                                                 Edit
                                             </button>
@@ -559,7 +572,7 @@ function BuilderContent() {
 
                 {/* Customize Colors */}
                 <div className="px-4 py-4">
-                    <Label className="text-sm font-semibold text-gray-700 mb-3 block">Colors</Label>
+                    <Label className="text-sm font-semibold text-foreground mb-3 block">Colors</Label>
                     <div className="flex gap-4">
                         <div className="flex-1">
                             <label className="text-xs text-gray-500 mb-1.5 block">Primary</label>

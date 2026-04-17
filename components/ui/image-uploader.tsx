@@ -17,27 +17,26 @@ interface ImageUploaderProps {
 
 export function ImageUploader({ value, onChange, onRemove, className, placeholder = "Upload Image" }: ImageUploaderProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [displayUrl, setDisplayUrl] = useState<string>("");
+    const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.images.generateUploadUrl);
     
-    // Get the actual URL for display
+    // Get the actual URL for display from Convex storage
     const storageUrl = useQuery(
         api.images.getImageUrl,
-        value && !value.startsWith("http") && !value.startsWith("data:") ? { storageId: value } : "skip"
+        value && !value.startsWith("http") && !value.startsWith("data:") && !value.startsWith("blob:") ? { storageId: value } : "skip"
     );
     
-    useEffect(() => {
-        if (value?.startsWith("http") || value?.startsWith("data:")) {
-            setDisplayUrl(value);
-        } else if (storageUrl) {
-            setDisplayUrl(storageUrl);
-        } else if (value) {
-            setDisplayUrl(resolveImageUrl(value));
-        } else {
-            setDisplayUrl("");
-        }
-    }, [value, storageUrl]);
+    // Determine the display URL
+    const getDisplayUrl = () => {
+        if (localPreviewUrl) return localPreviewUrl;
+        if (value?.startsWith("http") || value?.startsWith("data:") || value?.startsWith("blob:")) return value;
+        if (storageUrl) return storageUrl;
+        if (value) return resolveImageUrl(value);
+        return "";
+    };
+    
+    const displayUrl = getDisplayUrl();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -49,6 +48,11 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
         }
 
         setIsLoading(true);
+        
+        // Create local preview URL for immediate display
+        const localUrl = URL.createObjectURL(file);
+        setLocalPreviewUrl(localUrl);
+        
         try {
             // 1. Get a short-lived upload URL from Convex
             const postUrl = await generateUploadUrl();
@@ -64,21 +68,14 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
 
             const { storageId } = await result.json();
             
-            // For simplicity in this app, we will use the storageId as the value.
-            // In a real app, you might want to fetch the actual URL, 
-            // but Convex storage IDs can be used with a proxy or transformed.
-            // Here we'll treat the storageId as the persistent identifier.
-            // To display it, we'll need a way to turn storageId into a URL.
-            // Let's assume for now we want to store the final public URL if possible,
-            // or just use a helper. 
-            
-            // To keep it consistent with existing code that expects a URL:
-            // We'll pass the storageId and let the backend/components handle resolution.
-            // BUT, to show the preview IMMEDIATELY, we'll use the storage ID or a temporary local URL.
-            
+            // Clear local preview and set the storage ID
+            setLocalPreviewUrl(null);
+            URL.revokeObjectURL(localUrl);
             onChange(storageId);
         } catch (err) {
             console.error(err);
+            setLocalPreviewUrl(null);
+            URL.revokeObjectURL(localUrl);
             alert("Failed to upload image.");
         } finally {
             setIsLoading(false);

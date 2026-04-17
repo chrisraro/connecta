@@ -22,7 +22,7 @@ function QuickActionsToggle() {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button size="icon" className="fixed bottom-28 right-6 z-50 h-14 w-14 rounded-2xl shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:scale-105 transition-transform md:hidden">
+                <Button size="icon" className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 rounded-2xl shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:scale-105 transition-transform md:hidden">
                     <Sparkles className="w-7 h-7" />
                 </Button>
             </SheetTrigger>
@@ -147,7 +147,7 @@ function MobileBottomNav() {
     ];
 
     return (
-        <div className="fixed bottom-6 left-4 right-4 z-50 md:hidden">
+        <div className="mobile-bottom-nav fixed bottom-6 left-4 right-4 z-50 md:hidden">
             <nav className="bg-background/80 backdrop-blur-2xl border border-border rounded-[2.5rem] p-2 flex items-center justify-between shadow-2xl ring-1 ring-border/50 overflow-hidden">
                 {navItems.map((item) => {
                     const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
