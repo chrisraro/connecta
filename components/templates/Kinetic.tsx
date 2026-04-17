@@ -4,7 +4,7 @@ import { TemplateProps } from "@/types/profile";
 import {
   Phone, Mail, Globe, MapPin, Download, Facebook, Instagram, Linkedin, Twitter, Youtube,
   Link as LinkIcon, Briefcase, GraduationCap, Code, Quote, Image as ImageIcon, Send,
-  ChevronRight, ExternalLink, Zap
+  ChevronRight, ExternalLink, Zap, ShoppingBag, Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
@@ -34,7 +34,7 @@ const COLORS = {
   background: "#0e0e0e",
   surface: "#1a1a1a",
   surfaceContainer: "#20201f",
-  surfaceContainerHigh: "#262626",
+  surfaceContainerHigh: "#2a2a2a",
   surfaceContainerLowest: "#000000",
   primary: "#ba9eff",
   primaryDim: "#8455ef",
@@ -44,14 +44,14 @@ const COLORS = {
 };
 
 export default function Kinetic({ data }: TemplateProps) {
-  const { agent, theme, projects, ownerId } = data;
+  const { agent, theme, projects, ownerId, products, propertyListings, inlineProjects } = data;
 
   return (
     <div
       className="min-h-screen pb-20"
       style={{
         backgroundColor: theme.backgroundColor,
-        color: theme.textColor,
+        color: "#ffffff",
         fontFamily: "'Manrope', sans-serif",
       }}
     >
@@ -62,7 +62,13 @@ export default function Kinetic({ data }: TemplateProps) {
       {agent.techStack && agent.techStack.length > 0 && <TechStackSection techStack={agent.techStack} theme={theme} />}
       {agent.services && agent.services.length > 0 && <ServicesSection services={agent.services} theme={theme} />}
       {agent.experience && agent.experience.length > 0 && <ExperienceSection experience={agent.experience} theme={theme} />}
+      {/* Inline Projects */}
+      {inlineProjects && inlineProjects.length > 0 && <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} />}
       {projects && projects.length > 0 && <ProjectsSection projects={projects} theme={theme} />}
+      {/* Products / Store */}
+      {products && products.length > 0 && <ProductsSection products={products} theme={theme} />}
+      {/* Property Listings */}
+      {propertyListings && propertyListings.length > 0 && <PropertyListingsSection propertyListings={propertyListings} theme={theme} />}
       {agent.testimonials && agent.testimonials.length > 0 && <TestimonialsSection testimonials={agent.testimonials} theme={theme} />}
       {agent.gallery && agent.gallery.length > 0 && <GallerySection gallery={agent.gallery} theme={theme} />}
       <ContactSection theme={theme} ownerId={ownerId} />
@@ -88,7 +94,7 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
       />
 
       <div className="max-w-md mx-auto relative">
-        {/* Profile Image - Sharp corners */}
+        {/* Profile Image */}
         <div className="flex justify-center mb-8">
           <div
             className="w-28 h-28 overflow-hidden"
@@ -106,32 +112,32 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
           </div>
         </div>
 
-        {/* Name & Title - Kinetic Typography */}
+        {/* Name & Title */}
         <div className="text-center mb-8">
           <h1
-            className="text-5xl font-bold mb-3 leading-none"
+            className="text-4xl font-bold mb-3 leading-none"
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              color: theme.textColor,
+              color: "#ffffff",
               letterSpacing: "-0.02em",
             }}
           >
             {agent.fullName}
           </h1>
           <p
-            className="text-sm uppercase tracking-widest mb-2"
-            style={{ color: theme.primaryColor, fontWeight: 600 }}
+            className="text-sm uppercase tracking-widest mb-2 font-semibold"
+            style={{ color: theme.primaryColor }}
           >
             {agent.title}
           </p>
           {agent.company && (
-            <p className="text-sm" style={{ color: `${theme.textColor}80` }}>
+            <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>
               {agent.company}
             </p>
           )}
         </div>
 
-        {/* Action Buttons - Sharp, electric */}
+        {/* Action Buttons */}
         <div className="flex gap-3 justify-center flex-wrap">
           {agent.phone && (
             <a
@@ -139,7 +145,7 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
               className="flex items-center gap-2 px-5 py-3 text-sm font-semibold uppercase tracking-wider transition-all"
               style={{
                 backgroundColor: theme.primaryColor,
-                color: "#39008c",
+                color: "#1a0040",
                 clipPath: "polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)",
               }}
             >
@@ -153,7 +159,7 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
               className="flex items-center gap-2 px-5 py-3 text-sm font-semibold uppercase tracking-wider transition-all"
               style={{
                 backgroundColor: COLORS.secondary,
-                color: "#365700",
+                color: "#1a3000",
                 clipPath: "polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)",
               }}
             >
@@ -163,7 +169,7 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
           )}
         </div>
 
-        {/* Social Links - Neon style */}
+        {/* Social Links */}
         {agent.socialLinks && agent.socialLinks.length > 0 && (
           <div className="flex gap-3 justify-center mt-8">
             {agent.socialLinks.map((link, i) => {
@@ -176,8 +182,8 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
                   rel="noopener noreferrer"
                   className="w-10 h-10 flex items-center justify-center transition-all"
                   style={{
-                    backgroundColor: COLORS.surfaceContainer,
-                    color: theme.textColor,
+                    backgroundColor: COLORS.surfaceContainerHigh,
+                    color: "#ffffff",
                     border: `1px solid ${theme.primaryColor}40`,
                   }}
                 >
@@ -204,10 +210,10 @@ function AboutSection({ agent, theme }: { agent: TemplateProps["data"]["agent"];
     >
       <div className="max-w-md mx-auto">
         <h2
-          className="text-3xl font-bold mb-4"
+          className="text-2xl font-bold mb-4"
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            color: theme.textColor,
+            color: "#ffffff",
             letterSpacing: "-0.02em",
           }}
         >
@@ -215,7 +221,7 @@ function AboutSection({ agent, theme }: { agent: TemplateProps["data"]["agent"];
         </h2>
         <p
           className="text-base leading-relaxed"
-          style={{ color: `${theme.textColor}cc`, lineHeight: "1.7" }}
+          style={{ color: "rgba(255,255,255,0.85)", lineHeight: "1.8" }}
         >
           {agent.about}
         </p>
@@ -228,7 +234,7 @@ function AboutSection({ agent, theme }: { agent: TemplateProps["data"]["agent"];
 
 function CertificationSection({ certification, theme }: { certification: NonNullable<TemplateProps["data"]["agent"]["certification"]>; theme: TemplateProps["data"]["theme"] }) {
   return (
-    <section className="px-6 py-8">
+    <section className="px-6 py-8" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
         <div
           className="p-6 relative overflow-hidden"
@@ -237,7 +243,6 @@ function CertificationSection({ certification, theme }: { certification: NonNull
             borderLeft: `4px solid ${theme.primaryColor}`,
           }}
         >
-          {/* Glow effect */}
           <div
             className="absolute top-0 left-0 w-32 h-32 opacity-20 blur-2xl"
             style={{ background: theme.primaryColor }}
@@ -247,8 +252,8 @@ function CertificationSection({ certification, theme }: { certification: NonNull
               <div
                 className="w-12 h-12 flex items-center justify-center shrink-0"
                 style={{
-                  backgroundColor: `${theme.primaryColor}20`,
-                  border: `1px solid ${theme.primaryColor}40`,
+                  backgroundColor: `${theme.primaryColor}30`,
+                  border: `1px solid ${theme.primaryColor}50`,
                 }}
               >
                 <Zap className="w-6 h-6" style={{ color: theme.primaryColor }} />
@@ -256,11 +261,11 @@ function CertificationSection({ certification, theme }: { certification: NonNull
               <div>
                 <h3
                   className="font-bold text-lg mb-1"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#ffffff" }}
                 >
                   {certification.title}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: `${theme.textColor}99` }}>
+                <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
                   {certification.description}
                 </p>
               </div>
@@ -279,10 +284,10 @@ function EducationSection({ education, theme }: { education: NonNullable<Templat
     <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
         <h2
-          className="text-3xl font-bold mb-6"
+          className="text-2xl font-bold mb-6"
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            color: theme.textColor,
+            color: "#ffffff",
             letterSpacing: "-0.02em",
           }}
         >
@@ -298,17 +303,17 @@ function EducationSection({ education, theme }: { education: NonNullable<Templat
               <div
                 className="w-10 h-10 flex items-center justify-center shrink-0"
                 style={{
-                  backgroundColor: `${theme.primaryColor}20`,
-                  border: `1px solid ${theme.primaryColor}40`,
+                  backgroundColor: `${theme.primaryColor}30`,
+                  border: `1px solid ${theme.primaryColor}50`,
                 }}
               >
                 <GraduationCap className="w-5 h-5" style={{ color: theme.primaryColor }} />
               </div>
               <div>
-                <h3 className="font-semibold text-sm" style={{ color: theme.textColor }}>
+                <h3 className="font-semibold text-sm" style={{ color: "#ffffff" }}>
                   {edu.degree}
                 </h3>
-                <p className="text-sm mt-1" style={{ color: `${theme.textColor}80` }}>
+                <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.7)" }}>
                   {edu.school}
                 </p>
                 {edu.year && (
@@ -332,10 +337,10 @@ function TechStackSection({ techStack, theme }: { techStack: NonNullable<Templat
     <section className="px-6 py-10" style={{ backgroundColor: COLORS.surface }}>
       <div className="max-w-md mx-auto">
         <h2
-          className="text-3xl font-bold mb-6"
+          className="text-2xl font-bold mb-6"
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            color: theme.textColor,
+            color: "#ffffff",
             letterSpacing: "-0.02em",
           }}
         >
@@ -357,7 +362,7 @@ function TechStackSection({ techStack, theme }: { techStack: NonNullable<Templat
                     className="px-3 py-1.5 text-xs font-medium"
                     style={{
                       backgroundColor: COLORS.surfaceContainerHigh,
-                      color: theme.textColor,
+                      color: "#ffffff",
                       borderLeft: `3px solid ${COLORS.secondary}`,
                     }}
                   >
@@ -380,10 +385,10 @@ function ServicesSection({ services, theme }: { services: NonNullable<TemplatePr
     <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
         <h2
-          className="text-3xl font-bold mb-6"
+          className="text-2xl font-bold mb-6"
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            color: theme.textColor,
+            color: "#ffffff",
             letterSpacing: "-0.02em",
           }}
         >
@@ -395,9 +400,9 @@ function ServicesSection({ services, theme }: { services: NonNullable<TemplatePr
               key={i}
               className="px-4 py-2 text-sm font-semibold uppercase tracking-wider"
               style={{
-                backgroundColor: `${theme.primaryColor}20`,
+                backgroundColor: `${theme.primaryColor}25`,
                 color: theme.primaryColor,
-                border: `1px solid ${theme.primaryColor}40`,
+                border: `1px solid ${theme.primaryColor}50`,
               }}
             >
               {service}
@@ -416,10 +421,10 @@ function ExperienceSection({ experience, theme }: { experience: NonNullable<Temp
     <section className="px-6 py-10" style={{ backgroundColor: COLORS.surface }}>
       <div className="max-w-md mx-auto">
         <h2
-          className="text-3xl font-bold mb-6"
+          className="text-2xl font-bold mb-6"
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            color: theme.textColor,
+            color: "#ffffff",
             letterSpacing: "-0.02em",
           }}
         >
@@ -431,10 +436,9 @@ function ExperienceSection({ experience, theme }: { experience: NonNullable<Temp
               key={i}
               className="relative pl-6 pb-6"
               style={{
-                borderLeft: i === experience.length - 1 ? "none" : `2px solid ${theme.primaryColor}30`,
+                borderLeft: i === experience.length - 1 ? "none" : `2px solid ${theme.primaryColor}40`,
               }}
             >
-              {/* Timeline dot */}
               <div
                 className="absolute left-0 top-0 w-3 h-3 -translate-x-[7px]"
                 style={{
@@ -445,22 +449,83 @@ function ExperienceSection({ experience, theme }: { experience: NonNullable<Temp
               <div>
                 <h3
                   className="font-bold text-base mb-1"
-                  style={{ color: theme.textColor, fontFamily: "'Space Grotesk', sans-serif" }}
+                  style={{ color: "#ffffff", fontFamily: "'Space Grotesk', sans-serif" }}
                 >
                   {exp.title}
                 </h3>
-                <p className="text-sm" style={{ color: `${theme.textColor}80` }}>
+                <p className="text-sm" style={{ color: "rgba(255,255,255,0.7)" }}>
                   {exp.company}
                 </p>
                 <p className="text-xs mt-1 font-mono" style={{ color: theme.primaryColor }}>
                   {exp.period}
                 </p>
                 {exp.description && (
-                  <p className="text-sm mt-3 leading-relaxed" style={{ color: `${theme.textColor}99` }}>
+                  <p className="text-sm mt-3 leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
                     {exp.description}
                   </p>
                 )}
               </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Inline Projects Section ─────────────────────────────────────────────────
+
+function InlineProjectsSection({ inlineProjects, theme }: { inlineProjects: NonNullable<TemplateProps["data"]["inlineProjects"]>; theme: TemplateProps["data"]["theme"] }) {
+  return (
+    <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
+      <div className="max-w-md mx-auto">
+        <h2
+          className="text-2xl font-bold mb-6"
+          style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            color: "#ffffff",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Projects
+        </h2>
+        <div className="space-y-4">
+          {inlineProjects.map((project, i) => (
+            <div
+              key={i}
+              className="p-5"
+              style={{
+                backgroundColor: COLORS.surfaceContainer,
+                borderLeft: `3px solid ${theme.primaryColor}`,
+              }}
+            >
+              <h3
+                className="font-bold text-base mb-1"
+                style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#ffffff" }}
+              >
+                {project.title}
+              </h3>
+              {project.category && (
+                <p className="text-xs uppercase tracking-widest mb-2 font-semibold" style={{ color: theme.primaryColor }}>
+                  {project.category.replace("-", " ")}
+                </p>
+              )}
+              {project.description && (
+                <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+                  {project.description}
+                </p>
+              )}
+              {project.link && (
+                <a
+                  href={project.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm flex items-center gap-1 font-semibold uppercase tracking-wider mt-3"
+                  style={{ color: theme.primaryColor }}
+                >
+                  View <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
           ))}
         </div>
@@ -477,10 +542,10 @@ function ProjectsSection({ projects, theme }: { projects: TemplateProps["data"][
       <div className="max-w-md mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h2
-            className="text-3xl font-bold"
+            className="text-2xl font-bold"
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              color: theme.textColor,
+              color: "#ffffff",
               letterSpacing: "-0.02em",
             }}
           >
@@ -506,12 +571,12 @@ function ProjectsSection({ projects, theme }: { projects: TemplateProps["data"][
               <div className="p-5">
                 <h3
                   className="font-bold text-lg mb-2"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#ffffff" }}
                 >
                   {project.title}
                 </h3>
                 {project.description && (
-                  <p className="text-sm leading-relaxed mb-4" style={{ color: `${theme.textColor}80` }}>
+                  <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.7)" }}>
                     {project.description}
                   </p>
                 )}
@@ -535,6 +600,146 @@ function ProjectsSection({ projects, theme }: { projects: TemplateProps["data"][
   );
 }
 
+// ─── Products Section ────────────────────────────────────────────────────────
+
+function ProductsSection({ products, theme }: { products: NonNullable<TemplateProps["data"]["products"]>; theme: TemplateProps["data"]["theme"] }) {
+  return (
+    <section className="px-6 py-10" style={{ backgroundColor: COLORS.surface }}>
+      <div className="max-w-md mx-auto">
+        <h2
+          className="text-2xl font-bold mb-6"
+          style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            color: "#ffffff",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Store
+        </h2>
+        <div className="space-y-4">
+          {products.map((product, i) => (
+            <div
+              key={i}
+              className="p-5"
+              style={{
+                backgroundColor: COLORS.surfaceContainer,
+                border: `1px solid ${theme.primaryColor}20`,
+              }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-bold text-base" style={{ color: "#ffffff", fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {product.title}
+                  </h3>
+                  <p className="text-sm mt-1 leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+                    {product.description}
+                  </p>
+                </div>
+                {product.price !== undefined && (
+                  <span className="text-lg font-bold ml-4 shrink-0" style={{ color: COLORS.secondary }}>
+                    ${product.price}
+                  </span>
+                )}
+              </div>
+              {product.link && (
+                <a
+                  href={product.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm flex items-center gap-1 font-semibold uppercase tracking-wider mt-3"
+                  style={{ color: theme.primaryColor }}
+                >
+                  View <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Property Listings Section ───────────────────────────────────────────────
+
+function PropertyListingsSection({ propertyListings, theme }: { propertyListings: NonNullable<TemplateProps["data"]["propertyListings"]>; theme: TemplateProps["data"]["theme"] }) {
+  return (
+    <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
+      <div className="max-w-md mx-auto">
+        <h2
+          className="text-2xl font-bold mb-6"
+          style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            color: "#ffffff",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Properties
+        </h2>
+        <div className="space-y-4">
+          {propertyListings.map((property, i) => (
+            <div
+              key={i}
+              className="p-5"
+              style={{
+                backgroundColor: COLORS.surfaceContainer,
+                borderLeft: `3px solid ${COLORS.secondary}`,
+              }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-bold text-base" style={{ color: "#ffffff", fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {property.title}
+                  </h3>
+                  {property.location && (
+                    <p className="text-xs flex items-center gap-1 mt-1" style={{ color: "rgba(255,255,255,0.6)" }}>
+                      <MapPin className="w-3 h-3" /> {property.location}
+                    </p>
+                  )}
+                  {property.description && (
+                    <p className="text-sm mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+                      {property.description}
+                    </p>
+                  )}
+                </div>
+                {property.price && (
+                  <span className="text-lg font-bold ml-4 shrink-0" style={{ color: COLORS.secondary }}>
+                    {property.price}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-3">
+                {property.status && (
+                  <span
+                    className="text-xs px-3 py-1 font-semibold uppercase tracking-wider"
+                    style={{
+                      backgroundColor: `${COLORS.secondary}20`,
+                      color: COLORS.secondary,
+                    }}
+                  >
+                    {property.status.replace("-", " ")}
+                  </span>
+                )}
+                {property.link && (
+                  <a
+                    href={property.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs flex items-center gap-1 font-semibold"
+                    style={{ color: theme.primaryColor }}
+                  >
+                    Details <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Testimonials Section ────────────────────────────────────────────────────
 
 function TestimonialsSection({ testimonials, theme }: { testimonials: NonNullable<TemplateProps["data"]["agent"]["testimonials"]>; theme: TemplateProps["data"]["theme"] }) {
@@ -542,10 +747,10 @@ function TestimonialsSection({ testimonials, theme }: { testimonials: NonNullabl
     <section className="px-6 py-10" style={{ backgroundColor: COLORS.surface }}>
       <div className="max-w-md mx-auto">
         <h2
-          className="text-3xl font-bold mb-6"
+          className="text-2xl font-bold mb-6"
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            color: theme.textColor,
+            color: "#ffffff",
             letterSpacing: "-0.02em",
           }}
         >
@@ -558,13 +763,13 @@ function TestimonialsSection({ testimonials, theme }: { testimonials: NonNullabl
               className="p-6 relative"
               style={{
                 backgroundColor: COLORS.surfaceContainer,
-                border: `1px solid ${theme.primaryColor}20`,
+                border: `1px solid ${theme.primaryColor}30`,
               }}
             >
               <Quote className="w-8 h-8 mb-4" style={{ color: theme.primaryColor }} />
               <p
                 className="text-base leading-relaxed mb-4"
-                style={{ color: theme.textColor }}
+                style={{ color: "#ffffff" }}
               >
                 &ldquo;{testimonial.quote}&rdquo;
               </p>
@@ -573,7 +778,7 @@ function TestimonialsSection({ testimonials, theme }: { testimonials: NonNullabl
                   {testimonial.author}
                 </p>
                 {testimonial.role && (
-                  <p className="text-xs mt-0.5" style={{ color: `${theme.textColor}60` }}>
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>
                     {testimonial.role}
                   </p>
                 )}
@@ -593,10 +798,10 @@ function GallerySection({ gallery, theme }: { gallery: NonNullable<TemplateProps
     <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
         <h2
-          className="text-3xl font-bold mb-6"
+          className="text-2xl font-bold mb-6"
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            color: theme.textColor,
+            color: "#ffffff",
             letterSpacing: "-0.02em",
           }}
         >
@@ -658,16 +863,16 @@ function ContactSection({ theme, ownerId }: { theme: TemplateProps["data"]["them
     <section className="px-6 py-12" style={{ backgroundColor: COLORS.surface }}>
       <div className="max-w-md mx-auto">
         <h2
-          className="text-3xl font-bold mb-2"
+          className="text-2xl font-bold mb-2"
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            color: theme.textColor,
+            color: "#ffffff",
             letterSpacing: "-0.02em",
           }}
         >
           Get In Touch
         </h2>
-        <p className="text-sm mb-8" style={{ color: `${theme.textColor}80` }}>
+        <p className="text-sm mb-8" style={{ color: "rgba(255,255,255,0.7)" }}>
           Let&apos;s build something amazing together.
         </p>
 
@@ -686,8 +891,8 @@ function ContactSection({ theme, ownerId }: { theme: TemplateProps["data"]["them
               placeholder="Your name"
               className="h-12 border-0"
               style={{
-                backgroundColor: COLORS.surfaceContainerLowest,
-                color: theme.textColor,
+                backgroundColor: COLORS.surfaceContainerHigh,
+                color: "#ffffff",
                 borderBottom: `2px solid ${theme.primaryColor}`,
               }}
             />
@@ -707,8 +912,8 @@ function ContactSection({ theme, ownerId }: { theme: TemplateProps["data"]["them
               placeholder="your@email.com"
               className="h-12 border-0"
               style={{
-                backgroundColor: COLORS.surfaceContainerLowest,
-                color: theme.textColor,
+                backgroundColor: COLORS.surfaceContainerHigh,
+                color: "#ffffff",
                 borderBottom: `2px solid ${theme.primaryColor}`,
               }}
             />
@@ -727,8 +932,8 @@ function ContactSection({ theme, ownerId }: { theme: TemplateProps["data"]["them
               placeholder="Tell me about your project..."
               className="min-h-[120px] resize-none border-0"
               style={{
-                backgroundColor: COLORS.surfaceContainerLowest,
-                color: theme.textColor,
+                backgroundColor: COLORS.surfaceContainerHigh,
+                color: "#ffffff",
                 borderBottom: `2px solid ${theme.primaryColor}`,
               }}
             />
@@ -739,7 +944,7 @@ function ContactSection({ theme, ownerId }: { theme: TemplateProps["data"]["them
             className="w-full h-12 font-semibold uppercase tracking-wider border-0"
             style={{
               backgroundColor: isSuccess ? COLORS.secondary : theme.primaryColor,
-              color: isSuccess ? "#365700" : "#39008c",
+              color: isSuccess ? "#1a3000" : "#1a0040",
               clipPath: "polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)",
             }}
           >

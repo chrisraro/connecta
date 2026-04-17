@@ -87,7 +87,13 @@ export default defineSchema({
 
     layoutConfig: v.object({
       themeId: v.string(),
-      colorPalette: v.object({ primary: v.string(), background: v.string(), text: v.string() }),
+      colorPalette: v.object({
+        primary: v.string(),
+        background: v.string(),
+        text: v.string(),
+        secondary: v.optional(v.string()),
+        accent: v.optional(v.string()),
+      }),
       componentOrder: v.array(v.string()),
       heroStyle: v.string(),
     }),
@@ -108,6 +114,26 @@ export default defineSchema({
       description: v.string(),
       price: v.optional(v.number()),
       image: v.optional(v.string()),
+    }))),
+
+    // Inline property listings (for builder)
+    propertyListings: v.optional(v.array(v.object({
+      title: v.string(),
+      description: v.optional(v.string()),
+      price: v.optional(v.string()),
+      location: v.optional(v.string()),
+      image: v.optional(v.string()),
+      status: v.optional(v.string()),
+      link: v.optional(v.string()),
+    }))),
+
+    // Inline projects (for builder, separate from projects table)
+    inlineProjects: v.optional(v.array(v.object({
+      title: v.string(),
+      description: v.optional(v.string()),
+      category: v.optional(v.string()),
+      image: v.optional(v.string()),
+      link: v.optional(v.string()),
     }))),
   }).index("by_owner", ["ownerId"]),
 

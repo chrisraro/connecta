@@ -4,7 +4,7 @@ import { TemplateProps } from "@/types/profile";
 import {
   Phone, Mail, Globe, MapPin, Download, Facebook, Instagram, Linkedin, Twitter, Youtube,
   Link as LinkIcon, Briefcase, GraduationCap, Code, Quote, Image as ImageIcon, Send,
-  ChevronRight, ExternalLink
+  ChevronRight, ExternalLink, ShoppingBag, Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
@@ -42,7 +42,7 @@ const COLORS = {
 };
 
 export default function Editorial({ data }: TemplateProps) {
-  const { agent, theme, projects, ownerId } = data;
+  const { agent, theme, projects, ownerId, products, propertyListings, inlineProjects } = data;
 
   return (
     <div
@@ -60,7 +60,10 @@ export default function Editorial({ data }: TemplateProps) {
       {agent.techStack && agent.techStack.length > 0 && <TechStackSection techStack={agent.techStack} theme={theme} />}
       {agent.services && agent.services.length > 0 && <ServicesSection services={agent.services} theme={theme} />}
       {agent.experience && agent.experience.length > 0 && <ExperienceSection experience={agent.experience} theme={theme} />}
+      {inlineProjects && inlineProjects.length > 0 && <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} />}
       {projects && projects.length > 0 && <ProjectsSection projects={projects} theme={theme} />}
+      {products && products.length > 0 && <ProductsSection products={products} theme={theme} />}
+      {propertyListings && propertyListings.length > 0 && <PropertyListingsSection propertyListings={propertyListings} theme={theme} />}
       {agent.testimonials && agent.testimonials.length > 0 && <TestimonialsSection testimonials={agent.testimonials} theme={theme} />}
       {agent.gallery && agent.gallery.length > 0 && <GallerySection gallery={agent.gallery} theme={theme} />}
       <ContactSection theme={theme} ownerId={ownerId} />
@@ -527,6 +530,116 @@ function TestimonialsSection({ testimonials, theme }: { testimonials: NonNullabl
                   <p className="text-xs mt-0.5" style={{ color: `${theme.textColor}60` }}>
                     {testimonial.role}
                   </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Inline Projects Section ─────────────────────────────────────────────────
+
+function InlineProjectsSection({ inlineProjects, theme }: { inlineProjects: NonNullable<TemplateProps["data"]["inlineProjects"]>; theme: TemplateProps["data"]["theme"] }) {
+  return (
+    <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
+      <div className="max-w-md mx-auto">
+        <h2 className="text-2xl font-normal mb-6" style={{ fontFamily: "'Noto Serif', serif", color: theme.textColor }}>
+          Projects
+        </h2>
+        <div className="space-y-4">
+          {inlineProjects.map((project, i) => (
+            <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: COLORS.surfaceContainerLowest, boxShadow: "0 20px 40px rgba(27, 28, 25, 0.06)" }}>
+              <h3 className="font-medium text-base mb-1" style={{ fontFamily: "'Noto Serif', serif" }}>{project.title}</h3>
+              {project.category && (
+                <p className="text-xs uppercase tracking-widest mb-2" style={{ color: theme.primaryColor, fontWeight: 500 }}>
+                  {project.category.replace("-", " ")}
+                </p>
+              )}
+              {project.description && <p className="text-sm leading-relaxed" style={{ color: `${theme.textColor}80` }}>{project.description}</p>}
+              {project.link && (
+                <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-sm flex items-center gap-1 font-medium mt-3" style={{ color: theme.primaryColor }}>
+                  View Project <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Products Section ────────────────────────────────────────────────────────
+
+function ProductsSection({ products, theme }: { products: NonNullable<TemplateProps["data"]["products"]>; theme: TemplateProps["data"]["theme"] }) {
+  return (
+    <section className="px-6 py-10" style={{ backgroundColor: COLORS.surfaceContainer }}>
+      <div className="max-w-md mx-auto">
+        <h2 className="text-2xl font-normal mb-6" style={{ fontFamily: "'Noto Serif', serif", color: theme.textColor }}>
+          Store
+        </h2>
+        <div className="space-y-4">
+          {products.map((product, i) => (
+            <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: COLORS.surfaceContainerLowest }}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-medium text-base" style={{ fontFamily: "'Noto Serif', serif" }}>{product.title}</h3>
+                  <p className="text-sm mt-1 leading-relaxed" style={{ color: `${theme.textColor}80` }}>{product.description}</p>
+                </div>
+                {product.price !== undefined && (
+                  <span className="text-lg font-medium ml-4 shrink-0" style={{ color: theme.primaryColor }}>${product.price}</span>
+                )}
+              </div>
+              {product.link && (
+                <a href={product.link} target="_blank" rel="noopener noreferrer" className="text-sm flex items-center gap-1 font-medium mt-3" style={{ color: theme.primaryColor }}>
+                  View <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Property Listings Section ───────────────────────────────────────────────
+
+function PropertyListingsSection({ propertyListings, theme }: { propertyListings: NonNullable<TemplateProps["data"]["propertyListings"]>; theme: TemplateProps["data"]["theme"] }) {
+  return (
+    <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
+      <div className="max-w-md mx-auto">
+        <h2 className="text-2xl font-normal mb-6" style={{ fontFamily: "'Noto Serif', serif", color: theme.textColor }}>
+          Properties
+        </h2>
+        <div className="space-y-4">
+          {propertyListings.map((property, i) => (
+            <div key={i} className="rounded-2xl p-5" style={{ backgroundColor: COLORS.surfaceContainerLowest, boxShadow: "0 20px 40px rgba(27, 28, 25, 0.06)" }}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-medium text-base" style={{ fontFamily: "'Noto Serif', serif" }}>{property.title}</h3>
+                  {property.location && (
+                    <p className="text-xs flex items-center gap-1 mt-1" style={{ color: `${theme.textColor}60` }}>
+                      <MapPin className="w-3 h-3" /> {property.location}
+                    </p>
+                  )}
+                  {property.description && <p className="text-sm mt-2 leading-relaxed" style={{ color: `${theme.textColor}80` }}>{property.description}</p>}
+                </div>
+                {property.price && <span className="text-lg font-medium ml-4 shrink-0" style={{ color: theme.primaryColor }}>{property.price}</span>}
+              </div>
+              <div className="flex items-center gap-3 mt-3">
+                {property.status && (
+                  <span className="text-xs px-3 py-1 rounded-full" style={{ backgroundColor: COLORS.primaryContainer, color: COLORS.primary }}>
+                    {property.status.replace("-", " ")}
+                  </span>
+                )}
+                {property.link && (
+                  <a href={property.link} target="_blank" rel="noopener noreferrer" className="text-sm flex items-center gap-1 font-medium" style={{ color: theme.primaryColor }}>
+                    Details <ExternalLink className="w-3 h-3" />
+                  </a>
                 )}
               </div>
             </div>

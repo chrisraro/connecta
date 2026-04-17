@@ -49,6 +49,8 @@ export const createProfile = mutation({
                 primary: v.string(),
                 background: v.string(),
                 text: v.string(),
+                secondary: v.optional(v.string()),
+                accent: v.optional(v.string()),
             }),
             componentOrder: v.array(v.string()),
             heroStyle: v.string(),
@@ -67,6 +69,22 @@ export const createProfile = mutation({
             description: v.string(),
             price: v.optional(v.number()),
             image: v.optional(v.string()),
+        }))),
+        propertyListings: v.optional(v.array(v.object({
+            title: v.string(),
+            description: v.optional(v.string()),
+            price: v.optional(v.string()),
+            location: v.optional(v.string()),
+            image: v.optional(v.string()),
+            status: v.optional(v.string()),
+            link: v.optional(v.string()),
+        }))),
+        inlineProjects: v.optional(v.array(v.object({
+            title: v.string(),
+            description: v.optional(v.string()),
+            category: v.optional(v.string()),
+            image: v.optional(v.string()),
+            link: v.optional(v.string()),
         }))),
         clerkId: v.string(),
         id: v.optional(v.id("profiles")),
@@ -91,6 +109,8 @@ export const createProfile = mutation({
             featuredProjects: args.featuredProjects || [],
             products: args.products,
             services: args.services,
+            propertyListings: args.propertyListings,
+            inlineProjects: args.inlineProjects,
         };
 
         if (args.id) {

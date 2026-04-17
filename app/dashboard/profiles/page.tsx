@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { resolveImageUrl } from "@/lib/utils";
 import { Id } from "@/convex/_generated/dataModel";
+import { ProfileImage } from "@/components/templates/ProfileImage";
 
 export default function ProfilesPage() {
     const { user } = useUser();
@@ -156,15 +157,26 @@ export default function ProfilesPage() {
                             
                             {profile.agentInfo.avatarUrl && (
                                 <div className="flex justify-center -mt-8 relative z-10">
-                                    <img 
-                                        src={resolveImageUrl(profile.agentInfo.avatarUrl)} 
-                                        alt="avatar" 
+                                    <ProfileImage 
+                                        src={profile.agentInfo.avatarUrl}
+                                        alt="avatar"
+                                        fallbackSeed={profile.agentInfo.fullName || profile.name}
+                                        className="w-16 h-16 rounded-full object-cover border-4 border-card shadow-lg" 
+                                    />
+                                </div>
+                            )}
+                            {!profile.agentInfo.avatarUrl && (
+                                <div className="flex justify-center -mt-8 relative z-10">
+                                    <ProfileImage 
+                                        src={undefined}
+                                        alt="avatar"
+                                        fallbackSeed={profile.agentInfo.fullName || profile.name}
                                         className="w-16 h-16 rounded-full object-cover border-4 border-card shadow-lg" 
                                     />
                                 </div>
                             )}
 
-                            <CardHeader className={profile.agentInfo.avatarUrl ? "pt-2 pb-2 text-center" : "pb-2 text-center"}>
+                            <CardHeader className="pt-2 pb-2 text-center">
                                 <CardTitle className="text-xl font-black uppercase tracking-tight text-foreground">{profile.name}</CardTitle>
                                 <CardDescription className="text-muted-foreground font-medium">
                                     {profile.agentInfo.fullName}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -30,7 +30,7 @@ import { Switch } from "@/components/ui/switch";
 import {
     Loader2, Save, Plus, Trash2, X, GripVertical, ChevronLeft,
     Palette, LayoutTemplate, User, Briefcase, GraduationCap, Code, Quote, Image as ImageIcon,
-    Sparkles, ArrowUpDown
+    Sparkles, ArrowUpDown, ShoppingBag, Building2, FolderOpen
 } from "lucide-react";
 
 // Templates
@@ -40,9 +40,11 @@ import Architectural from "@/components/templates/Architectural";
 import { TEMPLATES, getTemplateMeta } from "@/components/templates/registry";
 import {
     ProfileData, ProfileInfo, ProjectItem,
-    PROJECT_CATEGORY_LABELS, ProfileType, ProductItem, ServiceItem
+    PROJECT_CATEGORY_LABELS, ProfileType, ProductItem, ServiceItem,
+    PropertyListingItem, InlineProject
 } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { ProfileImage } from "@/components/templates/ProfileImage";
 import { Id } from "@/convex/_generated/dataModel";
 
 // --- Types & Defaults ---
@@ -76,11 +78,147 @@ const INITIAL_BLOCKS: Block[] = [
     { id: "TechStack", label: "Tech Stack", icon: Code, isEnabled: false },
     { id: "Services", label: "Services", icon: Briefcase, isEnabled: false },
     { id: "Experience", label: "Experience", icon: Briefcase, isEnabled: false },
-    { id: "Projects", label: "Projects", icon: LayoutTemplate, isEnabled: true },
+    { id: "Projects", label: "Projects", icon: FolderOpen, isEnabled: true },
+    { id: "Products", label: "Store / Business Listing", icon: ShoppingBag, isEnabled: false },
+    { id: "Properties", label: "Property Listing", icon: Building2, isEnabled: false },
     { id: "Testimonials", label: "Recommendations", icon: Quote, isEnabled: false },
     { id: "Gallery", label: "Gallery", icon: ImageIcon, isEnabled: false },
     { id: "Contact", label: "Contact Form", icon: User, isEnabled: true },
 ];
+
+// --- Gallery Uploader Component ---
+
+function GalleryUploader({
+    gallery,
+    onAdd,
+    onRemove,
+    maxImages = 3,
+    maxSizeMB = 1,
+}: {
+    gallery: string[];
+    onAdd: (storageId: string) => void;
+    onRemove: (index: number) => void;
+    maxImages?: number;
+    maxSizeMB?: number;
+}) {
+    const [isUploading, setIsUploading] = useState(false);
+    const [localPreviews, setLocalPreviews] = useState<Record<number, string>>({});
+    const inputRef = useRef<HTMLInputElement>(null);
+    const generateUploadUrl = useMutation(api.images.generateUploadUrl);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            alert("Please upload an image file.");
+            return;
+        }
+
+        if (file.size > maxSizeMB * 1024 * 1024) {
+            alert(`Image must be under ${maxSizeMB}MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.`);
+            return;
+        }
+
+        if (gallery.length >= maxImages) {
+            alert(`Maximum ${maxImages} gallery images allowed.`);
+            return;
+        }
+
+        setIsUploading(true);
+        const previewIdx = gallery.length;
+        const localUrl = URL.createObjectURL(file);
+        setLocalPreviews(prev => ({ ...prev, [previewIdx]: localUrl }));
+
+        try {
+            const postUrl = await generateUploadUrl();
+            const result = await fetch(postUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+            if (!result.ok) throw new Error("Upload failed");
+            const { storageId } = await result.json();
+            onAdd(storageId);
+            setLocalPreviews(prev => {
+                const next = { ...prev };
+                delete next[previewIdx];
+                return next;
+            });
+            URL.revokeObjectURL(localUrl);
+        } catch (err) {
+            console.error(err);
+            setLocalPreviews(prev => {
+                const next = { ...prev };
+                delete next[previewIdx];
+                return next;
+            });
+            URL.revokeObjectURL(localUrl);
+            alert("Failed to upload image.");
+        } finally {
+            setIsUploading(false);
+            if (inputRef.current) inputRef.current.value = "";
+        }
+    };
+
+    return (
+        <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+                {gallery.length}/{maxImages} images (max {maxSizeMB}MB each)
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+                {gallery.map((img, i) => (
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
+                        <ProfileImage
+                            src={img}
+                            alt={`Gallery ${i + 1}`}
+                            className="w-full h-full object-cover"
+                        />
+                        <button
+                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white shadow-md"
+                            onClick={() => onRemove(i)}
+                        >
+                            <X className="w-3 h-3" />
+                        </button>
+                    </div>
+                ))}
+                {/* Show local preview for uploading image */}
+                {Object.entries(localPreviews).map(([idx, url]) => (
+                    <div key={`preview-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
+                        <img src={url} alt="Uploading..." className="w-full h-full object-cover opacity-60" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        </div>
+                    </div>
+                ))}
+                {/* Upload button */}
+                {gallery.length < maxImages && Object.keys(localPreviews).length === 0 && (
+                    <button
+                        onClick={() => inputRef.current?.click()}
+                        disabled={isUploading}
+                        className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 hover:bg-muted/50 transition-colors"
+                    >
+                        {isUploading ? (
+                            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                        ) : (
+                            <>
+                                <Plus className="w-5 h-5 text-muted-foreground" />
+                                <span className="text-[10px] text-muted-foreground">Add Photo</span>
+                            </>
+                        )}
+                    </button>
+                )}
+            </div>
+            <input
+                type="file"
+                ref={inputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileChange}
+            />
+        </div>
+    );
+}
 
 // --- Sortable Item Component ---
 
@@ -132,19 +270,15 @@ function TemplateSelector({
                                 : "hover:scale-[1.02]"
                         }`}
                     >
-                        {/* Template Preview */}
                         <div
                             className="absolute inset-0"
                             style={{ background: template.thumbnail }}
                         />
-                        {/* Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        {/* Content */}
                         <div className="absolute bottom-0 left-0 right-0 p-3">
                             <p className="text-white font-semibold text-sm">{template.name}</p>
                             <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{template.description}</p>
                         </div>
-                        {/* Selected indicator */}
                         {selectedTemplate === template.id && (
                             <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                                 <Sparkles className="w-3 h-3 text-primary-foreground" />
@@ -177,7 +311,6 @@ function SectionEditor({
     return (
         <div className="fixed inset-0 z-[60] bg-background">
             <div className="flex flex-col h-full">
-                {/* Header */}
                 <div className="flex items-center justify-between gap-3 p-4 border-b bg-background">
                     <div className="flex items-center gap-3">
                         <button onClick={onClose} className="p-2 -ml-2 hover:bg-muted rounded-full">
@@ -189,7 +322,6 @@ function SectionEditor({
                         <Save className="w-4 h-4 mr-2" /> Done
                     </Button>
                 </div>
-                {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 bg-background">
                     {children}
                 </div>
@@ -218,11 +350,13 @@ function BuilderContent() {
     // Template State
     const [selectedTemplate, setSelectedTemplate] = useState("editorial");
 
-    // Config State
+    // Config State - expanded colors
     const [customColors, setCustomColors] = useState({
         primary: TEMPLATES[0].defaultColors.primary,
         background: TEMPLATES[0].defaultColors.background,
-        text: TEMPLATES[0].defaultColors.text
+        text: TEMPLATES[0].defaultColors.text,
+        secondary: "",
+        accent: "",
     });
     const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
     const [profileType, setProfileType] = useState<ProfileType>("individual");
@@ -238,6 +372,18 @@ function BuilderContent() {
     const [experience, setExperience] = useState<NonNullable<ProfileInfo["experience"]>>([]);
     const [testimonials, setTestimonials] = useState<NonNullable<ProfileInfo["testimonials"]>>([]);
     const [gallery, setGallery] = useState<NonNullable<ProfileInfo["gallery"]>>([]);
+
+    // Products / Store state
+    const [products, setProducts] = useState<ProductItem[]>([]);
+    const [newProduct, setNewProduct] = useState<{ title: string; description: string; price: string; link: string }>({ title: "", description: "", price: "", link: "" });
+
+    // Property Listings state
+    const [propertyListings, setPropertyListings] = useState<PropertyListingItem[]>([]);
+    const [newPropertyListing, setNewPropertyListing] = useState<{ title: string; description: string; price: string; location: string; status: string; link: string }>({ title: "", description: "", price: "", location: "", status: "for-sale", link: "" });
+
+    // Inline Projects state
+    const [inlineProjects, setInlineProjects] = useState<InlineProject[]>([]);
+    const [newInlineProject, setNewInlineProject] = useState<{ title: string; description: string; category: string; link: string }>({ title: "", description: "", category: "", link: "" });
 
     // Form inputs for new items
     const [newEducation, setNewEducation] = useState({ degree: "", school: "", year: "" });
@@ -267,6 +413,26 @@ function BuilderContent() {
                 if (info.testimonials) setTestimonials(info.testimonials.map(t => ({ ...t, role: t.role || "" })));
                 if (info.gallery) setGallery(info.gallery);
 
+                // Load products
+                if (existingProfile.products) {
+                    setProducts(existingProfile.products.map(p => ({
+                        ...p,
+                        price: p.price ?? undefined,
+                        image: p.image ?? undefined,
+                        link: p.link ?? undefined,
+                    })));
+                }
+
+                // Load property listings
+                if ((existingProfile as any).propertyListings) {
+                    setPropertyListings((existingProfile as any).propertyListings);
+                }
+
+                // Load inline projects
+                if ((existingProfile as any).inlineProjects) {
+                    setInlineProjects((existingProfile as any).inlineProjects);
+                }
+
                 // Load template
                 if (existingProfile.layoutConfig?.themeId) {
                     const templateId = existingProfile.layoutConfig.themeId;
@@ -276,7 +442,14 @@ function BuilderContent() {
                 }
 
                 if (existingProfile.layoutConfig) {
-                    setCustomColors(existingProfile.layoutConfig.colorPalette || TEMPLATES[0].defaultColors);
+                    const palette = existingProfile.layoutConfig.colorPalette || TEMPLATES[0].defaultColors;
+                    setCustomColors({
+                        primary: palette.primary,
+                        background: palette.background,
+                        text: palette.text,
+                        secondary: (palette as any).secondary || "",
+                        accent: (palette as any).accent || "",
+                    });
                     const order = existingProfile.layoutConfig.componentOrder || [];
                     setBlocks(prev => {
                         const updated = prev.map(b => ({ ...b, isEnabled: order.includes(b.id) }));
@@ -316,7 +489,11 @@ function BuilderContent() {
     useEffect(() => {
         const template = getTemplateMeta(selectedTemplate);
         if (template && !editingId) {
-            setCustomColors(template.defaultColors);
+            setCustomColors(prev => ({
+                ...template.defaultColors,
+                secondary: prev.secondary || "",
+                accent: prev.accent || "",
+            }));
         }
     }, [selectedTemplate, editingId]);
 
@@ -362,6 +539,32 @@ function BuilderContent() {
                 gallery: gallery.length > 0 ? gallery : undefined,
             };
 
+            const cleanProducts = products.length > 0 ? products.map(p => ({
+                title: p.title,
+                description: p.description,
+                price: p.price ? Number(p.price) : undefined,
+                image: p.image || undefined,
+                link: p.link || undefined,
+            })) : undefined;
+
+            const cleanPropertyListings = propertyListings.length > 0 ? propertyListings.map(p => ({
+                title: p.title,
+                description: p.description || undefined,
+                price: p.price || undefined,
+                location: p.location || undefined,
+                image: p.image || undefined,
+                status: p.status || undefined,
+                link: p.link || undefined,
+            })) : undefined;
+
+            const cleanInlineProjects = inlineProjects.length > 0 ? inlineProjects.map(p => ({
+                title: p.title,
+                description: p.description || undefined,
+                category: p.category || undefined,
+                image: p.image || undefined,
+                link: p.link || undefined,
+            })) : undefined;
+
             const profileId = await createProfile({
                 id: editingId ? (editingId as Id<"profiles">) : undefined,
                 clerkId: user.id,
@@ -370,14 +573,22 @@ function BuilderContent() {
                 agentInfo: cleanAgentInfo,
                 layoutConfig: {
                     themeId: selectedTemplate,
-                    colorPalette: customColors,
+                    colorPalette: {
+                        primary: customColors.primary,
+                        background: customColors.background,
+                        text: customColors.text,
+                        secondary: customColors.secondary || undefined,
+                        accent: customColors.accent || undefined,
+                    },
                     componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
                 },
                 featuredProperties: [],
                 featuredProjects: [],
-                products: [],
-                services: []
+                products: cleanProducts,
+                services: [],
+                propertyListings: cleanPropertyListings,
+                inlineProjects: cleanInlineProjects,
             });
             router.push(`/p/${profileId}`);
         } catch (error: any) {
@@ -416,8 +627,49 @@ function BuilderContent() {
         setNewTestimonial({ quote: "", author: "", role: "" });
     };
 
-    const addGalleryImage = (url: string) => {
-        if (url) setGallery([...gallery, url]);
+    const addProduct = () => {
+        if (!newProduct.title || !newProduct.description) return;
+        setProducts([...products, {
+            title: newProduct.title,
+            description: newProduct.description,
+            price: newProduct.price ? Number(newProduct.price) : undefined,
+            link: newProduct.link || undefined,
+        }]);
+        setNewProduct({ title: "", description: "", price: "", link: "" });
+    };
+
+    const addPropertyListing = () => {
+        if (!newPropertyListing.title) return;
+        setPropertyListings([...propertyListings, {
+            title: newPropertyListing.title,
+            description: newPropertyListing.description || undefined,
+            price: newPropertyListing.price || undefined,
+            location: newPropertyListing.location || undefined,
+            status: newPropertyListing.status || undefined,
+            link: newPropertyListing.link || undefined,
+        }]);
+        setNewPropertyListing({ title: "", description: "", price: "", location: "", status: "for-sale", link: "" });
+    };
+
+    const addInlineProject = () => {
+        if (!newInlineProject.title) return;
+        setInlineProjects([...inlineProjects, {
+            title: newInlineProject.title,
+            description: newInlineProject.description || undefined,
+            category: newInlineProject.category || undefined,
+            link: newInlineProject.link || undefined,
+        }]);
+        setNewInlineProject({ title: "", description: "", category: "", link: "" });
+    };
+
+    const addGalleryImage = (storageId: string) => {
+        if (storageId && gallery.length < 3) {
+            setGallery([...gallery, storageId]);
+        }
+    };
+
+    const removeGalleryImage = (index: number) => {
+        setGallery(gallery.filter((_, i) => i !== index));
     };
 
     // Render preview based on selected template
@@ -429,9 +681,17 @@ function BuilderContent() {
             agent: { ...agentInfo, certification, education, techStack, experience, testimonials, gallery },
             properties: [],
             projects: projects,
-            products: [],
+            products: products,
             services: [],
-            theme: { primaryColor: customColors.primary, backgroundColor: customColors.background, textColor: customColors.text }
+            propertyListings: propertyListings,
+            inlineProjects: inlineProjects,
+            theme: {
+                primaryColor: customColors.primary,
+                backgroundColor: customColors.background,
+                textColor: customColors.text,
+                secondaryColor: customColors.secondary || undefined,
+                accentColor: customColors.accent || undefined,
+            }
         };
 
         switch (selectedTemplate) {
@@ -570,12 +830,12 @@ function BuilderContent() {
                     )}
                 </div>
 
-                {/* Customize Colors */}
+                {/* Customize Colors - Expanded */}
                 <div className="px-4 py-4">
                     <Label className="text-sm font-semibold text-foreground mb-3 block">Colors</Label>
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="text-xs text-gray-500 mb-1.5 block">Primary</label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Primary</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
@@ -590,8 +850,8 @@ function BuilderContent() {
                                 />
                             </div>
                         </div>
-                        <div className="flex-1">
-                            <label className="text-xs text-gray-500 mb-1.5 block">Background</label>
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Background</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
@@ -603,6 +863,56 @@ function BuilderContent() {
                                     value={customColors.background}
                                     onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
                                     className="flex-1 text-xs"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Text / Heading</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={customColors.text}
+                                    onChange={(e) => setCustomColors({ ...customColors, text: e.target.value })}
+                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                />
+                                <Input
+                                    value={customColors.text}
+                                    onChange={(e) => setCustomColors({ ...customColors, text: e.target.value })}
+                                    className="flex-1 text-xs"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Secondary</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={customColors.secondary || customColors.primary}
+                                    onChange={(e) => setCustomColors({ ...customColors, secondary: e.target.value })}
+                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                />
+                                <Input
+                                    value={customColors.secondary || ""}
+                                    onChange={(e) => setCustomColors({ ...customColors, secondary: e.target.value })}
+                                    className="flex-1 text-xs"
+                                    placeholder="Auto"
+                                />
+                            </div>
+                        </div>
+                        <div className="col-span-2">
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Accent</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={customColors.accent || customColors.primary}
+                                    onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
+                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                />
+                                <Input
+                                    value={customColors.accent || ""}
+                                    onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
+                                    className="flex-1 text-xs"
+                                    placeholder="Auto"
                                 />
                             </div>
                         </div>
@@ -679,8 +989,8 @@ function BuilderContent() {
                         <Label className="text-sm">Social Links</Label>
                         <div className="space-y-2 mt-2">
                             {agentInfo.socialLinks?.map((link, idx) => (
-                                <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                    <span className="text-sm flex-1">{link.platform}: {link.url}</span>
+                                <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                                    <span className="text-sm flex-1 text-foreground">{link.platform}: {link.url}</span>
                                     <button
                                         onClick={() => {
                                             const newLinks = [...agentInfo.socialLinks];
@@ -696,7 +1006,7 @@ function BuilderContent() {
                             <div className="flex gap-2">
                                 <select
                                     id="social-platform"
-                                    className="flex-1 h-10 rounded-lg border border-gray-200 px-3 text-sm"
+                                    className="flex-1 h-10 rounded-lg border border-border bg-background px-3 text-sm"
                                 >
                                     <option value="Instagram">Instagram</option>
                                     <option value="Facebook">Facebook</option>
@@ -742,7 +1052,7 @@ function BuilderContent() {
                     <div>
                         <Label className="text-sm">About Me</Label>
                         <textarea
-                            className="w-full min-h-[150px] mt-1 p-3 rounded-lg border border-gray-200 text-sm"
+                            className="w-full min-h-[150px] mt-1 p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                             placeholder="Tell your story..."
                             value={agentInfo.about || ""}
                             onChange={(e) => setAgentInfo({ ...agentInfo, about: e.target.value })}
@@ -761,7 +1071,7 @@ function BuilderContent() {
                         {agentInfo.services?.map((service, i) => (
                             <span
                                 key={i}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm"
                             >
                                 {service}
                                 <button
@@ -829,7 +1139,7 @@ function BuilderContent() {
                     <div>
                         <Label className="text-sm">Description</Label>
                         <textarea
-                            className="w-full min-h-[100px] mt-1 p-3 rounded-lg border border-gray-200 text-sm"
+                            className="w-full min-h-[100px] mt-1 p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                             value={certification.description}
                             onChange={(e) => setCertification({ ...certification, description: e.target.value })}
                             placeholder="Description..."
@@ -845,39 +1155,22 @@ function BuilderContent() {
             >
                 <div className="space-y-4">
                     {education.map((edu, i) => (
-                        <div key={i} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                        <div key={i} className="p-3 bg-muted rounded-lg flex items-center justify-between">
                             <div>
-                                <p className="font-medium text-sm">{edu.degree}</p>
-                                <p className="text-sm text-gray-500">{edu.school}</p>
-                                {edu.year && <p className="text-xs text-gray-400">{edu.year}</p>}
+                                <p className="font-medium text-sm text-foreground">{edu.degree}</p>
+                                <p className="text-sm text-muted-foreground">{edu.school}</p>
+                                {edu.year && <p className="text-xs text-muted-foreground">{edu.year}</p>}
                             </div>
-                            <button
-                                onClick={() => setEducation(education.filter((_, idx) => idx !== i))}
-                                className="text-red-500"
-                            >
+                            <button onClick={() => setEducation(education.filter((_, idx) => idx !== i))} className="text-red-500">
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
                     ))}
                     <div className="space-y-2">
-                        <Input
-                            placeholder="Degree"
-                            value={newEducation.degree}
-                            onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
-                        />
-                        <Input
-                            placeholder="School"
-                            value={newEducation.school}
-                            onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })}
-                        />
-                        <Input
-                            placeholder="Year"
-                            value={newEducation.year}
-                            onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })}
-                        />
-                        <Button onClick={addEducation} className="w-full">
-                            <Plus className="w-4 h-4 mr-2" /> Add Education
-                        </Button>
+                        <Input placeholder="Degree" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
+                        <Input placeholder="School" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
+                        <Input placeholder="Year" value={newEducation.year} onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })} />
+                        <Button onClick={addEducation} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Education</Button>
                     </div>
                 </div>
             </SectionEditor>
@@ -889,33 +1182,20 @@ function BuilderContent() {
             >
                 <div className="space-y-4">
                     {techStack.map((stack, i) => (
-                        <div key={i} className="p-3 bg-gray-50 rounded-lg">
+                        <div key={i} className="p-3 bg-muted rounded-lg">
                             <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm">{stack.category}</p>
-                                <button
-                                    onClick={() => setTechStack(techStack.filter((_, idx) => idx !== i))}
-                                    className="text-red-500"
-                                >
+                                <p className="font-medium text-sm text-foreground">{stack.category}</p>
+                                <button onClick={() => setTechStack(techStack.filter((_, idx) => idx !== i))} className="text-red-500">
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
-                            <p className="text-sm text-gray-500">{stack.skills.join(", ")}</p>
+                            <p className="text-sm text-muted-foreground">{stack.skills.join(", ")}</p>
                         </div>
                     ))}
                     <div className="space-y-2">
-                        <Input
-                            placeholder="Category (e.g., Frontend)"
-                            value={newTechStack.category}
-                            onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })}
-                        />
-                        <Input
-                            placeholder="Skills (comma separated)"
-                            value={newTechStack.skills}
-                            onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })}
-                        />
-                        <Button onClick={addTechStack} className="w-full">
-                            <Plus className="w-4 h-4 mr-2" /> Add Category
-                        </Button>
+                        <Input placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })} />
+                        <Input placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })} />
+                        <Button onClick={addTechStack} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Category</Button>
                     </div>
                 </div>
             </SectionEditor>
@@ -927,46 +1207,160 @@ function BuilderContent() {
             >
                 <div className="space-y-4">
                     {experience.map((exp, i) => (
-                        <div key={i} className="p-3 bg-gray-50 rounded-lg">
+                        <div key={i} className="p-3 bg-muted rounded-lg">
                             <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm">{exp.title}</p>
-                                <button
-                                    onClick={() => setExperience(experience.filter((_, idx) => idx !== i))}
-                                    className="text-red-500"
-                                >
+                                <p className="font-medium text-sm text-foreground">{exp.title}</p>
+                                <button onClick={() => setExperience(experience.filter((_, idx) => idx !== i))} className="text-red-500">
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
-                            <p className="text-sm text-gray-500">{exp.company}</p>
-                            <p className="text-xs text-gray-400">{exp.period}</p>
-                            {exp.description && <p className="text-sm text-gray-600 mt-1">{exp.description}</p>}
+                            <p className="text-sm text-muted-foreground">{exp.company}</p>
+                            <p className="text-xs text-muted-foreground">{exp.period}</p>
+                            {exp.description && <p className="text-sm text-muted-foreground mt-1">{exp.description}</p>}
                         </div>
                     ))}
                     <div className="space-y-2">
-                        <Input
-                            placeholder="Job Title"
-                            value={newExperience.title}
-                            onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })}
-                        />
-                        <Input
-                            placeholder="Company"
-                            value={newExperience.company}
-                            onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
-                        />
-                        <Input
-                            placeholder="Period (e.g., 2020 - Present)"
-                            value={newExperience.period}
-                            onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })}
-                        />
+                        <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
+                        <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
+                        <Input placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })} />
                         <textarea
-                            className="w-full p-3 rounded-lg border border-gray-200 text-sm"
+                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                             placeholder="Description"
                             value={newExperience.description}
                             onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
                         />
-                        <Button onClick={addExperience} className="w-full">
-                            <Plus className="w-4 h-4 mr-2" /> Add Experience
-                        </Button>
+                        <Button onClick={addExperience} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Experience</Button>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            {/* Projects Section Editor */}
+            <SectionEditor
+                isOpen={activeModal === "Projects"}
+                onClose={() => setActiveModal(null)}
+                title="Projects"
+            >
+                <div className="space-y-4">
+                    {inlineProjects.map((project, i) => (
+                        <div key={i} className="p-3 bg-muted rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm text-foreground">{project.title}</p>
+                                <button onClick={() => setInlineProjects(inlineProjects.filter((_, idx) => idx !== i))} className="text-red-500">
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            {project.category && <p className="text-xs text-primary mt-1">{project.category}</p>}
+                            {project.description && <p className="text-sm text-muted-foreground mt-1">{project.description}</p>}
+                            {project.link && <p className="text-xs text-blue-500 mt-1">{project.link}</p>}
+                        </div>
+                    ))}
+                    <div className="space-y-2 pt-2 border-t border-border">
+                        <Label className="text-xs text-muted-foreground">Add New Project</Label>
+                        <Input placeholder="Project Title" value={newInlineProject.title} onChange={(e) => setNewInlineProject({ ...newInlineProject, title: e.target.value })} />
+                        <textarea
+                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                            placeholder="Short description"
+                            value={newInlineProject.description}
+                            onChange={(e) => setNewInlineProject({ ...newInlineProject, description: e.target.value })}
+                        />
+                        <select
+                            value={newInlineProject.category}
+                            onChange={(e) => setNewInlineProject({ ...newInlineProject, category: e.target.value })}
+                            className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                        >
+                            <option value="">Select Category</option>
+                            {Object.entries(PROJECT_CATEGORY_LABELS).map(([key, label]) => (
+                                <option key={key} value={key}>{label}</option>
+                            ))}
+                        </select>
+                        <Input placeholder="External URL (optional)" value={newInlineProject.link} onChange={(e) => setNewInlineProject({ ...newInlineProject, link: e.target.value })} />
+                        <Button onClick={addInlineProject} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Project</Button>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            {/* Products / Store Listing Editor */}
+            <SectionEditor
+                isOpen={activeModal === "Products"}
+                onClose={() => setActiveModal(null)}
+                title="Store / Business Listing"
+            >
+                <div className="space-y-4">
+                    {products.map((product, i) => (
+                        <div key={i} className="p-3 bg-muted rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm text-foreground">{product.title}</p>
+                                <button onClick={() => setProducts(products.filter((_, idx) => idx !== i))} className="text-red-500">
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
+                            {product.price !== undefined && <p className="text-sm font-semibold text-foreground mt-1">${product.price}</p>}
+                            {product.link && <p className="text-xs text-blue-500 mt-1">{product.link}</p>}
+                        </div>
+                    ))}
+                    <div className="space-y-2 pt-2 border-t border-border">
+                        <Label className="text-xs text-muted-foreground">Add New Product / Listing</Label>
+                        <Input placeholder="Product Title" value={newProduct.title} onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })} />
+                        <textarea
+                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                            placeholder="Description"
+                            value={newProduct.description}
+                            onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                        />
+                        <Input type="number" placeholder="Price (optional)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} />
+                        <Input placeholder="Link (optional)" value={newProduct.link} onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })} />
+                        <Button onClick={addProduct} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Product</Button>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            {/* Property Listing Editor */}
+            <SectionEditor
+                isOpen={activeModal === "Properties"}
+                onClose={() => setActiveModal(null)}
+                title="Property Listing"
+            >
+                <div className="space-y-4">
+                    {propertyListings.map((property, i) => (
+                        <div key={i} className="p-3 bg-muted rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm text-foreground">{property.title}</p>
+                                <button onClick={() => setPropertyListings(propertyListings.filter((_, idx) => idx !== i))} className="text-red-500">
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            {property.location && <p className="text-xs text-muted-foreground mt-1">{property.location}</p>}
+                            {property.price && <p className="text-sm font-semibold text-foreground mt-1">{property.price}</p>}
+                            {property.status && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary mt-1 inline-block capitalize">
+                                    {property.status.replace("-", " ")}
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                    <div className="space-y-2 pt-2 border-t border-border">
+                        <Label className="text-xs text-muted-foreground">Add New Property</Label>
+                        <Input placeholder="Property Title" value={newPropertyListing.title} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, title: e.target.value })} />
+                        <textarea
+                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                            placeholder="Description (optional)"
+                            value={newPropertyListing.description}
+                            onChange={(e) => setNewPropertyListing({ ...newPropertyListing, description: e.target.value })}
+                        />
+                        <Input placeholder="Price (e.g., $250,000)" value={newPropertyListing.price} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, price: e.target.value })} />
+                        <Input placeholder="Location" value={newPropertyListing.location} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, location: e.target.value })} />
+                        <select
+                            value={newPropertyListing.status}
+                            onChange={(e) => setNewPropertyListing({ ...newPropertyListing, status: e.target.value })}
+                            className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                        >
+                            <option value="for-sale">For Sale</option>
+                            <option value="for-rent">For Rent</option>
+                            <option value="sold">Sold</option>
+                        </select>
+                        <Input placeholder="Listing URL (optional)" value={newPropertyListing.link} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, link: e.target.value })} />
+                        <Button onClick={addPropertyListing} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Property</Button>
                     </div>
                 </div>
             </SectionEditor>
@@ -978,68 +1372,44 @@ function BuilderContent() {
             >
                 <div className="space-y-4">
                     {testimonials.map((t, i) => (
-                        <div key={i} className="p-3 bg-gray-50 rounded-lg">
+                        <div key={i} className="p-3 bg-muted rounded-lg">
                             <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm">{t.author}</p>
-                                <button
-                                    onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))}
-                                    className="text-red-500"
-                                >
+                                <p className="font-medium text-sm text-foreground">{t.author}</p>
+                                <button onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))} className="text-red-500">
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
-                            {t.role && <p className="text-xs text-gray-500">{t.role}</p>}
-                            <p className="text-sm text-gray-600 mt-1 italic">&ldquo;{t.quote}&rdquo;</p>
+                            {t.role && <p className="text-xs text-muted-foreground">{t.role}</p>}
+                            <p className="text-sm text-muted-foreground mt-1 italic">&ldquo;{t.quote}&rdquo;</p>
                         </div>
                     ))}
                     <div className="space-y-2">
                         <textarea
-                            className="w-full p-3 rounded-lg border border-gray-200 text-sm"
+                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                             placeholder="Quote"
                             value={newTestimonial.quote}
                             onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
                         />
-                        <Input
-                            placeholder="Author Name"
-                            value={newTestimonial.author}
-                            onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })}
-                        />
-                        <Input
-                            placeholder="Role/Title"
-                            value={newTestimonial.role}
-                            onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })}
-                        />
-                        <Button onClick={addTestimonial} className="w-full">
-                            <Plus className="w-4 h-4 mr-2" /> Add Recommendation
-                        </Button>
+                        <Input placeholder="Author Name" value={newTestimonial.author} onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })} />
+                        <Input placeholder="Role/Title" value={newTestimonial.role} onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })} />
+                        <Button onClick={addTestimonial} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Recommendation</Button>
                     </div>
                 </div>
             </SectionEditor>
 
+            {/* Gallery Section Editor - Fixed with GalleryUploader */}
             <SectionEditor
                 isOpen={activeModal === "Gallery"}
                 onClose={() => setActiveModal(null)}
                 title="Gallery"
             >
                 <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-2">
-                        {gallery.map((img, i) => (
-                            <div key={i} className="relative aspect-square rounded-lg overflow-hidden">
-                                <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
-                                <button
-                                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white"
-                                    onClick={() => setGallery(gallery.filter((_, idx) => idx !== i))}
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                    <ImageUploader
-                        value=""
-                        onChange={(val) => addGalleryImage(val)}
-                        onRemove={() => { }}
-                        placeholder="Add Gallery Image"
+                    <GalleryUploader
+                        gallery={gallery}
+                        onAdd={addGalleryImage}
+                        onRemove={removeGalleryImage}
+                        maxImages={3}
+                        maxSizeMB={1}
                     />
                 </div>
             </SectionEditor>
@@ -1050,8 +1420,8 @@ function BuilderContent() {
 export default function BuilderPage() {
     return (
         <Suspense fallback={
-            <div className="h-screen flex items-center justify-center bg-gray-50">
-                <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+            <div className="h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
             </div>
         }>
             <BuilderContent />

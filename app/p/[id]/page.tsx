@@ -52,10 +52,14 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
         projects: [],
         products: profile.products,
         services: profile.services,
+        propertyListings: (profile as any).propertyListings,
+        inlineProjects: (profile as any).inlineProjects,
         theme: {
             primaryColor: layoutConfig.colorPalette.primary,
             backgroundColor: layoutConfig.colorPalette.background,
             textColor: layoutConfig.colorPalette.text,
+            secondaryColor: (layoutConfig.colorPalette as any).secondary,
+            accentColor: (layoutConfig.colorPalette as any).accent,
         }
     };
 

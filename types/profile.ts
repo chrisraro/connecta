@@ -127,6 +127,24 @@ export interface ServiceItem {
     image?: string;
 }
 
+export interface PropertyListingItem {
+    title: string;
+    description?: string;
+    price?: string;
+    location?: string;
+    image?: string;
+    status?: string;
+    link?: string;
+}
+
+export interface InlineProject {
+    title: string;
+    description?: string;
+    category?: string;
+    image?: string;
+    link?: string;
+}
+
 // ─── Profile Data (passed to all template components) ────────────────────────
 export interface ProfileData {
     ownerId: string;
@@ -137,10 +155,14 @@ export interface ProfileData {
     projects: ProjectItem[];
     products?: ProductItem[];
     services?: ServiceItem[];
+    propertyListings?: PropertyListingItem[];
+    inlineProjects?: InlineProject[];
     theme: {
         primaryColor: string;
         backgroundColor: string;
         textColor: string;
+        secondaryColor?: string;
+        accentColor?: string;
     };
 }
 
