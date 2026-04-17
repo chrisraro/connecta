@@ -355,8 +355,8 @@ function BuilderContent() {
         primary: TEMPLATES[0].defaultColors.primary,
         background: TEMPLATES[0].defaultColors.background,
         text: TEMPLATES[0].defaultColors.text,
-        secondary: "",
-        accent: "",
+        secondary: TEMPLATES[0].defaultColors.primary,
+        accent: TEMPLATES[0].defaultColors.primary,
     });
     const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
     const [profileType, setProfileType] = useState<ProfileType>("individual");
@@ -447,8 +447,8 @@ function BuilderContent() {
                         primary: palette.primary,
                         background: palette.background,
                         text: palette.text,
-                        secondary: (palette as any).secondary || "",
-                        accent: (palette as any).accent || "",
+                        secondary: (palette as any).secondary || palette.primary,
+                        accent: (palette as any).accent || palette.primary,
                     });
                     const order = existingProfile.layoutConfig.componentOrder || [];
                     setBlocks(prev => {
@@ -491,8 +491,8 @@ function BuilderContent() {
         if (template && !editingId) {
             setCustomColors(prev => ({
                 ...template.defaultColors,
-                secondary: prev.secondary || "",
-                accent: prev.accent || "",
+                secondary: template.defaultColors.primary,
+                accent: template.defaultColors.primary,
             }));
         }
     }, [selectedTemplate, editingId]);
@@ -577,8 +577,8 @@ function BuilderContent() {
                         primary: customColors.primary,
                         background: customColors.background,
                         text: customColors.text,
-                        secondary: customColors.secondary || undefined,
-                        accent: customColors.accent || undefined,
+                        secondary: customColors.secondary !== customColors.primary ? customColors.secondary : undefined,
+                        accent: customColors.accent !== customColors.primary ? customColors.accent : undefined,
                     },
                     componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
@@ -887,15 +887,14 @@ function BuilderContent() {
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
-                                    value={customColors.secondary || customColors.primary}
+                                    value={customColors.secondary}
                                     onChange={(e) => setCustomColors({ ...customColors, secondary: e.target.value })}
                                     className="w-10 h-10 rounded-lg border-0 cursor-pointer"
                                 />
                                 <Input
-                                    value={customColors.secondary || ""}
+                                    value={customColors.secondary}
                                     onChange={(e) => setCustomColors({ ...customColors, secondary: e.target.value })}
                                     className="flex-1 text-xs"
-                                    placeholder="Auto"
                                 />
                             </div>
                         </div>
@@ -904,15 +903,14 @@ function BuilderContent() {
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
-                                    value={customColors.accent || customColors.primary}
+                                    value={customColors.accent}
                                     onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
                                     className="w-10 h-10 rounded-lg border-0 cursor-pointer"
                                 />
                                 <Input
-                                    value={customColors.accent || ""}
+                                    value={customColors.accent}
                                     onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
                                     className="flex-1 text-xs"
-                                    placeholder="Auto"
                                 />
                             </div>
                         </div>
