@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { SaveContactButton } from "./SaveContactButton";
+import { ProfileImage } from "./ProfileImage";
 
 const SOCIAL_ICONS: Record<string, React.ElementType> = {
   "Instagram": Instagram,
@@ -92,9 +93,10 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
               className="w-20 h-20 rounded-xl overflow-hidden shrink-0"
               style={{ backgroundColor: COLORS.surface }}
             >
-              <img
-                src={resolveImageUrl(agent.avatarUrl) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${agent.fullName}`}
+              <ProfileImage
+                src={agent.avatarUrl}
                 alt={agent.fullName}
+                fallbackSeed={agent.fullName}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -473,8 +475,8 @@ function ProjectsSection({ projects, theme }: { projects: TemplateProps["data"][
             >
               {project.images && project.images[0] && (
                 <div className="aspect-video">
-                  <img
-                    src={resolveImageUrl(project.images[0])}
+                  <ProfileImage
+                    src={project.images[0]}
                     alt={project.title}
                     className="w-full h-full object-cover"
                   />
@@ -583,8 +585,8 @@ function GallerySection({ gallery, theme }: { gallery: NonNullable<TemplateProps
               className="aspect-square rounded-lg overflow-hidden"
               style={{ backgroundColor: COLORS.surface }}
             >
-              <img
-                src={resolveImageUrl(img)}
+              <ProfileImage
+                src={img}
                 alt={`Gallery ${i + 1}`}
                 className="w-full h-full object-cover"
               />
