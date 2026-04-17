@@ -26,19 +26,21 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import {
-    Loader2, Save, Plus, Trash2, Smartphone, Monitor, X,
-    Palette, LayoutTemplate, User, List, GripVertical as DragHandleIcon,
-    Package, Briefcase, GraduationCap, Code, Quote, Image as ImageIcon
+    Loader2, Save, Plus, Trash2, X, GripVertical, ChevronLeft,
+    Palette, LayoutTemplate, User, Briefcase, GraduationCap, Code, Quote, Image as ImageIcon,
+    Sparkles, ArrowUpDown
 } from "lucide-react";
 
 // Templates
-import Default from "@/components/templates/Default";
-import { 
-    ProfileData, ProfileInfo, ProjectItem, 
-    PROJECT_CATEGORY_LABELS, ProfileType, ProductItem, ServiceItem 
+import Editorial from "@/components/templates/Editorial";
+import Kinetic from "@/components/templates/Kinetic";
+import Architectural from "@/components/templates/Architectural";
+import { TEMPLATES, getTemplateMeta } from "@/components/templates/registry";
+import {
+    ProfileData, ProfileInfo, ProjectItem,
+    PROJECT_CATEGORY_LABELS, ProfileType, ProductItem, ServiceItem
 } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { Id } from "@/convex/_generated/dataModel";
@@ -60,46 +62,131 @@ const INITIAL_AGENT_INFO: ProfileInfo = {
 };
 
 type Block = {
-    id: string; 
+    id: string;
     label: string;
+    icon: React.ElementType;
     isEnabled: boolean;
 };
 
 const INITIAL_BLOCKS: Block[] = [
-    { id: "Hero", label: "Hero Section", isEnabled: true },
-    { id: "About", label: "About", isEnabled: true },
-    { id: "Certification", label: "Certification", isEnabled: false },
-    { id: "Education", label: "Education", isEnabled: false },
-    { id: "TechStack", label: "Tech Stack", isEnabled: false },
-    { id: "Services", label: "Services", isEnabled: false },
-    { id: "Experience", label: "Experience", isEnabled: false },
-    { id: "Projects", label: "Projects", isEnabled: true },
-    { id: "Testimonials", label: "Recommendations", isEnabled: false },
-    { id: "Gallery", label: "Gallery", isEnabled: false },
-    { id: "Contact", label: "Contact Form", isEnabled: true },
-];
-
-const THEMES = [
-    { id: "modern", name: "Modern", primary: "#E91E63", background: "#FFFFFF", text: "#1a1a1a" },
-    { id: "dark", name: "Dark", primary: "#E91E63", background: "#1a1a1a", text: "#FFFFFF" },
-    { id: "minimal", name: "Minimal", primary: "#6366f1", background: "#F4F4F5", text: "#18181B" },
+    { id: "Hero", label: "Hero Section", icon: User, isEnabled: true },
+    { id: "About", label: "About", icon: User, isEnabled: true },
+    { id: "Certification", label: "Certification", icon: Briefcase, isEnabled: false },
+    { id: "Education", label: "Education", icon: GraduationCap, isEnabled: false },
+    { id: "TechStack", label: "Tech Stack", icon: Code, isEnabled: false },
+    { id: "Services", label: "Services", icon: Briefcase, isEnabled: false },
+    { id: "Experience", label: "Experience", icon: Briefcase, isEnabled: false },
+    { id: "Projects", label: "Projects", icon: LayoutTemplate, isEnabled: true },
+    { id: "Testimonials", label: "Recommendations", icon: Quote, isEnabled: false },
+    { id: "Gallery", label: "Gallery", icon: ImageIcon, isEnabled: false },
+    { id: "Contact", label: "Contact Form", icon: User, isEnabled: true },
 ];
 
 // --- Sortable Item Component ---
 
-function SortableBlockItem({ block, onToggle }: { block: Block, onToggle: (id: string) => void }) {
+function SortableBlockItem({ block, onToggle }: { block: Block; onToggle: (id: string) => void }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
+    const Icon = block.icon;
 
     return (
-        <div ref={setNodeRef} style={style} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg mb-2">
-            <div className="flex items-center gap-3">
-                <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
-                    <DragHandleIcon className="w-5 h-5" />
-                </div>
-                <span className="font-medium text-sm">{block.label}</span>
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 shadow-sm"
+        >
+            <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600">
+                <GripVertical className="w-4 h-4" />
             </div>
-            <Switch checked={block.isEnabled} onCheckedChange={() => onToggle(block.id)} />
+            <Icon className="w-4 h-4 text-gray-500" />
+            <span className="flex-1 text-sm font-medium">{block.label}</span>
+            <Switch
+                checked={block.isEnabled}
+                onCheckedChange={() => onToggle(block.id)}
+                className="data-[state=checked]:bg-blue-600"
+            />
+        </div>
+    );
+}
+
+// --- Template Selector Component ---
+
+function TemplateSelector({
+    selectedTemplate,
+    onSelect
+}: {
+    selectedTemplate: string;
+    onSelect: (id: string) => void;
+}) {
+    return (
+        <div className="space-y-3">
+            <Label className="text-sm font-semibold text-gray-700">Choose Template</Label>
+            <div className="grid grid-cols-3 gap-3">
+                {TEMPLATES.map((template) => (
+                    <button
+                        key={template.id}
+                        onClick={() => onSelect(template.id)}
+                        className={`relative rounded-xl overflow-hidden aspect-[3/4] transition-all ${
+                            selectedTemplate === template.id
+                                ? "ring-2 ring-blue-600 ring-offset-2"
+                                : "hover:scale-[1.02]"
+                        }`}
+                    >
+                        {/* Template Preview */}
+                        <div
+                            className="absolute inset-0"
+                            style={{ background: template.thumbnail }}
+                        />
+                        {/* Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        {/* Content */}
+                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                            <p className="text-white font-semibold text-sm">{template.name}</p>
+                            <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{template.description}</p>
+                        </div>
+                        {/* Selected indicator */}
+                        {selectedTemplate === template.id && (
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                                <Sparkles className="w-3 h-3 text-white" />
+                            </div>
+                        )}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// --- Section Editor Modal ---
+
+function SectionEditor({
+    isOpen,
+    onClose,
+    title,
+    children
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+}) {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 bg-white">
+            <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center gap-3 p-4 border-b">
+                    <button onClick={onClose} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <h2 className="font-semibold">{title}</h2>
+                </div>
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4">
+                    {children}
+                </div>
+            </div>
         </div>
     );
 }
@@ -117,28 +204,34 @@ function BuilderContent() {
     const existingProfile = useQuery(api.profiles.getProfile, editingId ? { profileId: editingId as Id<"profiles"> } : "skip");
 
     // UI State
-    const [activeTab, setActiveTab] = useState("blocks");
+    const [activeModal, setActiveModal] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [mobileView, setMobileView] = useState<"editor" | "preview">("editor");
+    const [showReorderMode, setShowReorderMode] = useState(false);
+
+    // Template State
+    const [selectedTemplate, setSelectedTemplate] = useState("editorial");
 
     // Config State
-    const [selectedThemeId, setSelectedThemeId] = useState("modern");
-    const [customColors, setCustomColors] = useState({ primary: "#E91E63", background: "#FFFFFF", text: "#1a1a1a" });
+    const [customColors, setCustomColors] = useState({
+        primary: TEMPLATES[0].defaultColors.primary,
+        background: TEMPLATES[0].defaultColors.background,
+        text: TEMPLATES[0].defaultColors.text
+    });
     const [blocks, setBlocks] = useState<Block[]>(INITIAL_BLOCKS);
     const [profileType, setProfileType] = useState<ProfileType>("individual");
 
     // Content State
     const [agentInfo, setAgentInfo] = useState<ProfileInfo>(INITIAL_AGENT_INFO);
     const [projects, setProjects] = useState<ProjectItem[]>([]);
-    
-    // New field states - use ProfileInfo types directly
+
+    // New field states
     const [certification, setCertification] = useState<{ title: string; description: string }>({ title: "", description: "" });
     const [education, setEducation] = useState<NonNullable<ProfileInfo["education"]>>([]);
     const [techStack, setTechStack] = useState<NonNullable<ProfileInfo["techStack"]>>([]);
     const [experience, setExperience] = useState<NonNullable<ProfileInfo["experience"]>>([]);
     const [testimonials, setTestimonials] = useState<NonNullable<ProfileInfo["testimonials"]>>([]);
     const [gallery, setGallery] = useState<NonNullable<ProfileInfo["gallery"]>>([]);
-    
+
     // Form inputs for new items
     const [newEducation, setNewEducation] = useState({ degree: "", school: "", year: "" });
     const [newTechStack, setNewTechStack] = useState({ category: "", skills: "" });
@@ -157,7 +250,7 @@ function BuilderContent() {
                     ...INITIAL_AGENT_INFO,
                     ...existingProfile.agentInfo,
                 });
-                
+
                 // Load new fields
                 const info = existingProfile.agentInfo;
                 if (info.certification) setCertification(info.certification);
@@ -166,14 +259,17 @@ function BuilderContent() {
                 if (info.experience) setExperience(info.experience.map(e => ({ ...e, description: e.description || "" })));
                 if (info.testimonials) setTestimonials(info.testimonials.map(t => ({ ...t, role: t.role || "" })));
                 if (info.gallery) setGallery(info.gallery);
-                
-                if (existingProfile.featuredProjects) {
-                    // Projects would need to be fetched separately
+
+                // Load template
+                if (existingProfile.layoutConfig?.themeId) {
+                    const templateId = existingProfile.layoutConfig.themeId;
+                    if (TEMPLATES.find(t => t.id === templateId)) {
+                        setSelectedTemplate(templateId);
+                    }
                 }
 
                 if (existingProfile.layoutConfig) {
-                    setSelectedThemeId(existingProfile.layoutConfig.themeId || "modern");
-                    setCustomColors(existingProfile.layoutConfig.colorPalette || THEMES[0]);
+                    setCustomColors(existingProfile.layoutConfig.colorPalette || TEMPLATES[0].defaultColors);
                     const order = existingProfile.layoutConfig.componentOrder || [];
                     setBlocks(prev => {
                         const updated = prev.map(b => ({ ...b, isEnabled: order.includes(b.id) }));
@@ -209,6 +305,14 @@ function BuilderContent() {
         }
     }, [onboarding, hasPrefilled, user, existingProfile, editingId]);
 
+    // Update colors when template changes
+    useEffect(() => {
+        const template = getTemplateMeta(selectedTemplate);
+        if (template && !editingId) {
+            setCustomColors(template.defaultColors);
+        }
+    }, [selectedTemplate, editingId]);
+
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -223,14 +327,6 @@ function BuilderContent() {
     };
 
     const toggleBlock = (id: string) => setBlocks(blocks.map(b => b.id === id ? { ...b, isEnabled: !b.isEnabled } : b));
-
-    const applyTheme = (themeId: string) => {
-        const theme = THEMES.find(t => t.id === themeId);
-        if (theme) {
-            setSelectedThemeId(themeId);
-            setCustomColors({ primary: theme.primary, background: theme.background, text: theme.text });
-        }
-    };
 
     const handleSave = async () => {
         if (!user?.id) return;
@@ -266,7 +362,7 @@ function BuilderContent() {
                 profileType: profileType,
                 agentInfo: cleanAgentInfo,
                 layoutConfig: {
-                    themeId: selectedThemeId, 
+                    themeId: selectedTemplate,
                     colorPalette: customColors,
                     componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
@@ -294,9 +390,9 @@ function BuilderContent() {
 
     const addTechStack = () => {
         if (!newTechStack.category || !newTechStack.skills) return;
-        setTechStack([...techStack, { 
-            category: newTechStack.category, 
-            skills: newTechStack.skills.split(",").map(s => s.trim()) 
+        setTechStack([...techStack, {
+            category: newTechStack.category,
+            skills: newTechStack.skills.split(",").map(s => s.trim())
         }]);
         setNewTechStack({ category: "", skills: "" });
     };
@@ -317,77 +413,111 @@ function BuilderContent() {
         if (url) setGallery([...gallery, url]);
     };
 
-    const renderComponent = (componentId: string) => {
+    // Render preview based on selected template
+    const renderPreview = () => {
         const data: ProfileData = {
             ownerId: user?.id || "",
             name: agentInfo.fullName,
             profileType: profileType,
-            agent: { ...agentInfo, certification, education, techStack, experience, testimonials, gallery }, 
-            properties: [], 
+            agent: { ...agentInfo, certification, education, techStack, experience, testimonials, gallery },
+            properties: [],
             projects: projects,
             products: [],
             services: [],
             theme: { primaryColor: customColors.primary, backgroundColor: customColors.background, textColor: customColors.text }
         };
-        
-        // Only render if block is enabled
-        const block = blocks.find(b => b.id === componentId);
-        if (!block?.isEnabled) return null;
-        
-        return <Default key="default" data={data} />;
+
+        switch (selectedTemplate) {
+            case "kinetic":
+                return <Kinetic data={data} />;
+            case "architectural":
+                return <Architectural data={data} />;
+            case "editorial":
+            default:
+                return <Editorial data={data} />;
+        }
     };
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-background text-foreground">
-            <div className="lg:hidden p-2 border-b bg-muted/40 flex justify-center gap-2">
-                <Button variant={mobileView === "editor" ? "default" : "outline"} size="sm" onClick={() => setMobileView("editor")} className="w-32">
-                    <List className="w-4 h-4 mr-2" /> Editor
-                </Button>
-                <Button variant={mobileView === "preview" ? "default" : "outline"} size="sm" onClick={() => setMobileView("preview")} className="w-32">
-                    <Smartphone className="w-4 h-4 mr-2" /> Preview
-                </Button>
-            </div>
-
-            <div className={`w-full lg:w-4/12 p-4 flex flex-col border-r border-border bg-card h-full overflow-y-auto ${mobileView === "preview" ? "hidden lg:flex" : "flex"}`}>
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-xl font-bold flex items-center gap-2">
-                        <LayoutTemplate className="w-5 h-5 text-primary" />
-                        {editingId ? "Edit Profile" : "Builder"}
+        <div className="min-h-screen bg-gray-50">
+            {/* Header */}
+            <header className="sticky top-0 z-40 bg-white border-b px-4 py-3">
+                <div className="max-w-lg mx-auto flex items-center justify-between">
+                    <button
+                        onClick={() => router.back()}
+                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <h1 className="font-semibold">
+                        {editingId ? "Edit Profile" : "Create Profile"}
                     </h1>
-                    <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                        {editingId ? "Save Changes" : "Publish"}
+                    <Button
+                        size="sm"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="bg-blue-600 hover:bg-blue-700"
+                    >
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
                     </Button>
                 </div>
+            </header>
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                    <TabsList className="grid grid-cols-4 mb-6">
-                        <TabsTrigger value="blocks"><List className="w-4 h-4 mr-2" /> Blocks</TabsTrigger>
-                        <TabsTrigger value="design"><Palette className="w-4 h-4 mr-2" /> Design</TabsTrigger>
-                        <TabsTrigger value="content"><User className="w-4 h-4 mr-2" /> Profile</TabsTrigger>
-                        <TabsTrigger value="dynamic"><Package className="w-4 h-4 mr-2" /> Content</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="blocks" className="space-y-4">
-                        <div className="p-4 bg-muted/20 border border-border rounded-xl mb-6">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block">Profile Type</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {(["individual", "company", "business"] as const).map((type) => (
-                                    <Button
-                                        key={type}
-                                        size="sm"
-                                        variant={profileType === type ? "default" : "outline"}
-                                        onClick={() => setProfileType(type)}
-                                        className="capitalize text-xs font-bold h-9"
-                                    >
-                                        {type}
-                                    </Button>
-                                ))}
-                            </div>
+            <div className="max-w-lg mx-auto pb-32">
+                {/* Phone Preview */}
+                <div className="p-4">
+                    <div className="bg-gray-900 rounded-[2.5rem] p-3 shadow-2xl">
+                        <div
+                            className="rounded-[2rem] overflow-hidden bg-white"
+                            style={{ maxHeight: "500px", overflowY: "auto" }}
+                        >
+                            {renderPreview()}
                         </div>
+                    </div>
+                </div>
 
-                        <div className="p-4 bg-muted/20 border border-border rounded-xl">
-                            <h3 className="text-xs font-bold uppercase text-muted-foreground mb-4">Reorder & Toggle Sections</h3>
+                {/* Template Selection */}
+                <div className="px-4 py-4">
+                    <TemplateSelector
+                        selectedTemplate={selectedTemplate}
+                        onSelect={setSelectedTemplate}
+                    />
+                </div>
+
+                {/* Profile Type */}
+                <div className="px-4 py-4">
+                    <Label className="text-sm font-semibold text-gray-700 mb-3 block">Profile Type</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                        {(["individual", "company", "business"] as const).map((type) => (
+                            <button
+                                key={type}
+                                onClick={() => setProfileType(type)}
+                                className={`py-2.5 px-4 rounded-xl text-sm font-medium capitalize transition-all ${
+                                    profileType === type
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-white border border-gray-200 text-gray-700"
+                                }`}
+                            >
+                                {type}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Sections List */}
+                <div className="px-4 py-4">
+                    <div className="flex items-center justify-between mb-3">
+                        <Label className="text-sm font-semibold text-gray-700">Sections</Label>
+                        <button
+                            onClick={() => setShowReorderMode(!showReorderMode)}
+                            className="text-sm text-blue-600 flex items-center gap-1"
+                        >
+                            {showReorderMode ? "Done" : <><ArrowUpDown className="w-3 h-3" /> Reorder</>}
+                        </button>
+                    </div>
+
+                    {showReorderMode ? (
+                        <div className="space-y-2">
                             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                                 <SortableContext items={blocks} strategy={verticalListSortingStrategy}>
                                     {blocks.map(block => (
@@ -396,349 +526,521 @@ function BuilderContent() {
                                 </SortableContext>
                             </DndContext>
                         </div>
-                    </TabsContent>
-
-                    <TabsContent value="design" className="space-y-6">
-                        <div className="space-y-3">
-                            <Label>Preset Themes</Label>
-                            <div className="grid grid-cols-3 gap-3">
-                                {THEMES.map(theme => (
+                    ) : (
+                        <div className="space-y-2">
+                            {blocks.map((block) => {
+                                const Icon = block.icon;
+                                return (
                                     <div
-                                        key={theme.id}
-                                        className={`cursor-pointer border rounded-lg p-2 text-center text-xs font-medium hover:bg-accent ${selectedThemeId === theme.id ? "border-primary ring-1 ring-primary" : "border-border"}`}
-                                        onClick={() => applyTheme(theme.id)}
+                                        key={block.id}
+                                        className="flex items-center gap-3 p-4 bg-white rounded-xl border border-gray-100"
                                     >
-                                        <div className="h-6 w-full rounded mb-2" style={{ background: theme.background }}></div>
-                                        {theme.name}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-4 border-t border-border">
-                            <Label>Custom Colors</Label>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Background</Label>
-                                    <div className="flex items-center gap-2">
-                                        <input type="color" className="w-8 h-8 rounded border overflow-hidden p-0 border-0 cursor-pointer" value={customColors.background} onChange={e => setCustomColors({ ...customColors, background: e.target.value })} />
-                                        <Input className="h-8 text-xs font-mono" value={customColors.background} onChange={e => setCustomColors({ ...customColors, background: e.target.value })} />
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Primary</Label>
-                                    <div className="flex items-center gap-2">
-                                        <input type="color" className="w-8 h-8 rounded border overflow-hidden p-0 border-0 cursor-pointer" value={customColors.primary} onChange={e => setCustomColors({ ...customColors, primary: e.target.value })} />
-                                        <Input className="h-8 text-xs font-mono" value={customColors.primary} onChange={e => setCustomColors({ ...customColors, primary: e.target.value })} />
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Text</Label>
-                                    <div className="flex items-center gap-2">
-                                        <input type="color" className="w-8 h-8 rounded border overflow-hidden p-0 border-0 cursor-pointer" value={customColors.text} onChange={e => setCustomColors({ ...customColors, text: e.target.value })} />
-                                        <Input className="h-8 text-xs font-mono" value={customColors.text} onChange={e => setCustomColors({ ...customColors, text: e.target.value })} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="content" className="space-y-6">
-                        <div className="space-y-4">
-                            <h3 className="font-semibold text-sm">Profile Details</h3>
-                            <Input placeholder="Full Name" value={agentInfo.fullName} onChange={e => setAgentInfo({ ...agentInfo, fullName: e.target.value })} />
-                            <Input placeholder="Title" value={agentInfo.title} onChange={e => setAgentInfo({ ...agentInfo, title: e.target.value })} />
-                            <Input placeholder="Company" value={agentInfo.company} onChange={e => setAgentInfo({ ...agentInfo, company: e.target.value })} />
-
-                            <h3 className="font-semibold text-sm pt-2">Contact Info</h3>
-                            <Input placeholder="Phone Number" value={agentInfo.phone} onChange={e => setAgentInfo({ ...agentInfo, phone: e.target.value })} />
-                            <Input placeholder="Email Address" value={agentInfo.email} onChange={e => setAgentInfo({ ...agentInfo, email: e.target.value })} />
-                            <Input placeholder="Physical Address" value={agentInfo.address || ""} onChange={e => setAgentInfo({ ...agentInfo, address: e.target.value })} />
-                            <Input placeholder="Website URL" value={agentInfo.website || ""} onChange={e => setAgentInfo({ ...agentInfo, website: e.target.value })} />
-
-                            <div className="space-y-2">
-                                <Label>Profile Picture</Label>
-                                <ImageUploader
-                                    value={agentInfo.avatarUrl || ""}
-                                    onChange={(val) => setAgentInfo({ ...agentInfo, avatarUrl: val })}
-                                    onRemove={() => setAgentInfo({ ...agentInfo, avatarUrl: "" })}
-                                    placeholder="Upload Photo"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>About Me</Label>
-                                <textarea
-                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    placeholder="Tell your story..."
-                                    value={agentInfo.about || ""}
-                                    onChange={e => setAgentInfo({ ...agentInfo, about: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-4 border-t border-border">
-                            <h3 className="font-semibold text-sm">Social Profiles</h3>
-                            <div className="grid grid-cols-[1fr_2fr] gap-2">
-                                <select id="social-platform" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                                    <option value="Instagram">Instagram</option>
-                                    <option value="Facebook">Facebook</option>
-                                    <option value="LinkedIn">LinkedIn</option>
-                                    <option value="Twitter">Twitter/X</option>
-                                    <option value="TikTok">TikTok</option>
-                                    <option value="YouTube">YouTube</option>
-                                    <option value="Website">Other Website</option>
-                                </select>
-                                <Input placeholder="Username (or full URL)" id="social-username" />
-                            </div>
-                            <Button size="sm" variant="outline" onClick={() => {
-                                const platformSelect = (document.getElementById('social-platform') as HTMLSelectElement);
-                                const usernameInput = (document.getElementById('social-username') as HTMLInputElement);
-                                const platform = platformSelect.value;
-                                const username = usernameInput.value.trim();
-                                if (platform && username) {
-                                    let finalUrl = username;
-                                    if (!username.startsWith('http')) {
-                                        const prefixes: Record<string, string> = { "Instagram": "https://instagram.com/", "Facebook": "https://facebook.com/", "LinkedIn": "https://linkedin.com/in/", "Twitter": "https://x.com/", "TikTok": "https://tiktok.com/@", "YouTube": "https://youtube.com/@" };
-                                        if (prefixes[platform]) finalUrl = prefixes[platform] + username;
-                                    }
-                                    setAgentInfo({ ...agentInfo, socialLinks: [...(agentInfo.socialLinks || []), { platform, url: finalUrl }] });
-                                    usernameInput.value = "";
-                                }
-                            }} className="w-full">
-                                <Plus className="w-4 h-4 mr-2" /> Add Social
-                            </Button>
-                            <div className="space-y-2">
-                                {agentInfo.socialLinks?.map((link, idx) => (
-                                    <div key={idx} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded border">
-                                        <div className="flex flex-col overflow-hidden">
-                                            <span className="font-medium flex items-center gap-2">{link.platform}</span>
-                                            <span className="text-xs text-muted-foreground truncate max-w-[200px]">{link.url}</span>
-                                        </div>
-                                        <Trash2 className="w-4 h-4 text-destructive cursor-pointer shrink-0" onClick={() => {
-                                            const newLinks = [...agentInfo.socialLinks];
-                                            newLinks.splice(idx, 1);
-                                            setAgentInfo({ ...agentInfo, socialLinks: newLinks });
-                                        }} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="dynamic" className="space-y-6">
-                        {/* Certification */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2">
-                                <Briefcase className="w-4 h-4 text-primary" />
-                                <Label className="text-xs font-black uppercase text-primary">Certification</Label>
-                            </div>
-                            <Input 
-                                placeholder="Title (e.g., Software Engineer)" 
-                                value={certification.title} 
-                                onChange={e => setCertification({...certification, title: e.target.value})} 
-                            />
-                            <Input 
-                                placeholder="Description" 
-                                value={certification.description} 
-                                onChange={e => setCertification({...certification, description: e.target.value})} 
-                            />
-                        </div>
-
-                        {/* Education */}
-                        <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-center gap-2">
-                                <GraduationCap className="w-4 h-4 text-primary" />
-                                <Label className="text-xs font-black uppercase text-primary">Education</Label>
-                            </div>
-                            <div className="space-y-2">
-                                <Input placeholder="Degree" value={newEducation.degree} onChange={e => setNewEducation({...newEducation, degree: e.target.value})} />
-                                <Input placeholder="School" value={newEducation.school} onChange={e => setNewEducation({...newEducation, school: e.target.value})} />
-                                <Input placeholder="Year" value={newEducation.year} onChange={e => setNewEducation({...newEducation, year: e.target.value})} />
-                                <Button size="sm" className="w-full" onClick={addEducation}>Add Education</Button>
-                            </div>
-                            <div className="space-y-2">
-                                {education.map((edu, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
-                                        <span>{edu.degree} - {edu.school}</span>
-                                        <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setEducation(education.filter((_, idx) => idx !== i))} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Tech Stack */}
-                        <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-center gap-2">
-                                <Code className="w-4 h-4 text-primary" />
-                                <Label className="text-xs font-black uppercase text-primary">Tech Stack</Label>
-                            </div>
-                            <div className="space-y-2">
-                                <Input placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={e => setNewTechStack({...newTechStack, category: e.target.value})} />
-                                <Input placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={e => setNewTechStack({...newTechStack, skills: e.target.value})} />
-                                <Button size="sm" className="w-full" onClick={addTechStack}>Add Category</Button>
-                            </div>
-                            <div className="space-y-2">
-                                {techStack.map((stack, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
-                                        <span>{stack.category}: {stack.skills.join(", ")}</span>
-                                        <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setTechStack(techStack.filter((_, idx) => idx !== i))} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Services */}
-                        <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-center gap-2">
-                                <Briefcase className="w-4 h-4 text-primary" />
-                                <Label className="text-xs font-black uppercase text-primary">Services</Label>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="flex gap-2">
-                                    <Input 
-                                        placeholder="Add a service (e.g., Web Design)" 
-                                        id="new-service"
-                                        onKeyDown={e => {
-                                            if (e.key === "Enter") {
-                                                e.preventDefault();
-                                                const input = e.target as HTMLInputElement;
-                                                if (input.value.trim()) {
-                                                    setAgentInfo({ ...agentInfo, services: [...(agentInfo.services || []), input.value.trim()] });
-                                                    input.value = "";
-                                                }
-                                            }
-                                        }}
-                                    />
-                                    <Button 
-                                        size="sm" 
-                                        onClick={() => {
-                                            const input = document.getElementById('new-service') as HTMLInputElement;
-                                            if (input.value.trim()) {
-                                                setAgentInfo({ ...agentInfo, services: [...(agentInfo.services || []), input.value.trim()] });
-                                                input.value = "";
-                                            }
-                                        }}
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {agentInfo.services?.map((service, i) => (
-                                        <span key={i} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-primary/10 text-primary">
-                                            {service}
-                                            <button 
-                                                onClick={() => setAgentInfo({ ...agentInfo, services: agentInfo.services?.filter((_, idx) => idx !== i) })}
-                                                className="hover:text-destructive"
+                                        <Icon className="w-5 h-5 text-gray-400" />
+                                        <span className="flex-1 font-medium text-sm">{block.label}</span>
+                                        <div className="flex items-center gap-2">
+                                            {block.isEnabled ? (
+                                                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Visible</span>
+                                            ) : (
+                                                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Hidden</span>
+                                            )}
+                                            <button
+                                                onClick={() => setActiveModal(block.id)}
+                                                className="text-sm text-blue-600 font-medium"
                                             >
-                                                <X className="w-3 h-3" />
+                                                Edit
                                             </button>
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Experience */}
-                        <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-center gap-2">
-                                <Briefcase className="w-4 h-4 text-primary" />
-                                <Label className="text-xs font-black uppercase text-primary">Experience</Label>
-                            </div>
-                            <div className="space-y-2">
-                                <Input placeholder="Job Title" value={newExperience.title} onChange={e => setNewExperience({...newExperience, title: e.target.value})} />
-                                <Input placeholder="Company" value={newExperience.company} onChange={e => setNewExperience({...newExperience, company: e.target.value})} />
-                                <Input placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={e => setNewExperience({...newExperience, period: e.target.value})} />
-                                <Input placeholder="Description" value={newExperience.description} onChange={e => setNewExperience({...newExperience, description: e.target.value})} />
-                                <Button size="sm" className="w-full" onClick={addExperience}>Add Experience</Button>
-                            </div>
-                            <div className="space-y-2">
-                                {experience.map((exp, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
-                                        <span>{exp.title} at {exp.company}</span>
-                                        <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setExperience(experience.filter((_, idx) => idx !== i))} />
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
+                                );
+                            })}
                         </div>
-
-                        {/* Testimonials */}
-                        <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-center gap-2">
-                                <Quote className="w-4 h-4 text-primary" />
-                                <Label className="text-xs font-black uppercase text-primary">Recommendations</Label>
-                            </div>
-                            <div className="space-y-2">
-                                <textarea 
-                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                    placeholder="Quote"
-                                    value={newTestimonial.quote}
-                                    onChange={e => setNewTestimonial({...newTestimonial, quote: e.target.value})}
-                                />
-                                <Input placeholder="Author Name" value={newTestimonial.author} onChange={e => setNewTestimonial({...newTestimonial, author: e.target.value})} />
-                                <Input placeholder="Role/Title" value={newTestimonial.role} onChange={e => setNewTestimonial({...newTestimonial, role: e.target.value})} />
-                                <Button size="sm" className="w-full" onClick={addTestimonial}>Add Recommendation</Button>
-                            </div>
-                            <div className="space-y-2">
-                                {testimonials.map((t, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2 bg-muted/50 rounded border text-xs">
-                                        <span className="truncate max-w-[200px]">&ldquo;{t.quote.substring(0, 30)}...&rdquo; - {t.author}</span>
-                                        <Trash2 className="w-3 h-3 text-destructive cursor-pointer" onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Gallery */}
-                        <div className="space-y-4 pt-4 border-t">
-                            <div className="flex items-center gap-2">
-                                <ImageIcon className="w-4 h-4 text-primary" />
-                                <Label className="text-xs font-black uppercase text-primary">Gallery</Label>
-                            </div>
-                            <div className="space-y-2">
-                                <ImageUploader
-                                    value=""
-                                    onChange={(val) => addGalleryImage(val)}
-                                    onRemove={() => {}}
-                                    placeholder="Add Gallery Image"
-                                />
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                {gallery.map((img, i) => (
-                                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                                        <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
-                                        <button 
-                                            className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs"
-                                            onClick={() => setGallery(gallery.filter((_, idx) => idx !== i))}
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </div>
-
-            <div className={`flex-1 bg-muted/20 flex flex-col h-full overflow-hidden ${mobileView === "editor" ? "hidden lg:flex" : "flex"}`}>
-                <div className="bg-card border-b border-border p-2 flex justify-between items-center text-xs text-muted-foreground shadow-sm z-10">
-                    <div className="flex gap-2 items-center px-4"><Monitor className="w-4 h-4" /> Live Preview</div>
-                    <div className="px-4 font-mono">TapFolio v1.0</div>
+                    )}
                 </div>
-                <div className="flex-1 overflow-y-auto p-8 flex justify-center bg-muted/30">
-                    <div className="w-full max-w-[420px] bg-background shadow-2xl rounded-3xl overflow-hidden border-8 border-foreground/5 ring-1 ring-border flex flex-col h-fit min-h-[800px]" style={{ backgroundColor: customColors.background }}>
-                        {renderComponent("Default")}
+
+                {/* Customize Colors */}
+                <div className="px-4 py-4">
+                    <Label className="text-sm font-semibold text-gray-700 mb-3 block">Colors</Label>
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <label className="text-xs text-gray-500 mb-1.5 block">Primary</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={customColors.primary}
+                                    onChange={(e) => setCustomColors({ ...customColors, primary: e.target.value })}
+                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                />
+                                <Input
+                                    value={customColors.primary}
+                                    onChange={(e) => setCustomColors({ ...customColors, primary: e.target.value })}
+                                    className="flex-1 text-xs"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-xs text-gray-500 mb-1.5 block">Background</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value={customColors.background}
+                                    onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
+                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                />
+                                <Input
+                                    value={customColors.background}
+                                    onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
+                                    className="flex-1 text-xs"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div >
+
+            {/* Section Editor Modals */}
+            <SectionEditor
+                isOpen={activeModal === "Hero"}
+                onClose={() => setActiveModal(null)}
+                title="Hero Section"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <Label className="text-sm">Full Name</Label>
+                        <Input
+                            value={agentInfo.fullName}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, fullName: e.target.value })}
+                            placeholder="John Doe"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Title</Label>
+                        <Input
+                            value={agentInfo.title}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, title: e.target.value })}
+                            placeholder="Software Engineer"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Company</Label>
+                        <Input
+                            value={agentInfo.company}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, company: e.target.value })}
+                            placeholder="Company Name"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Profile Picture</Label>
+                        <ImageUploader
+                            value={agentInfo.avatarUrl || ""}
+                            onChange={(val) => setAgentInfo({ ...agentInfo, avatarUrl: val })}
+                            onRemove={() => setAgentInfo({ ...agentInfo, avatarUrl: "" })}
+                            placeholder="Upload Photo"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Phone</Label>
+                        <Input
+                            value={agentInfo.phone}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, phone: e.target.value })}
+                            placeholder="+1 234 567 890"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Email</Label>
+                        <Input
+                            type="email"
+                            value={agentInfo.email}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, email: e.target.value })}
+                            placeholder="john@example.com"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Website</Label>
+                        <Input
+                            value={agentInfo.website || ""}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, website: e.target.value })}
+                            placeholder="https://example.com"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Social Links</Label>
+                        <div className="space-y-2 mt-2">
+                            {agentInfo.socialLinks?.map((link, idx) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                                    <span className="text-sm flex-1">{link.platform}: {link.url}</span>
+                                    <button
+                                        onClick={() => {
+                                            const newLinks = [...agentInfo.socialLinks];
+                                            newLinks.splice(idx, 1);
+                                            setAgentInfo({ ...agentInfo, socialLinks: newLinks });
+                                        }}
+                                        className="text-red-500"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                            <div className="flex gap-2">
+                                <select
+                                    id="social-platform"
+                                    className="flex-1 h-10 rounded-lg border border-gray-200 px-3 text-sm"
+                                >
+                                    <option value="Instagram">Instagram</option>
+                                    <option value="Facebook">Facebook</option>
+                                    <option value="LinkedIn">LinkedIn</option>
+                                    <option value="Twitter">Twitter</option>
+                                    <option value="TikTok">TikTok</option>
+                                    <option value="YouTube">YouTube</option>
+                                    <option value="Website">Website</option>
+                                </select>
+                                <Input
+                                    id="social-url"
+                                    placeholder="URL or username"
+                                    className="flex-[2]"
+                                />
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        const platform = (document.getElementById('social-platform') as HTMLSelectElement).value;
+                                        const url = (document.getElementById('social-url') as HTMLInputElement).value;
+                                        if (platform && url) {
+                                            setAgentInfo({
+                                                ...agentInfo,
+                                                socialLinks: [...(agentInfo.socialLinks || []), { platform, url }]
+                                            });
+                                            (document.getElementById('social-url') as HTMLInputElement).value = '';
+                                        }
+                                    }}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            <SectionEditor
+                isOpen={activeModal === "About"}
+                onClose={() => setActiveModal(null)}
+                title="About Section"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <Label className="text-sm">About Me</Label>
+                        <textarea
+                            className="w-full min-h-[150px] mt-1 p-3 rounded-lg border border-gray-200 text-sm"
+                            placeholder="Tell your story..."
+                            value={agentInfo.about || ""}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, about: e.target.value })}
+                        />
+                    </div>
+                </div>
+            </SectionEditor>
+
+            <SectionEditor
+                isOpen={activeModal === "Services"}
+                onClose={() => setActiveModal(null)}
+                title="Services"
+            >
+                <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                        {agentInfo.services?.map((service, i) => (
+                            <span
+                                key={i}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm"
+                            >
+                                {service}
+                                <button
+                                    onClick={() => setAgentInfo({
+                                        ...agentInfo,
+                                        services: agentInfo.services?.filter((_, idx) => idx !== i)
+                                    })}
+                                    className="ml-1"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                        <Input
+                            id="new-service"
+                            placeholder="Add a service (e.g., Web Design)"
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const input = e.target as HTMLInputElement;
+                                    if (input.value.trim()) {
+                                        setAgentInfo({
+                                            ...agentInfo,
+                                            services: [...(agentInfo.services || []), input.value.trim()]
+                                        });
+                                        input.value = "";
+                                    }
+                                }
+                            }}
+                        />
+                        <Button
+                            onClick={() => {
+                                const input = document.getElementById('new-service') as HTMLInputElement;
+                                if (input.value.trim()) {
+                                    setAgentInfo({
+                                        ...agentInfo,
+                                        services: [...(agentInfo.services || []), input.value.trim()]
+                                    });
+                                    input.value = "";
+                                }
+                            }}
+                        >
+                            <Plus className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            <SectionEditor
+                isOpen={activeModal === "Certification"}
+                onClose={() => setActiveModal(null)}
+                title="Certification"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <Label className="text-sm">Title</Label>
+                        <Input
+                            value={certification.title}
+                            onChange={(e) => setCertification({ ...certification, title: e.target.value })}
+                            placeholder="e.g., Certified Software Engineer"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Description</Label>
+                        <textarea
+                            className="w-full min-h-[100px] mt-1 p-3 rounded-lg border border-gray-200 text-sm"
+                            value={certification.description}
+                            onChange={(e) => setCertification({ ...certification, description: e.target.value })}
+                            placeholder="Description..."
+                        />
+                    </div>
+                </div>
+            </SectionEditor>
+
+            <SectionEditor
+                isOpen={activeModal === "Education"}
+                onClose={() => setActiveModal(null)}
+                title="Education"
+            >
+                <div className="space-y-4">
+                    {education.map((edu, i) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                            <div>
+                                <p className="font-medium text-sm">{edu.degree}</p>
+                                <p className="text-sm text-gray-500">{edu.school}</p>
+                                {edu.year && <p className="text-xs text-gray-400">{edu.year}</p>}
+                            </div>
+                            <button
+                                onClick={() => setEducation(education.filter((_, idx) => idx !== i))}
+                                className="text-red-500"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
+                    <div className="space-y-2">
+                        <Input
+                            placeholder="Degree"
+                            value={newEducation.degree}
+                            onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })}
+                        />
+                        <Input
+                            placeholder="School"
+                            value={newEducation.school}
+                            onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })}
+                        />
+                        <Input
+                            placeholder="Year"
+                            value={newEducation.year}
+                            onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })}
+                        />
+                        <Button onClick={addEducation} className="w-full">
+                            <Plus className="w-4 h-4 mr-2" /> Add Education
+                        </Button>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            <SectionEditor
+                isOpen={activeModal === "TechStack"}
+                onClose={() => setActiveModal(null)}
+                title="Tech Stack"
+            >
+                <div className="space-y-4">
+                    {techStack.map((stack, i) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm">{stack.category}</p>
+                                <button
+                                    onClick={() => setTechStack(techStack.filter((_, idx) => idx !== i))}
+                                    className="text-red-500"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <p className="text-sm text-gray-500">{stack.skills.join(", ")}</p>
+                        </div>
+                    ))}
+                    <div className="space-y-2">
+                        <Input
+                            placeholder="Category (e.g., Frontend)"
+                            value={newTechStack.category}
+                            onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })}
+                        />
+                        <Input
+                            placeholder="Skills (comma separated)"
+                            value={newTechStack.skills}
+                            onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })}
+                        />
+                        <Button onClick={addTechStack} className="w-full">
+                            <Plus className="w-4 h-4 mr-2" /> Add Category
+                        </Button>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            <SectionEditor
+                isOpen={activeModal === "Experience"}
+                onClose={() => setActiveModal(null)}
+                title="Experience"
+            >
+                <div className="space-y-4">
+                    {experience.map((exp, i) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm">{exp.title}</p>
+                                <button
+                                    onClick={() => setExperience(experience.filter((_, idx) => idx !== i))}
+                                    className="text-red-500"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <p className="text-sm text-gray-500">{exp.company}</p>
+                            <p className="text-xs text-gray-400">{exp.period}</p>
+                            {exp.description && <p className="text-sm text-gray-600 mt-1">{exp.description}</p>}
+                        </div>
+                    ))}
+                    <div className="space-y-2">
+                        <Input
+                            placeholder="Job Title"
+                            value={newExperience.title}
+                            onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })}
+                        />
+                        <Input
+                            placeholder="Company"
+                            value={newExperience.company}
+                            onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
+                        />
+                        <Input
+                            placeholder="Period (e.g., 2020 - Present)"
+                            value={newExperience.period}
+                            onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })}
+                        />
+                        <textarea
+                            className="w-full p-3 rounded-lg border border-gray-200 text-sm"
+                            placeholder="Description"
+                            value={newExperience.description}
+                            onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                        />
+                        <Button onClick={addExperience} className="w-full">
+                            <Plus className="w-4 h-4 mr-2" /> Add Experience
+                        </Button>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            <SectionEditor
+                isOpen={activeModal === "Testimonials"}
+                onClose={() => setActiveModal(null)}
+                title="Recommendations"
+            >
+                <div className="space-y-4">
+                    {testimonials.map((t, i) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm">{t.author}</p>
+                                <button
+                                    onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))}
+                                    className="text-red-500"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                            {t.role && <p className="text-xs text-gray-500">{t.role}</p>}
+                            <p className="text-sm text-gray-600 mt-1 italic">&ldquo;{t.quote}&rdquo;</p>
+                        </div>
+                    ))}
+                    <div className="space-y-2">
+                        <textarea
+                            className="w-full p-3 rounded-lg border border-gray-200 text-sm"
+                            placeholder="Quote"
+                            value={newTestimonial.quote}
+                            onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
+                        />
+                        <Input
+                            placeholder="Author Name"
+                            value={newTestimonial.author}
+                            onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })}
+                        />
+                        <Input
+                            placeholder="Role/Title"
+                            value={newTestimonial.role}
+                            onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })}
+                        />
+                        <Button onClick={addTestimonial} className="w-full">
+                            <Plus className="w-4 h-4 mr-2" /> Add Recommendation
+                        </Button>
+                    </div>
+                </div>
+            </SectionEditor>
+
+            <SectionEditor
+                isOpen={activeModal === "Gallery"}
+                onClose={() => setActiveModal(null)}
+                title="Gallery"
+            >
+                <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-2">
+                        {gallery.map((img, i) => (
+                            <div key={i} className="relative aspect-square rounded-lg overflow-hidden">
+                                <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
+                                <button
+                                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white"
+                                    onClick={() => setGallery(gallery.filter((_, idx) => idx !== i))}
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <ImageUploader
+                        value=""
+                        onChange={(val) => addGalleryImage(val)}
+                        onRemove={() => { }}
+                        placeholder="Add Gallery Image"
+                    />
+                </div>
+            </SectionEditor>
+        </div>
     );
 }
 
 export default function BuilderPage() {
     return (
-        <Suspense fallback={<div className="h-screen flex items-center justify-center bg-background"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
+        <Suspense fallback={
+            <div className="h-screen flex items-center justify-center bg-gray-50">
+                <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+            </div>
+        }>
             <BuilderContent />
         </Suspense>
     );
