@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, X, Loader2 } from "lucide-react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { resolveImageUrl } from "@/lib/utils";
 
 interface ImageUploaderProps {
     value?: string;
@@ -16,8 +17,27 @@ interface ImageUploaderProps {
 
 export function ImageUploader({ value, onChange, onRemove, className, placeholder = "Upload Image" }: ImageUploaderProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [displayUrl, setDisplayUrl] = useState<string>("");
     const inputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.images.generateUploadUrl);
+    
+    // Get the actual URL for display
+    const storageUrl = useQuery(
+        api.images.getImageUrl,
+        value && !value.startsWith("http") && !value.startsWith("data:") ? { storageId: value } : "skip"
+    );
+    
+    useEffect(() => {
+        if (value?.startsWith("http") || value?.startsWith("data:")) {
+            setDisplayUrl(value);
+        } else if (storageUrl) {
+            setDisplayUrl(storageUrl);
+        } else if (value) {
+            setDisplayUrl(resolveImageUrl(value));
+        } else {
+            setDisplayUrl("");
+        }
+    }, [value, storageUrl]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -68,14 +88,7 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
 
     const triggerUpload = () => inputRef.current?.click();
 
-    // Helper to resolve storageId to a displayable URL
-    // In Convex, we can use a helper or a dedicated route.
-    // For this prototype, we'll assume the 'value' could be a storageId or a URL.
-    const displayUrl = value?.startsWith("http") || value?.startsWith("data:") 
-        ? value 
-        : value ? `https://neat-hedgehog-331.convex.site/api/storage/${value}` : "";
-
-    if (value) {
+    if (displayUrl) {
         return (
             <div className={`relative w-32 h-32 rounded-lg overflow-hidden border border-border group ${className}`}>
                 <img src={displayUrl} alt="Uploaded" className="w-full h-full object-cover" />

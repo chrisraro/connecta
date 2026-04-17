@@ -16,6 +16,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { SaveContactButton } from "./SaveContactButton";
 
 const SOCIAL_ICONS: Record<string, React.ElementType> = {
   "Instagram": Instagram,
@@ -64,6 +65,7 @@ export default function Kinetic({ data }: TemplateProps) {
       {agent.testimonials && agent.testimonials.length > 0 && <TestimonialsSection testimonials={agent.testimonials} theme={theme} />}
       {agent.gallery && agent.gallery.length > 0 && <GallerySection gallery={agent.gallery} theme={theme} />}
       <ContactSection theme={theme} ownerId={ownerId} />
+      <SaveContactButton agent={agent} theme={theme} variant="kinetic" />
     </div>
   );
 }
