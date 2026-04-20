@@ -12,7 +12,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import {
     User, Phone, Globe, Briefcase, Image as ImageIcon,
     ChevronRight, ChevronLeft, CheckCircle2, Sparkles, X,
-    Building2, Store, Edit, ArrowRight, Loader2
+    Building2, Store, Edit, ArrowRight, Loader2, SmartphoneNfc, AlertCircle
 } from "lucide-react";
 
 type ProfileCategory = "individual" | "company" | "business";
@@ -75,14 +75,20 @@ function OnboardingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const isEditMode = searchParams.get("edit") === "true";
+    const cardUuid = searchParams.get("card_uuid");
     
     const { user: clerkUser } = useUser();
     const updateOnboarding = useMutation(api.users.updateOnboarding);
+    const claimCard = useMutation(api.cards.claimCardByUuid);
+    const linkProfile = useMutation(api.cards.linkProfile);
     const onboarding = useQuery(api.users.getOnboardingStatus, clerkUser?.id ? { clerkId: clerkUser.id } : "skip");
 
     const [step, setStep] = useState(0);
     const [saving, setSaving] = useState(false);
     const [hasPrefilled, setHasPrefilled] = useState(false);
+    const [cardClaimed, setCardClaimed] = useState(false);
+    const [claimedCardId, setClaimedCardId] = useState<string | null>(null);
+    const [claimError, setClaimError] = useState<string | null>(null);
 
     // Form state
     const [profileCategory, setProfileCategory] = useState<ProfileCategory>("individual");
@@ -118,6 +124,28 @@ function OnboardingContent() {
             setHasPrefilled(true);
         }
     }, [onboarding, hasPrefilled, clerkUser]);
+
+    // Claim card when user is authenticated and card_uuid is present
+    useEffect(() => {
+        if (!cardUuid || !clerkUser?.id || cardClaimed) return;
+
+        const claim = async () => {
+            try {
+                const cardId = await claimCard({
+                    clerkId: clerkUser.id,
+                    uuid: cardUuid,
+                });
+                setClaimedCardId(cardId);
+                setCardClaimed(true);
+                setClaimError(null);
+            } catch (err: any) {
+                console.error("Card claim error:", err);
+                setClaimError(err.message || "Failed to claim card");
+            }
+        };
+
+        claim();
+    }, [cardUuid, clerkUser?.id, cardClaimed, claimCard]);
 
     const progress = (step / (STEPS.length - 1)) * 100;
 
@@ -166,8 +194,43 @@ function OnboardingContent() {
     };
 
     const handleFinish = async () => {
-        await saveProgress(true);
-        router.push("/dashboard/builder");
+        setSaving(true);
+        try {
+            const result = await updateOnboarding({
+                clerkId: clerkUser!.id,
+                profileCategory,
+                email,
+                fullName: fullName || (clerkUser?.fullName ?? ""),
+                title: title || "Professional",
+                company: company || undefined,
+                phone: phone || "",
+                website: website || undefined,
+                about: about || undefined,
+                avatarUrl: avatarUrl || undefined,
+                services,
+                markCompleted: true,
+            });
+
+            // If we have a claimed card and a newly created profile, link them
+            if (claimedCardId && result.profileId) {
+                try {
+                    await linkProfile({
+                        clerkId: clerkUser!.id,
+                        cardId: claimedCardId as any,
+                        profileId: result.profileId as any,
+                    });
+                } catch (linkErr) {
+                    console.error("Failed to link card to profile:", linkErr);
+                    // Non-blocking - profile is still created
+                }
+            }
+
+            router.push("/dashboard/builder");
+        } catch (err) {
+            console.error("Failed to finish onboarding:", err);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleSkip = async () => {
@@ -248,6 +311,38 @@ function OnboardingContent() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
+                {/* Card Detection Alert */}
+                {cardUuid && (
+                    <div className="mb-4 bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                            {cardClaimed ? (
+                                <CheckCircle2 className="w-5 h-5 text-primary" />
+                            ) : claimError ? (
+                                <AlertCircle className="w-5 h-5 text-destructive" />
+                            ) : (
+                                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                            )}
+                        </div>
+                        <div>
+                            {cardClaimed ? (
+                                <>
+                                    <p className="text-sm font-semibold text-primary">TapFolio Card Detected!</p>
+                                    <p className="text-xs text-muted-foreground">Your card is being activated and will be linked to your profile.</p>
+                                </>
+                            ) : claimError ? (
+                                <>
+                                    <p className="text-sm font-semibold text-destructive">Card Activation Issue</p>
+                                    <p className="text-xs text-muted-foreground">{claimError}</p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm font-semibold text-primary">Card Detected!</p>
+                                    <p className="text-xs text-muted-foreground">Activating your TapFolio card...</p>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
                 <div className="mb-8">
                     <div className="flex justify-between text-xs text-muted-foreground mb-2">
                         <span>Step {step + 1} of {STEPS.length}</span>
@@ -465,9 +560,20 @@ function OnboardingContent() {
                                         Your profile is set up. Now customize your public page in the Profile Builder.
                                     </p>
                                 </div>
+                                {cardClaimed && (
+                                    <div className="w-full bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                            <SmartphoneNfc className="w-5 h-5 text-primary" />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-sm font-semibold text-primary">Card Activated!</p>
+                                            <p className="text-xs text-muted-foreground">Your physical TapFolio card is now live and linked to your profile.</p>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="w-full space-y-2 mt-2">
                                     <Button className="w-full" size="lg" onClick={handleFinish} disabled={saving}>
-                                        {saving ? "Saving..." : "Go to Profile Builder →"}
+                                        {saving ? "Saving..." : "Go to Profile Builder \u2192"}
                                     </Button>
                                     <Button variant="ghost" className="w-full" onClick={() => router.push("/dashboard")}>
                                         Back to Dashboard

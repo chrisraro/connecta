@@ -1,9 +1,10 @@
-# Project Context: "Tap & Save" - NFC Real Estate Platform
+# Project Context: "TapFolio" - Digital Business Card & CRM Platform
 
 ## 1. Executive Summary
-**Tap & Save Prototype** is a hybrid SaaS platform designed for Real Estate Agents and Brokerages. It bridges physical networking with digital lead capture.
-* **The Hardware:** Users purchase NFC-enabled business cards via a WordPress/WooCommerce storefront.
-* **The Software:** A Next.js + Convex application handles card activation, dashboard management, analytics, and an AI-powered "Generative UI" profile builder.
+**TapFolio** is a high-fidelity SaaS platform designed for modern professionals and businesses. It bridges physical networking with digital lead capture and relationship management.
+* **The Hardware:** Users utilize NFC-enabled business cards and hardware to instantly share their digital profiles.
+* **The Software:** A Next.js + Convex application handles card activation, lead CRM, dashboard management, and an AI-powered profile builder.
+* **The Focus:** A complete Digital Identity solution featuring Smart Business Cards, integrated Lead CRM, and NFC hardware synchronization.
 
 ## 2. Tech Stack (Strict Constraints)
 

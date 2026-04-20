@@ -109,3 +109,50 @@ export const incrementTapCount = mutation({
         }
     },
 });
+
+export const claimCardByUuid = mutation({
+    args: {
+        clerkId: v.string(),
+        uuid: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const user = await getUser(ctx, args.clerkId);
+        if (!user) throw new Error("User not found");
+
+        // Find the card by UUID (with decoded and case-insensitive fallbacks)
+        let card = await ctx.db
+            .query("cards")
+            .withIndex("by_uuid", (q) => q.eq("uuid", args.uuid))
+            .first();
+
+        if (!card) {
+            const decoded = decodeURIComponent(args.uuid);
+            if (decoded !== args.uuid) {
+                card = await ctx.db
+                    .query("cards")
+                    .withIndex("by_uuid", (q) => q.eq("uuid", decoded))
+                    .first();
+            }
+        }
+
+        if (!card) throw new Error("Card not found");
+
+        // If card already belongs to this user, return it (idempotent)
+        if (card.ownerId === user._id && card.status === "active") {
+            return card._id;
+        }
+
+        // If card belongs to another user or is already active, reject
+        if (card.status !== "inventory") {
+            throw new Error("Card is not available for claiming");
+        }
+
+        // Claim the card: assign ownership and activate
+        await ctx.db.patch(card._id, {
+            ownerId: user._id,
+            status: "active",
+        });
+
+        return card._id;
+    },
+});

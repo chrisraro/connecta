@@ -118,7 +118,56 @@ export const updateOnboarding = mutation({
             ...(args.markCompleted ? { onboardingCompleted: true } : {}),
         });
 
-        return user._id;
+        // Auto-create a default profile when onboarding is completed
+        let profileId: string | null = null;
+        if (args.markCompleted) {
+            // Check if user already has a profile
+            const existingProfiles = await ctx.db
+                .query("profiles")
+                .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
+                .collect();
+
+            if (existingProfiles.length === 0) {
+                const profileType = args.profileCategory || "individual";
+                const themeColors = profileType === "business"
+                    ? { primary: "#00193c", background: "#f7f9fb", text: "#191c1e" }
+                    : profileType === "company"
+                        ? { primary: "#ba9eff", background: "#0e0e0e", text: "#ffffff" }
+                        : { primary: "#705838", background: "#fbf9f4", text: "#1b1c19" };
+
+                profileId = await ctx.db.insert("profiles", {
+                    ownerId: user._id,
+                    name: `${args.fullName}'s Profile`,
+                    profileType: profileType,
+                    agentInfo: {
+                        fullName: args.fullName,
+                        title: args.title,
+                        company: args.company || "",
+                        phone: args.phone,
+                        email: args.email || "",
+                        address: undefined,
+                        website: args.website,
+                        about: args.about,
+                        avatarUrl: args.avatarUrl,
+                        services: args.services,
+                        socialLinks: args.socialLinks || [],
+                    },
+                    layoutConfig: {
+                        themeId: profileType === "business" ? "architectural" : profileType === "company" ? "kinetic" : "editorial",
+                        colorPalette: themeColors,
+                        componentOrder: ["Hero", "About", "Services", "Projects", "Contact"],
+                        heroStyle: "default",
+                    },
+                    featuredProperties: [],
+                    featuredProjects: [],
+                });
+            } else {
+                // Return the first existing profile ID
+                profileId = existingProfiles[0]._id;
+            }
+        }
+
+        return { userId: user._id, profileId };
     },
 });
 

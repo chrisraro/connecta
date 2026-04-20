@@ -20,8 +20,11 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
         if (card === null) {
             setError("This card ID was not found in our system.");
         } else if (card) {
-            if (card.status !== "active") {
-                setError("This card has not been activated yet.");
+            if (card.status === "inventory") {
+                // Unactivated card - redirect to signup with card_uuid for activation flow
+                router.replace(`/auth?mode=signup&card_uuid=${encodeURIComponent(uuid)}`);
+            } else if (card.status !== "active") {
+                setError("This card is not available.");
             } else if (!card.linkedProfileId) {
                 setError("This card is activated but not linked to any profile yet.");
             } else if (!incrementedRef.current) {
@@ -31,7 +34,7 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
                 router.replace(`/p/${card.linkedProfileId}`);
             }
         }
-    }, [card, router, incrementTap]);
+    }, [card, router, incrementTap, uuid]);
 
     if (error) {
         return (
