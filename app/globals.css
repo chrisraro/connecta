@@ -159,3 +159,30 @@
     border-color: color-mix(in oklch, var(--chart-5) 20%, transparent);
   }
 }
+
+/* Clerk Auth - Centering & Mobile Responsive */
+.cl-rootBox {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.cl-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  border-radius: inherit !important;
+}
+
+.cl-internal {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Prevent any Clerk element from overflowing */
+[class*="cl-"] {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
