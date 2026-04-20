@@ -36,9 +36,24 @@ const clerkAppearance = {
 function AuthContent() {
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
+  const cardUuid = searchParams.get("card_uuid");
 
   // Default to Sign Up if mode is 'signup' or if no mode is specified (as requested)
   const isSignIn = mode === "signin";
+
+  // Build redirect URL with card_uuid preserved if present
+  const redirectUrl = cardUuid 
+    ? `/dashboard/onboarding?card_uuid=${encodeURIComponent(cardUuid)}`
+    : "/dashboard/onboarding";
+
+  // Build auth URLs with card_uuid preserved when switching between sign-in/sign-up
+  const signUpUrl = cardUuid 
+    ? `/auth?mode=signup&card_uuid=${encodeURIComponent(cardUuid)}`
+    : "/auth?mode=signup";
+  
+  const signInUrl = cardUuid 
+    ? `/auth?mode=signin&card_uuid=${encodeURIComponent(cardUuid)}`
+    : "/auth?mode=signin";
 
   return (
     <div className="w-full max-w-md animate-in fade-in zoom-in slide-in-from-bottom-6 duration-1000 ease-out px-4 py-8">
@@ -59,15 +74,15 @@ function AuthContent() {
           <SignIn 
             appearance={clerkAppearance} 
             routing="hash"
-            fallbackRedirectUrl="/dashboard"
-            signUpUrl="/auth?mode=signup"
+            fallbackRedirectUrl={redirectUrl}
+            signUpUrl={signUpUrl}
           />
         ) : (
           <SignUp 
             appearance={clerkAppearance} 
             routing="hash"
-            fallbackRedirectUrl="/dashboard"
-            signInUrl="/auth?mode=signin"
+            fallbackRedirectUrl={redirectUrl}
+            signInUrl={signInUrl}
           />
         )}
       </div>
