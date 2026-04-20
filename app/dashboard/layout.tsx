@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { NotificationsPopover } from "@/components/ui/notifications-popover";
+import { OfflineLeadCapture } from "@/components/profile-builder/OfflineLeadCapture";
 import {
     Sheet,
     SheetContent,
@@ -231,6 +232,9 @@ export default function DashboardLayout({
 
                 {/* Mobile Quick Actions FAB */}
                 <QuickActionsToggle />
+
+                {/* Offline Lead Capture Button */}
+                <OfflineLeadCapture />
 
                 {/* Mobile Bottom Nav */}
                 <MobileBottomNav />

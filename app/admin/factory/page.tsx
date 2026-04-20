@@ -95,7 +95,7 @@ export default function AdminFactoryPage() {
                 }
 
                 try {
-                    setNdefStatus("Writing NDEF URL...");
+                    setNdefStatus("Writing NDEF records...");
                     // 1. Write NDEF URL to the tag so phones natively redirect to the tap route
                     // Force the production domain here. Native OS NFC background readers (especially iOS) 
                     // will IGNORE localhost or HTTP urls. They require a valid HTTPS domain to show the notification natively.
@@ -103,12 +103,20 @@ export default function AdminFactoryPage() {
                     const url = `${PRODUCTION_DOMAIN}/t/${serialNumber}`;
                     console.log("Writing NDEF URL:", url);
                     
+                    // 2. Create vCard as fallback for offline scenarios
+                    // This allows phones to save contact even without internet
+                    const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:TapFolio User\nTEL;TYPE=CELL:\nEMAIL:\nURL:${url}\nNOTE:Scan QR or visit URL to view full profile\nEND:VCARD`;
+                    
+                    // Write BOTH records: URL (primary) + vCard (offline fallback)
                     await ndef.write({
-                        records: [{ recordType: "url", data: url }]
+                        records: [
+                            { recordType: "url", data: url },
+                            { recordType: "text", data: vCard }
+                        ]
                     });
-                    setNdefStatus("NDEF Write Success!");
+                    setNdefStatus("NDEF Write Success! (URL + vCard)");
 
-                    // 2. Register the card in Convex
+                    // 3. Register the card in Convex
                     const result = await registerCard({
                         clerkId: user?.id,
                         uuid: serialNumber
