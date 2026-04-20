@@ -302,6 +302,37 @@ export default function AdminFactoryPage() {
                 </div>
             </div>
 
+            {/* How It Works Info */}
+            <div className="mb-8 bg-zinc-900/50 border border-zinc-800 rounded-3xl p-6">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-red-500" />
+                    How Card Activation Works
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-zinc-950/50 rounded-2xl p-4 border border-zinc-800">
+                        <div className="w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center mb-3">
+                            <span className="text-red-500 font-black">1</span>
+                        </div>
+                        <h4 className="font-bold text-white text-sm mb-2">Register Card</h4>
+                        <p className="text-xs text-zinc-400">Scan or manually register cards. They start as "inventory" status.</p>
+                    </div>
+                    <div className="bg-zinc-950/50 rounded-2xl p-4 border border-zinc-800">
+                        <div className="w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center mb-3">
+                            <span className="text-red-500 font-black">2</span>
+                        </div>
+                        <h4 className="font-bold text-white text-sm mb-2">Customer Taps</h4>
+                        <p className="text-xs text-zinc-400">Customer taps the card → redirected to signup with auto-activation.</p>
+                    </div>
+                    <div className="bg-zinc-950/50 rounded-2xl p-4 border border-zinc-800">
+                        <div className="w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center mb-3">
+                            <span className="text-red-500 font-black">3</span>
+                        </div>
+                        <h4 className="font-bold text-white text-sm mb-2">Card Activated</h4>
+                        <p className="text-xs text-zinc-400">After signup, card is automatically claimed and linked to their profile.</p>
+                    </div>
+                </div>
+            </div>
+
             {isScanning && (
                 <div className="mb-8 p-12 bg-zinc-900/50 border-2 border-dashed border-red-500/30 rounded-[2.5rem] flex flex-col items-center justify-center text-center animate-pulse">
                     <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
@@ -506,17 +537,14 @@ export default function AdminFactoryPage() {
                             <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">TapFolio</div>
                             
                             <QRCodeSVG 
-                                value={selectedCard?.activationCode || ""} 
+                                value={`https://tapfolio-beta.vercel.app/t/${selectedCard?.uuid || ""}`} 
                                 size={110}
                                 level="H"
                                 marginSize={1}
                             />
                             
-                            <div className="mt-2 text-black font-black text-lg tracking-[0.3em] uppercase">
-                                {selectedCard?.activationCode}
-                            </div>
-                            <div className="mt-0.5 text-zinc-400 font-mono text-[8px]">
-                                UID: {selectedCard?.uuid}
+                            <div className="mt-2 text-black font-mono text-[9px] text-center px-2 truncate max-w-full">
+                                tapfolio.com/t/{selectedCard?.uuid?.substring(0, 8)}...
                             </div>
                         </div>
 
