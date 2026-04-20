@@ -125,7 +125,6 @@ export const claimCardByUuid = mutation({
             const newUserId = await ctx.db.insert("users", {
                 clerkId: args.clerkId,
                 email: "", // Will be updated during onboarding
-                name: null,
                 role: "agent",
                 subscriptionStatus: "active",
                 credits: 5,
