@@ -116,10 +116,13 @@ export const claimCardByUuid = mutation({
         uuid: v.string(),
     },
     handler: async (ctx, args) => {
+        console.log("claimCardByUuid called:", { clerkId: args.clerkId, uuid: args.uuid });
+        
         // Get or create user
         let user = await getUser(ctx, args.clerkId);
         
         if (!user) {
+            console.log("User not found, creating new user...", args.clerkId);
             // User doesn't exist in Convex yet - create them
             // This happens when user just signed up via Clerk
             const newUserId = await ctx.db.insert("users", {
@@ -132,7 +135,11 @@ export const claimCardByUuid = mutation({
             });
             
             user = await ctx.db.get(newUserId);
-            if (!user) throw new Error("Failed to create user");
+            if (!user) {
+                console.error("Failed to retrieve newly created user");
+                throw new Error("Failed to create user");
+            }
+            console.log("New user created:", user._id);
         }
 
         // Find the card by UUID (with decoded and case-insensitive fallbacks)
@@ -151,24 +158,43 @@ export const claimCardByUuid = mutation({
             }
         }
 
-        if (!card) throw new Error("Card not found");
+        if (!card) {
+            console.error("Card not found for UUID:", args.uuid);
+            throw new Error("Card not found");
+        }
 
-        // If card already belongs to this user, return it (idempotent)
+        console.log("Card found:", { 
+            cardId: card._id, 
+            status: card.status, 
+            currentOwnerId: card.ownerId 
+        });
+
+        // If card already belongs to this user and is active, return it (idempotent)
         if (card.ownerId === user._id && card.status === "active") {
+            console.log("Card already claimed by this user, returning existing card");
             return card._id;
         }
 
-        // If card belongs to another user or is already active, reject
+        // If card belongs to another user, reject
+        if (card.ownerId && card.ownerId !== user._id) {
+            console.error("Card belongs to another user");
+            throw new Error("Card is not available for claiming");
+        }
+
+        // If card is not in inventory status, reject
         if (card.status !== "inventory") {
+            console.error("Card is not in inventory status:", card.status);
             throw new Error("Card is not available for claiming");
         }
 
         // Claim the card: assign ownership and activate
+        console.log("Claiming card for user:", user._id);
         await ctx.db.patch(card._id, {
             ownerId: user._id,
             status: "active",
         });
 
+        console.log("Card claimed successfully:", card._id);
         return card._id;
     },
 });

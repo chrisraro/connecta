@@ -77,7 +77,7 @@ function OnboardingContent() {
     const isEditMode = searchParams.get("edit") === "true";
     const cardUuid = searchParams.get("card_uuid");
     
-    const { user: clerkUser } = useUser();
+    const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
     const updateOnboarding = useMutation(api.users.updateOnboarding);
     const claimCard = useMutation(api.cards.claimCardByUuid);
     const linkProfile = useMutation(api.cards.linkProfile);
@@ -89,6 +89,7 @@ function OnboardingContent() {
     const [cardClaimed, setCardClaimed] = useState(false);
     const [claimedCardId, setClaimedCardId] = useState<string | null>(null);
     const [claimError, setClaimError] = useState<string | null>(null);
+    const [isClaiming, setIsClaiming] = useState(false);
 
     // Form state
     const [profileCategory, setProfileCategory] = useState<ProfileCategory>("individual");
@@ -127,25 +128,47 @@ function OnboardingContent() {
 
     // Claim card when user is authenticated and card_uuid is present
     useEffect(() => {
-        if (!cardUuid || !clerkUser?.id || cardClaimed) return;
+        // Only claim if:
+        // 1. Clerk is fully loaded
+        // 2. We have a card UUID
+        // 3. We have a Clerk user ID
+        // 4. Card hasn't been claimed yet
+        // 5. We're not already in the process of claiming
+        if (!isClerkLoaded || !cardUuid || !clerkUser?.id || cardClaimed || isClaiming) return;
 
         const claim = async () => {
+            setIsClaiming(true);
             try {
+                console.log("Attempting to claim card:", { 
+                    clerkId: clerkUser.id, 
+                    uuid: cardUuid 
+                });
+                
                 const cardId = await claimCard({
                     clerkId: clerkUser.id,
                     uuid: cardUuid,
                 });
+                
+                console.log("Card claimed successfully:", cardId);
                 setClaimedCardId(cardId);
                 setCardClaimed(true);
                 setClaimError(null);
             } catch (err: any) {
                 console.error("Card claim error:", err);
-                setClaimError(err.message || "Failed to claim card");
+                // Don't show error immediately - might be a race condition
+                // Only show error if it's not a "already claimed" scenario
+                if (err.message?.includes("not available")) {
+                    setClaimError("This card has already been activated.");
+                } else {
+                    setClaimError(err.message || "Failed to claim card");
+                }
+            } finally {
+                setIsClaiming(false);
             }
         };
 
         claim();
-    }, [cardUuid, clerkUser?.id, cardClaimed, claimCard]);
+    }, [cardUuid, clerkUser?.id, cardClaimed, isClaiming, claimCard, isClerkLoaded]);
 
     const progress = (step / (STEPS.length - 1)) * 100;
 
@@ -319,6 +342,8 @@ function OnboardingContent() {
                                 <CheckCircle2 className="w-5 h-5 text-primary" />
                             ) : claimError ? (
                                 <AlertCircle className="w-5 h-5 text-destructive" />
+                            ) : isClaiming ? (
+                                <Loader2 className="w-5 h-5 text-primary animate-spin" />
                             ) : (
                                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
                             )}
@@ -327,17 +352,22 @@ function OnboardingContent() {
                             {cardClaimed ? (
                                 <>
                                     <p className="text-sm font-semibold text-primary">TapFolio Card Detected!</p>
-                                    <p className="text-xs text-muted-foreground">Your card is being activated and will be linked to your profile.</p>
+                                    <p className="text-xs text-muted-foreground">Your card has been activated and will be linked to your profile.</p>
                                 </>
                             ) : claimError ? (
                                 <>
                                     <p className="text-sm font-semibold text-destructive">Card Activation Issue</p>
                                     <p className="text-xs text-muted-foreground">{claimError}</p>
                                 </>
+                            ) : isClaiming ? (
+                                <>
+                                    <p className="text-sm font-semibold text-primary">Activating Your Card...</p>
+                                    <p className="text-xs text-muted-foreground">Please wait while we set up your TapFolio card.</p>
+                                </>
                             ) : (
                                 <>
                                     <p className="text-sm font-semibold text-primary">Card Detected!</p>
-                                    <p className="text-xs text-muted-foreground">Activating your TapFolio card...</p>
+                                    <p className="text-xs text-muted-foreground">Preparing to activate your TapFolio card...</p>
                                 </>
                             )}
                         </div>
