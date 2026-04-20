@@ -116,8 +116,25 @@ export const claimCardByUuid = mutation({
         uuid: v.string(),
     },
     handler: async (ctx, args) => {
-        const user = await getUser(ctx, args.clerkId);
-        if (!user) throw new Error("User not found");
+        // Get or create user
+        let user = await getUser(ctx, args.clerkId);
+        
+        if (!user) {
+            // User doesn't exist in Convex yet - create them
+            // This happens when user just signed up via Clerk
+            const newUserId = await ctx.db.insert("users", {
+                clerkId: args.clerkId,
+                email: "", // Will be updated during onboarding
+                name: null,
+                role: "agent",
+                subscriptionStatus: "active",
+                credits: 5,
+                onboardingCompleted: false,
+            });
+            
+            user = await ctx.db.get(newUserId);
+            if (!user) throw new Error("Failed to create user");
+        }
 
         // Find the card by UUID (with decoded and case-insensitive fallbacks)
         let card = await ctx.db
