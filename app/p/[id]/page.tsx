@@ -8,7 +8,9 @@ import Kinetic from "@/components/templates/Kinetic";
 import Architectural from "@/components/templates/Architectural";
 import { ProfileData, ProfileType } from "@/types/profile";
 import { Loader2 } from "lucide-react";
-import { use } from "react";
+import { use, useEffect } from "react";
+import { registerServiceWorker, cacheVCardForOffline } from "@/lib/service-worker";
+import { generateVCardBlob } from "@/lib/vcard";
 
 // Template component map
 const TEMPLATE_COMPONENTS = {
@@ -24,6 +26,26 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
 function PublicProfileContent({ profileId }: { profileId: string }) {
     const profile = useQuery(api.profiles.getProfile, { profileId: profileId as Id<"profiles"> });
+
+    // Register service worker and cache vCard when profile loads
+    useEffect(() => {
+        // Register service worker for offline support
+        registerServiceWorker();
+    }, []);
+
+    // Cache vCard when profile data is available
+    useEffect(() => {
+        if (profile?.agentInfo) {
+            try {
+                const vCardBlob = generateVCardBlob(profile.agentInfo);
+                vCardBlob.text().then((vCardText) => {
+                    cacheVCardForOffline(profileId, vCardText);
+                });
+            } catch (error) {
+                console.error('Failed to cache vCard:', error);
+            }
+        }
+    }, [profile, profileId]);
 
     if (profile === undefined) {
         return (

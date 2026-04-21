@@ -95,28 +95,21 @@ export default function AdminFactoryPage() {
                 }
 
                 try {
-                    setNdefStatus("Writing NDEF records...");
-                    // 1. Write NDEF URL to the tag so phones natively redirect to the tap route
-                    // Force the production domain here. Native OS NFC background readers (especially iOS) 
-                    // will IGNORE localhost or HTTP urls. They require a valid HTTPS domain to show the notification natively.
+                    setNdefStatus("Writing NDEF URL...");
+                    // Write ONLY the URL to the NFC tag
+                    // This ensures maximum compatibility across all devices
+                    // The vCard download will happen on the profile page when loaded
                     const PRODUCTION_DOMAIN = "https://tapfolio-beta.vercel.app";
                     const url = `${PRODUCTION_DOMAIN}/t/${serialNumber}`;
                     console.log("Writing NDEF URL:", url);
                     
-                    // 2. Create vCard as fallback for offline scenarios
-                    // This allows phones to save contact even without internet
-                    const vCard = `BEGIN:VCARD\nVERSION:3.0\nFN:TapFolio User\nTEL;TYPE=CELL:\nEMAIL:\nURL:${url}\nNOTE:Scan QR or visit URL to view full profile\nEND:VCARD`;
-                    
-                    // Write BOTH records: URL (primary) + vCard (offline fallback)
                     await ndef.write({
-                        records: [
-                            { recordType: "url", data: url },
-                            { recordType: "text", data: vCard }
-                        ]
+                        records: [{ recordType: "url", data: url }]
                     });
-                    setNdefStatus("NDEF Write Success! (URL + vCard)");
+                    setNdefStatus("NDEF Write Success!");
+                    console.log("Successfully wrote URL to NFC tag");
 
-                    // 3. Register the card in Convex
+                    // Register the card in Convex
                     const result = await registerCard({
                         clerkId: user?.id,
                         uuid: serialNumber
