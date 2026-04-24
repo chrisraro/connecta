@@ -275,3 +275,82 @@ export const getCards = query({
     return cards;
   },
 });
+
+// Mutation to register a single NFC card (admin only)
+export const registerSingleCard = mutation({
+  args: {
+    clerkId: v.string(),
+    uuid: v.string(),
+    activationCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Verify requester is admin
+    const adminUser = await requireAdmin(ctx, args.clerkId);
+
+    // Check if UUID already exists
+    const existingCard = await ctx.db
+      .query("cards")
+      .withIndex("by_uuid", (q) => q.eq("uuid", args.uuid))
+      .first();
+
+    if (existingCard) {
+      throw new Error(`Card with UUID ${args.uuid} already exists`);
+    }
+
+    // Check if activation code already exists
+    const existingActivation = await ctx.db
+      .query("cards")
+      .withIndex("by_activationCode", (q) => q.eq("activationCode", args.activationCode))
+      .first();
+
+    if (existingActivation) {
+      throw new Error(`Card with activation code ${args.activationCode} already exists`);
+    }
+
+    // Create new card in inventory status
+    const cardId = await ctx.db.insert("cards", {
+      ownerId: adminUser._id,
+      uuid: args.uuid,
+      activationCode: args.activationCode,
+      status: "inventory",
+      linkedProfileId: undefined,
+      tapCount: 0,
+    });
+
+    return {
+      success: true,
+      cardId,
+      uuid: args.uuid,
+      activationCode: args.activationCode,
+    };
+  },
+});
+
+// Mutation to delete multiple cards (admin only)
+export const deleteCards = mutation({
+  args: {
+    clerkId: v.string(),
+    cardIds: v.array(v.id("cards")),
+  },
+  handler: async (ctx, args) => {
+    // Verify requester is admin
+    await requireAdmin(ctx, args.clerkId);
+
+    let deletedCount = 0;
+
+    // Delete each card
+    for (const cardId of args.cardIds) {
+      const card = await ctx.db.get(cardId);
+      if (card) {
+        await ctx.db.delete(cardId);
+        deletedCount++;
+      }
+    }
+
+    return {
+      success: true,
+      deletedCount,
+      totalRequested: args.cardIds.length,
+    };
+  },
+});
