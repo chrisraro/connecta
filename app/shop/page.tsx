@@ -32,7 +32,7 @@ function formatPrice(priceInCents: number): string {
 
 export default function ShopPage() {
   const categories = useQuery(api.shop.getCategories, {});
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Id<"productCategories"> | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -42,7 +42,7 @@ export default function ShopPage() {
     categoryId: selectedCategory || undefined,
     search: searchQuery || undefined,
     sortBy: sortBy as any,
-    inStockOnly: inStockOnly || undefined,
+    inStockOnly: inStockOnly,
   });
 
   const handleAddToCart = async (productId: Id<"products">) => {
