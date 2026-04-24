@@ -110,13 +110,29 @@ export default function AdminFactoryPage() {
                     console.log("Successfully wrote URL to NFC tag");
 
                     // Register the card in Convex
+                    if (!user?.id) {
+                        setScanError("User not authenticated.");
+                        return;
+                    }
+
+                    // Generate a unique activation code
+                    const activationCode = `ACT-${serialNumber}-${Date.now()}`;
+
                     const result = await registerCard({
-                        clerkId: user?.id,
-                        uuid: serialNumber
+                        clerkId: user!.id!,
+                        uuid: serialNumber,
+                        activationCode: activationCode
                     });
                     
-                    setLastRegistered(result);
-                    setSelectedCard(result);
+                    // Transform response to match expected state shape
+                    const cardData = {
+                        id: result.cardId,
+                        uuid: result.uuid,
+                        activationCode: result.activationCode
+                    };
+                    
+                    setLastRegistered(cardData);
+                    setSelectedCard(cardData);
                     setShowPrintDialog(true);
                     
                     // Optional: keep scanning for next card?
@@ -155,14 +171,30 @@ export default function AdminFactoryPage() {
         const uuid = formData.get("uuid") as string;
         
         if (!uuid) return;
+        if (!user?.id) {
+            alert("User not authenticated.");
+            return;
+        }
 
         try {
+            // Generate a unique activation code
+            const activationCode = `ACT-${uuid}-${Date.now()}`;
+
             const result = await registerCard({
-                clerkId: user?.id,
-                uuid: uuid
+                clerkId: user!.id!,
+                uuid: uuid,
+                activationCode: activationCode
             });
-            setLastRegistered(result);
-            setSelectedCard(result);
+
+            // Transform response to match expected state shape
+            const cardData = {
+                id: result.cardId,
+                uuid: result.uuid,
+                activationCode: result.activationCode
+            };
+
+            setLastRegistered(cardData);
+            setSelectedCard(cardData);
             setShowPrintDialog(true);
             (e.target as HTMLFormElement).reset();
         } catch (err) {
@@ -192,12 +224,16 @@ export default function AdminFactoryPage() {
 
     const handleDeleteSelected = async () => {
         if (selectedIds.size === 0) return;
+        if (!user?.id) {
+            alert("User not authenticated.");
+            return;
+        }
         if (!confirm(`Are you sure you want to delete ${selectedIds.size} card(s)?`)) return;
 
         setIsDeleting(true);
         try {
             await deleteCards({
-                clerkId: user?.id,
+                clerkId: user!.id!,
                 cardIds: Array.from(selectedIds)
             });
             setSelectedIds(new Set());
@@ -210,12 +246,16 @@ export default function AdminFactoryPage() {
     };
 
     const handleDeleteSingle = async (id: Id<"cards">) => {
+        if (!user?.id) {
+            alert("User not authenticated.");
+            return;
+        }
         if (!confirm("Are you sure you want to delete this card?")) return;
 
         setIsDeleting(true);
         try {
             await deleteCards({
-                clerkId: user?.id,
+                clerkId: user!.id!,
                 cardIds: [id]
             });
             const newSet = new Set(selectedIds);
