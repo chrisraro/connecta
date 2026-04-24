@@ -236,4 +236,155 @@ export default defineSchema({
     reason: v.optional(v.string()),
   }).index("by_user", ["userId"])
     .index("by_active", ["revokedAt"]),
+
+  // 10. Product Categories
+  productCategories: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    description: v.optional(v.string()),
+    parentId: v.optional(v.id("productCategories")),
+    image: v.optional(v.string()),
+    isActive: v.boolean(),
+    sortOrder: v.number(),
+  }).index("by_slug", ["slug"])
+    .index("by_active", ["isActive"])
+    .index("by_parent", ["parentId"]),
+
+  // 11. Products
+  products: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    description: v.optional(v.string()),
+    categoryId: v.optional(v.id("productCategories")),
+    basePrice: v.number(),
+    compareAtPrice: v.optional(v.number()),
+    costPrice: v.optional(v.number()),
+    sku: v.string(),
+    barcode: v.optional(v.string()),
+    inventory: v.number(),
+    lowStockThreshold: v.number(),
+    trackInventory: v.boolean(),
+    isPublished: v.boolean(),
+    isFeatured: v.boolean(),
+    tags: v.array(v.string()),
+    images: v.array(v.string()),
+    primaryImageIndex: v.number(),
+    weight: v.optional(v.number()),
+    dimensions: v.optional(v.object({
+      length: v.number(),
+      width: v.number(),
+      height: v.number(),
+      unit: v.union(v.literal("cm"), v.literal("in")),
+    })),
+    shippingRequired: v.boolean(),
+    metadata: v.optional(v.any()),
+  }).index("by_slug", ["slug"])
+    .index("by_category", ["categoryId"])
+    .index("by_published", ["isPublished"])
+    .index("by_sku", ["sku"]),
+
+  // 12. Product Variations
+  productVariations: defineTable({
+    productId: v.id("products"),
+    name: v.string(),
+    sku: v.string(),
+    price: v.number(),
+    inventory: v.number(),
+    options: v.array(v.object({
+      optionName: v.string(),
+      optionValue: v.string(),
+    })),
+    image: v.optional(v.string()),
+  }).index("by_product", ["productId"])
+    .index("by_sku", ["sku"]),
+
+  // 13. Shopping Carts
+  carts: defineTable({
+    userId: v.optional(v.id("users")),
+    guestId: v.optional(v.string()),
+    items: v.array(v.object({
+      productId: v.id("products"),
+      variationId: v.optional(v.id("productVariations")),
+      quantity: v.number(),
+      priceAtAdd: v.number(),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"])
+    .index("by_guest", ["guestId"]),
+
+  // 14. Orders
+  orders: defineTable({
+    orderNumber: v.string(),
+    userId: v.optional(v.id("users")),
+    guestEmail: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("shipped"),
+      v.literal("delivered"),
+      v.literal("cancelled"),
+      v.literal("refunded")
+    ),
+    items: v.array(v.object({
+      productId: v.id("products"),
+      productName: v.string(),
+      variationId: v.optional(v.id("productVariations")),
+      variationName: v.optional(v.string()),
+      quantity: v.number(),
+      unitPrice: v.number(),
+      total: v.number(),
+    })),
+    subtotal: v.number(),
+    tax: v.number(),
+    shipping: v.number(),
+    discount: v.optional(v.number()),
+    total: v.number(),
+    currency: v.string(),
+    paymentProvider: v.union(v.literal("stripe"), v.literal("paypal")),
+    paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed"), v.literal("refunded")),
+    paymentIntentId: v.optional(v.string()),
+    shippingAddress: v.object({
+      fullName: v.string(),
+      addressLine1: v.string(),
+      addressLine2: v.optional(v.string()),
+      city: v.string(),
+      state: v.optional(v.string()),
+      postalCode: v.string(),
+      country: v.string(),
+      phone: v.string(),
+    }),
+    billingAddress: v.optional(v.object({
+      fullName: v.string(),
+      addressLine1: v.string(),
+      addressLine2: v.optional(v.string()),
+      city: v.string(),
+      state: v.optional(v.string()),
+      postalCode: v.string(),
+      country: v.string(),
+    })),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_orderNumber", ["orderNumber"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_paymentStatus", ["paymentStatus"])
+    .index("by_createdAt", ["createdAt"]),
+
+  // 15. Discount Codes
+  discounts: defineTable({
+    code: v.string(),
+    type: v.union(v.literal("percentage"), v.literal("fixed")),
+    value: v.number(),
+    minOrderValue: v.optional(v.number()),
+    maxDiscountAmount: v.optional(v.number()),
+    usageLimit: v.optional(v.number()),
+    usedCount: v.number(),
+    validFrom: v.number(),
+    validUntil: v.optional(v.number()),
+    isActive: v.boolean(),
+    applicableProducts: v.optional(v.array(v.id("products"))),
+  }).index("by_code", ["code"])
+    .index("by_active", ["isActive"]),
 });

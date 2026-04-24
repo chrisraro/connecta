@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { CartProvider } from "@/contexts/CartContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +42,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <CartProvider>
+              {children}
+            </CartProvider>
           </ThemeProvider>
         </ConvexClientProvider>
       </body>

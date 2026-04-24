@@ -6,6 +6,8 @@ const isPublicRoute = createRouteMatcher([
     '/auth(.*)',    // Unified auth route (includes callback)
     '/p/(.*)',      // Public profiles
     '/t/(.*)',      // NFC Tap redirects
+    '/shop(.*)',    // Public shop (browsing, cart, checkout)
+    '/api/webhooks(.*)', // Payment webhooks
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

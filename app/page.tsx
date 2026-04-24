@@ -80,9 +80,9 @@ export default function LandingPage() {
             </Link>
           </SignedOut>
 
-          <Link href="https://tapandsave.com/shop" target="_blank" className="w-full">
+          <Link href="/shop" className="w-full">
             <Button size="lg" variant="outline" className="w-full sm:w-auto border-border text-foreground hover:bg-muted h-14 sm:h-16 px-8 sm:px-10 text-lg sm:text-xl rounded-2xl">
-              Buy Cards
+              Shop Now
             </Button>
           </Link>
         </div>
@@ -124,7 +124,7 @@ export default function LandingPage() {
                     <BenefitItem text="No app required for your clients" />
                 </div>
                 <div className="mt-10 sm:mt-12">
-                    <Link href="https://tapandsave.com/shop" target="_blank">
+                    <Link href="/shop">
                         <Button className="bg-primary text-primary-foreground font-bold h-12 rounded-xl w-full sm:w-auto">
                             Explore the Shop
                         </Button>

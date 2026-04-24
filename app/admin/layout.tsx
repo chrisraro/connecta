@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, Users, SmartphoneNfc, LogOut, Menu, BarChart3, FileText, Settings } from "lucide-react";
+import { Loader2, LayoutDashboard, Users, SmartphoneNfc, LogOut, Menu, BarChart3, FileText, Settings, ShoppingCart, Package, Tags, ShoppingCart as CartIcon, TrendingUp, Percent } from "lucide-react";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -67,10 +67,23 @@ export default function AdminLayout({
 
     // We rely purely on `verifiedAdmin` which waits for DB sync. No more white-screen blocks.
 
-    const navItems = [
+    type NavItem = { href?: string; label: string; icon: any; children?: NavItem[] };
+    
+    const navItems: NavItem[] = [
         { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
         { href: "/admin/users", label: "User Management", icon: Users },
         { href: "/admin/factory", label: "NFC Factory", icon: SmartphoneNfc },
+        {
+            label: "Shop",
+            icon: ShoppingCart,
+            children: [
+                { href: "/admin/shop/products", label: "Products", icon: Package },
+                { href: "/admin/shop/categories", label: "Categories", icon: Tags },
+                { href: "/admin/shop/orders", label: "Orders", icon: CartIcon },
+                { href: "/admin/shop/inventory", label: "Inventory", icon: TrendingUp },
+                { href: "/admin/shop/discounts", label: "Discounts", icon: Percent },
+            ]
+        },
         { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
         { href: "/admin/audit", label: "Audit Logs", icon: FileText },
         { href: "/admin/settings", label: "Settings", icon: Settings },
@@ -96,17 +109,48 @@ export default function AdminLayout({
                             <span>TapFolio Admin</span>
                         </div>
                         <nav className="p-4 space-y-2">
-                            {navItems.map((item) => (
-                                <Link key={item.href} href={item.href}>
-                                    <div className={cn(
-                                        "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                                        pathname === item.href ? "bg-red-600/10 text-red-500" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
-                                    )}>
-                                        <item.icon className="h-5 w-5" />
-                                        {item.label}
-                                    </div>
-                                </Link>
-                            ))}
+                            {navItems.map((item) => {
+                                if ('children' in item) {
+                                    return (
+                                        <div key={item.label} className="space-y-1">
+                                            <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-zinc-400">
+                                                <item.icon className="w-4 h-4" />
+                                                <span>{item.label}</span>
+                                            </div>
+                                            <div className="ml-7 space-y-1">
+                                                {item.children?.map((child) => (
+                                                    <Link key={child.href} href={child.href!}>
+                                                        <Button
+                                                            variant={pathname === child.href ? "secondary" : "ghost"}
+                                                            className={cn(
+                                                                "w-full justify-start gap-2 text-sm",
+                                                                pathname === child.href
+                                                                    ? "bg-red-600/10 text-red-600 hover:bg-red-600/20"
+                                                                    : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                                            )}
+                                                        >
+                                                            <child.icon className="w-4 h-4" />
+                                                            {child.label}
+                                                        </Button>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                if (!item.href) return null;
+                                return (
+                                    <Link key={item.href} href={item.href}>
+                                        <div className={cn(
+                                            "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                                            pathname === item.href ? "bg-red-600/10 text-red-500" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                        )}>
+                                            <item.icon className="h-5 w-5" />
+                                            {item.label}
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                         </nav>
                         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-900">
                             <Button variant="ghost" className="w-full justify-start text-zinc-500 hover:text-red-500" onClick={() => router.push("/dashboard")}>
@@ -130,17 +174,42 @@ export default function AdminLayout({
                 </div>
 
                 <nav className="flex-1 px-4 space-y-2 py-4">
-                    {navItems.map((item) => (
-                        <Link key={item.href} href={item.href}>
-                            <div className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                                pathname === item.href ? "bg-red-600/10 text-red-500" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
-                            )}>
-                                <item.icon className="h-5 w-5" />
-                                {item.label}
-                            </div>
-                        </Link>
-                    ))}
+                    {navItems.map((item) => {
+                        if ('children' in item) {
+                            return (
+                                <div key={item.label} className="space-y-1">
+                                    <div className="flex items-center gap-3 px-4 py-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                                        <item.icon className="w-3 h-3" />
+                                        <span>{item.label}</span>
+                                    </div>
+                                    <div className="ml-4 space-y-1">
+                                        {item.children?.map((child) => (
+                                            <Link key={child.href} href={child.href!}>
+                                                <div className={cn(
+                                                    "flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                    pathname === child.href ? "bg-red-600/10 text-red-500" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                                )}>
+                                                    <child.icon className="h-4 w-4" />
+                                                    {child.label}
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return (
+                            <Link key={item.href} href={item.href!}>
+                                <div className={cn(
+                                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                                    pathname === item.href ? "bg-red-600/10 text-red-500" : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                                )}>
+                                    <item.icon className="h-5 w-5" />
+                                    {item.label}
+                                </div>
+                            </Link>
+                        );
+                    })}
                 </nav>
 
                 <div className="p-6 border-t border-zinc-900">
@@ -158,8 +227,8 @@ export default function AdminLayout({
 
             {/* Mobile Bottom Bar */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-zinc-950 border-t border-zinc-900 flex items-center justify-around px-2 z-40">
-                {navItems.map((item) => (
-                    <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center gap-1 flex-1 h-full">
+                {navItems.filter(item => !('children' in item)).slice(0, 4).map((item) => (
+                    <Link key={item.href} href={item.href!} className="flex flex-col items-center justify-center gap-1 flex-1 h-full">
                         <item.icon className={cn(
                             "h-5 w-5",
                             pathname === item.href ? "text-red-500" : "text-zinc-500"
