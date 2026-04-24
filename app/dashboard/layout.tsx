@@ -5,9 +5,9 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Bell, Zap, LayoutTemplate, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Bell, Zap, LayoutTemplate, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { NotificationsPopover } from "@/components/ui/notifications-popover";
 import { OfflineLeadCapture } from "@/components/profile-builder/OfflineLeadCapture";
@@ -206,6 +206,14 @@ export default function DashboardLayout({
 }) {
     const { user, isLoaded } = useUser();
     const syncUser = useMutation(api.users.syncUser);
+    const router = useRouter();
+    const pathname = usePathname();
+
+    // Check admin status
+    const adminStatus = useQuery(
+        api.admin.checkAdminStatus,
+        isLoaded && user ? { clerkId: user.id } : "skip"
+    );
 
     useEffect(() => {
         if (isLoaded && user) {
@@ -216,6 +224,24 @@ export default function DashboardLayout({
             });
         }
     }, [isLoaded, user, syncUser]);
+
+    // Redirect admins to admin dashboard (except onboarding)
+    useEffect(() => {
+        if (!isLoaded || !adminStatus || !pathname) return;
+        
+        if (adminStatus.isAdmin && pathname !== "/dashboard/onboarding") {
+            console.log("Admin detected on user dashboard, redirecting to admin...");
+            router.replace("/admin");
+        }
+    }, [isLoaded, adminStatus, pathname, router]);
+
+    if (!isLoaded) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen bg-background text-foreground selection:bg-primary/30">

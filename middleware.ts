@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
     '/',
-    '/auth(.*)',    // Unified auth route
+    '/auth(.*)',    // Unified auth route (includes callback)
     '/p/(.*)',      // Public profiles
     '/t/(.*)',      // NFC Tap redirects
 ]);
@@ -11,12 +11,18 @@ const isPublicRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
     const { pathname } = req.nextUrl;
     
-    // Single URL Experience: Redirect all auth-related paths to the root /auth page
-    if (pathname === '/sign-in' || pathname === '/sign-up' || (pathname.startsWith('/auth/') && pathname !== '/auth')) {
+    // Single URL Experience: Redirect old auth paths to /auth
+    if (pathname === '/sign-in' || pathname === '/sign-up') {
+        return NextResponse.redirect(new URL('/auth', req.url));
+    }
+    if (pathname.startsWith('/auth/') && pathname !== '/auth' && pathname !== '/auth/callback') {
         return NextResponse.redirect(new URL('/auth', req.url));
     }
 
-    if (!isPublicRoute(req)) await auth.protect();
+    // Protect all non-public routes (requires authentication)
+    if (!isPublicRoute(req)) {
+        await auth.protect();
+    }
 });
 
 export const config = {

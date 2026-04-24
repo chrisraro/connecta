@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ImagePlus, X, Loader2 } from "lucide-react";
+import { ImagePlus, X, Loader2, Info } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { resolveImageUrl } from "@/lib/utils";
+import { compressImage, formatFileSize } from "@/lib/image-compression";
 
 interface ImageUploaderProps {
     value?: string;
@@ -18,6 +19,7 @@ interface ImageUploaderProps {
 export function ImageUploader({ value, onChange, onRemove, className, placeholder = "Upload Image" }: ImageUploaderProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+    const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.images.generateUploadUrl);
     
@@ -48,35 +50,71 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
         }
 
         setIsLoading(true);
-        
-        // Create local preview URL for immediate display
-        const localUrl = URL.createObjectURL(file);
-        setLocalPreviewUrl(localUrl);
+        setCompressionInfo(null);
         
         try {
+            console.log("Starting image upload...", { fileName: file.name, size: file.size, type: file.type });
+            
+            // Compress image if over 1MB
+            let fileToUpload = file;
+            const ONE_MB = 1 * 1024 * 1024;
+            
+            if (file.size > ONE_MB) {
+                console.log(`File size ${formatFileSize(file.size)} exceeds 1MB, compressing...`);
+                const compressionResult = await compressImage(file, {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1920,
+                    quality: 0.9,
+                    minWidthOrHeight: 800,
+                });
+                
+                fileToUpload = new File([compressionResult.blob], file.name, {
+                    type: 'image/jpeg',
+                });
+                
+                setCompressionInfo(
+                    `Compressed: ${formatFileSize(compressionResult.originalSize)} → ${formatFileSize(compressionResult.compressedSize)} (${compressionResult.compressionRatio.toFixed(0)}% reduction)`
+                );
+                
+                console.log('Compression result:', compressionResult);
+            }
+            
+            // Create local preview URL for immediate display
+            const localUrl = URL.createObjectURL(fileToUpload);
+            setLocalPreviewUrl(localUrl);
+            
             // 1. Get a short-lived upload URL from Convex
             const postUrl = await generateUploadUrl();
+            console.log("Got upload URL:", postUrl);
 
             // 2. POST the file to the URL
             const result = await fetch(postUrl, {
                 method: "POST",
-                headers: { "Content-Type": file.type },
-                body: file,
+                headers: { "Content-Type": fileToUpload.type },
+                body: fileToUpload,
             });
 
-            if (!result.ok) throw new Error("Upload failed");
+            console.log("Upload response status:", result.status);
+            
+            if (!result.ok) {
+                const errorText = await result.text();
+                console.error("Upload failed:", errorText);
+                throw new Error(`Upload failed: ${result.status} ${errorText}`);
+            }
 
             const { storageId } = await result.json();
+            console.log("Upload successful, storageId:", storageId);
             
             // Clear local preview and set the storage ID
             setLocalPreviewUrl(null);
             URL.revokeObjectURL(localUrl);
             onChange(storageId);
         } catch (err) {
-            console.error(err);
+            console.error("Image upload error:", err);
             setLocalPreviewUrl(null);
-            URL.revokeObjectURL(localUrl);
-            alert("Failed to upload image.");
+            
+            const errorMessage = err instanceof Error ? err.message : "Unknown error";
+            alert(`Failed to upload image: ${errorMessage}`);
         } finally {
             setIsLoading(false);
             if (inputRef.current) inputRef.current.value = "";
@@ -129,9 +167,16 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
                     <>
                         <ImagePlus className="w-6 h-6 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">{placeholder}</span>
+                        <span className="text-[10px] text-muted-foreground">Max 1MB (auto-compressed)</span>
                     </>
                 )}
             </Button>
+            {compressionInfo && (
+                <div className="mt-2 flex items-start gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+                    <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    <span>{compressionInfo}</span>
+                </div>
+            )}
         </div>
     );
 }

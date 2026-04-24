@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, Users, SmartphoneNfc, LogOut, Menu } from "lucide-react";
+import { Loader2, LayoutDashboard, Users, SmartphoneNfc, LogOut, Menu, BarChart3, FileText, Settings } from "lucide-react";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     const router = useRouter();
+    const pathname = usePathname(); // Move hooks BEFORE any conditional returns
     const { user, isLoaded, isSignedIn } = useUser();
     const userRole = useQuery(api.users.getUser); 
     const syncUser = useMutation(api.users.syncUser);
@@ -66,11 +67,13 @@ export default function AdminLayout({
 
     // We rely purely on `verifiedAdmin` which waits for DB sync. No more white-screen blocks.
 
-    const pathname = usePathname();
     const navItems = [
-        { href: "/admin", label: "Overview", icon: LayoutDashboard },
+        { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
         { href: "/admin/users", label: "User Management", icon: Users },
         { href: "/admin/factory", label: "NFC Factory", icon: SmartphoneNfc },
+        { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+        { href: "/admin/audit", label: "Audit Logs", icon: FileText },
+        { href: "/admin/settings", label: "Settings", icon: Settings },
     ];
 
     return (

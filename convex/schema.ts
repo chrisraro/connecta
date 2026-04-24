@@ -211,4 +211,29 @@ export default defineSchema({
     data: v.optional(v.any()), // Extra context data
     createdAt: v.number(),
   }).index("by_user", ["userId"]).index("by_user_read", ["userId", "read"]),
+
+  // 8. Audit Logs (Security & Compliance)
+  auditLogs: defineTable({
+    userId: v.id("users"),
+    action: v.string(), // "create_profile", "delete_card", "update_user", etc.
+    resourceType: v.string(), // "profiles", "cards", "leads", "users"
+    resourceId: v.string(), // ID of the affected resource
+    changes: v.optional(v.any()), // Before/after state snapshot
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    timestamp: v.number(),
+  }).index("by_user", ["userId"])
+    .index("by_resource", ["resourceType", "resourceId"])
+    .index("by_timestamp", ["timestamp"]),
+
+  // 9. Admin Users (Role-Based Access Control)
+  admins: defineTable({
+    userId: v.id("users"),
+    role: v.union(v.literal("superadmin"), v.literal("moderator")),
+    grantedBy: v.id("users"),
+    grantedAt: v.number(),
+    revokedAt: v.optional(v.number()),
+    reason: v.optional(v.string()),
+  }).index("by_user", ["userId"])
+    .index("by_active", ["revokedAt"]),
 });

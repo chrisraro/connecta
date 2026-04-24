@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { sanitizePlainText } from "../lib/sanitize";
 
 // Leads Management
 export const createLead = mutation({
@@ -13,13 +14,19 @@ export const createLead = mutation({
         message: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        // Sanitize user inputs to prevent XSS
+        const sanitizedName = sanitizePlainText(args.inquirerName);
+        const sanitizedContact = sanitizePlainText(args.inquirerContact);
+        const sanitizedMessage = args.message ? sanitizePlainText(args.message) : undefined;
+        const sanitizedPropertyName = args.propertyName ? sanitizePlainText(args.propertyName) : undefined;
+
         const leadId = await ctx.db.insert("leads", {
             ownerId: args.ownerId,
             propertyId: args.propertyId,
-            propertyName: args.propertyName,
-            inquirerName: args.inquirerName,
-            inquirerContact: args.inquirerContact,
-            message: args.message,
+            propertyName: sanitizedPropertyName,
+            inquirerName: sanitizedName,
+            inquirerContact: sanitizedContact,
+            message: sanitizedMessage,
             status: "new",
             createdAt: Date.now(),
         });
@@ -30,9 +37,9 @@ export const createLead = mutation({
             type: "new_lead",
             read: false,
             title: "New Lead Inquiry",
-            message: `${args.inquirerName} has sent you a message!`,
+            message: `${sanitizedName} has sent you a message!`,
             link: "/dashboard/leads",
-            data: { leadId, inquirerName: args.inquirerName },
+            data: { leadId, inquirerName: sanitizedName },
             createdAt: Date.now(),
         });
 
@@ -41,10 +48,10 @@ export const createLead = mutation({
         if (user && user.email) {
             await ctx.scheduler.runAfter(0, internal.email.sendLeadNotification, {
                 toEmail: user.email,
-                inquirerName: args.inquirerName,
-                inquirerContact: args.inquirerContact,
-                propertyName: args.propertyName,
-                message: args.message,
+                inquirerName: sanitizedName,
+                inquirerContact: sanitizedContact,
+                propertyName: sanitizedPropertyName,
+                message: sanitizedMessage,
             });
         }
 

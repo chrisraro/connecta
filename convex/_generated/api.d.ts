@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as audit from "../audit.js";
 import type * as cards from "../cards.js";
 import type * as email from "../email.js";
 import type * as images from "../images.js";
@@ -26,6 +27,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  audit: typeof audit;
   cards: typeof cards;
   email: typeof email;
   images: typeof images;

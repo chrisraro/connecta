@@ -14,33 +14,29 @@ export const syncUser = mutation({
             .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
             .first();
 
-        const isAdmin = args.email === "tapfolio.dev@gmail.com";
-
         if (existingUser) {
             const updates: Partial<Doc<"users">> = {};
             if (existingUser.email !== args.email) {
                 updates.email = args.email;
             }
-            if (isAdmin && existingUser.role !== "admin") {
-                updates.role = "admin";
-            }
+            // Note: Admin role is now managed via admins table, not hardcoded email
             if (Object.keys(updates).length > 0) {
                 await ctx.db.patch(existingUser._id, updates);
             }
-            return { id: existingUser._id, role: isAdmin ? "admin" : existingUser.role };
+            return { id: existingUser._id, role: existingUser.role };
         }
 
         const newUserId = await ctx.db.insert("users", {
             clerkId: args.clerkId,
             email: args.email,
             name: args.name,
-            role: isAdmin ? "admin" : "agent",
+            role: "agent", // Default role, admin granted separately via admins table
             subscriptionStatus: "active",
             credits: 5,
             onboardingCompleted: false,
         });
 
-        return { id: newUserId, role: isAdmin ? "admin" : "agent" };
+        return { id: newUserId, role: "agent" };
     },
 });
 

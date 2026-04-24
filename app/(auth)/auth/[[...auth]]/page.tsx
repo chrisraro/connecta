@@ -32,10 +32,8 @@ async function AuthContent({
 
   const isSignIn = mode === 'signin';
 
-  // Build redirect URL with card_uuid preserved if present
-  const redirectUrl = cardUuid
-    ? `/dashboard/onboarding?card_uuid=${encodeURIComponent(cardUuid)}`
-    : '/dashboard/onboarding';
+  // Build redirect URL - always go to callback first to check admin status
+  const redirectUrl = '/auth/callback';
 
   // Build auth URLs with card_uuid preserved when switching between sign-in/sign-up
   const signUpUrl = cardUuid
@@ -69,13 +67,15 @@ async function AuthContent({
           {isSignIn ? (
             <SignIn
               routing="hash"
-              fallbackRedirectUrl={redirectUrl}
+              forceRedirectUrl={redirectUrl}
+              afterSignInUrl={redirectUrl}
               signUpUrl={signUpUrl}
             />
           ) : (
             <SignUp
               routing="hash"
-              fallbackRedirectUrl={redirectUrl}
+              forceRedirectUrl={redirectUrl}
+              afterSignUpUrl={redirectUrl}
               signInUrl={signInUrl}
             />
           )}
