@@ -1,24 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Truck, Shield } from "lucide-react";
+import { ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Truck, Shield, Loader2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
 
 function formatPrice(priceInCents: number): string {
-  return `$${(priceInCents / 100).toFixed(2)}`;
+  const amount = (priceInCents / 100).toFixed(2);
+  return `₱${amount}`;
+}
+
+// Helper component to resolve and display product images
+function ProductImage({ storageId, alt, className }: { storageId: string; alt: string; className?: string }) {
+  const imageUrl = useQuery(
+    api.images.getImageUrl,
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+  );
+
+  const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
+
+  if (!displayUrl) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={displayUrl}
+      alt={alt}
+      className={className}
+    />
+  );
 }
 
 export default function ProductPage() {
   const params = useParams();
+  const router = useRouter();
   const slug = params.slug as string;
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -63,6 +91,8 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     try {
       await addItem(product._id, selectedVariation, quantity);
+      // Redirect to checkout immediately after adding to cart
+      router.push('/shop/checkout');
     } catch (error) {
       console.error("Failed to add to cart:", error);
     }
@@ -78,15 +108,15 @@ export default function ProductPage() {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
         {/* Product Images */}
         <div className="space-y-4">
           {/* Main Image */}
           <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
             {product.images.length > 0 ? (
               <>
-                <img
-                  src={resolveImageUrl(product.images[selectedImage])}
+                <ProductImage
+                  storageId={product.images[selectedImage]}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -128,8 +158,8 @@ export default function ProductPage() {
                       : "border-transparent hover:border-muted"
                   }`}
                 >
-                  <img
-                    src={resolveImageUrl(image)}
+                  <ProductImage
+                    storageId={image}
                     alt={`${product.name} - Image ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -143,10 +173,10 @@ export default function ProductPage() {
         <div className="space-y-6">
           {/* Title & Price */}
           <div>
-            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">{product.name}</h1>
             
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-primary">
+              <span className="text-2xl sm:text-3xl font-bold text-primary">
                 {formatPrice(currentPrice)}
               </span>
               {product.compareAtPrice && product.compareAtPrice > currentPrice && (
@@ -254,8 +284,12 @@ export default function ProductPage() {
               disabled={!isInStock || isLoading}
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
-              {isInStock ? "Add to Cart" : "Out of Stock"}
+              {isInStock ? "Add to Cart & Checkout" : "Out of Stock"}
             </Button>
+            
+            <p className="text-xs text-muted-foreground text-center">
+              You'll be redirected to checkout after adding to cart
+            </p>
 
             <Link href="/shop/cart">
               <Button variant="outline" size="lg" className="w-full">

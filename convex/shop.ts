@@ -154,16 +154,26 @@ export const getProductById = query({
 // Get cart by user ID or guest ID
 export const getCart = query({
   args: {
-    userId: v.optional(v.id("users")),
+    clerkId: v.optional(v.string()),
     guestId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     let cart;
 
-    if (args.userId) {
+    // If clerkId provided, look up the user
+    let userId;
+    if (args.clerkId) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
+        .first();
+      userId = user?._id;
+    }
+
+    if (userId) {
       cart = await ctx.db
         .query("carts")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+        .withIndex("by_user", (q) => q.eq("userId", userId))
         .first();
     } else if (args.guestId) {
       cart = await ctx.db
@@ -207,13 +217,23 @@ export const getCart = query({
 // Add item to cart
 export const addToCart = mutation({
   args: {
-    userId: v.optional(v.id("users")),
+    clerkId: v.optional(v.string()),
     guestId: v.optional(v.string()),
     productId: v.id("products"),
     variationId: v.optional(v.id("productVariations")),
     quantity: v.number(),
   },
   handler: async (ctx, args) => {
+    // Lookup user from clerkId
+    let userId;
+    if (args.clerkId) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
+        .first();
+      userId = user?._id;
+    }
+
     // Validate product exists and is published
     const product = await ctx.db.get(args.productId);
     if (!product || !product.isPublished) {
@@ -241,10 +261,10 @@ export const addToCart = mutation({
 
     // Find or create cart
     let cart;
-    if (args.userId) {
+    if (userId) {
       cart = await ctx.db
         .query("carts")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+        .withIndex("by_user", (q) => q.eq("userId", userId))
         .first();
     } else if (args.guestId) {
       cart = await ctx.db
@@ -258,7 +278,7 @@ export const addToCart = mutation({
     if (!cart) {
       // Create new cart
       const cartId = await ctx.db.insert("carts", {
-        userId: args.userId,
+        userId,
         guestId: args.guestId,
         items: [{
           productId: args.productId,
@@ -308,23 +328,33 @@ export const addToCart = mutation({
 // Update cart item quantity
 export const updateCartItem = mutation({
   args: {
-    userId: v.optional(v.id("users")),
+    clerkId: v.optional(v.string()),
     guestId: v.optional(v.string()),
     productId: v.id("products"),
     variationId: v.optional(v.id("productVariations")),
     quantity: v.number(),
   },
   handler: async (ctx, args) => {
+    // Lookup user from clerkId
+    let userId;
+    if (args.clerkId) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
+        .first();
+      userId = user?._id;
+    }
+
     if (args.quantity < 0) {
       throw new Error("Quantity must be non-negative");
     }
 
     // Find cart
     let cart;
-    if (args.userId) {
+    if (userId) {
       cart = await ctx.db
         .query("carts")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+        .withIndex("by_user", (q) => q.eq("userId", userId))
         .first();
     } else if (args.guestId) {
       cart = await ctx.db
@@ -371,18 +401,28 @@ export const updateCartItem = mutation({
 // Remove item from cart
 export const removeFromCart = mutation({
   args: {
-    userId: v.optional(v.id("users")),
+    clerkId: v.optional(v.string()),
     guestId: v.optional(v.string()),
     productId: v.id("products"),
     variationId: v.optional(v.id("productVariations")),
   },
   handler: async (ctx, args) => {
+    // Lookup user from clerkId
+    let userId;
+    if (args.clerkId) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
+        .first();
+      userId = user?._id;
+    }
+
     // Find cart
     let cart;
-    if (args.userId) {
+    if (userId) {
       cart = await ctx.db
         .query("carts")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+        .withIndex("by_user", (q) => q.eq("userId", userId))
         .first();
     } else if (args.guestId) {
       cart = await ctx.db
@@ -412,15 +452,25 @@ export const removeFromCart = mutation({
 // Clear cart
 export const clearCart = mutation({
   args: {
-    userId: v.optional(v.id("users")),
+    clerkId: v.optional(v.string()),
     guestId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // Lookup user from clerkId
+    let userId;
+    if (args.clerkId) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
+        .first();
+      userId = user?._id;
+    }
+
     let cart;
-    if (args.userId) {
+    if (userId) {
       cart = await ctx.db
         .query("carts")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+        .withIndex("by_user", (q) => q.eq("userId", userId))
         .first();
     } else if (args.guestId) {
       cart = await ctx.db
@@ -445,10 +495,21 @@ export const clearCart = mutation({
 // Merge guest cart into user cart (on login)
 export const mergeGuestCart = mutation({
   args: {
-    userId: v.id("users"),
+    clerkId: v.string(),
     guestId: v.string(),
   },
   handler: async (ctx, args) => {
+    // Lookup user from clerkId
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    const userId = user._id;
+
     const guestCart = await ctx.db
       .query("carts")
       .withIndex("by_guest", (q) => q.eq("guestId", args.guestId))
@@ -460,7 +521,7 @@ export const mergeGuestCart = mutation({
 
     let userCart = await ctx.db
       .query("carts")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
 
     const now = Date.now();
@@ -468,7 +529,7 @@ export const mergeGuestCart = mutation({
     if (!userCart) {
       // Create user cart with guest items
       await ctx.db.insert("carts", {
-        userId: args.userId,
+        userId,
         guestId: undefined,
         items: guestCart.items,
         createdAt: now,

@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { resolveImageUrl } from "@/lib/utils";
 import { compressImage, formatFileSize } from "@/lib/image-compression";
+import { useUser } from "@clerk/nextjs";
 
 interface ImageUploaderProps {
     value?: string;
@@ -17,6 +18,7 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ value, onChange, onRemove, className, placeholder = "Upload Image" }: ImageUploaderProps) {
+    const { user } = useUser();
     const [isLoading, setIsLoading] = useState(false);
     const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
     const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
@@ -84,7 +86,13 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
             setLocalPreviewUrl(localUrl);
             
             // 1. Get a short-lived upload URL from Convex
-            const postUrl = await generateUploadUrl();
+            if (!user?.id) {
+                throw new Error("User not authenticated");
+            }
+            
+            const postUrl = await generateUploadUrl({
+                clerkId: user.id,
+            });
             console.log("Got upload URL:", postUrl);
 
             // 2. POST the file to the URL

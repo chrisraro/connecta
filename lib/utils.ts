@@ -7,6 +7,9 @@ export function cn(...inputs: ClassValue[]) {
 
 export function resolveImageUrl(path: string | undefined | null) {
   if (!path) return "";
-  if (path.startsWith("http") || path.startsWith("data:")) return path;
-  return `https://neat-hedgehog-331.convex.site/api/storage/${path}`;
+  // If it's already a full URL, return as-is
+  if (path.startsWith("http") || path.startsWith("data:") || path.startsWith("blob:")) return path;
+  // For Convex storage IDs, we need to use the storage URL API
+  // This will be resolved on the client side via the getImageUrl query
+  return path;
 }

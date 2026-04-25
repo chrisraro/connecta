@@ -21,6 +21,7 @@ export const createCategory = mutation({
     parentId: v.optional(v.id("productCategories")),
     image: v.optional(v.string()),
     sortOrder: v.number(),
+    isActive: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
@@ -31,7 +32,7 @@ export const createCategory = mutation({
       description: args.description,
       parentId: args.parentId,
       image: args.image,
-      isActive: true,
+      isActive: args.isActive !== undefined ? args.isActive : true,
       sortOrder: args.sortOrder,
     });
 

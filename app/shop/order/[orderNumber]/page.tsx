@@ -10,7 +10,8 @@ import { CheckCircle, Clock, Truck, Package } from "lucide-react";
 import Link from "next/link";
 
 function formatPrice(priceInCents: number): string {
-  return `$${(priceInCents / 100).toFixed(2)}`;
+  const amount = (priceInCents / 100).toFixed(2);
+  return `₱${amount}`;
 }
 
 function formatDate(timestamp: number): string {

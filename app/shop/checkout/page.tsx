@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
 import { useCart } from "@/contexts/CartContext";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -14,7 +15,36 @@ import { ArrowLeft, ArrowRight, CreditCard, CheckCircle, Loader2 } from "lucide-
 import Link from "next/link";
 
 function formatPrice(priceInCents: number): string {
-  return `$${(priceInCents / 100).toFixed(2)}`;
+  const amount = (priceInCents / 100).toFixed(2);
+  return `₱${amount}`;
+}
+
+// Helper component to resolve and display product images
+function CheckoutItemImage({ storageId, alt }: { storageId: string; alt: string }) {
+  const [error, setError] = useState(false);
+  const imageUrl = useQuery(
+    api.images.getImageUrl,
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+  );
+
+  const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
+
+  if (error || !displayUrl) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground bg-muted/50">
+        {error ? "Failed" : <Loader2 className="w-3 h-3 animate-spin" />}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={displayUrl}
+      alt={alt}
+      className="w-full h-full object-cover"
+      onError={() => setError(true)}
+    />
+  );
 }
 
 export default function CheckoutPage() {
@@ -111,7 +141,7 @@ export default function CheckoutPage() {
     return (
       <div className="max-w-2xl mx-auto text-center space-y-6">
         <CheckCircle className="w-16 h-16 mx-auto text-green-500" />
-        <h1 className="text-3xl font-bold">Order Confirmed!</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Order Confirmed!</h1>
         <p className="text-muted-foreground">
           Thank you for your purchase. Your order has been received.
         </p>
@@ -155,7 +185,7 @@ export default function CheckoutPage() {
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Checkout</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Checkout</h1>
         <p className="text-muted-foreground mt-1">Complete your order</p>
       </div>
 
@@ -180,7 +210,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2">
           {/* Step 1: Shipping Information */}
@@ -439,22 +469,36 @@ export default function CheckoutPage() {
             <CardContent className="space-y-4">
               {/* Items */}
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {items.map((item) => (
-                  <div key={`${item.productId}-${item.variationId}`} className="flex gap-3">
-                    <div className="w-12 h-12 bg-muted rounded flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {item.product?.name || "Product"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Qty: {item.quantity}
+                {items.map((item) => {
+                  const imageStorageId = item.product?.images?.[0];
+                  return (
+                    <div key={`${item.productId}-${item.variationId}`} className="flex gap-3">
+                      <div className="w-12 h-12 bg-muted rounded flex-shrink-0 overflow-hidden">
+                        {imageStorageId ? (
+                          <CheckoutItemImage
+                            storageId={imageStorageId}
+                            alt={item.product?.name || "Product"}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                            No Image
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {item.product?.name || "Product"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Qty: {item.quantity}
+                        </p>
+                      </div>
+                      <p className="text-sm font-medium">
+                        {formatPrice(item.lineTotal || 0)}
                       </p>
                     </div>
-                    <p className="text-sm font-medium">
-                      {formatPrice(item.lineTotal || 0)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Totals */}

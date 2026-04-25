@@ -54,23 +54,35 @@ export default function CategoriesPage() {
         if (!user?.id) return;
 
         try {
+            // Convert empty strings to undefined for optional fields
+            const parentId = formData.parentId || undefined;
+
             if (editingId) {
                 await updateCategory({
                     clerkId: user.id,
                     categoryId: editingId,
-                    ...formData,
-                    parentId: formData.parentId as any,
+                    name: formData.name,
+                    slug: formData.slug,
+                    description: formData.description,
+                    sortOrder: formData.sortOrder,
+                    isActive: formData.isActive,
+                    parentId: parentId as any,
                 });
             } else {
                 await createCategory({
                     clerkId: user.id,
-                    ...formData,
-                    parentId: formData.parentId as any,
+                    name: formData.name,
+                    slug: formData.slug,
+                    description: formData.description,
+                    sortOrder: formData.sortOrder,
+                    isActive: formData.isActive,
+                    parentId: parentId as any,
                 });
             }
             resetForm();
         } catch (error) {
             console.error("Failed to save category:", error);
+            alert("Failed to save category. Check console for details.");
         }
     };
 

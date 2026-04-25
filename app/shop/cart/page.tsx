@@ -1,16 +1,44 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from "lucide-react";
-import { resolveImageUrl } from "@/lib/utils";
+import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 function formatPrice(priceInCents: number): string {
-  return `$${(priceInCents / 100).toFixed(2)}`;
+  const amount = (priceInCents / 100).toFixed(2);
+  return `₱${amount}`;
+}
+
+// Helper component to resolve and display product images
+function CartItemImage({ storageId, alt }: { storageId: string; alt: string }) {
+  const imageUrl = useQuery(
+    api.images.getImageUrl,
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+  );
+
+  const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
+
+  if (!displayUrl) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+        <Loader2 className="w-4 h-4 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={displayUrl}
+      alt={alt}
+      className="w-full h-full object-cover"
+    />
+  );
 }
 
 export default function CartPage() {
@@ -18,7 +46,7 @@ export default function CartPage() {
   const [discountCode, setDiscountCode] = useState("");
   const [applyingDiscount, setApplyingDiscount] = useState(false);
 
-  const shipping = subtotal > 5000 ? 0 : 500; // Free shipping over $50
+  const shipping = subtotal > 5000 ? 0 : 500; // Free shipping over ₱50
   const tax = 0; // TODO: Implement tax calculation
   const total = subtotal + shipping + tax;
 
@@ -57,28 +85,27 @@ export default function CartPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Shopping Cart</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">Shopping Cart</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             {itemCount} item{itemCount !== 1 ? "s" : ""} in your cart
           </p>
         </div>
-        <Button variant="outline" onClick={() => clearCart()}>
+        <Button variant="outline" onClick={() => clearCart()} className="w-full sm:w-auto">
           <Trash2 className="w-4 h-4 mr-2" />
-          Clear Cart
+          <span className="hidden sm:inline">Clear Cart</span>
+          <span className="sm:hidden">Clear</span>
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => {
             const product = item.product;
             const variation = item.variation;
-            const imageUrl = product?.images?.[0] 
-              ? resolveImageUrl(product.images[0])
-              : null;
+            const imageStorageId = product?.images?.[0];
 
             return (
               <Card key={`${item.productId}-${item.variationId || "default"}`}>
@@ -87,11 +114,10 @@ export default function CartPage() {
                     {/* Product Image */}
                     <Link href={`/shop/product/${product?.slug}`}>
                       <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
+                        {imageStorageId ? (
+                          <CartItemImage
+                            storageId={imageStorageId}
                             alt={product?.name || "Product"}
-                            className="w-full h-full object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
@@ -120,40 +146,42 @@ export default function CartPage() {
                       </p>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center gap-3 mt-3">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.productId, item.variationId, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => updateQuantity(item.productId, item.variationId, item.quantity + 1)}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 touch-manipulation"
+                            onClick={() => updateQuantity(item.productId, item.variationId, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="w-10 text-center font-medium">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 touch-manipulation"
+                            onClick={() => updateQuantity(item.productId, item.variationId, item.quantity + 1)}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
 
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="ml-auto text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive px-2 py-1 h-auto"
                           onClick={() => removeItem(item.productId, item.variationId)}
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
-                          Remove
+                          <span className="hidden sm:inline">Remove</span>
                         </Button>
                       </div>
                     </div>
 
                     {/* Line Total */}
-                    <div className="text-right flex-shrink-0">
+                    <div className="text-right flex-shrink-0 mt-3 sm:mt-0">
                       <p className="text-lg font-bold">{formatPrice(item.lineTotal || 0)}</p>
                     </div>
                   </div>
@@ -227,19 +255,21 @@ export default function CartPage() {
               </div>
 
               {/* Checkout Button */}
-              <Link href="/shop/checkout">
-                <Button size="lg" className="w-full">
-                  Proceed to Checkout
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              <div className="pt-4 space-y-3">
+                <Link href="/shop/checkout">
+                  <Button size="lg" className="w-full mb-3">
+                    Proceed to Checkout
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
 
-              {/* Continue Shopping */}
-              <Link href="/shop">
-                <Button variant="outline" className="w-full">
-                  Continue Shopping
-                </Button>
-              </Link>
+                {/* Continue Shopping */}
+                <Link href="/shop">
+                  <Button variant="outline" className="w-full">
+                    Continue Shopping
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>

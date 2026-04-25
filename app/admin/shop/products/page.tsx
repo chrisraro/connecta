@@ -28,7 +28,34 @@ import { Id } from "@/convex/_generated/dataModel";
 import { resolveImageUrl } from "@/lib/utils";
 
 function formatPrice(priceInCents: number): string {
-  return `$${(priceInCents / 100).toFixed(2)}`;
+  const amount = (priceInCents / 100).toFixed(2);
+  return `₱${amount}`;
+}
+
+// Helper component to resolve and display storage images
+function ProductImage({ storageId, alt }: { storageId: string; alt: string }) {
+  const imageUrl = useQuery(
+    api.images.getImageUrl,
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+  );
+
+  const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
+
+  if (!displayUrl) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={displayUrl}
+      alt={alt}
+      className="w-full h-full object-cover"
+    />
+  );
 }
 
 export default function AdminProductsPage() {
@@ -158,10 +185,9 @@ export default function AdminProductsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-muted rounded overflow-hidden flex-shrink-0">
                           {imageUrl ? (
-                            <img
-                              src={resolveImageUrl(imageUrl)}
+                            <ProductImage
+                              storageId={imageUrl}
                               alt={product.name}
-                              className="w-full h-full object-cover"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">

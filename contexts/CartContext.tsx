@@ -51,7 +51,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const cart = useQuery(
     api.shop.getCart,
     user?.id 
-      ? { userId: user.id as Id<"users"> }
+      ? { clerkId: user.id }
       : guestId 
         ? { guestId }
         : "skip"
@@ -71,7 +71,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoaded && user && guestId) {
       mergeGuestCart({
-        userId: user.id as Id<"users">,
+        clerkId: user.id,
         guestId,
       }).catch(err => {
         console.error("Failed to merge guest cart:", err);
@@ -86,7 +86,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   ) => {
     try {
       await addToCart({
-        userId: user?.id as Id<"users"> | undefined,
+        clerkId: user?.id,
         guestId: user?.id ? undefined : guestId,
         productId,
         variationId,
@@ -104,7 +104,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   ) => {
     try {
       await removeFromCartMutation({
-        userId: user?.id as Id<"users"> | undefined,
+        clerkId: user?.id,
         guestId: user?.id ? undefined : guestId,
         productId,
         variationId,
@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   ) => {
     try {
       await updateCartItem({
-        userId: user?.id as Id<"users"> | undefined,
+        clerkId: user?.id,
         guestId: user?.id ? undefined : guestId,
         productId,
         variationId,
@@ -137,7 +137,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = useCallback(async () => {
     try {
       await clearCartMutation({
-        userId: user?.id as Id<"users"> | undefined,
+        clerkId: user?.id,
         guestId: user?.id ? undefined : guestId,
       });
     } catch (error) {
