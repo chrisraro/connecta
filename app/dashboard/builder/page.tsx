@@ -101,6 +101,7 @@ function GalleryUploader({
     maxImages?: number;
     maxSizeMB?: number;
 }) {
+    const { user } = useUser();
     const [isUploading, setIsUploading] = useState(false);
     const [localPreviews, setLocalPreviews] = useState<Record<number, string>>({});
     const inputRef = useRef<HTMLInputElement>(null);
@@ -131,7 +132,10 @@ function GalleryUploader({
         setLocalPreviews(prev => ({ ...prev, [previewIdx]: localUrl }));
 
         try {
-            const postUrl = await generateUploadUrl();
+            if (!user?.id) {
+                throw new Error("User not authenticated");
+            }
+            const postUrl = await generateUploadUrl({ clerkId: user.id });
             const result = await fetch(postUrl, {
                 method: "POST",
                 headers: { "Content-Type": file.type },
