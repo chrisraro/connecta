@@ -29,12 +29,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Eye, Package, Truck, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { Loader2, Eye, Package, Truck, CheckCircle, XCircle, RefreshCw, Download, Search, AlertTriangle } from "lucide-react";
 import { Id } from "@/convex/_generated/dataModel";
+import { formatPHP } from "@/lib/payment";
 
-function formatPrice(priceInCents: number): string {
-    return `$${(priceInCents / 100).toFixed(2)}`;
-}
+const formatPrice = formatPHP;
 
 function formatDate(timestamp: number): string {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -50,23 +49,45 @@ export default function OrdersPage() {
     const { user } = useUser();
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [paymentFilter, setPaymentFilter] = useState<string>("all");
+    const [search, setSearch] = useState("");
 
     const orders = useQuery(api.adminShop.getOrders, user?.id ? { clerkId: user.id } : "skip");
     const updateOrderStatus = useMutation(api.adminShop.updateOrderStatus);
+    const markOrderRefunded = useMutation(api.adminShop.markOrderRefunded);
 
     const isLoading = orders === undefined;
 
     const handleStatusUpdate = async (orderId: Id<"orders">, newStatus: string) => {
         if (!user?.id) return;
-
         try {
             await updateOrderStatus({
                 clerkId: user.id,
                 orderId,
                 status: newStatus as any,
             });
+            setSelectedOrder((prev: any) => prev ? { ...prev, status: newStatus } : prev);
         } catch (error) {
             console.error("Failed to update order status:", error);
+            alert(error instanceof Error ? error.message : "Failed to update status");
+        }
+    };
+
+    const handleMarkRefunded = async (orderId: Id<"orders">) => {
+        if (!user?.id) return;
+        if (!confirm(
+            "Mark this PAID order as REFUNDED?\n\n" +
+            "This restores inventory and records the refund. " +
+            "You must still issue the actual money refund in the PayRex dashboard."
+        )) return;
+        try {
+            await markOrderRefunded({ clerkId: user.id, orderId });
+            setSelectedOrder((prev: any) =>
+                prev ? { ...prev, status: "refunded", paymentStatus: "refunded" } : prev
+            );
+        } catch (error) {
+            console.error("Failed to mark refunded:", error);
+            alert(error instanceof Error ? error.message : "Failed to mark refunded");
         }
     };
 
@@ -92,9 +113,56 @@ export default function OrdersPage() {
         return colors[status] || "bg-zinc-600";
     };
 
-    const filteredOrders = orders?.filter(order => 
-        statusFilter === "all" || order.status === statusFilter
-    ).sort((a, b) => b.createdAt - a.createdAt);
+    const searchLower = search.trim().toLowerCase();
+    const filteredOrders = orders
+        ?.filter((order) => statusFilter === "all" || order.status === statusFilter)
+        .filter((order) => paymentFilter === "all" || order.paymentStatus === paymentFilter)
+        .filter((order) => {
+            if (!searchLower) return true;
+            return (
+                order.orderNumber.toLowerCase().includes(searchLower) ||
+                (order.guestEmail || "").toLowerCase().includes(searchLower)
+            );
+        })
+        .sort((a, b) => b.createdAt - a.createdAt);
+
+    const exportToCSV = () => {
+        if (!filteredOrders?.length) return;
+        const headers = [
+            "Order Number", "Date", "Customer Email", "Status", "Payment Status",
+            "Items", "Subtotal", "Shipping", "Tax", "Discount", "Total", "Currency",
+            "Discount Code", "PayRex Checkout ID", "Payment Intent ID",
+        ];
+        const rows = filteredOrders.map((o) => [
+            o.orderNumber,
+            new Date(o.createdAt).toISOString(),
+            o.guestEmail || "",
+            o.status,
+            o.paymentStatus,
+            o.items.reduce((s, i) => s + i.quantity, 0),
+            (o.subtotal / 100).toFixed(2),
+            (o.shipping / 100).toFixed(2),
+            (o.tax / 100).toFixed(2),
+            ((o.discount || 0) / 100).toFixed(2),
+            (o.total / 100).toFixed(2),
+            o.currency,
+            o.appliedDiscountCode || "",
+            o.payrexCheckoutId || "",
+            o.paymentIntentId || "",
+        ]);
+        const escapeCsv = (val: any) => {
+            const s = String(val);
+            return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const csv = [headers, ...rows].map((r) => r.map(escapeCsv).join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `orders-${new Date().toISOString().split("T")[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
 
     if (isLoading) {
         return (
@@ -106,19 +174,33 @@ export default function OrdersPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-white">Orders</h1>
-                <p className="text-zinc-400 mt-1">Manage customer orders and fulfillment</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-white">Orders</h1>
+                    <p className="text-zinc-400 mt-1">Manage customer orders and fulfillment</p>
+                </div>
+                <Button onClick={exportToCSV} className="bg-zinc-800 hover:bg-zinc-700" disabled={!filteredOrders?.length}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                </Button>
             </div>
 
-            {/* Filters */}
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <Input
+                        placeholder="Search by order # or email..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-10 bg-zinc-900 border-zinc-800"
+                    />
+                </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[200px] bg-zinc-900 border-zinc-800">
-                        <SelectValue placeholder="Filter by status" />
+                    <SelectTrigger className="w-full md:w-[180px] bg-zinc-900 border-zinc-800">
+                        <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All Orders</SelectItem>
+                        <SelectItem value="all">All Statuses</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="processing">Processing</SelectItem>
                         <SelectItem value="shipped">Shipped</SelectItem>
@@ -127,12 +209,25 @@ export default function OrdersPage() {
                         <SelectItem value="refunded">Refunded</SelectItem>
                     </SelectContent>
                 </Select>
+                <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                    <SelectTrigger className="w-full md:w-[180px] bg-zinc-900 border-zinc-800">
+                        <SelectValue placeholder="Payment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Payments</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                        <SelectItem value="refunded">Refunded</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
-            {/* Orders Table */}
             <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
-                    <CardTitle className="text-white">All Orders</CardTitle>
+                    <CardTitle className="text-white">
+                        All Orders ({filteredOrders?.length || 0})
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -154,15 +249,11 @@ export default function OrdersPage() {
                                     <TableCell className="font-mono text-white font-medium">
                                         {order.orderNumber}
                                     </TableCell>
-                                    <TableCell className="text-zinc-400">
+                                    <TableCell className="text-zinc-400 text-xs">
                                         {formatDate(order.createdAt)}
                                     </TableCell>
                                     <TableCell className="text-zinc-400">
-                                        {order.userId ? (
-                                            <span className="text-xs">{order.guestEmail || "User"}</span>
-                                        ) : (
-                                            <span className="text-xs">{order.guestEmail}</span>
-                                        )}
+                                        <span className="text-xs">{order.guestEmail || "Registered user"}</span>
                                     </TableCell>
                                     <TableCell className="text-zinc-400">
                                         {order.items.length}
@@ -195,22 +286,20 @@ export default function OrdersPage() {
                     </Table>
                     {filteredOrders?.length === 0 && (
                         <div className="text-center py-12 text-zinc-500">
-                            No orders found{statusFilter !== "all" ? ` with status "${statusFilter}"` : ""}.
+                            No orders found.
                         </div>
                     )}
                 </CardContent>
             </Card>
 
-            {/* Order Details Dialog */}
             <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-                <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-3xl">
+                <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Order Details - {selectedOrder?.orderNumber}</DialogTitle>
                     </DialogHeader>
                     {selectedOrder && (
                         <div className="space-y-6">
-                            {/* Status Update */}
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-wrap items-center gap-4">
                                 <span className="text-sm text-zinc-400">Update Status:</span>
                                 <Select
                                     value={selectedOrder.status}
@@ -221,36 +310,51 @@ export default function OrdersPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="pending">
-                                            <div className="flex items-center gap-2">
-                                                <RefreshCw className="w-4 h-4" /> Pending
-                                            </div>
+                                            <div className="flex items-center gap-2"><RefreshCw className="w-4 h-4" /> Pending</div>
                                         </SelectItem>
                                         <SelectItem value="processing">
-                                            <div className="flex items-center gap-2">
-                                                <Package className="w-4 h-4" /> Processing
-                                            </div>
+                                            <div className="flex items-center gap-2"><Package className="w-4 h-4" /> Processing</div>
                                         </SelectItem>
                                         <SelectItem value="shipped">
-                                            <div className="flex items-center gap-2">
-                                                <Truck className="w-4 h-4" /> Shipped
-                                            </div>
+                                            <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Shipped</div>
                                         </SelectItem>
                                         <SelectItem value="delivered">
-                                            <div className="flex items-center gap-2">
-                                                <CheckCircle className="w-4 h-4" /> Delivered
-                                            </div>
+                                            <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Delivered</div>
                                         </SelectItem>
                                         <SelectItem value="cancelled">
-                                            <div className="flex items-center gap-2">
-                                                <XCircle className="w-4 h-4" /> Cancelled
-                                            </div>
+                                            <div className="flex items-center gap-2"><XCircle className="w-4 h-4" /> Cancelled</div>
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
+
+                                {selectedOrder.paymentStatus === "paid" && (
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => handleMarkRefunded(selectedOrder._id)}
+                                    >
+                                        Mark Refunded
+                                    </Button>
+                                )}
                             </div>
 
-                            {/* Customer Info */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-600/30 bg-amber-600/5 text-sm">
+                                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                                <p className="text-zinc-400">
+                                    Marking an order refunded here restores inventory and records the refund,
+                                    but the actual money refund must be issued in the{" "}
+                                    <a
+                                        href="https://dashboard.payrexhq.com"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-amber-400 underline"
+                                    >
+                                        PayRex dashboard
+                                    </a>.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Card className="bg-zinc-800 border-zinc-700">
                                     <CardHeader className="pb-2">
                                         <CardTitle className="text-sm text-zinc-400">Shipping Address</CardTitle>
@@ -266,6 +370,9 @@ export default function OrdersPage() {
                                         </p>
                                         <p className="text-zinc-400">{selectedOrder.shippingAddress.country}</p>
                                         <p className="text-zinc-400 mt-2">{selectedOrder.shippingAddress.phone}</p>
+                                        {selectedOrder.guestEmail && (
+                                            <p className="text-zinc-400 mt-1">{selectedOrder.guestEmail}</p>
+                                        )}
                                     </CardContent>
                                 </Card>
 
@@ -275,17 +382,26 @@ export default function OrdersPage() {
                                     </CardHeader>
                                     <CardContent className="text-sm space-y-1">
                                         <p className="text-white">Provider: {selectedOrder.paymentProvider}</p>
-                                        <p>
+                                        <p className="flex items-center gap-2">
                                             Status: <Badge className={getPaymentStatusColor(selectedOrder.paymentStatus)}>{selectedOrder.paymentStatus}</Badge>
                                         </p>
+                                        {selectedOrder.payrexCheckoutId && (
+                                            <p className="text-zinc-400 text-xs font-mono break-all">
+                                                PayRex Checkout: {selectedOrder.payrexCheckoutId}
+                                            </p>
+                                        )}
                                         {selectedOrder.paymentIntentId && (
-                                            <p className="text-zinc-400 text-xs font-mono">ID: {selectedOrder.paymentIntentId}</p>
+                                            <p className="text-zinc-400 text-xs font-mono break-all">
+                                                Payment Intent: {selectedOrder.paymentIntentId}
+                                            </p>
+                                        )}
+                                        {selectedOrder.paidAt && (
+                                            <p className="text-zinc-400 text-xs">Paid: {formatDate(selectedOrder.paidAt)}</p>
                                         )}
                                     </CardContent>
                                 </Card>
                             </div>
 
-                            {/* Order Items */}
                             <div>
                                 <h3 className="text-lg font-semibold mb-3">Order Items</h3>
                                 <div className="space-y-2">
@@ -296,7 +412,9 @@ export default function OrdersPage() {
                                                 {item.variationName && (
                                                     <p className="text-sm text-zinc-400">{item.variationName}</p>
                                                 )}
-                                                <p className="text-sm text-zinc-400">Qty: {item.quantity}</p>
+                                                <p className="text-sm text-zinc-400">
+                                                    {item.quantity} x {formatPrice(item.unitPrice)}
+                                                </p>
                                             </div>
                                             <p className="text-white font-medium">{formatPrice(item.total)}</p>
                                         </div>
@@ -304,27 +422,26 @@ export default function OrdersPage() {
                                 </div>
                             </div>
 
-                            {/* Order Summary */}
                             <Card className="bg-zinc-800 border-zinc-700">
                                 <CardContent className="pt-6 space-y-2">
                                     <div className="flex justify-between text-zinc-400">
                                         <span>Subtotal</span>
                                         <span>{formatPrice(selectedOrder.subtotal)}</span>
                                     </div>
+                                    {selectedOrder.discount > 0 && (
+                                        <div className="flex justify-between text-green-400">
+                                            <span>Discount{selectedOrder.appliedDiscountCode ? ` (${selectedOrder.appliedDiscountCode})` : ""}</span>
+                                            <span>-{formatPrice(selectedOrder.discount)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between text-zinc-400">
                                         <span>Shipping</span>
-                                        <span>{formatPrice(selectedOrder.shipping)}</span>
+                                        <span>{selectedOrder.shipping === 0 ? "Free" : formatPrice(selectedOrder.shipping)}</span>
                                     </div>
                                     <div className="flex justify-between text-zinc-400">
                                         <span>Tax</span>
                                         <span>{formatPrice(selectedOrder.tax)}</span>
                                     </div>
-                                    {selectedOrder.discount && (
-                                        <div className="flex justify-between text-green-400">
-                                            <span>Discount</span>
-                                            <span>-{formatPrice(selectedOrder.discount)}</span>
-                                        </div>
-                                    )}
                                     <div className="flex justify-between text-white font-bold text-lg pt-2 border-t border-zinc-700">
                                         <span>Total</span>
                                         <span>{formatPrice(selectedOrder.total)}</span>

@@ -12,11 +12,9 @@ import { useCart } from "@/contexts/CartContext";
 import { Id } from "@/convex/_generated/dataModel";
 import { resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
+import { formatPHP } from "@/lib/payment";
 
-function formatPrice(priceInCents: number): string {
-  const amount = (priceInCents / 100).toFixed(2);
-  return `₱${amount}`;
-}
+const formatPrice = formatPHP;
 
 // Helper component to resolve and display product images
 function ProductImage({ storageId, alt, className }: { storageId: string; alt: string; className?: string }) {
@@ -304,7 +302,7 @@ export default function ProductPage() {
               <Truck className="w-5 h-5 text-muted-foreground mt-0.5" />
               <div>
                 <div className="text-sm font-medium">Free Shipping</div>
-                <div className="text-xs text-muted-foreground">On orders over $50</div>
+                <div className="text-xs text-muted-foreground">On orders over ₱50</div>
               </div>
             </div>
             <div className="flex items-start gap-3">

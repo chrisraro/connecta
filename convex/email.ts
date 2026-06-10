@@ -1,6 +1,6 @@
 "use node";
 import { v } from "convex/values";
-import { internalAction, action } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import { Resend } from "resend";
 
 export const sendLeadNotification = internalAction({
@@ -12,19 +12,15 @@ export const sendLeadNotification = internalAction({
         message: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        // NOTE: Make sure to add RESEND_API_KEY in the Convex Dashboard -> Settings -> Environment Variables
         const resendKey = process.env.RESEND_API_KEY;
         if (!resendKey) {
             console.warn("RESEND_API_KEY is not configured. Email not sent.");
             return;
         }
-
         const resend = new Resend(resendKey);
-        
         const propertyText = args.propertyName ? `regarding ${args.propertyName}` : "from your profile";
-
         await resend.emails.send({
-            from: "Tapfolio <onboarding@resend.dev>", // Resend testing domain
+            from: "Tapfolio <onboarding@resend.dev>",
             to: args.toEmail,
             subject: `New Lead ${propertyText} - ${args.inquirerName}`,
             html: `
@@ -33,7 +29,6 @@ export const sendLeadNotification = internalAction({
                 <p><strong>Contact:</strong> ${args.inquirerContact}</p>
                 ${args.propertyName ? `<p><strong>Interest:</strong> ${args.propertyName}</p>` : ""}
                 <p><strong>Message:</strong><br/>${args.message || "No message provided."}</p>
-                
                 <br/>
                 <p>Log in to your Tapfolio dashboard to reply.</p>
             `,
@@ -41,7 +36,6 @@ export const sendLeadNotification = internalAction({
     },
 });
 
-// Send order confirmation email (for guest checkout)
 export const sendOrderConfirmation = internalAction({
     args: {
         toEmail: v.string(),
@@ -75,13 +69,13 @@ export const sendOrderConfirmation = internalAction({
             console.warn("RESEND_API_KEY is not configured. Email not sent.");
             return { success: false, error: "Email not configured" };
         }
-
         const resend = new Resend(resendKey);
-
         const formatPrice = (cents: number, currency: string) => {
+            if (currency.toUpperCase() === "PHP") {
+                return `₱${(cents / 100).toFixed(2)}`;
+            }
             return `${currency.toUpperCase()} ${(cents / 100).toFixed(2)}`;
         };
-
         try {
             await resend.emails.send({
                 from: "Tapfolio Shop <orders@resend.dev>",
@@ -91,13 +85,11 @@ export const sendOrderConfirmation = internalAction({
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                         <h1 style="color: #333;">Thank you for your order!</h1>
                         <p style="color: #666;">Your order has been confirmed and is being processed.</p>
-                        
                         <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
                             <h2 style="color: #333; margin-top: 0;">Order Details</h2>
                             <p><strong>Order Number:</strong> ${args.orderNumber}</p>
                             <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                         </div>
-
                         <div style="margin: 20px 0;">
                             <h2 style="color: #333;">Order Items</h2>
                             <table style="width: 100%; border-collapse: collapse;">
@@ -122,7 +114,6 @@ export const sendOrderConfirmation = internalAction({
                                 </tbody>
                             </table>
                         </div>
-
                         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
                             <h3 style="color: #333; margin-top: 0;">Shipping Address</h3>
                             <p style="margin: 5px 0;">${args.shippingAddress.fullName}</p>
@@ -132,7 +123,6 @@ export const sendOrderConfirmation = internalAction({
                             <p style="margin: 5px 0;">${args.shippingAddress.country}</p>
                             <p style="margin: 5px 0;">${args.shippingAddress.phone}</p>
                         </div>
-
                         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
                             <h3 style="color: #333; margin-top: 0;">Order Summary</h3>
                             <table style="width: 100%;">
@@ -154,15 +144,13 @@ export const sendOrderConfirmation = internalAction({
                                 </tr>
                             </table>
                         </div>
-
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
                             <p>If you have any questions about your order, please contact us at support@tapfolio.com</p>
-                            <p>© ${new Date().getFullYear()} Tapfolio. All rights reserved.</p>
+                            <p>&copy; ${new Date().getFullYear()} Tapfolio. All rights reserved.</p>
                         </div>
                     </div>
                 `,
             });
-
             return { success: true };
         } catch (error) {
             console.error("Failed to send order confirmation:", error);

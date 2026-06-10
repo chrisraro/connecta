@@ -11,6 +11,7 @@ import { ShoppingCart, Search, SlidersHorizontal, ChevronDown, Loader2, Check, X
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
 import { useEffect, useRef } from "react";
+import { formatPHP } from "@/lib/payment";
 
 // Enhanced toast notification component with actions
 function ToastNotification({ 
@@ -120,10 +121,7 @@ function ToastNotification({
   );
 }
 
-function formatPrice(priceInCents: number): string {
-  const amount = (priceInCents / 100).toFixed(2);
-  return `₱${amount}`;
-}
+const formatPrice = formatPHP;
 
 // Helper component to resolve and display product images
 function ProductImage({ storageId, alt, className }: { storageId: string; alt: string; className?: string }) {

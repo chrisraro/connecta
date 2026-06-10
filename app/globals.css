@@ -49,7 +49,7 @@
 
 :root {
   --radius: 0.5rem;
-  
+
   /* Lighter Zinc - Light Mode */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -70,7 +70,7 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  
+
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -91,32 +91,32 @@
   /* Dark Zinc - Dark Mode */
   --background: oklch(0.145 0 0);  /* Dark Background */
   --foreground: oklch(0.985 0 0);  /* White Text */
-  
+
   --card: oklch(0.145 0 0);
   --card-foreground: oklch(0.985 0 0);
-  
+
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  
+
   --primary: oklch(0.985 0 0);     /* White Button */
   --primary-foreground: oklch(0.145 0 0); /* Black Text */
-  
+
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
-  
+
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  
+
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  
+
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.985 0 0);
-  
+
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
-  
+
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -143,6 +143,31 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Consistent, visible keyboard focus ring across the whole app */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius);
+  }
+
+  /* Brand-tinted text selection */
+  ::selection {
+    background-color: color-mix(in oklch, var(--chart-5) 30%, transparent);
+    color: var(--foreground);
+  }
+
+  /* Honor user reduced-motion preference for any animations/transitions we add */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer utilities {
@@ -157,6 +182,15 @@
   }
   .border-yellow-500\/20 {
     border-color: color-mix(in oklch, var(--chart-5) 20%, transparent);
+  }
+
+  /* Hide scrollbars for horizontal chip rails while keeping scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 

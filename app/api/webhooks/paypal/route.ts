@@ -1,66 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
- * PayPal Webhook Handler
- * 
- * Receives events from PayPal when payment status changes.
- * Updates order status in Convex accordingly.
+ * Deprecated: replaced by PayRex.
+ *
+ * PayPal has been removed. Payment confirmation is now handled by the PayRex
+ * webhook implemented as a Convex HTTP action at /webhooks/payrex
+ * (https://<deployment>.convex.site/webhooks/payrex). This route is retained
+ * only to return HTTP 410 Gone for any lingering PayPal webhook traffic.
  */
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const eventType = body.event_type;
-
-  console.log("PayPal webhook received:", eventType);
-
-  try {
-    switch (eventType) {
-      case "PAYMENT.CAPTURE.COMPLETED":
-        const completedPayment = body.resource;
-        console.log("PayPal payment completed:", completedPayment.id);
-        
-        // TODO: Update order in Convex
-        // await convex.mutation("checkout:confirmPayment", {
-        //   paymentIntentId: completedPayment.id,
-        //   paymentStatus: "paid",
-        // });
-        
-        break;
-
-      case "PAYMENT.CAPTURE.DENIED":
-      case "PAYMENT.CAPTURE.FAILED":
-        const failedPayment = body.resource;
-        console.log("PayPal payment failed:", failedPayment.id);
-        
-        // TODO: Update order in Convex
-        // await convex.mutation("checkout:confirmPayment", {
-        //   paymentIntentId: failedPayment.id,
-        //   paymentStatus: "failed",
-        // });
-        
-        break;
-
-      case "PAYMENT.CAPTURE.REFUNDED":
-        const refundedPayment = body.resource;
-        console.log("PayPal payment refunded:", refundedPayment.id);
-        
-        // TODO: Update order in Convex
-        // await convex.mutation("checkout:confirmPayment", {
-        //   paymentIntentId: refundedPayment.id,
-        //   paymentStatus: "refunded",
-        // });
-        
-        break;
-
-      default:
-        console.log(`Unhandled PayPal event type: ${eventType}`);
-    }
-
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error("PayPal webhook error:", error);
-    return NextResponse.json(
-      { error: "Webhook handler failed" },
-      { status: 500 }
-    );
-  }
+export async function POST() {
+  return NextResponse.json(
+    { error: "Gone: PayPal has been replaced by PayRex." },
+    { status: 410 }
+  );
 }

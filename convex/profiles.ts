@@ -1,5 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireUserMatching } from "./authz";
+import { planContext } from "./billing";
 
 export const createProfile = mutation({
     args: {
@@ -90,13 +92,29 @@ export const createProfile = mutation({
         id: v.optional(v.id("profiles")),
     },
     handler: async (ctx, args) => {
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
-            .unique();
+        const user = await requireUserMatching(ctx, args.clerkId);
 
-        if (!user) {
-            throw new Error("User not found");
+        const { limits } = planContext(user);
+
+        // Template gating: free plan may only select the basic templates.
+        if (
+            limits.allowedTemplateIds !== null &&
+            !limits.allowedTemplateIds.includes(args.layoutConfig.themeId)
+        ) {
+            throw new Error(
+                "This template is available on Pro & Business. Upgrade to unlock all templates."
+            );
+        }
+
+        // Profile-count gating: enforce only when creating a NEW profile.
+        if (!args.id && limits.maxProfiles !== null) {
+            const existing = await ctx.db
+                .query("profiles")
+                .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
+                .collect();
+            if (existing.length >= limits.maxProfiles) {
+                throw new Error("Upgrade to Pro for unlimited profiles.");
+            }
         }
 
         const profileData = {
@@ -130,12 +148,7 @@ export const createProfile = mutation({
 export const deleteProfile = mutation({
     args: { profileId: v.id("profiles"), clerkId: v.string() },
     handler: async (ctx, args) => {
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
-            .unique();
-
-        if (!user) throw new Error("User not found");
+        const user = await requireUserMatching(ctx, args.clerkId);
 
         const profile = await ctx.db.get(args.profileId);
         if (!profile || profile.ownerId !== user._id) {
@@ -149,7 +162,37 @@ export const deleteProfile = mutation({
 export const getProfile = query({
     args: { profileId: v.id("profiles") },
     handler: async (ctx, args) => {
-        return await ctx.db.get(args.profileId);
+        const profile = await ctx.db.get(args.profileId);
+        if (!profile) return null;
+
+        // Compute the owner's effective plan server-side and expose ONLY a
+        // cosmetic boolean (showBranding) plus optional team branding — never
+        // leak the owner's plan/expiry internals to the public.
+        const owner = await ctx.db.get(profile.ownerId);
+        let showBranding = true;
+        let teamBranding: {
+            companyName?: string;
+            logoUrl?: string;
+            accentColor?: string;
+        } | null = null;
+
+        if (owner) {
+            const { plan, limits } = planContext(owner);
+            showBranding = limits.showBranding;
+            // Business members inherit shared team branding on their profile.
+            if (plan === "business" && owner.teamId) {
+                const team = await ctx.db.get(owner.teamId);
+                if (team) {
+                    teamBranding = {
+                        companyName: team.companyName,
+                        logoUrl: team.logoUrl,
+                        accentColor: team.accentColor,
+                    };
+                }
+            }
+        }
+
+        return { ...profile, showBranding, teamBranding };
     },
 });
 
@@ -159,12 +202,8 @@ export const getMyProfiles = query({
     handler: async (ctx, args) => {
         if (!args.clerkId) return [];
 
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-            .unique();
-
-        if (!user) return [];
+        // Only the authenticated owner can list their own profiles.
+        const user = await requireUserMatching(ctx, args.clerkId);
 
         return await ctx.db
             .query("profiles")

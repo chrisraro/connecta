@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Inert scratch artifacts from sandboxed editing
+*.tmp
+*.new
+*.build
+SENTINEL_TEST.txt

@@ -7,7 +7,8 @@ import Editorial from "@/components/templates/Editorial";
 import Kinetic from "@/components/templates/Kinetic";
 import Architectural from "@/components/templates/Architectural";
 import { ProfileData, ProfileType } from "@/types/profile";
-import { Loader2 } from "lucide-react";
+import { Loader2, SmartphoneNfc, SearchX } from "lucide-react";
+import Link from "next/link";
 import { use } from "react";
 
 // Template component map
@@ -27,16 +28,30 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
 
     if (profile === undefined) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                <span className="sr-only">Loading profile…</span>
             </div>
         );
     }
 
     if (profile === null) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <h1 className="text-2xl font-bold text-gray-800">Profile Not Found</h1>
+            <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center text-foreground">
+                <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted text-muted-foreground">
+                    <SearchX className="h-8 w-8" aria-hidden="true" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight">Profile not found</h1>
+                <p className="mt-2 max-w-sm text-muted-foreground">
+                    This profile may have been removed or the link is incorrect.
+                </p>
+                <Link
+                    href="/"
+                    className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                    <SmartphoneNfc className="h-4 w-4" aria-hidden="true" />
+                    Go to TapFolio
+                </Link>
             </div>
         );
     }
@@ -74,9 +89,18 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
         >
             <TemplateComponent data={data} />
 
-            <div className="py-6 text-center text-xs opacity-50" style={{ color: layoutConfig.colorPalette.text }}>
-                Powered by TapFolio
-            </div>
+            {(profile as { showBranding?: boolean }).showBranding !== false && (
+                <div className="py-6 text-center text-xs" style={{ color: layoutConfig.colorPalette.text }}>
+                    <Link
+                        href="/"
+                        className="opacity-50 transition-opacity hover:opacity-90"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Powered by TapFolio
+                    </Link>
+                </div>
+            )}
         </div>
     );
 }

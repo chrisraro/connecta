@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, Home, ChevronRight } from "lucide-react";
+import { ShoppingCart, ChevronRight, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +18,10 @@ export default function ShopLayout({
   const getBreadcrumbs = () => {
     const paths = pathname.split("/").filter(Boolean);
     const breadcrumbs = [{ label: "Home", href: "/" }];
-    
+
     if (paths.includes("shop")) {
       const shopIndex = paths.indexOf("shop");
-      
+
       if (shopIndex === paths.length - 1) {
         breadcrumbs.push({ label: "Shop", href: "/shop" });
       } else if (paths[shopIndex + 1] === "product") {
@@ -35,7 +35,7 @@ export default function ShopLayout({
         breadcrumbs.push({ label: "Checkout", href: "/shop/checkout" });
       }
     }
-    
+
     return breadcrumbs;
   };
 
@@ -49,19 +49,19 @@ export default function ShopLayout({
           <div className="flex items-center justify-between h-16">
             {/* Logo & Navigation */}
             <div className="flex items-center gap-6">
-              <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+              <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
                 TapFolio
               </Link>
-              
-              <nav className="hidden md:flex items-center gap-4">
-                <Link 
-                  href="/shop" 
+
+              <nav className="hidden md:flex items-center gap-4" aria-label="Shop">
+                <Link
+                  href="/shop"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Shop
                 </Link>
-                <Link 
-                  href="/shop" 
+                <Link
+                  href="/shop"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Categories
@@ -69,17 +69,24 @@ export default function ShopLayout({
               </nav>
             </div>
 
-            {/* Cart Icon */}
-            <Link href="/shop/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="w-5 h-5" />
-                {itemCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary text-primary-foreground">
-                    {itemCount}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
+            {/* Account + Cart */}
+            <div className="flex items-center gap-1">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="icon" aria-label="Your account">
+                  <User className="w-5 h-5" aria-hidden="true" />
+                </Button>
+              </Link>
+              <Link href="/shop/cart">
+                <Button variant="ghost" size="icon" className="relative" aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}>
+                  <ShoppingCart className="w-5 h-5" aria-hidden="true" />
+                  {itemCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary text-primary-foreground">
+                      {itemCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -88,12 +95,12 @@ export default function ShopLayout({
       {breadcrumbs.length > 1 && (
         <div className="bg-muted/30 border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <nav className="flex items-center gap-2 text-sm">
+            <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
               {breadcrumbs.map((crumb, index) => (
                 <div key={crumb.href} className="flex items-center gap-2">
-                  {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                  {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
                   {index === breadcrumbs.length - 1 ? (
-                    <span className="text-foreground font-medium">{crumb.label}</span>
+                    <span className="text-foreground font-medium" aria-current="page">{crumb.label}</span>
                   ) : (
                     <Link href={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
                       {crumb.label}
@@ -105,6 +112,17 @@ export default function ShopLayout({
           </div>
         </div>
       )}
+
+      {/* Trust strip */}
+      <div className="border-b border-border bg-card/40">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground sm:px-6 lg:px-8">
+          <span>GCash, Maya, Card &amp; QR Ph accepted</span>
+          <span aria-hidden="true" className="hidden sm:inline">•</span>
+          <span>Ships nationwide PH</span>
+          <span aria-hidden="true" className="hidden sm:inline">•</span>
+          <span>Secure checkout via PayRex</span>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

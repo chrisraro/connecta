@@ -22,12 +22,13 @@ import { ArrowLeft, Loader2, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { ProductVariationsManager } from "./variations";
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { user, isLoaded: userLoaded } = useUser();
   const [productId, setProductId] = useState<string>("");
-  
+
   useEffect(() => {
     params.then(p => setProductId(p.id));
   }, [params]);
@@ -43,7 +44,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   );
 
   const product = allProducts?.find(p => p._id === productId);
-  
+
   const updateProduct = useMutation(api.adminShop.updateProduct);
 
   const [formData, setFormData] = useState({
@@ -76,7 +77,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [tagInput, setTagInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load product data when available
   useEffect(() => {
     if (product) {
       setFormData({
@@ -205,7 +205,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/admin/shop/products">
           <Button variant="ghost" size="icon">
@@ -220,10 +219,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Basic Information */}
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -300,7 +297,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </CardContent>
           </Card>
 
-          {/* Pricing */}
           <Card>
             <CardHeader>
               <CardTitle>Pricing</CardTitle>
@@ -357,7 +353,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </CardContent>
           </Card>
 
-          {/* Inventory */}
           <Card>
             <CardHeader>
               <CardTitle>Inventory</CardTitle>
@@ -403,7 +398,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </CardContent>
           </Card>
 
-          {/* Images */}
           <Card>
             <CardHeader>
               <CardTitle>Images</CardTitle>
@@ -422,7 +416,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     onRemove={() => removeImage(idx)}
                   />
                 ))}
-                
+
                 {formData.images.length < 10 && (
                   <ImageUploader
                     onChange={(storageId) => addImage(storageId)}
@@ -439,7 +433,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </CardContent>
           </Card>
 
-          {/* Tags */}
           <Card>
             <CardHeader>
               <CardTitle>Tags</CardTitle>
@@ -482,7 +475,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </CardContent>
           </Card>
 
-          {/* Shipping & Options */}
           <Card>
             <CardHeader>
               <CardTitle>Shipping & Options</CardTitle>
@@ -521,7 +513,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </Card>
         </div>
 
-        {/* Submit */}
         <div className="flex justify-end gap-4 mt-6">
           <Link href="/admin/shop/products">
             <Button type="button" variant="outline">
@@ -540,6 +531,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </Button>
         </div>
       </form>
+
+      {user?.id && productId && (
+        <ProductVariationsManager
+          clerkId={user.id}
+          productId={productId as Id<"products">}
+        />
+      )}
     </div>
   );
 }

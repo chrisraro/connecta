@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
+import { requireUserMatching } from "./authz";
+import { acceptInvitesForCurrentUser } from "./teams";
 
 export const syncUser = mutation({
     args: {
@@ -9,6 +11,10 @@ export const syncUser = mutation({
         name: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized: authentication required");
+        if (identity.subject !== args.clerkId) throw new Error("Unauthorized: identity mismatch");
+
         const existingUser = await ctx.db
             .query("users")
             .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
@@ -19,10 +25,12 @@ export const syncUser = mutation({
             if (existingUser.email !== args.email) {
                 updates.email = args.email;
             }
-            // Note: Admin role is now managed via admins table, not hardcoded email
             if (Object.keys(updates).length > 0) {
                 await ctx.db.patch(existingUser._id, updates);
             }
+            // Auto-accept any pending team invites matching this email.
+            const fresh = await ctx.db.get(existingUser._id);
+            if (fresh) await acceptInvitesForCurrentUser(ctx, fresh);
             return { id: existingUser._id, role: existingUser.role };
         }
 
@@ -30,11 +38,15 @@ export const syncUser = mutation({
             clerkId: args.clerkId,
             email: args.email,
             name: args.name,
-            role: "agent", // Default role, admin granted separately via admins table
+            role: "agent",
             subscriptionStatus: "active",
             credits: 5,
+            plan: "free",
             onboardingCompleted: false,
         });
+
+        const newUser = await ctx.db.get(newUserId);
+        if (newUser) await acceptInvitesForCurrentUser(ctx, newUser);
 
         return { id: newUserId, role: "agent" };
     },
@@ -45,7 +57,6 @@ export const getUser = query({
     handler: async (ctx) => {
         const identity = await ctx.auth.getUserIdentity();
         if (!identity) return null;
-
         return await ctx.db
             .query("users")
             .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
@@ -57,14 +68,7 @@ export const getOnboardingStatus = query({
     args: { clerkId: v.optional(v.string()) },
     handler: async (ctx, args) => {
         if (!args.clerkId) return { completed: false, data: null };
-
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-            .unique();
-
-        if (!user) return { completed: false, data: null };
-
+        const user = await requireUserMatching(ctx, args.clerkId);
         return {
             completed: user.onboardingCompleted ?? false,
             data: user.onboardingData ?? null,
@@ -89,12 +93,7 @@ export const updateOnboarding = mutation({
         markCompleted: v.boolean(),
     },
     handler: async (ctx, args) => {
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
-            .unique();
-
-        if (!user) throw new Error("User not found");
+        const user = await requireUserMatching(ctx, args.clerkId);
 
         await ctx.db.patch(user._id, {
             name: args.fullName,
@@ -114,10 +113,8 @@ export const updateOnboarding = mutation({
             ...(args.markCompleted ? { onboardingCompleted: true } : {}),
         });
 
-        // Auto-create a default profile when onboarding is completed
         let profileId: string | null = null;
         if (args.markCompleted) {
-            // Check if user already has a profile
             const existingProfiles = await ctx.db
                 .query("profiles")
                 .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
@@ -158,7 +155,6 @@ export const updateOnboarding = mutation({
                     featuredProjects: [],
                 });
             } else {
-                // Return the first existing profile ID
                 profileId = existingProfiles[0]._id;
             }
         }
@@ -171,14 +167,7 @@ export const getMyCards = query({
     args: { clerkId: v.optional(v.string()) },
     handler: async (ctx, args) => {
         if (!args.clerkId) return [];
-
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-            .unique();
-
-        if (!user) return [];
-
+        const user = await requireUserMatching(ctx, args.clerkId);
         return await ctx.db
             .query("cards")
             .withIndex("by_owner", (q) => q.eq("ownerId", user._id))

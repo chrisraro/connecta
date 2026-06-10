@@ -1,18 +1,16 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Clock, Truck, Package } from "lucide-react";
+import { CheckCircle, Clock, Truck, Package, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { formatPHP } from "@/lib/payment";
 
-function formatPrice(priceInCents: number): string {
-  const amount = (priceInCents / 100).toFixed(2);
-  return `₱${amount}`;
-}
+const formatPrice = formatPHP;
 
 function formatDate(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString("en-US", {
@@ -24,7 +22,9 @@ function formatDate(timestamp: number): string {
 
 export default function OrderDetailsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const orderNumber = params.orderNumber as string;
+  const justPaid = searchParams.get("paid") === "1";
 
   const order = useQuery(api.checkout.getOrderByNumber, { orderNumber });
 
@@ -41,7 +41,7 @@ export default function OrderDetailsPage() {
       <div className="text-center py-16">
         <h1 className="text-2xl font-bold mb-4">Order Not Found</h1>
         <p className="text-muted-foreground mb-6">
-          The order you're looking for doesn't exist.
+          The order you&apos;re looking for doesn&apos;t exist.
         </p>
         <Link href="/shop">
           <Button>Continue Shopping</Button>
@@ -88,7 +88,6 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Order Details</h1>
         <p className="text-muted-foreground mt-1">
@@ -96,7 +95,30 @@ export default function OrderDetailsPage() {
         </p>
       </div>
 
-      {/* Order Status */}
+      {justPaid && order.paymentStatus !== "paid" && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-border bg-primary/5">
+          <Loader2 className="w-5 h-5 animate-spin text-primary flex-shrink-0" />
+          <div>
+            <p className="font-medium">Confirming payment...</p>
+            <p className="text-sm text-muted-foreground">
+              We&apos;ve received your payment and are confirming it. This page
+              will update automatically once it&apos;s done.
+            </p>
+          </div>
+        </div>
+      )}
+      {justPaid && order.paymentStatus === "paid" && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-green-500/30 bg-green-500/10">
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Payment confirmed</p>
+            <p className="text-sm text-muted-foreground">
+              Thank you! Your order is now being processed.
+            </p>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
@@ -116,7 +138,6 @@ export default function OrderDetailsPage() {
         </CardContent>
       </Card>
 
-      {/* Order Items */}
       <Card>
         <CardHeader>
           <CardTitle>Order Items</CardTitle>
@@ -131,7 +152,7 @@ export default function OrderDetailsPage() {
                     <p className="text-sm text-muted-foreground">{item.variationName}</p>
                   )}
                   <p className="text-sm text-muted-foreground">
-                    Qty: {item.quantity} × {formatPrice(item.unitPrice)}
+                    Qty: {item.quantity} x {formatPrice(item.unitPrice)}
                   </p>
                 </div>
                 <p className="font-bold">{formatPrice(item.total)}</p>
@@ -141,9 +162,7 @@ export default function OrderDetailsPage() {
         </CardContent>
       </Card>
 
-      {/* Shipping & Payment Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Shipping Address */}
         <Card>
           <CardHeader>
             <CardTitle>Shipping Address</CardTitle>
@@ -164,7 +183,6 @@ export default function OrderDetailsPage() {
           </CardContent>
         </Card>
 
-        {/* Payment Info */}
         <Card>
           <CardHeader>
             <CardTitle>Payment Information</CardTitle>
@@ -192,7 +210,6 @@ export default function OrderDetailsPage() {
         </Card>
       </div>
 
-      {/* Order Total */}
       <Card>
         <CardHeader>
           <CardTitle>Order Summary</CardTitle>
@@ -227,7 +244,6 @@ export default function OrderDetailsPage() {
         </CardContent>
       </Card>
 
-      {/* Actions */}
       <div className="flex gap-4">
         <Link href="/shop">
           <Button variant="outline">Continue Shopping</Button>

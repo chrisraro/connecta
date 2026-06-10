@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TapFolio",
-  description: "NFC Real Estate Platform",
+  title: "TapFolio — Your business card, reinvented",
+  description:
+    "Premium NFC digital business cards for modern professionals. Tap to share a stunning profile and capture leads instantly.",
   icons: {
     icon: "/favicon.ico",
     apple: "/favicon.ico",

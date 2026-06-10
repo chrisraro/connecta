@@ -32,7 +32,7 @@ export default function InventoryPage() {
 
     const handleRestock = async (productId: Id<"products">) => {
         if (!user?.id) return;
-        
+
         const product = products?.find(p => p._id === productId);
         if (!product) return;
 
@@ -40,27 +40,18 @@ export default function InventoryPage() {
         if (additionalStock <= 0) return;
 
         try {
+            // updateProduct patches only the supplied fields, so we only need to
+            // send the new inventory count.
             await updateProduct({
                 clerkId: user.id,
                 productId,
                 inventory: product.inventory + additionalStock,
-                name: product.name,
-                slug: product.slug,
-                categoryId: product.categoryId,
-                basePrice: product.basePrice,
-                sku: product.sku,
-                trackInventory: product.trackInventory,
-                lowStockThreshold: product.lowStockThreshold,
-                isPublished: product.isPublished,
-                isFeatured: product.isFeatured,
-                images: product.images,
-                primaryImageIndex: product.primaryImageIndex,
-                shippingRequired: product.shippingRequired,
             });
-            
+
             setRestockMap({ ...restockMap, [productId]: 0 });
         } catch (error) {
             console.error("Failed to restock:", error);
+            alert(error instanceof Error ? error.message : "Failed to restock");
         }
     };
 
@@ -109,7 +100,6 @@ export default function InventoryPage() {
                 </Button>
             </div>
 
-            {/* Low Stock Alerts */}
             {lowStockProducts && lowStockProducts.length > 0 && (
                 <Alert className="bg-red-900/20 border-red-600 text-white">
                     <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -120,7 +110,6 @@ export default function InventoryPage() {
                 </Alert>
             )}
 
-            {/* Low Stock Products */}
             {lowStockProducts && lowStockProducts.length > 0 && (
                 <Card className="bg-zinc-900 border-red-600/50">
                     <CardHeader>
@@ -186,7 +175,6 @@ export default function InventoryPage() {
                 </Card>
             )}
 
-            {/* All Products Inventory */}
             <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader>
                     <CardTitle className="text-white">All Products Inventory</CardTitle>

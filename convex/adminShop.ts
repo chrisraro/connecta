@@ -1,10 +1,11 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./admin";
+import { logAudit } from "./audit";
 
 /**
  * Admin Shop Management
- * 
+ *
  * Admin-only functions for managing products, categories, orders, and analytics.
  */
 
@@ -24,7 +25,7 @@ export const createCategory = mutation({
     isActive: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     const categoryId = await ctx.db.insert("productCategories", {
       name: args.name,
@@ -34,6 +35,14 @@ export const createCategory = mutation({
       image: args.image,
       isActive: args.isActive !== undefined ? args.isActive : true,
       sortOrder: args.sortOrder,
+    });
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "create",
+      resourceType: "productCategory",
+      resourceId: categoryId,
+      changes: { name: args.name, slug: args.slug },
     });
 
     return { success: true, categoryId };
@@ -53,11 +62,19 @@ export const updateCategory = mutation({
     sortOrder: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     const { categoryId, clerkId, ...updates } = args;
 
     await ctx.db.patch(categoryId, updates);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "update",
+      resourceType: "productCategory",
+      resourceId: categoryId,
+      changes: updates,
+    });
 
     return { success: true };
   },
@@ -70,7 +87,7 @@ export const deleteCategory = mutation({
     reassignToId: v.optional(v.id("productCategories")),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     // If reassigning products, update them
     if (args.reassignToId) {
@@ -87,6 +104,14 @@ export const deleteCategory = mutation({
     }
 
     await ctx.db.delete(args.categoryId);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "delete",
+      resourceType: "productCategory",
+      resourceId: args.categoryId,
+      changes: args.reassignToId ? { reassignedTo: args.reassignToId } : undefined,
+    });
 
     return { success: true };
   },
@@ -137,11 +162,19 @@ export const createProduct = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     const { clerkId, ...productData } = args;
 
     const productId = await ctx.db.insert("products", productData);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "create",
+      resourceType: "product",
+      resourceId: productId,
+      changes: { name: args.name, sku: args.sku, basePrice: args.basePrice },
+    });
 
     return { success: true, productId };
   },
@@ -179,11 +212,19 @@ export const updateProduct = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     const { clerkId, productId, ...updates } = args;
 
     await ctx.db.patch(productId, updates);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "update",
+      resourceType: "product",
+      resourceId: productId,
+      changes: updates,
+    });
 
     return { success: true };
   },
@@ -195,7 +236,7 @@ export const deleteProduct = mutation({
     productId: v.id("products"),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     // Delete associated variations
     const variations = await ctx.db
@@ -209,6 +250,14 @@ export const deleteProduct = mutation({
 
     // Delete product
     await ctx.db.delete(args.productId);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "delete",
+      resourceType: "product",
+      resourceId: args.productId,
+      changes: { deletedVariations: variations.length },
+    });
 
     return { success: true };
   },
@@ -226,12 +275,10 @@ export const getProducts = query({
 
     let products = await ctx.db.query("products").collect();
 
-    // Filter by category
     if (args.categoryId) {
       products = products.filter(p => p.categoryId === args.categoryId);
     }
 
-    // Filter by search
     if (args.search) {
       const searchLower = args.search.toLowerCase();
       products = products.filter(p =>
@@ -240,7 +287,6 @@ export const getProducts = query({
       );
     }
 
-    // Filter by status
     if (args.status === "published") {
       products = products.filter(p => p.isPublished);
     } else if (args.status === "draft") {
@@ -283,11 +329,19 @@ export const createVariation = mutation({
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     const { clerkId, ...variationData } = args;
 
     const variationId = await ctx.db.insert("productVariations", variationData);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "create",
+      resourceType: "productVariation",
+      resourceId: variationId,
+      changes: { productId: args.productId, name: args.name, sku: args.sku },
+    });
 
     return { success: true, variationId };
   },
@@ -308,11 +362,19 @@ export const updateVariation = mutation({
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     const { clerkId, variationId, ...updates } = args;
 
     await ctx.db.patch(variationId, updates);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "update",
+      resourceType: "productVariation",
+      resourceId: variationId,
+      changes: updates,
+    });
 
     return { success: true };
   },
@@ -324,9 +386,16 @@ export const deleteVariation = mutation({
     variationId: v.id("productVariations"),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     await ctx.db.delete(args.variationId);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "delete",
+      resourceType: "productVariation",
+      resourceId: args.variationId,
+    });
 
     return { success: true };
   },
@@ -366,17 +435,12 @@ export const getOrders = query({
 
     let orders = await ctx.db.query("orders").collect();
 
-    // Filter by status
     if (args.status) {
       orders = orders.filter(o => o.status === args.status);
     }
-
-    // Filter by payment status
     if (args.paymentStatus) {
       orders = orders.filter(o => o.paymentStatus === args.paymentStatus);
     }
-
-    // Filter by date range
     if (args.dateFrom) {
       orders = orders.filter(o => o.createdAt >= args.dateFrom!);
     }
@@ -384,7 +448,6 @@ export const getOrders = query({
       orders = orders.filter(o => o.createdAt <= args.dateTo!);
     }
 
-    // Sort by creation date (newest first)
     orders.sort((a, b) => b.createdAt - a.createdAt);
 
     return orders;
@@ -419,9 +482,14 @@ export const updateOrderStatus = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
-    const updates: any = {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    const updates: { status: typeof args.status; updatedAt: number; notes?: string } = {
       status: args.status,
       updatedAt: Date.now(),
     };
@@ -430,9 +498,103 @@ export const updateOrderStatus = mutation({
       updates.notes = args.notes;
     }
 
+    // When cancelling an order that was PAID, restore inventory so the stock is
+    // not permanently held. We only restore if it was previously deducted (paid)
+    // and not already in a cancelled/refunded state.
+    let inventoryRestored = false;
+    if (
+      args.status === "cancelled" &&
+      order.paymentStatus === "paid" &&
+      order.status !== "cancelled" &&
+      order.status !== "refunded"
+    ) {
+      await restoreOrderInventory(ctx, order);
+      inventoryRestored = true;
+    }
+
     await ctx.db.patch(args.orderId, updates);
 
-    return { success: true };
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "update",
+      resourceType: "order",
+      resourceId: args.orderId,
+      changes: {
+        status: args.status,
+        previousStatus: order.status,
+        inventoryRestored,
+        notes: args.notes,
+      },
+    });
+
+    return { success: true, inventoryRestored };
+  },
+});
+
+// Helper: restore inventory for every line item of an order (product + variation).
+async function restoreOrderInventory(
+  ctx: any,
+  order: { items: Array<{ productId: any; variationId?: any; quantity: number }> }
+): Promise<void> {
+  for (const item of order.items) {
+    const product = await ctx.db.get(item.productId);
+    if (product && product.trackInventory) {
+      await ctx.db.patch(product._id, {
+        inventory: product.inventory + item.quantity,
+      });
+    }
+    if (item.variationId) {
+      const variation = await ctx.db.get(item.variationId);
+      if (variation) {
+        await ctx.db.patch(variation._id, {
+          inventory: variation.inventory + item.quantity,
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Explicitly mark a PAID order as refunded. This is a deliberate, separate
+ * action from a status change because the actual money refund must be issued
+ * in the PayRex dashboard — this only records that a refund was processed and
+ * restores inventory. Sets paymentStatus="refunded" and status="refunded".
+ */
+export const markOrderRefunded = mutation({
+  args: {
+    clerkId: v.string(),
+    orderId: v.id("orders"),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const admin = await requireAdmin(ctx, args.clerkId);
+
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+    if (order.paymentStatus !== "paid") {
+      throw new Error("Only paid orders can be refunded");
+    }
+
+    await restoreOrderInventory(ctx, order);
+
+    await ctx.db.patch(args.orderId, {
+      paymentStatus: "refunded",
+      status: "refunded",
+      notes: args.notes ?? order.notes,
+      updatedAt: Date.now(),
+    });
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "refund",
+      resourceType: "order",
+      resourceId: args.orderId,
+      changes: { orderNumber: order.orderNumber, total: order.total, notes: args.notes },
+    });
+
+    return { success: true, inventoryRestored: true };
   },
 });
 
@@ -446,7 +608,7 @@ export const getLowStockProducts = query({
     await requireAdmin(ctx, args.clerkId);
 
     const products = await ctx.db.query("products").collect();
-    
+
     const lowStock = products.filter(p =>
       p.trackInventory && p.inventory <= p.lowStockThreshold
     );
@@ -466,10 +628,8 @@ export const getSalesStats = query({
 
     let orders = await ctx.db.query("orders").collect();
 
-    // Filter paid orders only
     orders = orders.filter(o => o.paymentStatus === "paid");
 
-    // Filter by date range
     if (args.dateFrom) {
       orders = orders.filter(o => o.createdAt >= args.dateFrom!);
     }
@@ -481,7 +641,6 @@ export const getSalesStats = query({
     const totalOrders = orders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-    // Top selling products
     const productSales: Record<string, { productId: string, productName: string, quantity: number, revenue: number }> = {};
 
     for (const order of orders) {
@@ -530,7 +689,7 @@ export const createDiscount = mutation({
     applicableProducts: v.optional(v.array(v.id("products"))),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     const { clerkId, ...discountData } = args;
 
@@ -538,6 +697,14 @@ export const createDiscount = mutation({
       ...discountData,
       usedCount: 0,
       isActive: true,
+    });
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "create",
+      resourceType: "discount",
+      resourceId: discountId,
+      changes: { code: args.code, type: args.type, value: args.value },
     });
 
     return { success: true, discountId };
@@ -560,11 +727,19 @@ export const updateDiscount = mutation({
     applicableProducts: v.optional(v.array(v.id("products"))),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     const { clerkId, discountId, ...updates } = args;
 
     await ctx.db.patch(discountId, updates);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "update",
+      resourceType: "discount",
+      resourceId: discountId,
+      changes: updates,
+    });
 
     return { success: true };
   },
@@ -576,9 +751,16 @@ export const deleteDiscount = mutation({
     discountId: v.id("discounts"),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
+    const admin = await requireAdmin(ctx, args.clerkId);
 
     await ctx.db.delete(args.discountId);
+
+    await logAudit(ctx, {
+      userId: admin._id,
+      action: "delete",
+      resourceType: "discount",
+      resourceId: args.discountId,
+    });
 
     return { success: true };
   },
@@ -591,5 +773,97 @@ export const getDiscounts = query({
 
     const discounts = await ctx.db.query("discounts").collect();
     return discounts;
+  },
+});
+
+// ==========================================
+// RICH ANALYTICS
+// ==========================================
+
+export const getShopAnalytics = query({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx, args.clerkId);
+
+    const orders = await ctx.db.query("orders").collect();
+    const paidOrders = orders.filter((o) => o.paymentStatus === "paid");
+
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
+    const paidOrderCount = paidOrders.length;
+    const averageOrderValue =
+      paidOrderCount > 0 ? Math.round(totalRevenue / paidOrderCount) : 0;
+
+    const statusCounts: Record<string, number> = {
+      pending: 0,
+      processing: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+      refunded: 0,
+    };
+    for (const o of orders) {
+      statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
+    }
+
+    const productSales: Record<
+      string,
+      { productId: string; productName: string; quantity: number; revenue: number }
+    > = {};
+    for (const order of paidOrders) {
+      for (const item of order.items) {
+        if (!productSales[item.productId]) {
+          productSales[item.productId] = {
+            productId: item.productId,
+            productName: item.productName,
+            quantity: 0,
+            revenue: 0,
+          };
+        }
+        productSales[item.productId].quantity += item.quantity;
+        productSales[item.productId].revenue += item.total;
+      }
+    }
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+
+    const now = new Date();
+    const days: { date: string; label: string; revenue: number; orders: number }[] = [];
+    const buckets: Record<string, { revenue: number; orders: number }> = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      buckets[key] = { revenue: 0, orders: 0 };
+      days.push({
+        date: key,
+        label: `${d.getMonth() + 1}/${d.getDate()}`,
+        revenue: 0,
+        orders: 0,
+      });
+    }
+    for (const order of paidOrders) {
+      const paidTs = order.paidAt ?? order.createdAt;
+      const d = new Date(paidTs);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (buckets[key]) {
+        buckets[key].revenue += order.total;
+        buckets[key].orders += 1;
+      }
+    }
+    for (const day of days) {
+      day.revenue = buckets[day.date].revenue;
+      day.orders = buckets[day.date].orders;
+    }
+
+    return {
+      totalRevenue,
+      paidOrderCount,
+      averageOrderValue,
+      totalOrders: orders.length,
+      statusCounts,
+      topProducts,
+      revenueByDay: days,
+      currency: "PHP" as const,
+    };
   },
 });

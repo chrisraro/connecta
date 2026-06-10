@@ -4,14 +4,24 @@ import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, Activity, Users, CreditCard, MessageSquare } from "lucide-react";
+import { Loader2, DollarSign, ShoppingBag, TrendingUp, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatPHP } from "@/lib/payment";
+
+const STATUS_COLORS: Record<string, string> = {
+    pending: "bg-yellow-600",
+    processing: "bg-blue-600",
+    shipped: "bg-purple-600",
+    delivered: "bg-green-600",
+    cancelled: "bg-red-600",
+    refunded: "bg-zinc-600",
+};
 
 export default function AdminAnalyticsPage() {
     const { user, isLoaded } = useUser();
-    const stats = useQuery(api.admin.getDashboardStats, user?.id ? { clerkId: user.id } : "skip");
+    const analytics = useQuery(api.adminShop.getShopAnalytics, user?.id ? { clerkId: user.id } : "skip");
 
-    if (!isLoaded || stats === undefined) {
+    if (!isLoaded || analytics === undefined) {
         return (
             <div className="flex items-center justify-center h-[50vh]">
                 <Loader2 className="animate-spin text-red-600 w-8 h-8" />
@@ -19,103 +29,148 @@ export default function AdminAnalyticsPage() {
         );
     }
 
-    // Calculate mock growth percentages (replace with real data later)
-    const userGrowth = 12.5;
-    const cardGrowth = 8.3;
-    const leadGrowth = 23.1;
+    const maxRevenue = Math.max(1, ...analytics.revenueByDay.map((d) => d.revenue));
+    const maxTopQty = Math.max(1, ...analytics.topProducts.map((p) => p.quantity));
 
     return (
         <div className="space-y-8">
-            {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-white">Analytics & Insights</h1>
-                <p className="text-zinc-400 mt-1">Platform metrics and performance trends</p>
+                <h1 className="text-3xl font-bold text-white">Sales Analytics</h1>
+                <p className="text-zinc-400 mt-1">Revenue, orders, and top products (PHP)</p>
             </div>
 
-            {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="bg-zinc-900 border-zinc-800 text-white">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">User Growth</CardTitle>
-                        <Users className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-zinc-400">Total Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-zinc-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{stats.totalUsers}</div>
-                        <div className="flex items-center mt-2">
-                            <TrendingUp className="w-4 h-4 text-emerald-500 mr-1" />
-                            <span className="text-xs text-emerald-500 font-medium">+{userGrowth}% this month</span>
-                        </div>
+                        <div className="text-3xl font-bold text-emerald-500">{formatPHP(analytics.totalRevenue)}</div>
+                        <p className="text-xs text-zinc-500 mt-1">From paid orders</p>
                     </CardContent>
                 </Card>
 
                 <Card className="bg-zinc-900 border-zinc-800 text-white">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Card Activations</CardTitle>
-                        <CreditCard className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-zinc-400">Paid Orders</CardTitle>
+                        <ShoppingBag className="h-4 w-4 text-zinc-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-emerald-500">{stats.activeCards}</div>
-                        <div className="flex items-center mt-2">
-                            <TrendingUp className="w-4 h-4 text-emerald-500 mr-1" />
-                            <span className="text-xs text-emerald-500 font-medium">+{cardGrowth}% this month</span>
-                        </div>
+                        <div className="text-3xl font-bold">{analytics.paidOrderCount}</div>
+                        <p className="text-xs text-zinc-500 mt-1">of {analytics.totalOrders} total</p>
                     </CardContent>
                 </Card>
 
                 <Card className="bg-zinc-900 border-zinc-800 text-white">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Total Leads</CardTitle>
-                        <MessageSquare className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-zinc-400">Avg. Order Value</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-zinc-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{stats.totalLeads}</div>
-                        <div className="flex items-center mt-2">
-                            <TrendingUp className="w-4 h-4 text-emerald-500 mr-1" />
-                            <span className="text-xs text-emerald-500 font-medium">+{leadGrowth}% this month</span>
-                        </div>
+                        <div className="text-3xl font-bold">{formatPHP(analytics.averageOrderValue)}</div>
+                        <p className="text-xs text-zinc-500 mt-1">Per paid order</p>
                     </CardContent>
                 </Card>
 
                 <Card className="bg-zinc-900 border-zinc-800 text-white">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Inventory</CardTitle>
-                        <Activity className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-zinc-400">Delivered</CardTitle>
+                        <Package className="h-4 w-4 text-zinc-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-amber-500">{stats.inventoryCards}</div>
-                        <div className="flex items-center mt-2">
-                            <Badge variant="outline" className="text-xs text-zinc-400 border-zinc-700">
-                                Available stock
-                            </Badge>
-                        </div>
+                        <div className="text-3xl font-bold text-green-500">{analytics.statusCounts.delivered}</div>
+                        <p className="text-xs text-zinc-500 mt-1">Completed orders</p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Coming Soon Notice */}
             <Card className="bg-zinc-900 border-zinc-800 text-white">
                 <CardHeader>
-                    <CardTitle className="text-xl">Advanced Analytics</CardTitle>
+                    <CardTitle className="text-lg">Revenue (Last 30 Days)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
-                            <Activity className="w-8 h-8 text-blue-500" />
-                        </div>
-                        <h3 className="text-lg font-bold mb-2">Charts & Visualizations Coming Soon</h3>
-                        <p className="text-sm text-zinc-400 max-w-md">
-                            We&apos;re building powerful analytics tools including:
+                    {analytics.totalRevenue === 0 ? (
+                        <p className="text-sm text-zinc-500 py-8 text-center">
+                            No paid orders yet. Revenue will appear here as orders are paid.
                         </p>
-                        <ul className="mt-4 space-y-2 text-sm text-zinc-400">
-                            <li>📊 User growth trends over time</li>
-                            <li>📈 NFC card activation heatmaps</li>
-                            <li>📉 Lead generation funnel analysis</li>
-                            <li>🎯 Conversion rate tracking</li>
-                            <li>💰 Revenue and billing metrics</li>
-                        </ul>
-                    </div>
+                    ) : (
+                        <div className="w-full">
+                            <div className="flex items-end gap-1 h-48">
+                                {analytics.revenueByDay.map((day) => {
+                                    const heightPct = (day.revenue / maxRevenue) * 100;
+                                    return (
+                                        <div
+                                            key={day.date}
+                                            className="group relative flex-1 flex flex-col justify-end h-full"
+                                            title={day.label + ": " + formatPHP(day.revenue) + " (" + day.orders + " orders)"}
+                                        >
+                                            <div
+                                                className="w-full bg-emerald-600 hover:bg-emerald-500 rounded-t transition-colors"
+                                                style={{ height: Math.max(heightPct, day.revenue > 0 ? 2 : 0) + "%" }}
+                                            />
+                                            <div className="pointer-events-none absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 border border-zinc-700 px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                {formatPHP(day.revenue)}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex justify-between mt-2 text-xs text-zinc-500">
+                                <span>{analytics.revenueByDay[0]?.label}</span>
+                                <span>{analytics.revenueByDay[Math.floor(analytics.revenueByDay.length / 2)]?.label}</span>
+                                <span>{analytics.revenueByDay[analytics.revenueByDay.length - 1]?.label}</span>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-zinc-900 border-zinc-800 text-white">
+                    <CardHeader>
+                        <CardTitle className="text-lg">Orders by Status</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {Object.entries(analytics.statusCounts).map(([status, count]) => (
+                            <div key={status} className="flex items-center justify-between">
+                                <Badge className={STATUS_COLORS[status] || "bg-zinc-600"}>{status}</Badge>
+                                <span className="font-semibold">{count}</span>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-zinc-900 border-zinc-800 text-white">
+                    <CardHeader>
+                        <CardTitle className="text-lg">Top Products (by quantity)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {analytics.topProducts.length === 0 ? (
+                            <p className="text-sm text-zinc-500 py-6 text-center">No sales yet.</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {analytics.topProducts.map((p) => (
+                                    <div key={p.productId} className="space-y-1">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-white truncate pr-2">{p.productName}</span>
+                                            <span className="text-zinc-400 whitespace-nowrap">
+                                                {p.quantity} sold - {formatPHP(p.revenue)}
+                                            </span>
+                                        </div>
+                                        <div className="h-2 bg-zinc-800 rounded overflow-hidden">
+                                            <div
+                                                className="h-full bg-blue-600 rounded"
+                                                style={{ width: (p.quantity / maxTopQty) * 100 + "%" }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }

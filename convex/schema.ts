@@ -2,7 +2,6 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  // 1. Users
   users: defineTable({
     email: v.string(),
     clerkId: v.string(),
@@ -10,7 +9,9 @@ export default defineSchema({
     role: v.union(v.literal("agent"), v.literal("admin")),
     subscriptionStatus: v.string(),
     credits: v.number(),
-    // Onboarding
+    plan: v.optional(v.union(v.literal("free"), v.literal("pro"), v.literal("business"))),
+    planExpiresAt: v.optional(v.number()),
+    teamId: v.optional(v.id("teams")),
     onboardingCompleted: v.optional(v.boolean()),
     onboardingData: v.optional(v.object({
       profileCategory: v.optional(v.union(v.literal("individual"), v.literal("company"), v.literal("business"))),
@@ -27,7 +28,6 @@ export default defineSchema({
     })),
   }).index("by_clerkId", ["clerkId"]),
 
-  // 2. Physical NFC Cards
   cards: defineTable({
     ownerId: v.id("users"),
     uuid: v.string(),
@@ -39,12 +39,10 @@ export default defineSchema({
     .index("by_owner", ["ownerId"])
     .index("by_activationCode", ["activationCode"]),
 
-  // 3. Digital Profiles
   profiles: defineTable({
     ownerId: v.id("users"),
     name: v.string(),
     profileType: v.optional(v.union(v.literal("individual"), v.literal("company"), v.literal("business"))),
-
     agentInfo: v.object({
       fullName: v.string(),
       title: v.string(),
@@ -83,8 +81,6 @@ export default defineSchema({
       }))),
       gallery: v.optional(v.array(v.string())),
     }),
-
-
     layoutConfig: v.object({
       themeId: v.string(),
       colorPalette: v.object({
@@ -97,11 +93,8 @@ export default defineSchema({
       componentOrder: v.array(v.string()),
       heroStyle: v.string(),
     }),
-
     featuredProperties: v.array(v.id("properties")),
-    featuredProjects: v.optional(v.array(v.string())), // project IDs (strings, not Convex IDs for local builder state)
-    
-    // Dynamic Content based on profileType
+    featuredProjects: v.optional(v.array(v.string())),
     products: v.optional(v.array(v.object({
       title: v.string(),
       description: v.string(),
@@ -115,8 +108,6 @@ export default defineSchema({
       price: v.optional(v.number()),
       image: v.optional(v.string()),
     }))),
-
-    // Inline property listings (for builder)
     propertyListings: v.optional(v.array(v.object({
       title: v.string(),
       description: v.optional(v.string()),
@@ -126,8 +117,6 @@ export default defineSchema({
       status: v.optional(v.string()),
       link: v.optional(v.string()),
     }))),
-
-    // Inline projects (for builder, separate from projects table)
     inlineProjects: v.optional(v.array(v.object({
       title: v.string(),
       description: v.optional(v.string()),
@@ -137,7 +126,6 @@ export default defineSchema({
     }))),
   }).index("by_owner", ["ownerId"]),
 
-  // 4. Real Estate Properties (kept for RE professionals)
   properties: defineTable({
     ownerId: v.id("users"),
     title: v.string(),
@@ -162,7 +150,6 @@ export default defineSchema({
     dateSold: v.optional(v.string()),
   }).index("by_owner", ["ownerId"]),
 
-  // 5. Portfolio Projects (for creative/freelance/tech professionals)
   projects: defineTable({
     ownerId: v.id("users"),
     title: v.string(),
@@ -187,7 +174,6 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
-  // 6. Leads & Inquiries
   leads: defineTable({
     ownerId: v.id("users"),
     propertyId: v.optional(v.id("properties")),
@@ -200,7 +186,6 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_owner", ["ownerId"]),
 
-  // 7. Notifications
   notifications: defineTable({
     userId: v.id("users"),
     type: v.union(v.literal("new_lead"), v.literal("system")),
@@ -208,17 +193,16 @@ export default defineSchema({
     title: v.string(),
     message: v.string(),
     link: v.optional(v.string()),
-    data: v.optional(v.any()), // Extra context data
+    data: v.optional(v.any()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]).index("by_user_read", ["userId", "read"]),
 
-  // 8. Audit Logs (Security & Compliance)
   auditLogs: defineTable({
     userId: v.id("users"),
-    action: v.string(), // "create_profile", "delete_card", "update_user", etc.
-    resourceType: v.string(), // "profiles", "cards", "leads", "users"
-    resourceId: v.string(), // ID of the affected resource
-    changes: v.optional(v.any()), // Before/after state snapshot
+    action: v.string(),
+    resourceType: v.string(),
+    resourceId: v.string(),
+    changes: v.optional(v.any()),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
     timestamp: v.number(),
@@ -226,7 +210,6 @@ export default defineSchema({
     .index("by_resource", ["resourceType", "resourceId"])
     .index("by_timestamp", ["timestamp"]),
 
-  // 9. Admin Users (Role-Based Access Control)
   admins: defineTable({
     userId: v.id("users"),
     role: v.union(v.literal("superadmin"), v.literal("moderator")),
@@ -237,7 +220,6 @@ export default defineSchema({
   }).index("by_user", ["userId"])
     .index("by_active", ["revokedAt"]),
 
-  // 10. Product Categories
   productCategories: defineTable({
     name: v.string(),
     slug: v.string(),
@@ -250,7 +232,6 @@ export default defineSchema({
     .index("by_active", ["isActive"])
     .index("by_parent", ["parentId"]),
 
-  // 11. Products
   products: defineTable({
     name: v.string(),
     slug: v.string(),
@@ -283,7 +264,6 @@ export default defineSchema({
     .index("by_published", ["isPublished"])
     .index("by_sku", ["sku"]),
 
-  // 12. Product Variations
   productVariations: defineTable({
     productId: v.id("products"),
     name: v.string(),
@@ -298,7 +278,6 @@ export default defineSchema({
   }).index("by_product", ["productId"])
     .index("by_sku", ["sku"]),
 
-  // 13. Shopping Carts
   carts: defineTable({
     userId: v.optional(v.id("users")),
     guestId: v.optional(v.string()),
@@ -313,7 +292,6 @@ export default defineSchema({
   }).index("by_user", ["userId"])
     .index("by_guest", ["guestId"]),
 
-  // 14. Orders
   orders: defineTable({
     orderNumber: v.string(),
     userId: v.optional(v.id("users")),
@@ -339,11 +317,14 @@ export default defineSchema({
     tax: v.number(),
     shipping: v.number(),
     discount: v.optional(v.number()),
+    appliedDiscountCode: v.optional(v.string()),
     total: v.number(),
     currency: v.string(),
-    paymentProvider: v.union(v.literal("stripe"), v.literal("paypal")),
+    paymentProvider: v.union(v.literal("payrex"), v.literal("stripe"), v.literal("paypal")),
     paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed"), v.literal("refunded")),
     paymentIntentId: v.optional(v.string()),
+    payrexCheckoutId: v.optional(v.string()),
+    paidAt: v.optional(v.number()),
     shippingAddress: v.object({
       fullName: v.string(),
       addressLine1: v.string(),
@@ -372,7 +353,6 @@ export default defineSchema({
     .index("by_paymentStatus", ["paymentStatus"])
     .index("by_createdAt", ["createdAt"]),
 
-  // 15. Discount Codes
   discounts: defineTable({
     code: v.string(),
     type: v.union(v.literal("percentage"), v.literal("fixed")),
@@ -387,4 +367,55 @@ export default defineSchema({
     applicableProducts: v.optional(v.array(v.id("products"))),
   }).index("by_code", ["code"])
     .index("by_active", ["isActive"]),
+
+  settings: defineTable({
+    key: v.string(),
+    value: v.any(),
+    updatedAt: v.number(),
+    updatedBy: v.optional(v.id("users")),
+  }).index("by_key", ["key"]),
+
+  // --- SaaS layer (Phase 4): teams, invites, subscription invoices ---
+
+  teams: defineTable({
+    name: v.string(),
+    ownerId: v.id("users"),
+    seats: v.number(),
+    logoUrl: v.optional(v.string()),
+    accentColor: v.optional(v.string()),
+    companyName: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_owner", ["ownerId"]),
+
+  teamInvites: defineTable({
+    teamId: v.id("teams"),
+    email: v.string(),
+    invitedBy: v.id("users"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("revoked")
+    ),
+    createdAt: v.number(),
+  }).index("by_team", ["teamId"])
+    .index("by_email", ["email"]),
+
+  subscriptionInvoices: defineTable({
+    userId: v.id("users"),
+    plan: v.union(v.literal("pro"), v.literal("business")),
+    amountCentavos: v.number(),
+    periodDays: v.number(),
+    payrexCheckoutId: v.optional(v.string()),
+    paymentIntentId: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("paid"),
+      v.literal("expired")
+    ),
+    periodStart: v.optional(v.number()),
+    periodEnd: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"])
+    .index("by_checkoutId", ["payrexCheckoutId"])
+    .index("by_status", ["status"]),
 });

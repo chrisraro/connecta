@@ -1,9 +1,19 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { sanitizePlainText } from "../lib/sanitize";
+import { requireUser, requireUserMatching } from "./authz";
+import { planContext } from "./billing";
 
-// Leads Management
+const MAX_NAME = 120;
+const MAX_CONTACT = 200;
+const MAX_MESSAGE = 2000;
+const MAX_PROPERTY_NAME = 200;
+
+function capLen(value: string, max: number): string {
+    return value.length > max ? value.slice(0, max) : value;
+}
+
 export const createLead = mutation({
     args: {
         ownerId: v.id("users"),
@@ -14,12 +24,24 @@ export const createLead = mutation({
         message: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        // Sanitize user inputs to prevent XSS
-        const sanitizedName = sanitizePlainText(args.inquirerName);
-        const sanitizedContact = sanitizePlainText(args.inquirerContact);
-        const sanitizedMessage = args.message ? sanitizePlainText(args.message) : undefined;
-        const sanitizedPropertyName = args.propertyName ? sanitizePlainText(args.propertyName) : undefined;
+        const owner = await ctx.db.get(args.ownerId);
+        if (!owner) {
+            throw new Error("Invalid recipient");
+        }
+        if (!args.inquirerName.trim() || !args.inquirerContact.trim()) {
+            throw new Error("Name and contact are required");
+        }
+        const sanitizedName = capLen(sanitizePlainText(args.inquirerName), MAX_NAME);
+        const sanitizedContact = capLen(sanitizePlainText(args.inquirerContact), MAX_CONTACT);
+        const sanitizedMessage = args.message
+            ? capLen(sanitizePlainText(args.message), MAX_MESSAGE)
+            : undefined;
+        const sanitizedPropertyName = args.propertyName
+            ? capLen(sanitizePlainText(args.propertyName), MAX_PROPERTY_NAME)
+            : undefined;
 
+        // NOTE: leads are ALWAYS captured (never lost), regardless of plan. The
+        // Free plan only limits how many are VIEWABLE in getLeads.
         const leadId = await ctx.db.insert("leads", {
             ownerId: args.ownerId,
             propertyId: args.propertyId,
@@ -31,7 +53,6 @@ export const createLead = mutation({
             createdAt: Date.now(),
         });
 
-        // Insert a notification for the profile owner
         await ctx.db.insert("notifications", {
             userId: args.ownerId,
             type: "new_lead",
@@ -43,7 +64,6 @@ export const createLead = mutation({
             createdAt: Date.now(),
         });
 
-        // Trigger email sending
         const user = await ctx.db.get(args.ownerId);
         if (user && user.email) {
             await ctx.scheduler.runAfter(0, internal.email.sendLeadNotification, {
@@ -62,27 +82,45 @@ export const createLead = mutation({
 export const getLeads = query({
     args: { clerkId: v.optional(v.string()) },
     handler: async (ctx, args) => {
-        if (!args.clerkId) return [];
+        if (!args.clerkId) {
+            return { leads: [], lockedCount: 0, leadViewCap: null as number | null, canExport: false };
+        }
+        const user = await requireUserMatching(ctx, args.clerkId);
+        const { limits } = planContext(user);
 
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-            .unique();
-        if (!user) return [];
-
-        const leads = await ctx.db
+        const allLeads = await ctx.db
             .query("leads")
             .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
             .order("desc")
             .collect();
 
-        return leads;
+        // Free plan: only the newest `leadViewCap` leads are viewable; older
+        // ones are captured but locked behind an upgrade.
+        const cap = limits.leadViewCap;
+        let leads = allLeads;
+        let lockedCount = 0;
+        if (cap !== null && allLeads.length > cap) {
+            leads = allLeads.slice(0, cap);
+            lockedCount = allLeads.length - cap;
+        }
+
+        return {
+            leads,
+            lockedCount,
+            leadViewCap: cap,
+            canExport: limits.canExportLeads,
+        };
     },
 });
 
 export const markContacted = mutation({
     args: { leadId: v.id("leads") },
     handler: async (ctx, args) => {
+        const user = await requireUser(ctx);
+        const lead = await ctx.db.get(args.leadId);
+        if (!lead || lead.ownerId !== user._id) {
+            throw new Error("Unauthorized: lead not found or not owned by caller");
+        }
         await ctx.db.patch(args.leadId, {
             status: "contacted",
             lastContactedAt: Date.now(),

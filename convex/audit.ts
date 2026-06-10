@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { requireUserMatching, requireAdmin } from "./authz";
 
 /**
  * Audit Logging Utility
@@ -38,12 +39,8 @@ export async function logAudit(
 export const getMyAuditLogs = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
-      .unique();
-
-    if (!user) return [];
+    // Only the authenticated user can read their own audit logs.
+    const user = await requireUserMatching(ctx, args.clerkId);
 
     return await ctx.db
       .query("auditLogs")
@@ -61,22 +58,9 @@ export const getResourceAuditLogs = query({
     resourceId: v.string(),
   },
   handler: async (ctx, args) => {
-    // Verify user is admin
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
-      .unique();
-
-    if (!user) throw new Error("User not found");
-
-    const admin = await ctx.db
-      .query("admins")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .first();
-
-    if (!admin || admin.revokedAt) {
-      throw new Error("Unauthorized: Admin access required");
-    }
+    // Verify the authenticated caller is an active admin (clerkId must match token).
+    await requireUserMatching(ctx, args.clerkId);
+    await requireAdmin(ctx);
 
     return await ctx.db
       .query("auditLogs")

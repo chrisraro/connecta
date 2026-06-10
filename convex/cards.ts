@@ -1,12 +1,29 @@
 import { v } from "convex/values";
-import { mutation, query, QueryCtx } from "./_generated/server";
+import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
+import { requireUserMatching } from "./authz";
+import { planContext } from "./billing";
 
 async function getUser(ctx: QueryCtx, clerkId: string) {
     return await ctx.db
         .query("users")
         .withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId))
         .unique();
+}
+
+// Throws if activating one more card would exceed the user's plan limit on
+// active cards. Free = 1 active card; paid plans = unlimited.
+async function assertCanActivateCard(ctx: MutationCtx, user: Doc<"users">) {
+    const { limits } = planContext(user);
+    if (limits.maxActiveCards === null) return;
+    const owned = await ctx.db
+        .query("cards")
+        .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
+        .collect();
+    const activeCount = owned.filter((c) => c.status === "active").length;
+    if (activeCount >= limits.maxActiveCards) {
+        throw new Error("Upgrade to Pro to activate more than one card.");
+    }
 }
 
 export const getByActivationCode = query({
@@ -25,8 +42,7 @@ export const activateCard = mutation({
         activationCode: v.string(),
     },
     handler: async (ctx, args) => {
-        const user = await getUser(ctx, args.clerkId);
-        if (!user) throw new Error("User not found");
+        const user = await requireUserMatching(ctx, args.clerkId);
 
         const card = await ctx.db
             .query("cards")
@@ -35,6 +51,8 @@ export const activateCard = mutation({
 
         if (!card) throw new Error("Invalid activation code");
         if (card.status !== "inventory") throw new Error("Card already activated or reported lost");
+
+        await assertCanActivateCard(ctx, user);
 
         await ctx.db.patch(card._id, {
             ownerId: user._id,
@@ -52,8 +70,7 @@ export const linkProfile = mutation({
         profileId: v.optional(v.id("profiles")),
     },
     handler: async (ctx, args) => {
-        const user = await getUser(ctx, args.clerkId);
-        if (!user) throw new Error("User not found");
+        const user = await requireUserMatching(ctx, args.clerkId);
 
         const card = await ctx.db.get(args.cardId);
         if (!card) throw new Error("Card not found");
@@ -73,7 +90,7 @@ export const getCardByUuid = query({
             .query("cards")
             .withIndex("by_uuid", (q) => q.eq("uuid", args.uuid))
             .first();
-        
+
         // 2. Try decoded match (handles %3A colons)
         if (!card) {
             const decoded = decodeURIComponent(args.uuid);
@@ -116,30 +133,32 @@ export const claimCardByUuid = mutation({
         uuid: v.string(),
     },
     handler: async (ctx, args) => {
-        console.log("claimCardByUuid called:", { clerkId: args.clerkId, uuid: args.uuid });
-        
+        // SECURITY: enforce that the claimed clerkId belongs to the authenticated
+        // caller before creating/claiming anything in their name.
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized: authentication required");
+        if (identity.subject !== args.clerkId) throw new Error("Unauthorized: identity mismatch");
+
         // Get or create user
         let user = await getUser(ctx, args.clerkId);
-        
+
         if (!user) {
-            console.log("User not found, creating new user...", args.clerkId);
-            // User doesn't exist in Convex yet - create them
-            // This happens when user just signed up via Clerk
+            // User doesn't exist in Convex yet - create them.
+            // This happens when user just signed up via Clerk.
             const newUserId = await ctx.db.insert("users", {
                 clerkId: args.clerkId,
                 email: "", // Will be updated during onboarding
                 role: "agent",
                 subscriptionStatus: "active",
                 credits: 5,
+                plan: "free",
                 onboardingCompleted: false,
             });
-            
+
             user = await ctx.db.get(newUserId);
             if (!user) {
-                console.error("Failed to retrieve newly created user");
                 throw new Error("Failed to create user");
             }
-            console.log("New user created:", user._id);
         }
 
         // Find the card by UUID (with decoded and case-insensitive fallbacks)
@@ -159,42 +178,33 @@ export const claimCardByUuid = mutation({
         }
 
         if (!card) {
-            console.error("Card not found for UUID:", args.uuid);
             throw new Error("Card not found");
         }
 
-        console.log("Card found:", { 
-            cardId: card._id, 
-            status: card.status, 
-            currentOwnerId: card.ownerId 
-        });
-
         // If card already belongs to this user and is active, return it (idempotent)
         if (card.ownerId === user._id && card.status === "active") {
-            console.log("Card already claimed by this user, returning existing card");
             return card._id;
         }
 
         // If card belongs to another user, reject
         if (card.ownerId && card.ownerId !== user._id) {
-            console.error("Card belongs to another user");
             throw new Error("Card is not available for claiming");
         }
 
         // If card is not in inventory status, reject
         if (card.status !== "inventory") {
-            console.error("Card is not in inventory status:", card.status);
             throw new Error("Card is not available for claiming");
         }
 
+        // Plan gating: free plan may only have one active card.
+        await assertCanActivateCard(ctx, user);
+
         // Claim the card: assign ownership and activate
-        console.log("Claiming card for user:", user._id);
         await ctx.db.patch(card._id, {
             ownerId: user._id,
             status: "active",
         });
 
-        console.log("Card claimed successfully:", card._id);
         return card._id;
     },
 });

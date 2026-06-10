@@ -1,22 +1,125 @@
 import { v } from "convex/values";
-import { mutation, query, QueryCtx } from "./_generated/server";
-import { Id, Doc } from "./_generated/dataModel";
+import {
+  mutation,
+  query,
+  internalMutation,
+  internalQuery,
+} from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import { getAuthedUser } from "./authz";
+import { readShopSettings, computeTotals } from "./settings";
 
 /**
- * Checkout & Payment Logic
- * 
- * Handles order creation, payment processing, and webhook handling.
+ * Compute the discount amount (centavos) for a given code + subtotal.
+ * Shared between the public `validateDiscount` query and `createOrder` so the
+ * server stays the single source of truth. Throws on invalid/expired codes.
  */
+async function resolveDiscount(
+  ctx: { db: any },
+  code: string,
+  subtotal: number
+): Promise<number> {
+  const discount = await ctx.db
+    .query("discounts")
+    .withIndex("by_code", (q: any) => q.eq("code", code))
+    .first();
 
-// ==========================================
-// ORDER CREATION
-// ==========================================
+  if (!discount || !discount.isActive) {
+    throw new Error("Invalid discount code");
+  }
 
-// Create order from cart (before payment)
+  const now = Date.now();
+  if (now < discount.validFrom || (discount.validUntil && now > discount.validUntil)) {
+    throw new Error("Discount code expired");
+  }
+
+  if (discount.usageLimit && discount.usedCount >= discount.usageLimit) {
+    throw new Error("Discount code usage limit reached");
+  }
+
+  if (discount.minOrderValue && subtotal < discount.minOrderValue) {
+    throw new Error(
+      `Minimum order value is PHP ${(discount.minOrderValue / 100).toFixed(2)}`
+    );
+  }
+
+  let discountAmount: number;
+  if (discount.type === "percentage") {
+    discountAmount = Math.round(subtotal * (discount.value / 100));
+    if (discount.maxDiscountAmount) {
+      discountAmount = Math.min(discountAmount, discount.maxDiscountAmount);
+    }
+  } else {
+    discountAmount = discount.value;
+  }
+
+  // Never let the discount exceed the subtotal.
+  return Math.min(discountAmount, subtotal);
+}
+
+/**
+ * Public query: validate a discount code against a provided subtotal (centavos).
+ * Returns a non-throwing result so the cart/checkout UI can show inline errors.
+ * The server remains the source of truth — createOrder re-validates.
+ */
+export const validateDiscount = query({
+  args: {
+    code: v.string(),
+    subtotal: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const code = args.code.trim();
+    if (!code) {
+      return { valid: false as const, error: "Enter a discount code" };
+    }
+
+    const discount = await ctx.db
+      .query("discounts")
+      .withIndex("by_code", (q) => q.eq("code", code))
+      .first();
+
+    if (!discount || !discount.isActive) {
+      return { valid: false as const, error: "Invalid discount code" };
+    }
+
+    const now = Date.now();
+    if (now < discount.validFrom || (discount.validUntil && now > discount.validUntil)) {
+      return { valid: false as const, error: "Discount code expired" };
+    }
+    if (discount.usageLimit && discount.usedCount >= discount.usageLimit) {
+      return { valid: false as const, error: "Discount code usage limit reached" };
+    }
+    if (discount.minOrderValue && args.subtotal < discount.minOrderValue) {
+      return {
+        valid: false as const,
+        error: `Minimum order value is PHP ${(discount.minOrderValue / 100).toFixed(2)}`,
+      };
+    }
+
+    let discountAmount: number;
+    if (discount.type === "percentage") {
+      discountAmount = Math.round(args.subtotal * (discount.value / 100));
+      if (discount.maxDiscountAmount) {
+        discountAmount = Math.min(discountAmount, discount.maxDiscountAmount);
+      }
+    } else {
+      discountAmount = discount.value;
+    }
+    discountAmount = Math.min(discountAmount, args.subtotal);
+
+    return {
+      valid: true as const,
+      code: discount.code,
+      type: discount.type,
+      value: discount.value,
+      discountAmount,
+    };
+  },
+});
+
 export const createOrder = mutation({
   args: {
-    userId: v.optional(v.id("users")),
     guestEmail: v.optional(v.string()),
     guestId: v.optional(v.string()),
     shippingAddress: v.object({
@@ -38,22 +141,23 @@ export const createOrder = mutation({
       postalCode: v.string(),
       country: v.string(),
     })),
-    paymentProvider: v.union(v.literal("stripe"), v.literal("paypal")),
+    paymentProvider: v.literal("payrex"),
     discountCode: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Validate either userId or guestEmail is provided
-    if (!args.userId && !args.guestEmail) {
-      throw new Error("User ID or guest email is required");
+    const authedUser = await getAuthedUser(ctx);
+    const userId = authedUser?._id;
+
+    if (!userId && !args.guestEmail) {
+      throw new Error("Authentication or guest email is required");
     }
 
-    // Get cart
     let cart;
-    if (args.userId) {
+    if (userId) {
       cart = await ctx.db
         .query("carts")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+        .withIndex("by_user", (q) => q.eq("userId", userId))
         .first();
     } else if (args.guestId) {
       cart = await ctx.db
@@ -66,50 +170,16 @@ export const createOrder = mutation({
       throw new Error("Cart is empty");
     }
 
-    // Validate discount code if provided
+    const cartSubtotal = cart.items.reduce(
+      (sum, item) => sum + item.priceAtAdd * item.quantity,
+      0
+    );
+
     let discountAmount = 0;
     if (args.discountCode) {
-      const discount = await ctx.db
-        .query("discounts")
-        .withIndex("by_code", (q) => q.eq("code", args.discountCode!))
-        .first();
-
-      if (!discount || !discount.isActive) {
-        throw new Error("Invalid discount code");
-      }
-
-      const now = Date.now();
-      if (now < discount.validFrom || (discount.validUntil && now > discount.validUntil)) {
-        throw new Error("Discount code expired");
-      }
-
-      if (discount.usageLimit && discount.usedCount >= discount.usageLimit) {
-        throw new Error("Discount code usage limit reached");
-      }
-
-      // Calculate discount
-      const subtotal = cart.items.reduce((sum, item) => sum + (item.priceAtAdd * item.quantity), 0);
-      
-      if (discount.minOrderValue && subtotal < discount.minOrderValue) {
-        throw new Error(`Minimum order value is $${(discount.minOrderValue / 100).toFixed(2)}`);
-      }
-
-      if (discount.type === "percentage") {
-        discountAmount = Math.round(subtotal * (discount.value / 100));
-        if (discount.maxDiscountAmount) {
-          discountAmount = Math.min(discountAmount, discount.maxDiscountAmount);
-        }
-      } else {
-        discountAmount = discount.value;
-      }
-
-      // Increment usage count
-      await ctx.db.patch(discount._id, {
-        usedCount: discount.usedCount + 1,
-      });
+      discountAmount = await resolveDiscount(ctx, args.discountCode, cartSubtotal);
     }
 
-    // Build order items with current prices and validate stock
     const orderItems = await Promise.all(
       cart.items.map(async (item) => {
         const product = await ctx.db.get(item.productId);
@@ -117,10 +187,9 @@ export const createOrder = mutation({
           throw new Error(`Product ${item.productId} is no longer available`);
         }
 
-        // Validate stock
         if (product.trackInventory) {
           let availableStock = product.inventory;
-          
+
           if (item.variationId) {
             const variation = await ctx.db.get(item.variationId);
             if (!variation) {
@@ -157,31 +226,31 @@ export const createOrder = mutation({
       })
     );
 
-    // Calculate totals
     const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
-    const tax = 0; // TODO: Implement tax calculation
-    const shipping = 0; // TODO: Implement shipping calculation
+    const settings = await readShopSettings(ctx);
+    // Tax/shipping are computed off the discounted subtotal so promos reduce
+    // the taxable base and can unlock free shipping consistently with the UI.
+    const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+    const { tax, shipping } = computeTotals(settings, discountedSubtotal);
     const total = subtotal + tax + shipping - discountAmount;
 
-    // Generate order number
-    const orderNumber = await generateOrderNumber(ctx);
-
+    const orderNumber = generateOrderNumber();
     const now = Date.now();
 
-    // Create order
     const orderId = await ctx.db.insert("orders", {
       orderNumber,
-      userId: args.userId,
-      guestEmail: args.guestEmail,
+      userId,
+      guestEmail: userId ? undefined : args.guestEmail,
       status: "pending",
       items: orderItems,
       subtotal,
       tax,
       shipping,
       discount: discountAmount > 0 ? discountAmount : undefined,
+      appliedDiscountCode: discountAmount > 0 ? args.discountCode : undefined,
       total,
-      currency: "USD",
-      paymentProvider: args.paymentProvider,
+      currency: "PHP",
+      paymentProvider: "payrex",
       paymentStatus: "pending",
       shippingAddress: args.shippingAddress,
       billingAddress: args.billingAddress,
@@ -190,57 +259,28 @@ export const createOrder = mutation({
       updatedAt: now,
     });
 
-    // Clear cart
     await ctx.db.patch(cart._id, {
       items: [],
       updatedAt: now,
     });
 
-    // Schedule order confirmation email
-    const emailTarget = args.guestEmail || "";
-    if (emailTarget) {
-      await ctx.scheduler.runAfter(0, internal.email.sendOrderConfirmation, {
-        toEmail: emailTarget,
-        orderNumber,
-        orderTotal: total,
-        currency: "USD",
-        items: orderItems,
-        shippingAddress: args.shippingAddress,
-        subtotal,
-        tax,
-        shipping,
-      });
-    }
-
     return {
       orderId,
       orderNumber,
       total,
-      currency: "USD",
+      currency: "PHP",
+      discountCode: args.discountCode,
     };
   },
 });
 
-// Generate unique order number
-async function generateOrderNumber(ctx: QueryCtx): Promise<string> {
+function generateOrderNumber(): string {
   const year = new Date().getFullYear();
-  const prefix = `TF-${year}`;
-  
-  // Get count of orders this year
-  const allOrders = await ctx.db.query("orders").collect();
-  const yearOrders = allOrders.filter((order: Doc<"orders">) => 
-    order.orderNumber.startsWith(prefix)
-  );
-  
-  const sequence = (yearOrders.length + 1).toString().padStart(6, "0");
-  return `${prefix}-${sequence}`;
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+  return `TF-${year}-${ts}${rand}`;
 }
 
-// ==========================================
-// ORDER QUERIES
-// ==========================================
-
-// Get order by order number
 export const getOrderByNumber = query({
   args: { orderNumber: v.string() },
   handler: async (ctx, args) => {
@@ -248,124 +288,159 @@ export const getOrderByNumber = query({
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", args.orderNumber))
       .first();
-
     return order;
   },
 });
 
-// Get user's orders
 export const getUserOrders = query({
-  args: { userId: v.id("users") },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
+    const user = await getAuthedUser(ctx);
+    if (!user) return [];
     const orders = await ctx.db
       .query("orders")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .order("desc")
       .collect();
-
     return orders;
   },
 });
 
-// ==========================================
-// PAYMENT HANDLERS (Stubbed - to be implemented with Stripe/PayPal)
-// ==========================================
+export const getOrderForPayment = internalQuery({
+  args: { orderNumber: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("orders")
+      .withIndex("by_orderNumber", (q) => q.eq("orderNumber", args.orderNumber))
+      .first();
+  },
+});
 
-// Confirm order payment (called by webhook)
-export const confirmOrderPayment = mutation({
+export const attachPayrexSession = internalMutation({
   args: {
     orderNumber: v.string(),
-    paymentIntentId: v.string(),
-    paymentStatus: v.union(v.literal("paid"), v.literal("failed"), v.literal("refunded")),
+    payrexCheckoutId: v.string(),
+    paymentIntentId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const order = await ctx.db
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", args.orderNumber))
       .first();
-
-    if (!order) {
-      throw new Error("Order not found");
-    }
-
-    const now = Date.now();
-
-    // Update order
+    if (!order) throw new Error("Order not found");
     await ctx.db.patch(order._id, {
-      paymentStatus: args.paymentStatus,
-      paymentIntentId: args.paymentIntentId,
-      status: args.paymentStatus === "paid" ? "processing" : order.status,
-      updatedAt: now,
+      payrexCheckoutId: args.payrexCheckoutId,
+      paymentIntentId: args.paymentIntentId ?? order.paymentIntentId,
+      updatedAt: Date.now(),
     });
-
-    // If payment successful, deduct inventory
-    if (args.paymentStatus === "paid") {
-      for (const item of order.items) {
-        const product = await ctx.db.get(item.productId);
-        if (product && product.trackInventory) {
-          await ctx.db.patch(product._id, {
-            inventory: product.inventory - item.quantity,
-          });
-        }
-
-        if (item.variationId) {
-          const variation = await ctx.db.get(item.variationId);
-          if (variation) {
-            await ctx.db.patch(variation._id, {
-              inventory: variation.inventory - item.quantity,
-            });
-          }
-        }
-      }
-    }
-
     return { success: true };
   },
 });
 
-// Create Stripe PaymentIntent (stub - requires Stripe SDK)
-export const createStripePaymentIntent = mutation({
+export const internalConfirmOrderPayment = internalMutation({
   args: {
-    orderNumber: v.string(),
+    orderNumber: v.optional(v.string()),
+    paymentIntentId: v.optional(v.string()),
+    paymentStatus: v.union(
+      v.literal("paid"),
+      v.literal("failed"),
+      v.literal("refunded")
+    ),
   },
   handler: async (ctx, args) => {
-    // TODO: Implement with Stripe SDK
-    // This requires server-side Stripe integration
-    throw new Error("Stripe integration not yet implemented");
-  },
-});
+    let order: Doc<"orders"> | null = null;
+    if (args.orderNumber) {
+      order = await ctx.db
+        .query("orders")
+        .withIndex("by_orderNumber", (q) =>
+          q.eq("orderNumber", args.orderNumber!)
+        )
+        .first();
+    }
+    if (!order && args.paymentIntentId) {
+      order = await ctx.db
+        .query("orders")
+        .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
+        .first();
+    }
 
-// Handle Stripe webhook (stub)
-export const handleStripeWebhook = mutation({
-  args: {
-    payload: v.string(),
-    signature: v.string(),
-  },
-  handler: async (ctx, args) => {
-    // TODO: Implement Stripe webhook handler
-    // Parse webhook, verify signature, update order status
-    throw new Error("Stripe webhook not yet implemented");
-  },
-});
+    if (!order) {
+      return { success: false, reason: "order_not_found" };
+    }
 
-// Create PayPal order (stub)
-export const createPayPalOrder = mutation({
-  args: {
-    orderNumber: v.string(),
-  },
-  handler: async (ctx, args) => {
-    // TODO: Implement with PayPal SDK
-    throw new Error("PayPal integration not yet implemented");
-  },
-});
+    if (order.paymentStatus === "paid" && args.paymentStatus === "paid") {
+      return { success: true, alreadyProcessed: true };
+    }
 
-// Handle PayPal webhook (stub)
-export const handlePayPalWebhook = mutation({
-  args: {
-    payload: v.string(),
-  },
-  handler: async (ctx, args) => {
-    // TODO: Implement PayPal webhook handler
-    throw new Error("PayPal webhook not yet implemented");
+    const now = Date.now();
+
+    await ctx.db.patch(order._id, {
+      paymentStatus: args.paymentStatus,
+      paymentIntentId: args.paymentIntentId ?? order.paymentIntentId,
+      status: args.paymentStatus === "paid" ? "processing" : order.status,
+      paidAt: args.paymentStatus === "paid" ? now : order.paidAt,
+      updatedAt: now,
+    });
+
+    if (args.paymentStatus !== "paid") {
+      return { success: true };
+    }
+
+    for (const item of order.items) {
+      const product = await ctx.db.get(item.productId);
+      if (product && product.trackInventory) {
+        await ctx.db.patch(product._id, {
+          inventory: product.inventory - item.quantity,
+        });
+      }
+      if (item.variationId) {
+        const variation = await ctx.db.get(item.variationId);
+        if (variation) {
+          await ctx.db.patch(variation._id, {
+            inventory: variation.inventory - item.quantity,
+          });
+        }
+      }
+    }
+
+    if (order.appliedDiscountCode) {
+      const discount = await ctx.db
+        .query("discounts")
+        .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
+        .first();
+      if (discount) {
+        await ctx.db.patch(discount._id, {
+          usedCount: discount.usedCount + 1,
+        });
+      }
+    }
+
+    let toEmail = order.guestEmail ?? "";
+    if (order.userId) {
+      const orderUser = await ctx.db.get(order.userId);
+      if (orderUser?.email) toEmail = orderUser.email;
+    }
+
+    if (toEmail) {
+      await ctx.scheduler.runAfter(0, internal.email.sendOrderConfirmation, {
+        toEmail,
+        orderNumber: order.orderNumber,
+        orderTotal: order.total,
+        currency: order.currency,
+        items: order.items.map((i) => ({
+          productName: i.productName,
+          variationName: i.variationName,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          total: i.total,
+        })),
+        shippingAddress: order.shippingAddress,
+        subtotal: order.subtotal,
+        tax: order.tax,
+        shipping: order.shipping,
+      });
+    }
+
+    return { success: true };
   },
 });

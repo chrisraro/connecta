@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Bell, Zap, LayoutTemplate, ChevronRight, Loader2 } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Bell, Zap, LayoutTemplate, ChevronRight, Loader2, Building2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,7 @@ function DashboardSidebar({ className }: { className?: string }) {
         { title: "My Profiles", url: "/dashboard/profiles", icon: Users },
         { title: "Leads", url: "/dashboard/leads", icon: MessageSquare },
         { title: "NFC Cards", url: "/dashboard/cards", icon: SmartphoneNfc },
+        { title: "Team", url: "/dashboard/team", icon: Building2 },
         { title: "Billings", url: "/dashboard/billing", icon: CreditCard },
         { title: "Settings", url: "/dashboard/settings", icon: Settings },
         { title: "Profile Setup", url: "/dashboard/onboarding", icon: Sparkles, badge: isOnboardingIncomplete },
@@ -178,6 +179,7 @@ function MobileHeader() {
         if (pathname.startsWith("/dashboard/profiles")) return "Profiles";
         if (pathname.startsWith("/dashboard/leads")) return "Inquiries";
         if (pathname.startsWith("/dashboard/cards")) return "My Cards";
+        if (pathname.startsWith("/dashboard/team")) return "Team";
         if (pathname.startsWith("/dashboard/billing")) return "Billing";
         if (pathname.startsWith("/dashboard/settings")) return "Settings";
         return "TapFolio";
@@ -261,10 +263,10 @@ export default function DashboardLayout({
 
                 {/* Offline Lead Capture Button */}
                 <OfflineLeadCapture />
-
-                {/* Mobile Bottom Nav */}
-                <MobileBottomNav />
             </main>
+
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav />
         </div>
     );
 }

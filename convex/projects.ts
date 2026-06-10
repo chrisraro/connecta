@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireUser, requireUserMatching } from "./authz";
 
 const categoryValidator = v.union(
     v.literal("graphic-design"),
@@ -18,14 +19,7 @@ export const getProjects = query({
     args: { clerkId: v.optional(v.string()) },
     handler: async (ctx, args) => {
         if (!args.clerkId) return [];
-
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-            .unique();
-
-        if (!user) return [];
-
+        const user = await requireUserMatching(ctx, args.clerkId);
         return ctx.db
             .query("projects")
             .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
@@ -47,13 +41,7 @@ export const createProject = mutation({
         featured: v.boolean(),
     },
     handler: async (ctx, args) => {
-        const user = await ctx.db
-            .query("users")
-            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
-            .unique();
-
-        if (!user) throw new Error("User not found");
-
+        const user = await requireUserMatching(ctx, args.clerkId);
         const { clerkId, ...projectFields } = args;
         return ctx.db.insert("projects", {
             ownerId: user._id,
@@ -76,7 +64,12 @@ export const updateProject = mutation({
         featured: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
+        const user = await requireUser(ctx);
         const { id, ...fields } = args;
+        const project = await ctx.db.get(id);
+        if (!project || project.ownerId !== user._id) {
+            throw new Error("Unauthorized: project not found or not owned by caller");
+        }
         await ctx.db.patch(id, fields);
     },
 });
@@ -84,6 +77,11 @@ export const updateProject = mutation({
 export const deleteProject = mutation({
     args: { id: v.id("projects") },
     handler: async (ctx, args) => {
+        const user = await requireUser(ctx);
+        const project = await ctx.db.get(args.id);
+        if (!project || project.ownerId !== user._id) {
+            throw new Error("Unauthorized: project not found or not owned by caller");
+        }
         await ctx.db.delete(args.id);
     },
 });
