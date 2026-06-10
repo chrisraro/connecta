@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
-import { resolveImageUrl } from "@/lib/utils";
+import { resolveImageUrl, readableTextColor } from "@/lib/utils";
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -138,7 +138,7 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
                 style={{
                   background: `linear-gradient(135deg, ${theme.primaryColor}, ${COLORS.primaryContainer})`,
-                  color: "#ffffff",
+                  color: readableTextColor(theme.primaryColor),
                 }}
               >
                 <Phone className="w-4 h-4" />
@@ -824,7 +824,7 @@ function ContactSection({ theme, ownerId }: { theme: TemplateProps["data"]["them
               background: isSuccess
                 ? "#22c55e"
                 : `linear-gradient(135deg, ${theme.primaryColor}, ${COLORS.primaryContainer})`,
-              color: "#ffffff",
+              color: isSuccess ? "#ffffff" : readableTextColor(theme.primaryColor),
             }}
           >
             {isSubmitting ? (

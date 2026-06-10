@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
-import { resolveImageUrl } from "@/lib/utils";
+import { resolveImageUrl, readableTextColor } from "@/lib/utils";
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -82,8 +82,8 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
                     {agent.phone && (
                         <a 
                             href={`tel:${agent.phone}`}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-white"
-                            style={{ backgroundColor: theme.primaryColor }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+                            style={{ backgroundColor: theme.primaryColor, color: readableTextColor(theme.primaryColor) }}
                         >
                             <Phone className="w-4 h-4" />
                             Call Me
@@ -160,8 +160,8 @@ function CertificationSection({ certification, theme }: { certification: NonNull
         <section className="px-6 py-4">
             <div className="max-w-md mx-auto">
                 <div 
-                    className="rounded-2xl p-5 text-white"
-                    style={{ backgroundColor: theme.primaryColor }}
+                    className="rounded-2xl p-5"
+                    style={{ backgroundColor: theme.primaryColor, color: readableTextColor(theme.primaryColor) }}
                 >
                     <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
@@ -279,7 +279,7 @@ function ExperienceSection({ experience, theme }: { experience: NonNullable<Temp
                                 className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10"
                                 style={{ backgroundColor: theme.primaryColor }}
                             >
-                                <Briefcase className="w-4 h-4 text-white" />
+                                <Briefcase className="w-4 h-4" style={{ color: readableTextColor(theme.primaryColor) }} />
                             </div>
                             <div className="flex-1 pt-1">
                                 <h3 className="font-semibold text-sm">{exp.title}</h3>
@@ -477,7 +477,7 @@ function ContactSection({ theme, ownerId }: { theme: TemplateProps["data"]["them
                         className="w-full h-11 font-semibold rounded-xl"
                         style={{ 
                             backgroundColor: isSuccess ? "#22c55e" : theme.primaryColor, 
-                            color: "#fff"
+                            color: isSuccess ? "#ffffff" : readableTextColor(theme.primaryColor)
                         }}
                     >
                         {isSubmitting ? (

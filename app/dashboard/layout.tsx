@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { NotificationsPopover } from "@/components/ui/notifications-popover";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { OfflineLeadCapture } from "@/components/profile-builder/OfflineLeadCapture";
 import {
     Sheet,
@@ -131,6 +132,7 @@ function DashboardSidebar({ className }: { className?: string }) {
                     <div className="flex-1 text-xs text-muted-foreground font-medium">
                         Manage Account
                     </div>
+                    <ThemeToggle />
                     <NotificationsPopover />
                 </div>
             </div>
@@ -191,7 +193,8 @@ function MobileHeader() {
                 <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">2026 Edition</span>
                 <h1 className="text-xl font-black tracking-tight text-foreground">{getPageTitle()}</h1>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+                <ThemeToggle />
                 <NotificationsPopover />
                 <div className="p-0.5 rounded-full border-2 border-primary/20">
                     <UserButton />

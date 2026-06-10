@@ -6,6 +6,7 @@ import { ShoppingCart, ChevronRight, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function ShopLayout({
   children,
@@ -71,6 +72,7 @@ export default function ShopLayout({
 
             {/* Account + Cart */}
             <div className="flex items-center gap-1">
+              <ThemeToggle />
               <Link href="/dashboard">
                 <Button variant="ghost" size="icon" aria-label="Your account">
                   <User className="w-5 h-5" aria-hidden="true" />
@@ -117,9 +119,9 @@ export default function ShopLayout({
       <div className="border-b border-border bg-card/40">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground sm:px-6 lg:px-8">
           <span>GCash, Maya, Card &amp; QR Ph accepted</span>
-          <span aria-hidden="true" className="hidden sm:inline">•</span>
+          <span aria-hidden="true" className="hidden sm:inline">&bull;</span>
           <span>Ships nationwide PH</span>
-          <span aria-hidden="true" className="hidden sm:inline">•</span>
+          <span aria-hidden="true" className="hidden sm:inline">&bull;</span>
           <span>Secure checkout via PayRex</span>
         </div>
       </div>
@@ -142,10 +144,10 @@ export default function ShopLayout({
             <div>
               <h3 className="font-bold mb-2">Shop</h3>
               <div className="space-y-1">
-                <Link href="/shop" className="block text-sm text-muted-foreground hover:text-foreground">
+                <Link href="/shop" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
                   All Products
                 </Link>
-                <Link href="/shop/cart" className="block text-sm text-muted-foreground hover:text-foreground">
+                <Link href="/shop/cart" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Shopping Cart
                 </Link>
               </div>
@@ -153,17 +155,17 @@ export default function ShopLayout({
             <div>
               <h3 className="font-bold mb-2">Support</h3>
               <div className="space-y-1">
-                <Link href="/" className="block text-sm text-muted-foreground hover:text-foreground">
+                <Link href="/" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Contact Us
                 </Link>
-                <Link href="/" className="block text-sm text-muted-foreground hover:text-foreground">
+                <Link href="/" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Shipping Info
                 </Link>
               </div>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} TapFolio. All rights reserved.
+            &copy; {new Date().getFullYear()} TapFolio. All rights reserved.
           </div>
         </div>
       </footer>

@@ -59,7 +59,7 @@ export default function AdminLayout({
 
     if (!isLoaded || verifiedAdmin === null) {
         return (
-            <div className="h-screen w-full flex items-center justify-center bg-black text-white">
+            <div className="dark h-screen w-full flex items-center justify-center bg-black text-white">
                 <Loader2 className="animate-spin text-red-600 w-10 h-10" />
             </div>
         );
@@ -90,7 +90,7 @@ export default function AdminLayout({
     ];
 
     return (
-        <div className="flex flex-col md:flex-row min-h-screen bg-black text-white">
+        <div className="dark flex flex-col md:flex-row min-h-screen bg-black text-white">
             {/* Mobile Header */}
             <header className="md:hidden flex items-center justify-between p-4 border-b border-zinc-900 bg-zinc-950 sticky top-0 z-40">
                 <div className="flex items-center gap-2 font-bold text-lg text-red-600">

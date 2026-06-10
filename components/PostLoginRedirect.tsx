@@ -42,9 +42,9 @@ export default function PostLoginRedirect() {
   }, [isLoaded, adminStatus, router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30">
       <Loader2 className="w-10 h-10 animate-spin text-yellow-500 mb-4" />
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-sm text-muted-foreground">
         Checking your account...
       </p>
     </div>
