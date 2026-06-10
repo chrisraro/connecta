@@ -3,7 +3,7 @@
 This document summarizes the full production overhaul completed across four phases, and everything you must do before going live.
 
 ---
-
+version bump
 ## ⚠️ DO THIS FIRST — Security
 
 1. **Rotate your exposed keys.** `.env.local` contains real secrets (Clerk secret key, Resend API key) that were present in the working folder. Rotate them in the Clerk and Resend dashboards, then update `.env.local`. Never commit this file (`.gitignore` already covers it). See `.env.example` for the full list of required variables.
