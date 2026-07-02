@@ -157,21 +157,21 @@ export default function ProfilesPage() {
                             
                             {profile.agentInfo.avatarUrl && (
                                 <div className="flex justify-center -mt-8 relative z-10">
-                                    <ProfileImage 
+                                    <ProfileImage
                                         src={profile.agentInfo.avatarUrl}
                                         alt="avatar"
                                         fallbackSeed={profile.agentInfo.fullName || profile.name}
-                                        className="w-16 h-16 rounded-full object-cover border-4 border-card shadow-lg" 
+                                        className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card shadow-lg"
                                     />
                                 </div>
                             )}
                             {!profile.agentInfo.avatarUrl && (
                                 <div className="flex justify-center -mt-8 relative z-10">
-                                    <ProfileImage 
+                                    <ProfileImage
                                         src={undefined}
                                         alt="avatar"
                                         fallbackSeed={profile.agentInfo.fullName || profile.name}
-                                        className="w-16 h-16 rounded-full object-cover border-4 border-card shadow-lg" 
+                                        className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card shadow-lg"
                                     />
                                 </div>
                             )}
