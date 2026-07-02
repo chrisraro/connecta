@@ -406,6 +406,55 @@ export const internalConfirmOrderPayment = internalMutation({
       return { success: true };
     }
 
+    // Re-validate stock and the discount's usage limit HERE, immediately
+    // before committing, instead of trusting the create-time check — closes
+    // the overselling / usage-limit-bypass race between two orders paid
+    // concurrently for the same last-unit product or single-use code
+    // (Backend #1/#2/#3, Payments #3/#4). This only runs on the pending->paid
+    // path: the guards above already returned early for paid->paid and
+    // paid->non-paid, so an order can't be re-decremented or double-failed.
+    for (const item of order.items) {
+      const product = await ctx.db.get(item.productId);
+      if (product && product.trackInventory && product.inventory < item.quantity) {
+        await ctx.db.patch(order._id, {
+          paymentStatus: "failed",
+          status: order.status,
+          updatedAt: Date.now(),
+        });
+        return { success: false, reason: "insufficient_stock" };
+      }
+      if (item.variationId) {
+        const variation = await ctx.db.get(item.variationId);
+        if (variation && variation.inventory < item.quantity) {
+          await ctx.db.patch(order._id, {
+            paymentStatus: "failed",
+            status: order.status,
+            updatedAt: Date.now(),
+          });
+          return { success: false, reason: "insufficient_stock" };
+        }
+      }
+    }
+
+    if (order.appliedDiscountCode) {
+      const discount = await ctx.db
+        .query("discounts")
+        .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
+        .first();
+      if (
+        discount &&
+        discount.usageLimit !== undefined &&
+        discount.usedCount >= discount.usageLimit
+      ) {
+        await ctx.db.patch(order._id, {
+          paymentStatus: "failed",
+          status: order.status,
+          updatedAt: Date.now(),
+        });
+        return { success: false, reason: "discount_limit_reached" };
+      }
+    }
+
     for (const item of order.items) {
       const product = await ctx.db.get(item.productId);
       if (product && product.trackInventory) {

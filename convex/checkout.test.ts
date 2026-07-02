@@ -105,3 +105,166 @@ test("internalConfirmOrderPayment does not regress a paid order when a stale fai
   const orderAfterStaleFailed = await t.run(async (ctx) => ctx.db.get(orderId));
   expect(orderAfterStaleFailed?.paymentStatus).toBe("paid");
 });
+
+async function seedProductForOrder(t: ReturnType<typeof convexTest>, inventory: number) {
+  return await t.run(async (ctx) => {
+    return await ctx.db.insert("products", {
+      name: "Limited Card",
+      slug: "limited-card",
+      basePrice: 50000,
+      sku: "LC-1",
+      inventory,
+      lowStockThreshold: 1,
+      trackInventory: true,
+      isPublished: true,
+      isFeatured: false,
+      tags: [],
+      images: [],
+      primaryImageIndex: 0,
+      shippingRequired: true,
+    });
+  });
+}
+
+async function seedPendingOrder(
+  t: ReturnType<typeof convexTest>,
+  productId: any,
+  quantity: number,
+  orderNumber: string
+) {
+  return await t.run(async (ctx) => {
+    return await ctx.db.insert("orders", {
+      orderNumber,
+      status: "pending",
+      items: [
+        {
+          productId,
+          productName: "Limited Card",
+          quantity,
+          unitPrice: 50000,
+          total: 50000 * quantity,
+        },
+      ],
+      subtotal: 50000 * quantity,
+      tax: 0,
+      shipping: 0,
+      total: 50000 * quantity,
+      currency: "PHP",
+      paymentProvider: "payrex",
+      paymentStatus: "pending",
+      shippingAddress: {
+        fullName: "Buyer",
+        addressLine1: "1 St",
+        city: "Manila",
+        postalCode: "1000",
+        country: "PH",
+        phone: "0917",
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+}
+
+test("internalConfirmOrderPayment fails the second of two concurrent orders that oversell the last unit", async () => {
+  const t = convexTest(schema);
+  const productId = await seedProductForOrder(t, 1);
+  const orderNumberA = "TF-2026-ORDA";
+  const orderNumberB = "TF-2026-ORDB";
+  await seedPendingOrder(t, productId, 1, orderNumberA);
+  await seedPendingOrder(t, productId, 1, orderNumberB);
+
+  await t.mutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber: orderNumberA,
+    paymentStatus: "paid",
+  });
+  await t.mutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber: orderNumberB,
+    paymentStatus: "paid",
+  });
+
+  const product = await t.run(async (ctx) => ctx.db.get(productId));
+  expect(product?.inventory).toBe(0);
+
+  const orderB = await t.run(async (ctx) =>
+    ctx.db
+      .query("orders")
+      .withIndex("by_orderNumber", (q) => q.eq("orderNumber", orderNumberB))
+      .first()
+  );
+  expect(orderB?.paymentStatus).toBe("failed");
+});
+
+test("internalConfirmOrderPayment stops a discount from being redeemed past its usage limit", async () => {
+  const t = convexTest(schema);
+  const productId = await seedProductForOrder(t, 100);
+  await t.run(async (ctx) => {
+    await ctx.db.insert("discounts", {
+      code: "ONECODE",
+      type: "fixed",
+      value: 1000,
+      usageLimit: 1,
+      usedCount: 0,
+      validFrom: 0,
+      isActive: true,
+    });
+  });
+
+  const orderNumberA = "TF-2026-DISCA";
+  const orderNumberB = "TF-2026-DISCB";
+  await t.run(async (ctx) => {
+    for (const orderNumber of [orderNumberA, orderNumberB]) {
+      await ctx.db.insert("orders", {
+        orderNumber,
+        status: "pending",
+        items: [
+          { productId, productName: "Limited Card", quantity: 1, unitPrice: 50000, total: 50000 },
+        ],
+        subtotal: 50000,
+        tax: 0,
+        shipping: 0,
+        discount: 1000,
+        appliedDiscountCode: "ONECODE",
+        total: 49000,
+        currency: "PHP",
+        paymentProvider: "payrex",
+        paymentStatus: "pending",
+        shippingAddress: {
+          fullName: "Buyer",
+          addressLine1: "1 St",
+          city: "Manila",
+          postalCode: "1000",
+          country: "PH",
+          phone: "0917",
+        },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+  });
+
+  await t.mutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber: orderNumberA,
+    paymentStatus: "paid",
+  });
+  await t.mutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber: orderNumberB,
+    paymentStatus: "paid",
+  });
+
+  const discount = await t.run(async (ctx) =>
+    ctx.db
+      .query("discounts")
+      .withIndex("by_code", (q) => q.eq("code", "ONECODE"))
+      .first()
+  );
+  expect(discount?.usedCount).toBe(1);
+
+  const orderB = await t.run(async (ctx) =>
+    ctx.db
+      .query("orders")
+      .withIndex("by_orderNumber", (q) => q.eq("orderNumber", orderNumberB))
+      .first()
+  );
+  expect(orderB?.paymentStatus).toBe("failed");
+});

@@ -234,6 +234,10 @@ export const addToCart = mutation({
       userId = user?._id;
     }
 
+    if (!Number.isInteger(args.quantity) || args.quantity < 1) {
+      throw new Error("Quantity must be a positive whole number");
+    }
+
     // Validate product exists and is published
     const product = await ctx.db.get(args.productId);
     if (!product || !product.isPublished) {
@@ -345,8 +349,8 @@ export const updateCartItem = mutation({
       userId = user?._id;
     }
 
-    if (args.quantity < 0) {
-      throw new Error("Quantity must be non-negative");
+    if (!Number.isInteger(args.quantity) || args.quantity < 0) {
+      throw new Error("Quantity must be a non-negative whole number");
     }
 
     // Find cart
