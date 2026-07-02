@@ -7,7 +7,7 @@ import {
 } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { getAuthedUser } from "./authz";
+import { getAuthedUser, isActiveAdmin } from "./authz";
 import { readShopSettings, computeTotals } from "./settings";
 
 /**
@@ -284,10 +284,22 @@ function generateOrderNumber(): string {
 export const getOrderByNumber = query({
   args: { orderNumber: v.string() },
   handler: async (ctx, args) => {
+    // SECURITY: order numbers are not secret (predictable timestamp + 3-char
+    // suffix) — never return an order without verifying ownership (Auth #2).
+    const user = await getAuthedUser(ctx);
+    if (!user) {
+      throw new Error("Unauthorized: sign in to view this order");
+    }
     const order = await ctx.db
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", args.orderNumber))
       .first();
+    if (!order) return null;
+    const isOwner = order.userId === user._id;
+    const isAdmin = await isActiveAdmin(ctx, user._id);
+    if (!isOwner && !isAdmin) {
+      throw new Error("Unauthorized: you do not have access to this order");
+    }
     return order;
   },
 });
