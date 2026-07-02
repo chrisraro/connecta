@@ -85,7 +85,12 @@ export const getLeads = query({
         if (!args.clerkId) {
             return { leads: [], lockedCount: 0, leadViewCap: null as number | null, canExport: false };
         }
-        const user = await requireUserMatching(ctx, args.clerkId);
+        let user;
+        try {
+            user = await requireUserMatching(ctx, args.clerkId);
+        } catch (error) {
+            return { leads: [], lockedCount: 0, leadViewCap: null as number | null, canExport: false };
+        }
         const { limits } = planContext(user);
 
         const allLeads = await ctx.db

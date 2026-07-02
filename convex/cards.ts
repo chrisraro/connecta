@@ -85,33 +85,11 @@ export const linkProfile = mutation({
 export const getCardByUuid = query({
     args: { uuid: v.string() },
     handler: async (ctx, args) => {
-        // 1. Try exact match (fastest)
-        let card = await ctx.db
+        const normalized = decodeURIComponent(args.uuid).trim().toLowerCase();
+        return await ctx.db
             .query("cards")
-            .withIndex("by_uuid", (q) => q.eq("uuid", args.uuid))
+            .withIndex("by_uuid", (q) => q.eq("uuid", normalized))
             .first();
-
-        // 2. Try decoded match (handles %3A colons)
-        if (!card) {
-            const decoded = decodeURIComponent(args.uuid);
-            if (decoded !== args.uuid) {
-                card = await ctx.db
-                    .query("cards")
-                    .withIndex("by_uuid", (q) => q.eq("uuid", decoded))
-                    .first();
-            }
-        }
-
-        // 3. Try case-insensitive match (handles lowercase/uppercase hex mismatches)
-        if (!card) {
-            const normalized = decodeURIComponent(args.uuid).toLowerCase();
-            card = await ctx.db
-                .query("cards")
-                .collect()
-                .then(cards => cards.find(c => c.uuid.toLowerCase() === normalized) || null);
-        }
-
-        return card;
     },
 });
 
@@ -150,7 +128,6 @@ export const claimCardByUuid = mutation({
                 email: "", // Will be updated during onboarding
                 role: "agent",
                 subscriptionStatus: "active",
-                credits: 5,
                 plan: "free",
                 onboardingCompleted: false,
             });
@@ -161,21 +138,11 @@ export const claimCardByUuid = mutation({
             }
         }
 
-        // Find the card by UUID (with decoded and case-insensitive fallbacks)
-        let card = await ctx.db
+        const normalizedUuid = decodeURIComponent(args.uuid).trim().toLowerCase();
+        const card = await ctx.db
             .query("cards")
-            .withIndex("by_uuid", (q) => q.eq("uuid", args.uuid))
+            .withIndex("by_uuid", (q) => q.eq("uuid", normalizedUuid))
             .first();
-
-        if (!card) {
-            const decoded = decodeURIComponent(args.uuid);
-            if (decoded !== args.uuid) {
-                card = await ctx.db
-                    .query("cards")
-                    .withIndex("by_uuid", (q) => q.eq("uuid", decoded))
-                    .first();
-            }
-        }
 
         if (!card) {
             throw new Error("Card not found");

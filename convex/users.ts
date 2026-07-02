@@ -40,7 +40,6 @@ export const syncUser = mutation({
             name: args.name,
             role: "agent",
             subscriptionStatus: "active",
-            credits: 5,
             plan: "free",
             onboardingCompleted: false,
         });
@@ -148,7 +147,11 @@ export const updateOnboarding = mutation({
                     layoutConfig: {
                         themeId: profileType === "business" ? "architectural" : profileType === "company" ? "kinetic" : "editorial",
                         colorPalette: themeColors,
-                        componentOrder: ["Hero", "About", "Services", "Projects", "Contact"],
+                        componentOrder: profileType === "business"
+                            ? ["Hero", "About", "Services", "Products", "Properties", "Gallery", "Contact"]
+                            : profileType === "company"
+                                ? ["Hero", "About", "Services", "Projects", "Products", "Contact"]
+                                : ["Hero", "About", "Experience", "Education", "Projects", "Contact"],
                         heroStyle: "default",
                     },
                     featuredProperties: [],

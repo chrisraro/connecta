@@ -41,10 +41,11 @@ import { TEMPLATES, getTemplateMeta } from "@/components/templates/registry";
 import {
     ProfileData, ProfileInfo, ProjectItem,
     PROJECT_CATEGORY_LABELS, ProfileType, ProductItem, ServiceItem,
-    PropertyListingItem, InlineProject
+    PropertyListingItem, InlineProject, DigitalCardConfig
 } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { ProfileImage } from "@/components/templates/ProfileImage";
+import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { Id } from "@/convex/_generated/dataModel";
 
 // --- Types & Defaults ---
@@ -61,6 +62,17 @@ const INITIAL_AGENT_INFO: ProfileInfo = {
     avatarUrl: "",
     services: [],
     socialLinks: [],
+};
+
+const DEFAULT_DIGITAL_CARD: DigitalCardConfig = {
+    backgroundColor: "#1e1e1e",
+    textColor: "#ffffff",
+    layout: "split",
+    showQrCode: true,
+    theme: "dark",
+    cardBackgroundType: "solid",
+    cardGradientStart: "#000000",
+    cardGradientEnd: "#333333",
 };
 
 type Block = {
@@ -85,6 +97,19 @@ const INITIAL_BLOCKS: Block[] = [
     { id: "Gallery", label: "Gallery", icon: ImageIcon, isEnabled: false },
     { id: "Contact", label: "Contact Form", icon: User, isEnabled: true },
 ];
+
+const getBlocksForProfileType = (type: ProfileType, currentBlocks: Block[]) => {
+    return currentBlocks.filter(block => {
+        if (type === "individual") {
+            return block.id !== "Products" && block.id !== "Properties";
+        } else if (type === "company") {
+            return block.id !== "Education" && block.id !== "TechStack" && block.id !== "Experience" && block.id !== "Properties";
+        } else if (type === "business") {
+            return block.id !== "Education" && block.id !== "TechStack" && block.id !== "Experience";
+        }
+        return true;
+    });
+};
 
 // --- Gallery Uploader Component ---
 
@@ -367,6 +392,10 @@ function BuilderContent() {
 
     // Content State
     const [agentInfo, setAgentInfo] = useState<ProfileInfo>(INITIAL_AGENT_INFO);
+    const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
+    const [additionalEmails, setAdditionalEmails] = useState<string[]>([]);
+    const [digitalCard, setDigitalCard] = useState<DigitalCardConfig>(DEFAULT_DIGITAL_CARD);
+    const [previewMode, setPreviewMode] = useState<"page" | "card">("page");
     const [projects, setProjects] = useState<ProjectItem[]>([]);
 
     // New field states
@@ -395,6 +424,44 @@ function BuilderContent() {
     const [newExperience, setNewExperience] = useState({ title: "", company: "", period: "", description: "" });
     const [newTestimonial, setNewTestimonial] = useState({ quote: "", author: "", role: "" });
 
+    const handleCardThemeChange = (theme: "light" | "dark" | "glass" | "carbon") => {
+        let colors = {};
+        if (theme === "light") {
+            colors = {
+                backgroundColor: "#ffffff",
+                textColor: "#1e293b",
+                cardGradientStart: "#ffffff",
+                cardGradientEnd: "#f1f5f9",
+            };
+        } else if (theme === "dark") {
+            colors = {
+                backgroundColor: "#18181b",
+                textColor: "#f5f5f5",
+                cardGradientStart: "#18181b",
+                cardGradientEnd: "#09090b",
+            };
+        } else if (theme === "glass") {
+            colors = {
+                backgroundColor: "#ffffff",
+                textColor: "#ffffff",
+                cardGradientStart: "#ffffff",
+                cardGradientEnd: "#ffffff",
+            };
+        } else if (theme === "carbon") {
+            colors = {
+                backgroundColor: "#0d0d0d",
+                textColor: "#ececec",
+                cardGradientStart: "#18181b",
+                cardGradientEnd: "#020202",
+            };
+        }
+        setDigitalCard({
+            ...digitalCard,
+            theme,
+            ...colors
+        });
+    };
+
     // Prefill logic
     const [hasPrefilled, setHasPrefilled] = useState(false);
     useEffect(() => {
@@ -416,6 +483,9 @@ function BuilderContent() {
                 if (info.experience) setExperience(info.experience.map(e => ({ ...e, description: e.description || "" })));
                 if (info.testimonials) setTestimonials(info.testimonials.map(t => ({ ...t, role: t.role || "" })));
                 if (info.gallery) setGallery(info.gallery);
+                if ((info as any).additionalPhones) setAdditionalPhones((info as any).additionalPhones);
+                if ((info as any).additionalEmails) setAdditionalEmails((info as any).additionalEmails);
+                if ((existingProfile as any).digitalCard) setDigitalCard((existingProfile as any).digitalCard);
 
                 // Load products
                 if (existingProfile.products) {
@@ -516,6 +586,52 @@ function BuilderContent() {
 
     const toggleBlock = (id: string) => setBlocks(blocks.map(b => b.id === id ? { ...b, isEnabled: !b.isEnabled } : b));
 
+    const handleProfileTypeChange = (type: ProfileType) => {
+        setProfileType(type);
+
+        // Dynamic default theme and template switching
+        const matchingTemplate = type === "business" ? "architectural" : type === "company" ? "kinetic" : "editorial";
+        setSelectedTemplate(matchingTemplate);
+
+        const templateMeta = TEMPLATES.find(t => t.id === matchingTemplate);
+        if (templateMeta) {
+            setCustomColors({
+                primary: templateMeta.defaultColors.primary,
+                background: templateMeta.defaultColors.background,
+                text: templateMeta.defaultColors.text,
+                secondary: templateMeta.defaultColors.primary,
+                accent: templateMeta.defaultColors.primary,
+            });
+        }
+
+        // Pre-enable blocks matching the profile type
+        setBlocks(prev => prev.map(block => {
+            if (type === "individual") {
+                if (["Hero", "About", "Contact", "Projects", "Experience", "Education"].includes(block.id)) {
+                    return { ...block, isEnabled: true };
+                }
+                if (["Products", "Properties"].includes(block.id)) {
+                    return { ...block, isEnabled: false };
+                }
+            } else if (type === "company") {
+                if (["Hero", "About", "Contact", "Projects", "Services", "Products"].includes(block.id)) {
+                    return { ...block, isEnabled: true };
+                }
+                if (["Education", "Experience", "Properties"].includes(block.id)) {
+                    return { ...block, isEnabled: false };
+                }
+            } else if (type === "business") {
+                if (["Hero", "About", "Contact", "Services", "Products", "Properties", "Gallery"].includes(block.id)) {
+                    return { ...block, isEnabled: true };
+                }
+                if (["Education", "Experience"].includes(block.id)) {
+                    return { ...block, isEnabled: false };
+                }
+            }
+            return block;
+        }));
+    };
+
     const handleSave = async () => {
         if (!user?.id) return;
         setIsSaving(true);
@@ -526,15 +642,14 @@ function BuilderContent() {
                 company: String(agentInfo.company || ""),
                 phone: String(agentInfo.phone || ""),
                 email: String(agentInfo.email || ""),
-                address: agentInfo.address || undefined,
-                website: agentInfo.website || undefined,
-                about: agentInfo.about || undefined,
-                avatarUrl: agentInfo.avatarUrl || undefined,
-                services: (agentInfo.services || []).map(String),
-                socialLinks: (agentInfo.socialLinks || []).map(link => ({
-                    platform: String(link.platform || "Website"),
-                    url: String(link.url || "")
-                })),
+                additionalPhones: additionalPhones.length > 0 ? additionalPhones : undefined,
+                additionalEmails: additionalEmails.length > 0 ? additionalEmails : undefined,
+                address: agentInfo.address ? String(agentInfo.address) : undefined,
+                website: agentInfo.website ? String(agentInfo.website) : undefined,
+                about: agentInfo.about ? String(agentInfo.about) : undefined,
+                avatarUrl: agentInfo.avatarUrl ? String(agentInfo.avatarUrl) : undefined,
+                services: agentInfo.services || [],
+                socialLinks: agentInfo.socialLinks || [],
                 certification: certification.title ? certification : undefined,
                 education: education.length > 0 ? education : undefined,
                 techStack: techStack.length > 0 ? techStack : undefined,
@@ -584,7 +699,7 @@ function BuilderContent() {
                         secondary: customColors.secondary !== customColors.primary ? customColors.secondary : undefined,
                         accent: customColors.accent !== customColors.primary ? customColors.accent : undefined,
                     },
-                    componentOrder: blocks.filter(b => b.isEnabled).map(b => b.id),
+                    componentOrder: getBlocksForProfileType(profileType, blocks).filter(b => b.isEnabled).map(b => b.id),
                     heroStyle: "default"
                 },
                 featuredProperties: [],
@@ -593,6 +708,7 @@ function BuilderContent() {
                 services: [],
                 propertyListings: cleanPropertyListings,
                 inlineProjects: cleanInlineProjects,
+                digitalCard: digitalCard,
             });
             router.push(`/p/${profileId}`);
         } catch (error: any) {
@@ -741,20 +857,68 @@ function BuilderContent() {
             </header>
 
             <div className="max-w-lg mx-auto pb-8">
+                {/* Preview Switcher */}
+                <div className="px-4 pt-4 pb-2">
+                    <div className="flex bg-muted p-1 rounded-xl">
+                        <button
+                            onClick={() => setPreviewMode("page")}
+                            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                                previewMode === "page"
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            Profile Page Preview
+                        </button>
+                        <button
+                            onClick={() => setPreviewMode("card")}
+                            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                                previewMode === "card"
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            Digital Card Preview
+                        </button>
+                    </div>
+                </div>
+
                 {/* Phone Preview */}
                 <div className="p-4">
                     <div className="bg-gray-900 rounded-[2.5rem] p-3 shadow-2xl">
                         <div
                             className="rounded-[2rem] overflow-hidden bg-white"
-                            style={{ maxHeight: "500px", overflowY: "auto" }}
+                            style={{ maxHeight: "520px", overflowY: "auto" }}
                         >
-                            {renderPreview()}
+                            {previewMode === "card" ? (
+                                <div className="p-4 flex justify-center bg-neutral-900/5 min-h-[320px] items-center">
+                                    <DigitalBusinessCard
+                                        fullName={agentInfo.fullName}
+                                        title={agentInfo.title}
+                                        company={agentInfo.company}
+                                        phone={agentInfo.phone}
+                                        email={agentInfo.email}
+                                        additionalPhones={additionalPhones}
+                                        additionalEmails={additionalEmails}
+                                        services={agentInfo.services}
+                                        about={agentInfo.about}
+                                        profileId={editingId || undefined}
+                                        config={digitalCard}
+                                        onPositionsChange={(newPos) => setDigitalCard({ ...digitalCard, positions: newPos })}
+                                    />
+                                </div>
+                            ) : (
+                                renderPreview()
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Template Selection */}
-                <div className="px-4 py-4">
+                {/* Profile Page Configs */}
+                {previewMode === "page" && (
+                    <>
+                        {/* Template Selection */}
+                        <div className="px-4 py-4">
                     <TemplateSelector
                         selectedTemplate={selectedTemplate}
                         onSelect={setSelectedTemplate}
@@ -768,7 +932,7 @@ function BuilderContent() {
                         {(["individual", "company", "business"] as const).map((type) => (
                             <button
                                 key={type}
-                                onClick={() => setProfileType(type)}
+                                onClick={() => handleProfileTypeChange(type)}
                                 className={`py-2.5 px-4 rounded-xl text-sm font-medium capitalize transition-all ${
                                     profileType === type
                                         ? "bg-primary text-primary-foreground"
@@ -796,8 +960,8 @@ function BuilderContent() {
                     {showReorderMode ? (
                         <div className="space-y-2">
                             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                <SortableContext items={blocks} strategy={verticalListSortingStrategy}>
-                                    {blocks.map(block => (
+                                <SortableContext items={getBlocksForProfileType(profileType, blocks)} strategy={verticalListSortingStrategy}>
+                                    {getBlocksForProfileType(profileType, blocks).map(block => (
                                         <SortableBlockItem key={block.id} block={block} onToggle={toggleBlock} />
                                     ))}
                                 </SortableContext>
@@ -805,7 +969,7 @@ function BuilderContent() {
                         </div>
                     ) : (
                         <div className="space-y-2">
-                            {blocks.map((block) => {
+                            {getBlocksForProfileType(profileType, blocks).map((block) => {
                                 const Icon = block.icon;
                                 return (
                                     <div
@@ -920,6 +1084,169 @@ function BuilderContent() {
                         </div>
                     </div>
                 </div>
+                    </>
+                )}
+
+                {/* Digital Business Card Design */}
+                {previewMode === "card" && (
+                    <div className="px-4 py-4 border-t border-border">
+                    <Label className="text-sm font-semibold text-foreground mb-3 block">Digital Card Design</Label>
+                    <div className="space-y-4">
+                        {/* Theme Select */}
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Card Theme Style</label>
+                            <div className="grid grid-cols-4 gap-1.5">
+                                {(["light", "dark", "glass", "carbon"] as const).map((t) => (
+                                    <button
+                                        type="button"
+                                        key={t}
+                                        onClick={() => handleCardThemeChange(t)}
+                                        className={`py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
+                                            digitalCard.theme === t
+                                                ? "bg-primary text-primary-foreground border-primary"
+                                                : "bg-card border-border text-foreground hover:bg-muted"
+                                        }`}
+                                    >
+                                        {t}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Layout Select */}
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1.5 block">Card Layout</label>
+                            <div className="grid grid-cols-3 gap-1.5">
+                                {(["classic", "split", "centered"] as const).map((l) => (
+                                    <button
+                                        type="button"
+                                        key={l}
+                                        onClick={() => setDigitalCard({ ...digitalCard, layout: l })}
+                                        className={`py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
+                                            digitalCard.layout === l
+                                                ? "bg-primary text-primary-foreground border-primary"
+                                                : "bg-card border-border text-foreground hover:bg-muted"
+                                        }`}
+                                    >
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* QR Code Toggle */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-foreground">Show QR Code</span>
+                            <Switch
+                                checked={digitalCard.showQrCode}
+                                onCheckedChange={(val) => setDigitalCard({ ...digitalCard, showQrCode: val })}
+                            />
+                        </div>
+
+                        {/* Color Customization */}
+                        <div className="space-y-3 pt-2 border-t border-border/50">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-foreground">Background Type</span>
+                                <div className="flex gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setDigitalCard({ ...digitalCard, cardBackgroundType: "solid" })}
+                                        className={`px-3 py-1 rounded-md text-xs font-semibold ${
+                                            digitalCard.cardBackgroundType === "solid"
+                                                ? "bg-primary text-primary-foreground"
+                                                : "bg-muted text-muted-foreground"
+                                        }`}
+                                    >
+                                        Solid
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDigitalCard({ ...digitalCard, cardBackgroundType: "gradient" })}
+                                        className={`px-3 py-1 rounded-md text-xs font-semibold ${
+                                            digitalCard.cardBackgroundType === "gradient"
+                                                ? "bg-primary text-primary-foreground"
+                                                : "bg-muted text-muted-foreground"
+                                        }`}
+                                    >
+                                        Gradient
+                                    </button>
+                                </div>
+                            </div>
+
+                            {digitalCard.cardBackgroundType === "solid" ? (
+                                <div>
+                                    <label className="text-[10px] text-muted-foreground mb-1 block">Solid Background Color</label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            value={digitalCard.backgroundColor || "#ffffff"}
+                                            onChange={(e) => setDigitalCard({ ...digitalCard, backgroundColor: e.target.value })}
+                                            className="w-8 h-8 rounded-lg border-0 cursor-pointer"
+                                        />
+                                        <Input
+                                            value={digitalCard.backgroundColor || ""}
+                                            onChange={(e) => setDigitalCard({ ...digitalCard, backgroundColor: e.target.value })}
+                                            className="flex-1 text-xs h-8"
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-[10px] text-muted-foreground mb-1 block">Gradient Start</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="color"
+                                                value={digitalCard.cardGradientStart || "#000000"}
+                                                onChange={(e) => setDigitalCard({ ...digitalCard, cardGradientStart: e.target.value })}
+                                                className="w-8 h-8 rounded-lg border-0 cursor-pointer"
+                                            />
+                                            <Input
+                                                value={digitalCard.cardGradientStart || ""}
+                                                onChange={(e) => setDigitalCard({ ...digitalCard, cardGradientStart: e.target.value })}
+                                                className="flex-1 text-xs h-8"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-muted-foreground mb-1 block">Gradient End</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="color"
+                                                value={digitalCard.cardGradientEnd || "#000000"}
+                                                onChange={(e) => setDigitalCard({ ...digitalCard, cardGradientEnd: e.target.value })}
+                                                className="w-8 h-8 rounded-lg border-0 cursor-pointer"
+                                            />
+                                            <Input
+                                                value={digitalCard.cardGradientEnd || ""}
+                                                onChange={(e) => setDigitalCard({ ...digitalCard, cardGradientEnd: e.target.value })}
+                                                className="flex-1 text-xs h-8"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="text-[10px] text-muted-foreground mb-1 block">Text Color</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        value={digitalCard.textColor || "#000000"}
+                                        onChange={(e) => setDigitalCard({ ...digitalCard, textColor: e.target.value })}
+                                        className="w-8 h-8 rounded-lg border-0 cursor-pointer"
+                                    />
+                                    <Input
+                                        value={digitalCard.textColor || ""}
+                                        onChange={(e) => setDigitalCard({ ...digitalCard, textColor: e.target.value })}
+                                        className="flex-1 text-xs h-8"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                )}
             </div>
 
             {/* Section Editor Modals */}
@@ -969,6 +1296,36 @@ function BuilderContent() {
                             onChange={(e) => setAgentInfo({ ...agentInfo, phone: e.target.value })}
                             placeholder="+1 234 567 890"
                         />
+                        {/* Additional Phones */}
+                        <div className="space-y-1.5 mt-2">
+                            {additionalPhones.map((ph, idx) => (
+                                <div key={`add-phone-${idx}`} className="flex items-center gap-2">
+                                    <Input
+                                        value={ph}
+                                        onChange={(e) => {
+                                            const newPhs = [...additionalPhones];
+                                            newPhs[idx] = e.target.value;
+                                            setAdditionalPhones(newPhs);
+                                        }}
+                                        className="text-xs flex-1"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setAdditionalPhones(additionalPhones.filter((_, i) => i !== idx))}
+                                        className="text-red-500 hover:text-red-600 p-1"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setAdditionalPhones([...additionalPhones, ""])}
+                                className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+                            >
+                                <Plus className="w-3 h-3" /> Add phone number
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <Label className="text-sm">Email</Label>
@@ -978,6 +1335,37 @@ function BuilderContent() {
                             onChange={(e) => setAgentInfo({ ...agentInfo, email: e.target.value })}
                             placeholder="john@example.com"
                         />
+                        {/* Additional Emails */}
+                        <div className="space-y-1.5 mt-2">
+                            {additionalEmails.map((em, idx) => (
+                                <div key={`add-email-${idx}`} className="flex items-center gap-2">
+                                    <Input
+                                        type="email"
+                                        value={em}
+                                        onChange={(e) => {
+                                            const newEms = [...additionalEmails];
+                                            newEms[idx] = e.target.value;
+                                            setAdditionalEmails(newEms);
+                                        }}
+                                        className="text-xs flex-1"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setAdditionalEmails(additionalEmails.filter((_, i) => i !== idx))}
+                                        className="text-red-500 hover:text-red-600 p-1"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setAdditionalEmails([...additionalEmails, ""])}
+                                className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+                            >
+                                <Plus className="w-3 h-3" /> Add email address
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <Label className="text-sm">Website</Label>

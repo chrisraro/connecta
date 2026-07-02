@@ -98,7 +98,6 @@ export default function AdminUsersPage() {
                             <TableHead className="text-zinc-400">Plan</TableHead>
                             <TableHead className="text-zinc-400">Cards</TableHead>
                             <TableHead className="text-zinc-400">Orders</TableHead>
-                            <TableHead className="text-zinc-400">Credits</TableHead>
                             <TableHead className="text-zinc-400">Status</TableHead>
                             <TableHead className="text-zinc-400 text-right">Actions</TableHead>
                         </TableRow>
@@ -106,7 +105,7 @@ export default function AdminUsersPage() {
                     <TableBody>
                         {usersList.length === 0 ? (
                             <TableRow className="border-zinc-800">
-                                <TableCell colSpan={8} className="h-24 text-center text-zinc-500">
+                                <TableCell colSpan={7} className="h-24 text-center text-zinc-500">
                                     No users found.
                                 </TableCell>
                             </TableRow>
@@ -153,7 +152,6 @@ export default function AdminUsersPage() {
                                         </TableCell>
                                         <TableCell className="text-zinc-300 font-mono">{u.cardCount}</TableCell>
                                         <TableCell className="text-zinc-300 font-mono">{u.orderCount}</TableCell>
-                                        <TableCell className="text-zinc-300 font-mono">{u.credits}</TableCell>
                                         <TableCell>
                                             {isSuspended ? (
                                                 <Badge className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Suspended</Badge>

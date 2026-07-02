@@ -336,27 +336,27 @@ export default function LandingPage() {
       {/* ─── Final CTA ───────────────────────────────────────────────── */}
       <section className="px-4 pb-24 sm:px-6">
         <Reveal>
-          <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] bg-foreground px-6 py-16 text-center text-background sm:px-12 sm:py-20">
+          <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] bg-neutral-950 border border-neutral-800/80 px-6 py-16 text-center text-white sm:px-12 sm:py-20 shadow-2xl">
             <div
               aria-hidden="true"
-              className="aurora-blob aurora-a absolute right-0 top-0 h-64 w-64 bg-primary/30"
+              className="aurora-blob aurora-a absolute right-0 top-0 h-64 w-64 bg-yellow-500/10 blur-[80px]"
             />
             <div
               aria-hidden="true"
-              className="aurora-blob aurora-c absolute left-0 bottom-0 h-56 w-56 bg-[var(--chart-5)]/25"
+              className="aurora-blob aurora-c absolute left-0 bottom-0 h-56 w-56 bg-primary/20 blur-[80px]"
             />
-            <h2 className="text-3xl font-black tracking-tight sm:text-5xl">
+            <h2 className="relative z-10 text-3xl font-black tracking-tight sm:text-5xl bg-gradient-to-r from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent">
               Ready to make a lasting impression?
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-background/70">
+            <p className="relative z-10 mx-auto mt-5 max-w-xl text-neutral-400">
               Get your TapFolio card and turn every introduction into an
               opportunity.
             </p>
-            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+            <div className="relative z-10 mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <Link href="/shop" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="cta-sheen h-14 w-full rounded-2xl bg-primary px-8 text-base font-semibold text-primary-foreground hover:bg-primary/90 sm:w-auto"
+                  className="cta-sheen h-14 w-full rounded-2xl bg-white px-8 text-base font-bold text-black hover:bg-neutral-200 hover:text-black transition-spring hover:scale-105 active:scale-95 sm:w-auto shadow-md"
                 >
                   Get your card
                   <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
@@ -366,8 +366,8 @@ export default function LandingPage() {
                 <Link href="/auth" className="w-full sm:w-auto">
                   <Button
                     size="lg"
-                    variant="outline"
-                    className="h-14 w-full rounded-2xl border-background/30 bg-transparent px-8 text-base font-semibold text-background hover:bg-background/10 sm:w-auto"
+                    variant="ghost"
+                    className="h-14 w-full rounded-2xl border border-white/20 bg-white/5 px-8 text-base font-bold text-white hover:bg-white/10 hover:border-white/40 hover:text-white transition-spring hover:scale-105 active:scale-95 sm:w-auto"
                   >
                     Start for free
                   </Button>

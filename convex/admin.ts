@@ -343,7 +343,6 @@ export const getAllUsers = query({
           role: isUserAdmin ? "admin" : "agent",
           adminRole: isUserAdmin ? adminGrant!.role : null,
           subscriptionStatus: user.subscriptionStatus,
-          credits: user.credits || 0,
           plan: user.plan ?? "free",
           planExpiresAt: user.planExpiresAt ?? null,
           onboardingCompleted: user.onboardingCompleted || false,
@@ -374,12 +373,13 @@ export const registerSingleCard = mutation({
   },
   handler: async (ctx, args) => {
     const adminUser = await requireAdmin(ctx, args.clerkId);
+    const uuidNormalized = args.uuid.trim().toLowerCase();
     const existingCard = await ctx.db
       .query("cards")
-      .withIndex("by_uuid", (q) => q.eq("uuid", args.uuid))
+      .withIndex("by_uuid", (q) => q.eq("uuid", uuidNormalized))
       .first();
     if (existingCard) {
-      throw new Error(`Card with UUID ${args.uuid} already exists`);
+      throw new Error(`Card with UUID ${uuidNormalized} already exists`);
     }
     const existingActivation = await ctx.db
       .query("cards")
@@ -390,7 +390,7 @@ export const registerSingleCard = mutation({
     }
     const cardId = await ctx.db.insert("cards", {
       ownerId: adminUser._id,
-      uuid: args.uuid,
+      uuid: uuidNormalized,
       activationCode: args.activationCode,
       status: "inventory",
       linkedProfileId: undefined,
@@ -401,9 +401,9 @@ export const registerSingleCard = mutation({
       action: "create",
       resourceType: "card",
       resourceId: cardId,
-      changes: { uuid: args.uuid },
+      changes: { uuid: uuidNormalized },
     });
-    return { success: true, cardId, uuid: args.uuid, activationCode: args.activationCode };
+    return { success: true, cardId, uuid: uuidNormalized, activationCode: args.activationCode };
   },
 });
 
@@ -430,5 +430,24 @@ export const deleteCards = mutation({
       changes: { deletedCount, requested: args.cardIds.length },
     });
     return { success: true, deletedCount, totalRequested: args.cardIds.length };
+  },
+});
+
+export const lowercaseExistingCardUuids = mutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx, args.clerkId);
+    const cards = await ctx.db.query("cards").collect();
+    let updatedCount = 0;
+    for (const card of cards) {
+      const lowerUuid = card.uuid.trim().toLowerCase();
+      if (card.uuid !== lowerUuid) {
+        await ctx.db.patch(card._id, {
+          uuid: lowerUuid,
+        });
+        updatedCount++;
+      }
+    }
+    return { success: true, totalCards: cards.length, updated: updatedCount };
   },
 });

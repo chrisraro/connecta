@@ -298,7 +298,7 @@ export const addToCart = mutation({
       item => item.productId === args.productId && item.variationId === args.variationId
     );
 
-    let updatedItems = [...cart.items];
+    const updatedItems = [...cart.items];
 
     if (existingItemIndex >= 0) {
       // Update quantity
@@ -376,7 +376,7 @@ export const updateCartItem = mutation({
       throw new Error("Item not in cart");
     }
 
-    let updatedItems = [...cart.items];
+    const updatedItems = [...cart.items];
 
     if (args.quantity === 0) {
       // Remove item
@@ -499,14 +499,35 @@ export const mergeGuestCart = mutation({
     guestId: v.string(),
   },
   handler: async (ctx, args) => {
+    // SECURITY: enforce that the clerkId belongs to the authenticated caller
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized: authentication required");
+    }
+    if (identity.subject !== args.clerkId) {
+      throw new Error("Unauthorized: identity mismatch");
+    }
+
     // Lookup user from clerkId
-    const user = await ctx.db
+    let user = await ctx.db
       .query("users")
       .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      // Auto-create user if the Clerk webhook hasn't run yet
+      const newUserId = await ctx.db.insert("users", {
+        clerkId: args.clerkId,
+        email: identity.email || "",
+        role: "agent",
+        subscriptionStatus: "active",
+        plan: "free",
+        onboardingCompleted: false,
+      });
+      user = await ctx.db.get(newUserId);
+      if (!user) {
+        throw new Error("Failed to auto-create user");
+      }
     }
     const userId = user._id;
 
@@ -519,7 +540,7 @@ export const mergeGuestCart = mutation({
       return { success: true, merged: false };
     }
 
-    let userCart = await ctx.db
+    const userCart = await ctx.db
       .query("carts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();

@@ -9,6 +9,8 @@ export interface ProfileInfo {
     company?: string;
     phone: string;
     email: string;
+    additionalPhones?: string[];
+    additionalEmails?: string[];
     address?: string;
     website?: string;
     about?: string;
@@ -145,6 +147,23 @@ export interface InlineProject {
     link?: string;
 }
 
+export interface DigitalCardConfig {
+    backgroundColor: string;
+    textColor: string;
+    layout: "classic" | "split" | "centered";
+    showQrCode: boolean;
+    theme: "light" | "dark" | "glass" | "carbon";
+    cardBackgroundType: "solid" | "gradient";
+    cardGradientStart?: string;
+    cardGradientEnd?: string;
+    positions?: {
+        header?: { x: number; y: number; width?: number; scale?: number };
+        qr?: { x: number; y: number; width?: number; scale?: number };
+        bio?: { x: number; y: number; width?: number; scale?: number };
+        contacts?: { x: number; y: number; width?: number; scale?: number };
+    };
+}
+
 // ─── Profile Data (passed to all template components) ────────────────────────
 export interface ProfileData {
     ownerId: string;
@@ -164,6 +183,7 @@ export interface ProfileData {
         secondaryColor?: string;
         accentColor?: string;
     };
+    digitalCard?: DigitalCardConfig;
 }
 
 // Props compliant with all template components

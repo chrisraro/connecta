@@ -64,7 +64,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const mergeGuestCart = useMutation(api.shop.mergeGuestCart);
 
   useEffect(() => {
-    setIsClientLoaded(true);
+    setTimeout(() => {
+      setIsClientLoaded(true);
+    }, 0);
   }, []);
 
   // Merge guest cart when user logs in

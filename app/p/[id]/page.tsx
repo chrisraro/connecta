@@ -8,6 +8,7 @@ import Kinetic from "@/components/templates/Kinetic";
 import Architectural from "@/components/templates/Architectural";
 import { ProfileData, ProfileType } from "@/types/profile";
 import { Loader2, SmartphoneNfc, SearchX } from "lucide-react";
+import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import Link from "next/link";
 import { use } from "react";
 
@@ -70,12 +71,13 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
         propertyListings: (profile as any).propertyListings,
         inlineProjects: (profile as any).inlineProjects,
         theme: {
-            primaryColor: layoutConfig.colorPalette.primary,
+            primaryColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.primary,
             backgroundColor: layoutConfig.colorPalette.background,
             textColor: layoutConfig.colorPalette.text,
             secondaryColor: (layoutConfig.colorPalette as any).secondary,
-            accentColor: (layoutConfig.colorPalette as any).accent,
-        }
+            accentColor: profile.teamBranding?.accentColor || (layoutConfig.colorPalette as any).accent,
+        },
+        digitalCard: (profile as any).digitalCard,
     };
 
     // Get the template component based on themeId, fallback to Editorial
@@ -84,13 +86,31 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
 
     return (
         <div
-            className="min-h-screen"
+            className="min-h-screen flex flex-col"
             style={{ backgroundColor: layoutConfig.colorPalette.background }}
         >
+            {(profile as any).digitalCard && (
+                <div className="w-full max-w-lg mx-auto px-4 pt-6 flex justify-center">
+                    <DigitalBusinessCard
+                        fullName={agentInfo.fullName}
+                        title={agentInfo.title}
+                        company={agentInfo.company}
+                        phone={agentInfo.phone}
+                        email={agentInfo.email}
+                        additionalPhones={(agentInfo as any).additionalPhones}
+                        additionalEmails={(agentInfo as any).additionalEmails}
+                        services={agentInfo.services}
+                        about={agentInfo.about}
+                        profileId={profileId}
+                        config={(profile as any).digitalCard}
+                    />
+                </div>
+            )}
+            
             <TemplateComponent data={data} />
 
             {(profile as { showBranding?: boolean }).showBranding !== false && (
-                <div className="py-6 text-center text-xs" style={{ color: layoutConfig.colorPalette.text }}>
+                <div className="py-6 text-center text-xs mt-auto" style={{ color: layoutConfig.colorPalette.text }}>
                     <Link
                         href="/"
                         className="opacity-50 transition-opacity hover:opacity-90"

@@ -3,7 +3,7 @@
 ## 1. Executive Summary
 **TapFolio** is a high-fidelity SaaS platform designed for modern professionals and businesses. It bridges physical networking with digital lead capture and relationship management.
 * **The Hardware:** Users utilize NFC-enabled business cards and hardware to instantly share their digital profiles.
-* **The Software:** A Next.js + Convex application handles card activation, lead CRM, dashboard management, and an AI-powered profile builder.
+* **The Software:** A Next.js + Convex application handles card activation, lead CRM, dashboard management, and a customizable profile builder.
 * **The Focus:** A complete Digital Identity solution featuring Smart Business Cards, integrated Lead CRM, and NFC hardware synchronization.
 
 ## 2. Tech Stack (Strict Constraints)
@@ -18,10 +18,9 @@
     * **Admin Dashboard:** `shadcn/ui`
     * **Public Profiles:** Custom, high-fidelity components (Mobile-first)
 
-### AI & Intelligence
-* **SDK:** Vercel AI SDK (Core)
-* **Model:** `google/gemini-3-flash`
-* **Strategy:** "Generative UI" (AI generates JSON configuration, not raw HTML)
+### System Core Components
+* **User App:** Profile dashboard and lead capture management.
+* **Public Pages:** High-fidelity templates for digital cards.
 
 ### External Integrations
 * **E-Commerce Source:** WordPress + WooCommerce (External URL)
@@ -72,7 +71,6 @@ export default defineSchema({
     clerkId: v.string(),
     role: v.union(v.literal("agent"), v.literal("admin")),
     subscriptionStatus: v.string(), // "active", "past_due"
-    credits: v.number(), // Token balance for AI generation
   }).index("by_clerkId", ["clerkId"]),
 
   // 2. Physical Inventory (Cards)
@@ -86,7 +84,7 @@ export default defineSchema({
   }).index("by_uuid", ["uuid"])
     .index("by_owner", ["ownerId"]),
 
-  // 3. Digital Profiles (The Generative UI Data)
+  // 3. Digital Profiles (The Layout UI Data)
   profiles: defineTable({
     ownerId: v.id("users"),
     name: v.string(), // e.g., "Luxury Portfolio 2026"
@@ -103,7 +101,7 @@ export default defineSchema({
         socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
     }),
 
-    // The AI Configuration (JSON Recipe)
+    // The Layout Configuration (JSON Recipe)
     layoutConfig: v.object({
         themeId: v.string(), // "gold-standard", "modern-minimal"
         colorPalette: v.object({ primary: v.string(), background: v.string() }),
@@ -135,22 +133,6 @@ export default defineSchema({
   }),
 });
 
-## 5. Feature Specifications
-Feature: AI Layout Designer
-Goal: Allow non-technical agents to build beautiful portfolios.
-
-Input: "I sell luxury condos in BGC. I want a dark, gold-themed look."
-
-Process:
-
-Next.js Server Action calls google/gemini-3-flash.
-
-Gemini outputs a JSON object (validated by zod).
-
-Frontend updates the profiles.layoutConfig field in Convex.
-
-Constraint: AI never writes React code. It only selects options from our pre-built component library.
-
 Feature: "Save to Contact" (vCard)
 Component: <SaveContactButton />
 
@@ -173,9 +155,9 @@ Use convex/http.ts only for external webhooks (e.g., WooCommerce).
 
 Type Safety:
 
-Never use any. Define interfaces for all AI outputs and Component props.
+Never use any. Define interfaces for all profile configurations and Component props.
 
-Use zod to validate all AI responses before saving to the DB.
+Use zod to validate all profile inputs before saving to the DB.
 
 Performance:
 
@@ -187,6 +169,6 @@ File Structure:
 
 /convex: Backend functions and schema.
 
-/components/profile-builder: The AI interaction UI.
+/components/profile-builder: The profile creation and setup UI.
 
-/components/templates: The reliable "lego blocks" the AI selects (e.g., LuxuryHero.tsx, GridListings.tsx).
+/components/templates: The reliable "lego blocks" selected for layouts (e.g., LuxuryHero.tsx, GridListings.tsx).

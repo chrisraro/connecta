@@ -41,10 +41,6 @@ export function OfflineLeadCapture() {
 
         const handleOnline = () => {
             setOnline(true);
-            // Auto-sync when coming back online
-            if (getUnsyncedCount() > 0 && user) {
-                handleSync();
-            }
         };
         const handleOffline = () => setOnline(false);
 
@@ -55,7 +51,26 @@ export function OfflineLeadCapture() {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, [user]);
+    }, []);
+
+    // Auto-sync when currentUser loads and we have unsynced leads online
+    useEffect(() => {
+        if (online && currentUser && getUnsyncedCount() > 0 && !syncing) {
+            const autoSync = async () => {
+                setSyncing(true);
+                try {
+                    const result = await syncOfflineLeads(createLead, currentUser._id);
+                    setUnsyncedCount(getUnsyncedCount());
+                    console.log(`Auto-synced ${result.synced} offline leads.`);
+                } catch (error) {
+                    console.error("Auto-sync failed:", error);
+                } finally {
+                    setSyncing(false);
+                }
+            };
+            autoSync();
+        }
+    }, [online, currentUser, syncing, createLead]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -209,18 +224,22 @@ export function OfflineLeadCapture() {
                             </div>
 
                             <div className="flex gap-2">
-                                <Button type="submit" className="flex-1" disabled={saving}>
+                                <Button 
+                                    type="submit" 
+                                    className="flex-1" 
+                                    disabled={saving || (online && currentUser === undefined)}
+                                >
                                     {saving ? "Saving..." : (
-                                        <>
-                                            {!online ? (
+                                        currentUser === undefined && online ? "Connecting..." : (
+                                            !online ? (
                                                 <>
                                                     <WifiOff className="w-4 h-4 mr-2" />
                                                     Save Offline
                                                 </>
                                             ) : (
                                                 "Save Lead"
-                                            )}
-                                        </>
+                                            )
+                                        )
                                     )}
                                 </Button>
                                 

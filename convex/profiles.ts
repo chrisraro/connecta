@@ -13,6 +13,8 @@ export const createProfile = mutation({
             company: v.string(),
             phone: v.string(),
             email: v.string(),
+            additionalPhones: v.optional(v.array(v.string())),
+            additionalEmails: v.optional(v.array(v.string())),
             address: v.optional(v.string()),
             website: v.optional(v.string()),
             about: v.optional(v.string()),
@@ -88,6 +90,22 @@ export const createProfile = mutation({
             image: v.optional(v.string()),
             link: v.optional(v.string()),
         }))),
+        digitalCard: v.optional(v.object({
+            backgroundColor: v.string(),
+            textColor: v.string(),
+            layout: v.union(v.literal("classic"), v.literal("split"), v.literal("centered")),
+            showQrCode: v.boolean(),
+            theme: v.union(v.literal("light"), v.literal("dark"), v.literal("glass"), v.literal("carbon")),
+            cardBackgroundType: v.union(v.literal("solid"), v.literal("gradient")),
+            cardGradientStart: v.optional(v.string()),
+            cardGradientEnd: v.optional(v.string()),
+            positions: v.optional(v.object({
+                header: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
+                qr: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
+                bio: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
+                contacts: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
+            })),
+        })),
         clerkId: v.string(),
         id: v.optional(v.id("profiles")),
     },
@@ -129,6 +147,7 @@ export const createProfile = mutation({
             services: args.services,
             propertyListings: args.propertyListings,
             inlineProjects: args.inlineProjects,
+            digitalCard: args.digitalCard,
         };
 
         if (args.id) {
