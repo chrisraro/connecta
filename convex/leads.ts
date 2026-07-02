@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import { sanitizePlainText } from "../lib/sanitize";
 import { requireUser, requireUserMatching } from "./authz";
 import { planContext } from "./billing";
+import { checkRateLimit } from "./rateLimit";
 
 const MAX_NAME = 120;
 const MAX_CONTACT = 200;
@@ -24,6 +25,7 @@ export const createLead = mutation({
         message: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        await checkRateLimit(ctx, `lead:${args.ownerId}`, { max: 5, windowMs: 60_000 });
         const owner = await ctx.db.get(args.ownerId);
         if (!owner) {
             throw new Error("Invalid recipient");

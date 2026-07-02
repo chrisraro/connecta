@@ -392,6 +392,12 @@ export default defineSchema({
     updatedBy: v.optional(v.id("users")),
   }).index("by_key", ["key"]),
 
+  rateLimits: defineTable({
+    key: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+  }).index("by_key", ["key"]),
+
   // --- SaaS layer (Phase 4): teams, invites, subscription invoices ---
 
   teams: defineTable({

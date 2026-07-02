@@ -3,6 +3,17 @@ import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { Resend } from "resend";
 
+// HTML-escape untrusted strings before interpolating them into an email
+// template — Resend does not auto-escape (Security audit #4).
+export function escapeHtml(input: string): string {
+    return input
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 export const sendLeadNotification = internalAction({
     args: {
         toEmail: v.string(),
@@ -104,8 +115,8 @@ export const sendOrderConfirmation = internalAction({
                                     ${args.items.map(item => `
                                         <tr>
                                             <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                                                <strong>${item.productName}</strong>
-                                                ${item.variationName ? `<br/><span style="color: #666; font-size: 12px;">${item.variationName}</span>` : ''}
+                                                <strong>${escapeHtml(item.productName)}</strong>
+                                                ${item.variationName ? `<br/><span style="color: #666; font-size: 12px;">${escapeHtml(item.variationName)}</span>` : ''}
                                             </td>
                                             <td style="padding: 10px; text-align: center; border-bottom: 1px solid #eee;">${item.quantity}</td>
                                             <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${formatPrice(item.total, args.currency)}</td>
@@ -116,12 +127,12 @@ export const sendOrderConfirmation = internalAction({
                         </div>
                         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
                             <h3 style="color: #333; margin-top: 0;">Shipping Address</h3>
-                            <p style="margin: 5px 0;">${args.shippingAddress.fullName}</p>
-                            <p style="margin: 5px 0;">${args.shippingAddress.addressLine1}</p>
-                            ${args.shippingAddress.addressLine2 ? `<p style="margin: 5px 0;">${args.shippingAddress.addressLine2}</p>` : ''}
-                            <p style="margin: 5px 0;">${args.shippingAddress.city}${args.shippingAddress.state ? ', ' + args.shippingAddress.state : ''} ${args.shippingAddress.postalCode}</p>
-                            <p style="margin: 5px 0;">${args.shippingAddress.country}</p>
-                            <p style="margin: 5px 0;">${args.shippingAddress.phone}</p>
+                            <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.fullName)}</p>
+                            <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.addressLine1)}</p>
+                            ${args.shippingAddress.addressLine2 ? `<p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.addressLine2)}</p>` : ''}
+                            <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.city)}${args.shippingAddress.state ? ', ' + escapeHtml(args.shippingAddress.state) : ''} ${escapeHtml(args.shippingAddress.postalCode)}</p>
+                            <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.country)}</p>
+                            <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.phone)}</p>
                         </div>
                         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
                             <h3 style="color: #333; margin-top: 0;">Order Summary</h3>

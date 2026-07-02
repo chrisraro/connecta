@@ -9,6 +9,7 @@ import { Doc } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { getAuthedUser, isActiveAdmin } from "./authz";
 import { readShopSettings, computeTotals } from "./settings";
+import { checkRateLimit } from "./rateLimit";
 
 /**
  * Compute the discount amount (centavos) for a given code + subtotal.
@@ -148,6 +149,10 @@ export const createOrder = mutation({
   handler: async (ctx, args) => {
     const authedUser = await getAuthedUser(ctx);
     const userId = authedUser?._id;
+    await checkRateLimit(ctx, `order:${userId ?? args.guestId ?? "anon"}`, {
+      max: 5,
+      windowMs: 60_000,
+    });
 
     if (!userId && !args.guestEmail) {
       throw new Error("Authentication or guest email is required");
