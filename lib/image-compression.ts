@@ -70,9 +70,14 @@ export async function compressImage(
     height = Math.round(height * scale);
   }
 
-  // Ensure we don't go below minimum dimensions
-  width = Math.max(width, minWidthOrHeight);
-  height = Math.max(height, minWidthOrHeight);
+  // Ensure we don't go below minimum dimensions WITHOUT distorting the
+  // aspect ratio: scale both dimensions by whichever axis needs the bigger
+  // boost to clear minWidthOrHeight, not each axis independently.
+  if (width < minWidthOrHeight || height < minWidthOrHeight) {
+    const upscale = Math.max(minWidthOrHeight / width, minWidthOrHeight / height);
+    width = Math.round(width * upscale);
+    height = Math.round(height * upscale);
+  }
 
   // Create canvas
   const canvas = document.createElement('canvas');
@@ -110,10 +115,13 @@ export async function compressImage(
       const scale = 0.8;
       width = Math.round(width * scale);
       height = Math.round(height * scale);
-      
-      // Ensure minimum dimensions
-      width = Math.max(width, minWidthOrHeight);
-      height = Math.max(height, minWidthOrHeight);
+
+      // Same ratio-preserving clamp as the initial resize above.
+      if (width < minWidthOrHeight || height < minWidthOrHeight) {
+        const upscale = Math.max(minWidthOrHeight / width, minWidthOrHeight / height);
+        width = Math.round(width * upscale);
+        height = Math.round(height * upscale);
+      }
 
       canvas.width = width;
       canvas.height = height;
@@ -156,9 +164,16 @@ export async function compressImage(
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+    img.onerror = (err) => {
+      URL.revokeObjectURL(objectUrl);
+      reject(err);
+    };
+    img.src = objectUrl;
   });
 }
 

@@ -24,7 +24,15 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
     const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.images.generateUploadUrl);
-    
+
+    useEffect(() => {
+        return () => {
+            if (localPreviewUrl) {
+                URL.revokeObjectURL(localPreviewUrl);
+            }
+        };
+    }, [localPreviewUrl]);
+
     // Get the actual URL for display from Convex storage
     const storageUrl = useQuery(
         api.images.getImageUrl,
