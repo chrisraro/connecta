@@ -71,6 +71,7 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
         propertyListings: (profile as any).propertyListings,
         inlineProjects: (profile as any).inlineProjects,
         componentOrder: layoutConfig.componentOrder,
+        resolvedImages: (profile as any).resolvedImages,
         theme: {
             primaryColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.primary,
             backgroundColor: layoutConfig.colorPalette.background,

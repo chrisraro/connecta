@@ -44,13 +44,13 @@ const COLORS = {
 };
 
 export default function Kinetic({ data }: TemplateProps) {
-  const { agent, theme, projects, ownerId, products, propertyListings, inlineProjects, componentOrder } = data;
+  const { agent, theme, projects, ownerId, products, propertyListings, inlineProjects, componentOrder, resolvedImages } = data;
 
   // Maps a builder block id to the section(s) it renders. Same JSX/conditions
   // as the previous hardcoded sequence — only the order (and whether an id is
   // present at all) is now driven by componentOrder (Frontend audit #1).
   const sectionRenderers: Record<string, () => ReactNode> = {
-    Hero: () => <HeroSection agent={agent} theme={theme} />,
+    Hero: () => <HeroSection agent={agent} theme={theme} resolvedImages={resolvedImages} />,
     About: () => <AboutSection agent={agent} theme={theme} />,
     Certification: () => agent.certification ? <CertificationSection certification={agent.certification} theme={theme} /> : null,
     Education: () => agent.education && agent.education.length > 0 ? <EducationSection education={agent.education} theme={theme} /> : null,
@@ -60,13 +60,13 @@ export default function Kinetic({ data }: TemplateProps) {
     Projects: () => (
       <>
         {inlineProjects && inlineProjects.length > 0 && <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} />}
-        {projects && projects.length > 0 && <ProjectsSection projects={projects} theme={theme} />}
+        {projects && projects.length > 0 && <ProjectsSection projects={projects} theme={theme} resolvedImages={resolvedImages} />}
       </>
     ),
     Products: () => products && products.length > 0 ? <ProductsSection products={products} theme={theme} /> : null,
     Properties: () => propertyListings && propertyListings.length > 0 ? <PropertyListingsSection propertyListings={propertyListings} theme={theme} /> : null,
     Testimonials: () => agent.testimonials && agent.testimonials.length > 0 ? <TestimonialsSection testimonials={agent.testimonials} theme={theme} /> : null,
-    Gallery: () => agent.gallery && agent.gallery.length > 0 ? <GallerySection gallery={agent.gallery} theme={theme} /> : null,
+    Gallery: () => agent.gallery && agent.gallery.length > 0 ? <GallerySection gallery={agent.gallery} theme={theme} resolvedImages={resolvedImages} /> : null,
     Contact: () => <ContactSection theme={theme} ownerId={ownerId} />,
   };
 
@@ -93,7 +93,7 @@ export default function Kinetic({ data }: TemplateProps) {
 
 // ─── Hero Section ────────────────────────────────────────────────────────────
 
-function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; theme: TemplateProps["data"]["theme"] }) {
+function HeroSection({ agent, theme, resolvedImages }: { agent: TemplateProps["data"]["agent"]; theme: TemplateProps["data"]["theme"]; resolvedImages?: TemplateProps["data"]["resolvedImages"] }) {
   return (
     <section
       className="px-6 pt-12 pb-8 relative overflow-hidden"
@@ -122,6 +122,7 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
               alt={agent.fullName}
               fallbackSeed={agent.fullName}
               className="w-full h-full object-cover"
+              resolvedImages={resolvedImages}
             />
           </div>
         </div>
@@ -550,7 +551,7 @@ function InlineProjectsSection({ inlineProjects, theme }: { inlineProjects: NonN
 
 // ─── Projects Section ────────────────────────────────────────────────────────
 
-function ProjectsSection({ projects, theme }: { projects: TemplateProps["data"]["projects"]; theme: TemplateProps["data"]["theme"] }) {
+function ProjectsSection({ projects, theme, resolvedImages }: { projects: TemplateProps["data"]["projects"]; theme: TemplateProps["data"]["theme"]; resolvedImages?: TemplateProps["data"]["resolvedImages"] }) {
   return (
     <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
@@ -579,6 +580,7 @@ function ProjectsSection({ projects, theme }: { projects: TemplateProps["data"][
                     src={project.images[0]}
                     alt={project.title}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    resolvedImages={resolvedImages}
                   />
                 </div>
               )}
@@ -807,7 +809,7 @@ function TestimonialsSection({ testimonials, theme }: { testimonials: NonNullabl
 
 // ─── Gallery Section ─────────────────────────────────────────────────────────
 
-function GallerySection({ gallery, theme }: { gallery: NonNullable<TemplateProps["data"]["agent"]["gallery"]>; theme: TemplateProps["data"]["theme"] }) {
+function GallerySection({ gallery, theme, resolvedImages }: { gallery: NonNullable<TemplateProps["data"]["agent"]["gallery"]>; theme: TemplateProps["data"]["theme"]; resolvedImages?: TemplateProps["data"]["resolvedImages"] }) {
   return (
     <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
@@ -835,6 +837,7 @@ function GallerySection({ gallery, theme }: { gallery: NonNullable<TemplateProps
                 src={img}
                 alt={`Gallery ${i + 1}`}
                 className="w-full h-full object-cover"
+                resolvedImages={resolvedImages}
               />
             </div>
           ))}

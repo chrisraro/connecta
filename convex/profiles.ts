@@ -211,7 +211,35 @@ export const getProfile = query({
             }
         }
 
-        return { ...profile, showBranding, teamBranding };
+        // Batch-resolve every Convex-storage-id image referenced by this
+        // profile in one pass, instead of leaving each <ProfileImage> to fire
+        // its own useQuery round-trip on the client (UI/UX audit P0 — this
+        // was the single biggest contributor to slow first paint on the
+        // public profile page).
+        const candidateIds = [
+            profile.agentInfo.avatarUrl,
+            ...(profile.agentInfo.gallery ?? []),
+        ].filter((id): id is string => {
+            if (!id) return false;
+            return !id.startsWith("http") && !id.startsWith("data:") && !id.startsWith("blob:");
+        });
+        const uniqueIds = Array.from(new Set(candidateIds));
+        const resolvedEntries = await Promise.all(
+            uniqueIds.map(async (id) => {
+                try {
+                    const url = await ctx.storage.getUrl(id);
+                    return url ? ([id, url] as const) : null;
+                } catch {
+                    return null;
+                }
+            })
+        );
+        const resolvedImages: Record<string, string> = {};
+        for (const entry of resolvedEntries) {
+            if (entry) resolvedImages[entry[0]] = entry[1];
+        }
+
+        return { ...profile, showBranding, teamBranding, resolvedImages };
     },
 });
 
