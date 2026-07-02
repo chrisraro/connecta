@@ -377,7 +377,9 @@ export const internalConfirmOrderPayment = internalMutation({
     if (!order && args.paymentIntentId) {
       order = await ctx.db
         .query("orders")
-        .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
+        .withIndex("by_paymentIntentId", (q) =>
+          q.eq("paymentIntentId", args.paymentIntentId)
+        )
         .first();
     }
 

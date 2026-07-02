@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { requireUserMatching } from "./authz";
 
 /**
  * Public Shop Queries & Mutations
@@ -163,11 +164,8 @@ export const getCart = query({
     // If clerkId provided, look up the user
     let userId;
     if (args.clerkId) {
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-        .first();
-      userId = user?._id;
+      const user = await requireUserMatching(ctx, args.clerkId);
+      userId = user._id;
     }
 
     if (userId) {
@@ -227,11 +225,8 @@ export const addToCart = mutation({
     // Lookup user from clerkId
     let userId;
     if (args.clerkId) {
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-        .first();
-      userId = user?._id;
+      const user = await requireUserMatching(ctx, args.clerkId);
+      userId = user._id;
     }
 
     if (!Number.isInteger(args.quantity) || args.quantity < 1) {
@@ -342,11 +337,8 @@ export const updateCartItem = mutation({
     // Lookup user from clerkId
     let userId;
     if (args.clerkId) {
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-        .first();
-      userId = user?._id;
+      const user = await requireUserMatching(ctx, args.clerkId);
+      userId = user._id;
     }
 
     if (!Number.isInteger(args.quantity) || args.quantity < 0) {
@@ -414,11 +406,8 @@ export const removeFromCart = mutation({
     // Lookup user from clerkId
     let userId;
     if (args.clerkId) {
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-        .first();
-      userId = user?._id;
+      const user = await requireUserMatching(ctx, args.clerkId);
+      userId = user._id;
     }
 
     // Find cart
@@ -463,11 +452,8 @@ export const clearCart = mutation({
     // Lookup user from clerkId
     let userId;
     if (args.clerkId) {
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-        .first();
-      userId = user?._id;
+      const user = await requireUserMatching(ctx, args.clerkId);
+      userId = user._id;
     }
 
     let cart;

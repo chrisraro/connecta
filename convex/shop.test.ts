@@ -70,3 +70,65 @@ test("updateCartItem rejects a negative quantity (zero still means remove)", asy
     })
   ).rejects.toThrow(/quantity/i);
 });
+
+test("getCart rejects a clerkId that does not match the authenticated caller", async () => {
+  const t = convexTest(schema);
+  const victimClerkId = "victim_clerk_id";
+  await t.run(async (ctx) => {
+    const victimId = await ctx.db.insert("users", {
+      email: "victim@test.dev",
+      clerkId: victimClerkId,
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
+    });
+    await ctx.db.insert("carts", {
+      userId: victimId,
+      items: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+  const asAttacker = t.withIdentity({ subject: "attacker_clerk_id" });
+
+  await expect(
+    asAttacker.query(api.shop.getCart, { clerkId: victimClerkId })
+  ).rejects.toThrow(/unauthorized/i);
+});
+
+test("addToCart rejects a clerkId that does not match the authenticated caller", async () => {
+  const t = convexTest(schema);
+  const victimClerkId = "victim_clerk_id";
+  const productId = await seedProduct(t);
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "victim@test.dev",
+      clerkId: victimClerkId,
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
+    });
+  });
+  const asAttacker = t.withIdentity({ subject: "attacker_clerk_id" });
+
+  await expect(
+    asAttacker.mutation(api.shop.addToCart, {
+      clerkId: victimClerkId,
+      productId,
+      quantity: 1,
+    })
+  ).rejects.toThrow(/unauthorized/i);
+});
+
+test("addToCart still works for a guest with no clerkId", async () => {
+  const t = convexTest(schema);
+  const productId = await seedProduct(t);
+
+  const result = await t.mutation(api.shop.addToCart, {
+    guestId: "guest-xyz",
+    productId,
+    quantity: 1,
+  });
+
+  expect(result.success).toBe(true);
+});

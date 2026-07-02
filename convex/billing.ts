@@ -339,7 +339,9 @@ export const internalActivateInvoice = internalMutation({
     if (!invoice && args.paymentIntentId) {
       invoice = await ctx.db
         .query("subscriptionInvoices")
-        .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
+        .withIndex("by_paymentIntentId", (q) =>
+          q.eq("paymentIntentId", args.paymentIntentId)
+        )
         .first();
     }
     if (!invoice) {
