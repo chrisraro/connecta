@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -48,6 +48,7 @@ import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { Id } from "@/convex/_generated/dataModel";
 import { filterAgentInfoByEnabledBlocks } from "@/lib/profileSections";
+import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
 
 // --- Types & Defaults ---
 
@@ -425,6 +426,40 @@ function BuilderContent() {
     const [newExperience, setNewExperience] = useState({ title: "", company: "", period: "", description: "" });
     const [newTestimonial, setNewTestimonial] = useState({ quote: "", author: "", role: "" });
 
+    const captureSnapshot = useCallback(() => {
+        savedSnapshotRef.current = JSON.stringify({
+            agentInfo, additionalPhones, additionalEmails, digitalCard,
+            blocks, selectedTemplate, customColors, certification, education,
+            techStack, experience, testimonials, gallery, products,
+            propertyListings, inlineProjects,
+        });
+    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, blocks,
+        selectedTemplate, customColors, certification, education, techStack,
+        experience, testimonials, gallery, products, propertyListings, inlineProjects]);
+
+    const isDirty = useCallback(() => {
+        if (savedSnapshotRef.current === null) return false;
+        const current = JSON.stringify({
+            agentInfo, additionalPhones, additionalEmails, digitalCard,
+            blocks, selectedTemplate, customColors, certification, education,
+            techStack, experience, testimonials, gallery, products,
+            propertyListings, inlineProjects,
+        });
+        return hasUnsavedChanges(savedSnapshotRef.current, current);
+    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, blocks,
+        selectedTemplate, customColors, certification, education, techStack,
+        experience, testimonials, gallery, products, propertyListings, inlineProjects]);
+
+    useEffect(() => {
+        const handler = (e: BeforeUnloadEvent) => {
+            if (isDirty()) {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [isDirty]);
+
     const handleCardThemeChange = (theme: "light" | "dark" | "glass" | "carbon") => {
         let colors = {};
         if (theme === "light") {
@@ -465,6 +500,7 @@ function BuilderContent() {
 
     // Prefill logic
     const [hasPrefilled, setHasPrefilled] = useState(false);
+    const savedSnapshotRef = useRef<string | null>(null);
     useEffect(() => {
         if (hasPrefilled) return;
 
@@ -536,6 +572,7 @@ function BuilderContent() {
                     });
                 }
                 setHasPrefilled(true);
+                captureSnapshot();
             } else if (!editingId && onboarding?.data) {
                 const data = onboarding.data;
                 const type = (data.profileCategory || "individual") as ProfileType;
@@ -554,11 +591,27 @@ function BuilderContent() {
                     socialLinks: data.socialLinks || [],
                 }));
                 setHasPrefilled(true);
+                captureSnapshot();
             }
         } catch (err) {
             console.error("Prefill error:", err);
         }
     }, [onboarding, hasPrefilled, user, existingProfile, editingId]);
+
+    // The prefill effect above calls captureSnapshot() synchronously right after
+    // its setXxx(...) calls, in the same tick — but those state updates are
+    // batched, so that call still closes over the pre-prefill state and would
+    // record a stale baseline. Re-capture once hasPrefilled actually flips to
+    // true and the prefilled state has committed, so isDirty() starts out
+    // false instead of false-alarming on the very first back click.
+    // (captureSnapshot is intentionally omitted from the deps below — the
+    // same pattern the prefill effect above uses — so this only re-fires
+    // when hasPrefilled itself flips, not on every subsequent form edit.)
+    useEffect(() => {
+        if (hasPrefilled) {
+            captureSnapshot();
+        }
+    }, [hasPrefilled]);
 
     // Update colors when template changes
     useEffect(() => {
@@ -729,6 +782,7 @@ function BuilderContent() {
                 inlineProjects: cleanInlineProjects,
                 digitalCard: digitalCard,
             });
+            captureSnapshot();
             router.push(`/p/${profileId}`);
         } catch (error: any) {
             console.error("Save error:", error);
@@ -856,7 +910,12 @@ function BuilderContent() {
             <header className="sticky top-0 z-40 bg-background border-b border-border px-4 py-3">
                 <div className="max-w-lg mx-auto flex items-center justify-between">
                     <button
-                        onClick={() => router.back()}
+                        onClick={() => {
+                            if (isDirty() && !window.confirm("You have unsaved changes. Leave without saving?")) {
+                                return;
+                            }
+                            router.back();
+                        }}
                         className="p-2 -ml-2 hover:bg-muted rounded-full text-foreground"
                     >
                         <ChevronLeft className="w-5 h-5" />
