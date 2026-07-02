@@ -47,6 +47,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { Id } from "@/convex/_generated/dataModel";
+import { filterAgentInfoByEnabledBlocks } from "@/lib/profileSections";
 
 // --- Types & Defaults ---
 
@@ -658,6 +659,24 @@ function BuilderContent() {
                 gallery: gallery.length > 0 ? gallery : undefined,
             };
 
+            const enabledBlockIds = getBlocksForProfileType(profileType, blocks)
+                .filter(b => b.isEnabled)
+                .map(b => b.id);
+            // filterAgentInfoByEnabledBlocks only ever strips the optional
+            // block-owned fields (certification/education/etc.) — the
+            // required identity fields below are never touched by it, so
+            // re-asserting them here just narrows the return type back from
+            // ProfileInfo's optional `company` etc. to what createProfile expects.
+            const filteredAgentInfo = {
+                ...filterAgentInfoByEnabledBlocks(cleanAgentInfo, enabledBlockIds),
+                fullName: cleanAgentInfo.fullName,
+                title: cleanAgentInfo.title,
+                company: cleanAgentInfo.company,
+                phone: cleanAgentInfo.phone,
+                email: cleanAgentInfo.email,
+                socialLinks: cleanAgentInfo.socialLinks,
+            };
+
             const cleanProducts = products.length > 0 ? products.map(p => ({
                 title: p.title,
                 description: p.description,
@@ -689,7 +708,7 @@ function BuilderContent() {
                 clerkId: user.id,
                 name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
                 profileType: profileType,
-                agentInfo: cleanAgentInfo,
+                agentInfo: filteredAgentInfo,
                 layoutConfig: {
                     themeId: selectedTemplate,
                     colorPalette: {

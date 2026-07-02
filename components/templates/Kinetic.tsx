@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
 import { resolveImageUrl } from "@/lib/utils";
-import { useState } from "react";
+import { useState, Fragment, ReactNode } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -44,7 +44,35 @@ const COLORS = {
 };
 
 export default function Kinetic({ data }: TemplateProps) {
-  const { agent, theme, projects, ownerId, products, propertyListings, inlineProjects } = data;
+  const { agent, theme, projects, ownerId, products, propertyListings, inlineProjects, componentOrder } = data;
+
+  // Maps a builder block id to the section(s) it renders. Same JSX/conditions
+  // as the previous hardcoded sequence — only the order (and whether an id is
+  // present at all) is now driven by componentOrder (Frontend audit #1).
+  const sectionRenderers: Record<string, () => ReactNode> = {
+    Hero: () => <HeroSection agent={agent} theme={theme} />,
+    About: () => <AboutSection agent={agent} theme={theme} />,
+    Certification: () => agent.certification ? <CertificationSection certification={agent.certification} theme={theme} /> : null,
+    Education: () => agent.education && agent.education.length > 0 ? <EducationSection education={agent.education} theme={theme} /> : null,
+    TechStack: () => agent.techStack && agent.techStack.length > 0 ? <TechStackSection techStack={agent.techStack} theme={theme} /> : null,
+    Services: () => agent.services && agent.services.length > 0 ? <ServicesSection services={agent.services} theme={theme} /> : null,
+    Experience: () => agent.experience && agent.experience.length > 0 ? <ExperienceSection experience={agent.experience} theme={theme} /> : null,
+    Projects: () => (
+      <>
+        {inlineProjects && inlineProjects.length > 0 && <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} />}
+        {projects && projects.length > 0 && <ProjectsSection projects={projects} theme={theme} />}
+      </>
+    ),
+    Products: () => products && products.length > 0 ? <ProductsSection products={products} theme={theme} /> : null,
+    Properties: () => propertyListings && propertyListings.length > 0 ? <PropertyListingsSection propertyListings={propertyListings} theme={theme} /> : null,
+    Testimonials: () => agent.testimonials && agent.testimonials.length > 0 ? <TestimonialsSection testimonials={agent.testimonials} theme={theme} /> : null,
+    Gallery: () => agent.gallery && agent.gallery.length > 0 ? <GallerySection gallery={agent.gallery} theme={theme} /> : null,
+    Contact: () => <ContactSection theme={theme} ownerId={ownerId} />,
+  };
+
+  // Legacy profiles saved before componentOrder existed fall back to today's
+  // hardcoded order (the Object.keys insertion order above).
+  const order = componentOrder && componentOrder.length > 0 ? componentOrder : Object.keys(sectionRenderers);
 
   return (
     <div
@@ -55,23 +83,9 @@ export default function Kinetic({ data }: TemplateProps) {
         fontFamily: "'Manrope', sans-serif",
       }}
     >
-      <HeroSection agent={agent} theme={theme} />
-      <AboutSection agent={agent} theme={theme} />
-      {agent.certification && <CertificationSection certification={agent.certification} theme={theme} />}
-      {agent.education && agent.education.length > 0 && <EducationSection education={agent.education} theme={theme} />}
-      {agent.techStack && agent.techStack.length > 0 && <TechStackSection techStack={agent.techStack} theme={theme} />}
-      {agent.services && agent.services.length > 0 && <ServicesSection services={agent.services} theme={theme} />}
-      {agent.experience && agent.experience.length > 0 && <ExperienceSection experience={agent.experience} theme={theme} />}
-      {/* Inline Projects */}
-      {inlineProjects && inlineProjects.length > 0 && <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} />}
-      {projects && projects.length > 0 && <ProjectsSection projects={projects} theme={theme} />}
-      {/* Products / Store */}
-      {products && products.length > 0 && <ProductsSection products={products} theme={theme} />}
-      {/* Property Listings */}
-      {propertyListings && propertyListings.length > 0 && <PropertyListingsSection propertyListings={propertyListings} theme={theme} />}
-      {agent.testimonials && agent.testimonials.length > 0 && <TestimonialsSection testimonials={agent.testimonials} theme={theme} />}
-      {agent.gallery && agent.gallery.length > 0 && <GallerySection gallery={agent.gallery} theme={theme} />}
-      <ContactSection theme={theme} ownerId={ownerId} />
+      {order.map((id) => (
+        <Fragment key={id}>{sectionRenderers[id]?.()}</Fragment>
+      ))}
       <SaveContactButton agent={agent} theme={theme} variant="kinetic" />
     </div>
   );

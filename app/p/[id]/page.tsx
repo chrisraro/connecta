@@ -70,6 +70,7 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
         services: profile.services,
         propertyListings: (profile as any).propertyListings,
         inlineProjects: (profile as any).inlineProjects,
+        componentOrder: layoutConfig.componentOrder,
         theme: {
             primaryColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.primary,
             backgroundColor: layoutConfig.colorPalette.background,
