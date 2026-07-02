@@ -501,6 +501,26 @@ function BuilderContent() {
     // Prefill logic
     const [hasPrefilled, setHasPrefilled] = useState(false);
     const savedSnapshotRef = useRef<string | null>(null);
+
+    // Brand-new profiles (no existingProfile to edit AND no completed
+    // onboarding data) never satisfy either branch of the prefill effect
+    // below, so hasPrefilled never flips to true and the recapture effect
+    // further down never runs. Without this, savedSnapshotRef.current would
+    // stay null for the entire session and isDirty() (which short-circuits
+    // to false when the ref is null) would never report unsaved changes —
+    // silently losing a first-time user's typed data on navigation. Capture
+    // the initial (default/empty) state as the baseline unconditionally on
+    // mount so edits made from a blank profile are correctly detected as
+    // dirty. When prefill data does load (existing profile or onboarding),
+    // the hasPrefilled-triggered captureSnapshot() calls below run afterward
+    // and correctly overwrite this baseline with the loaded state.
+    useEffect(() => {
+        if (savedSnapshotRef.current === null) {
+            captureSnapshot();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     useEffect(() => {
         if (hasPrefilled) return;
 
