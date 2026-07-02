@@ -384,6 +384,14 @@ export const internalConfirmOrderPayment = internalMutation({
       return { success: true, alreadyProcessed: true };
     }
 
+    // A stale/duplicate/out-of-order "failed" webhook must never regress an
+    // order that has already been marked "paid" — inventory/discount/email
+    // side effects already ran and must not be silently undone (Payments #1
+    // follow-up finding from task-2 review).
+    if (order.paymentStatus === "paid" && args.paymentStatus !== "paid") {
+      return { success: true, alreadyProcessed: true, note: "ignored_stale_status_after_paid" };
+    }
+
     const now = Date.now();
 
     await ctx.db.patch(order._id, {

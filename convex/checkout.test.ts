@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
 async function seedOrder(t: ReturnType<typeof convexTest>, ownerClerkId: string) {
@@ -78,4 +78,30 @@ test("getOrderByNumber returns the order to its owner", async () => {
   });
 
   expect(order?.orderNumber).toBe("TF-2026-TESTORD");
+});
+
+test("internalConfirmOrderPayment does not regress a paid order when a stale failed webhook arrives afterward", async () => {
+  const t = convexTest(schema);
+  const { orderId } = await seedOrder(t, "owner_clerk_id");
+
+  const paidResult = await t.mutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber: "TF-2026-TESTORD",
+    paymentStatus: "paid",
+  });
+  expect(paidResult.success).toBe(true);
+
+  const paidOrder = await t.run(async (ctx) => ctx.db.get(orderId));
+  expect(paidOrder?.paymentStatus).toBe("paid");
+
+  // A stale/duplicate/out-of-order "failed" webhook arrives after the order
+  // was already legitimately marked paid (inventory/discount/email side
+  // effects already ran). It must not regress the order's paymentStatus.
+  const staleFailedResult = await t.mutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber: "TF-2026-TESTORD",
+    paymentStatus: "failed",
+  });
+  expect(staleFailedResult.success).toBe(true);
+
+  const orderAfterStaleFailed = await t.run(async (ctx) => ctx.db.get(orderId));
+  expect(orderAfterStaleFailed?.paymentStatus).toBe("paid");
 });
