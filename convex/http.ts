@@ -109,8 +109,12 @@ const payrexWebhook = httpAction(async (ctx, request) => {
   const isPaid =
     event.type === "payment_intent.succeeded" ||
     event.type === "checkout_session.payment.paid";
+  const isFailed =
+    event.type === "payment_intent.payment_failed" ||
+    event.type === "checkout_session.expire" ||
+    event.type === "checkout_session.payment.failed";
 
-  if (isPaid && event.data) {
+  if ((isPaid || isFailed) && event.data) {
     // Metadata may live in either location depending on the event type.
     const metaA = event.data.attributes?.metadata;
     const metaB = event.data.metadata;
@@ -130,11 +134,16 @@ const payrexWebhook = httpAction(async (ctx, request) => {
       typeof event.data.id === "string" ? event.data.id : undefined;
 
     if (invoiceId) {
-      // Plan upgrade/renewal: activate the subscription invoice.
-      await ctx.runMutation(internal.billing.internalActivateInvoice, {
-        invoiceId: invoiceId as Id<"subscriptionInvoices">,
-        paymentIntentId,
-      });
+      if (isPaid) {
+        await ctx.runMutation(internal.billing.internalActivateInvoice, {
+          invoiceId: invoiceId as Id<"subscriptionInvoices">,
+          paymentIntentId,
+        });
+      } else {
+        await ctx.runMutation(internal.billing.internalFailInvoice, {
+          invoiceId: invoiceId as Id<"subscriptionInvoices">,
+        });
+      }
     } else {
       // Existing shop order flow.
       const orderNumber =
@@ -148,7 +157,7 @@ const payrexWebhook = httpAction(async (ctx, request) => {
       await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
         orderNumber,
         paymentIntentId,
-        paymentStatus: "paid",
+        paymentStatus: isPaid ? "paid" : "failed",
       });
     }
   }
