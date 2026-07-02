@@ -441,10 +441,20 @@ export const internalConfirmOrderPayment = internalMutation({
         .query("discounts")
         .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
         .first();
+      // Mirror every create-time check from `resolveDiscount` above, not just
+      // usageLimit — an admin can deactivate a code or it can pass its
+      // validUntil expiry while an order sits "pending" with that code
+      // already applied. Re-checking only usageLimit here would let a
+      // since-deactivated/expired code still be honored (and usedCount still
+      // incremented) at payment-confirmation time (Task 3 review finding).
+      const discountNow = Date.now();
       if (
         discount &&
-        discount.usageLimit !== undefined &&
-        discount.usedCount >= discount.usageLimit
+        ((discount.usageLimit !== undefined &&
+          discount.usedCount >= discount.usageLimit) ||
+          discount.isActive === false ||
+          discountNow < discount.validFrom ||
+          (discount.validUntil && discountNow > discount.validUntil))
       ) {
         await ctx.db.patch(order._id, {
           paymentStatus: "failed",

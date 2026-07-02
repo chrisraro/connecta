@@ -268,3 +268,67 @@ test("internalConfirmOrderPayment stops a discount from being redeemed past its 
   );
   expect(orderB?.paymentStatus).toBe("failed");
 });
+
+test("internalConfirmOrderPayment fails an order whose discount was deactivated while the order was pending", async () => {
+  const t = convexTest(schema);
+  const productId = await seedProductForOrder(t, 100);
+  const discountId = await t.run(async (ctx) => {
+    return await ctx.db.insert("discounts", {
+      code: "DEACTME",
+      type: "fixed",
+      value: 1000,
+      usedCount: 0,
+      validFrom: 0,
+      isActive: true,
+    });
+  });
+
+  const orderNumber = "TF-2026-DEACT";
+  const orderId = await t.run(async (ctx) => {
+    return await ctx.db.insert("orders", {
+      orderNumber,
+      status: "pending",
+      items: [
+        { productId, productName: "Limited Card", quantity: 1, unitPrice: 50000, total: 50000 },
+      ],
+      subtotal: 50000,
+      tax: 0,
+      shipping: 0,
+      discount: 1000,
+      appliedDiscountCode: "DEACTME",
+      total: 49000,
+      currency: "PHP",
+      paymentProvider: "payrex",
+      paymentStatus: "pending",
+      shippingAddress: {
+        fullName: "Buyer",
+        addressLine1: "1 St",
+        city: "Manila",
+        postalCode: "1000",
+        country: "PH",
+        phone: "0917",
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+
+  // Admin deactivates the code (e.g. edits/disables the promo) while the
+  // order is still pending, i.e. after the create-time `resolveDiscount`
+  // check already passed but before payment confirmation runs.
+  await t.run(async (ctx) => {
+    await ctx.db.patch(discountId, { isActive: false });
+  });
+
+  const result = await t.mutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber,
+    paymentStatus: "paid",
+  });
+  expect(result.success).toBe(false);
+
+  const order = await t.run(async (ctx) => ctx.db.get(orderId));
+  expect(order?.paymentStatus).toBe("failed");
+
+  const discount = await t.run(async (ctx) => ctx.db.get(discountId));
+  expect(discount?.usedCount).toBe(0);
+});
