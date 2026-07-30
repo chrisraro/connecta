@@ -101,7 +101,7 @@ export default function CardsPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold">My NFC Cards</h1>
-                    <p className="text-muted-foreground">Manage and link your physical TapFolio cards to your profiles.</p>
+                    <p className="text-muted-foreground">Manage and link your physical Herald cards to your profiles.</p>
                 </div>
                 
                 <Dialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
@@ -174,7 +174,7 @@ export default function CardsPage() {
                         </div>
                         <h3 className="text-xl font-bold mb-2">No Active Cards</h3>
                         <p className="text-muted-foreground max-w-xs mb-8 font-medium">
-                            You haven&apos;t activated any physical TapFolio cards yet. Get started by clicking the button above.
+                            You haven&apos;t activated any physical Herald cards yet. Get started by clicking the button above.
                         </p>
                         <Button variant="outline" className="rounded-xl px-8 h-12" onClick={() => setShowActivationDialog(true)}>
                             Get Started
@@ -196,7 +196,7 @@ export default function CardsPage() {
                                 </div>
                                 <CardTitle className="flex items-center gap-2">
                                     <SmartphoneNfc className="w-5 h-5 text-primary" />
-                                    TapFolio NFC Card
+                                    Herald NFC Card
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6 space-y-4">

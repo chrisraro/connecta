@@ -2,6 +2,7 @@ import { SignIn, SignUp } from '@clerk/nextjs';
 import { SmartphoneNfc, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { HERALD } from '@/lib/brand';
 
 export default function AuthPage({
   searchParams,
@@ -54,7 +55,7 @@ async function AuthContent({
               <SmartphoneNfc className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-600 dark:text-yellow-500" strokeWidth={1.5} />
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-2 tracking-tight">
-              TapFolio
+              {HERALD.name}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground font-medium">
               Digital Business Card • Lead CRM • NFC Hardware

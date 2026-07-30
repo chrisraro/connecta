@@ -19,6 +19,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
+import { HERALD } from "@/lib/brand";
 
 function QuickActionsToggle() {
     return (
@@ -108,7 +109,7 @@ function DashboardSidebar({ className }: { className?: string }) {
         <aside className={`flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground ${className}`}>
             <div className="p-6 flex items-center gap-2 font-bold text-xl">
                 <SmartphoneNfc className="text-primary" />
-                <span className="text-foreground font-black tracking-tight">TapFolio</span>
+                <span className="text-foreground font-black tracking-tight">{HERALD.name}</span>
             </div>
             <nav className="flex-1 px-4 space-y-2 py-4">
                 {menuItems.map((item) => {
@@ -184,7 +185,7 @@ function MobileHeader() {
         if (pathname.startsWith("/dashboard/team")) return "Team";
         if (pathname.startsWith("/dashboard/billing")) return "Billing";
         if (pathname.startsWith("/dashboard/settings")) return "Settings";
-        return "TapFolio";
+        return HERALD.name;
     };
 
     return (

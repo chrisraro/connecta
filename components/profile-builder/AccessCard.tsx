@@ -6,6 +6,7 @@ import { ProfileInfo } from "@/types/profile";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 import { ProfileImage } from "@/components/templates/ProfileImage";
+import { HERALD } from "@/lib/brand";
 
 interface AccessCardProps {
     profileId: string;
@@ -86,7 +87,7 @@ export function AccessCard({ profileId, agent, className }: AccessCardProps) {
             
             {/* Bottom Tagline */}
             <div className="mt-6 pt-4 border-t border-white/5 text-[8px] tracking-[0.5em] text-zinc-600 uppercase text-center">
-                Tapfolio Digital Identity
+                {HERALD.name} Digital Identity
             </div>
         </div>
     );

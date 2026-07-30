@@ -21,6 +21,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Reveal } from "@/components/ui/reveal";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { CountUp } from "@/components/ui/count-up";
+import { HERALD } from "@/lib/brand";
 
 export default function LandingPage() {
   return (
@@ -36,7 +37,7 @@ export default function LandingPage() {
             className="flex shrink-0 items-center gap-2 text-xl font-bold tracking-tight"
           >
             <SmartphoneNfc className="text-primary" aria-hidden="true" />
-            <span>TapFolio</span>
+            <span>{HERALD.name}</span>
           </Link>
 
           <div className="hidden items-center gap-7 md:flex">
@@ -349,7 +350,7 @@ export default function LandingPage() {
               Ready to make a lasting impression?
             </h2>
             <p className="relative z-10 mx-auto mt-5 max-w-xl text-neutral-400">
-              Get your TapFolio card and turn every introduction into an
+              Get your {HERALD.name} card and turn every introduction into an
               opportunity.
             </p>
             <div className="relative z-10 mt-9 flex flex-col justify-center gap-3 sm:flex-row">
@@ -385,7 +386,7 @@ export default function LandingPage() {
             <div>
               <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
                 <SmartphoneNfc className="text-primary" aria-hidden="true" />
-                <span>TapFolio</span>
+                <span>{HERALD.name}</span>
               </Link>
               <p className="mt-3 max-w-xs text-sm text-muted-foreground">
                 Premium NFC digital business cards for modern professionals.
@@ -417,7 +418,7 @@ export default function LandingPage() {
             />
           </div>
           <div className="mt-10 border-t border-border pt-6 text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} TapFolio. All rights reserved.
+            &copy; {new Date().getFullYear()} {HERALD.name}. All rights reserved.
           </div>
         </div>
       </footer>
@@ -438,7 +439,7 @@ function NfcCardVisual() {
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
               <SmartphoneNfc className="h-5 w-5 text-primary" />
-              TapFolio
+              {HERALD.name}
             </span>
             <div className="flex flex-col gap-1">
               <span className="h-3 w-3 rounded-full border border-white/40" />
@@ -487,7 +488,7 @@ function SectionHeading({
 
 function Steps() {
   const steps = [
-    { step: "01", icon: Hand, title: "Tap", desc: "Hold your TapFolio NFC card to any smartphone — or let them scan your QR code." },
+    { step: "01", icon: Hand, title: "Tap", desc: "Hold your Herald NFC card to any smartphone — or let them scan your QR code." },
     { step: "02", icon: UserRound, title: "Profile", desc: "Your branded profile opens instantly with your photo, links, and call-to-actions." },
     { step: "03", icon: Inbox, title: "Lead captured", desc: "They save your contact or send a message — and it lands straight in your lead inbox." },
   ];

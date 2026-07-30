@@ -99,6 +99,11 @@ export default function AdminFactoryPage() {
                     // Write ONLY the URL to the NFC tag
                     // This ensures maximum compatibility across all devices
                     // The vCard download will happen on the profile page when loaded
+                    // NOTE(herald-rebrand): intentionally NOT renamed — this is the real,
+                    // live Vercel deployment host that physical NFC tags are written to.
+                    // Changing this string does not move the deployment; it would just
+                    // point every card at a dead URL. Rename only alongside an actual
+                    // domain/deployment migration. See lib/brand.test.ts INFRA_EXCEPTIONS.
                     const PRODUCTION_DOMAIN = "https://tapfolio-beta.vercel.app";
                     const url = `${PRODUCTION_DOMAIN}/t/${serialNumber}`;
                     console.log("Writing NDEF URL:", url);
@@ -575,15 +580,18 @@ export default function AdminFactoryPage() {
                             className="bg-white p-4 rounded-lg flex flex-col items-center justify-center shadow-2xl"
                             style={{ width: '200px', height: '200px' }}
                         >
-                            <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">TapFolio</div>
+                            <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">Herald</div>
                             
-                            <QRCodeSVG 
-                                value={`https://tapfolio-beta.vercel.app/t/${selectedCard?.uuid || ""}`} 
+                            {/* NOTE(herald-rebrand): domain intentionally NOT renamed — see
+                                PRODUCTION_DOMAIN above; this must match the real deployment
+                                the QR code actually resolves to. */}
+                            <QRCodeSVG
+                                value={`https://tapfolio-beta.vercel.app/t/${selectedCard?.uuid || ""}`}
                                 size={110}
                                 level="H"
                                 marginSize={1}
                             />
-                            
+
                             <div className="mt-2 text-black font-mono text-[9px] text-center px-2 truncate max-w-full">
                                 tapfolio.com/t/{selectedCard?.uuid?.substring(0, 8)}...
                             </div>

@@ -1,6 +1,6 @@
 {
-  "name": "TapFolio",
-  "short_name": "TapFolio",
+  "name": "Herald",
+  "short_name": "Herald",
   "description": "NFC Real Estate Platform",
   "start_url": "/",
   "display": "standalone",

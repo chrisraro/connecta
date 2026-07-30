@@ -24,7 +24,7 @@ export interface PlanLimits {
   allowedTemplateIds: string[] | null;
   /** Cap on how many stored leads are viewable. null = unlimited. */
   leadViewCap: number | null;
-  /** Whether "Powered by TapFolio" branding shows on public profile. */
+  /** Whether "Powered by Herald" branding shows on public profile. */
   showBranding: boolean;
   /** Whether lead CSV export is available. */
   canExportLeads: boolean;
@@ -64,7 +64,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
       "2 basic templates",
       "Up to 100 leads",
       "NFC + QR sharing",
-      "TapFolio branding",
+      "Herald branding",
     ],
   },
   pro: {

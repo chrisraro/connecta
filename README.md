@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Herald
 
-## Getting Started
+Herald is a premium NFC digital business card platform. A user taps a physical
+Herald card (or lets someone scan its QR code) to instantly share a branded
+profile, and every visit can capture a lead straight into the user's dashboard.
 
-First, run the development server:
+The name comes from the medieval herald, whose two duties map onto the
+product: formally **announcing** a person on arrival, and **designing the
+coat of arms** that identified them. Tagline: "Announced properly."
+
+The app is a Next.js (App Router) frontend backed by Convex, with Clerk for
+auth, Resend for transactional email, and PayRex for Philippine payment
+processing (GCash, Maya, cards, QR Ph). It also includes a small e‑commerce
+shop for ordering physical NFC cards.
+
+## Prerequisites
+
+- Node.js 20+
+- A [Convex](https://www.convex.dev/) account (free tier is fine for dev)
+- A [Clerk](https://clerk.com/) application (for authentication)
+- A [Resend](https://resend.com/) account (for lead-notification and
+  order-confirmation emails) — optional for local dev, required for real
+  email delivery
+- A [PayRex](https://payrexhq.com/) account (for billing/checkout) — optional
+  for local dev, required to accept real payments
+
+## Environment setup
+
+Copy `.env.example` to `.env.local` and fill in the values:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable | Where it comes from | Required for |
+| --- | --- | --- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → API Keys | Sign-in/sign-up |
+| `CLERK_SECRET_KEY` | Clerk Dashboard → API Keys | Sign-in/sign-up |
+| `NEXT_PUBLIC_APP_URL` | Your app's base URL (`http://localhost:3000` in dev) | Payment redirect/callback URLs |
+| `NEXT_PUBLIC_CONVEX_URL` | Set automatically by `npx convex dev` | Talking to your Convex deployment |
+| `CONVEX_DEPLOYMENT` | Set automatically by `npx convex dev` | Convex CLI/deploy targeting |
+| `RESEND_API_KEY` | Resend Dashboard → API Keys | Lead notification & order confirmation emails |
+| `PAYREX_SECRET_KEY` | PayRex Dashboard → API Keys | Creating checkout sessions (`convex/billing.ts`, `convex/payrex.ts`) |
+| `PAYREX_WEBHOOK_SECRET` | PayRex Dashboard → Webhooks | Verifying webhook signatures (`convex/http.ts`) |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without `RESEND_API_KEY` set, email sends are skipped (a warning is logged)
+rather than failing. Without the `PAYREX_*` vars, billing/checkout actions
+throw a clear "not configured" error instead of silently failing.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Known gap:** even with `RESEND_API_KEY` set, `convex/email.ts` currently
+sends from Resend's sandbox address (`onboarding@resend.dev`), which only
+delivers to the Resend account owner — not to real customers. A verified
+sending domain needs to be configured in Resend before email notifications
+will reach anyone else. See the `TODO(ops)` comments in `convex/email.ts`.
 
-## Learn More
+## Install & run
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npx convex dev    # provisions/starts your Convex dev deployment, keep this running
+npm run dev       # in a second terminal, starts the Next.js dev server
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tests
 
-## Deploy on Vercel
+```bash
+npm run test         # runs the full Vitest suite once
+npm run test:watch   # watch mode
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Build
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run build
+```
+
+## Lint
+
+```bash
+npm run lint
+```
+
+## Deploying
+
+1. **Convex**: run `npx convex deploy` to push your schema/functions to a
+   production Convex deployment, and note the production `NEXT_PUBLIC_CONVEX_URL`
+   / `CONVEX_DEPLOYMENT` it prints.
+2. **Clerk**: switch to a production Clerk instance and update the
+   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` env vars
+   accordingly.
+3. **Resend**: verify a real sending domain in the Resend dashboard, then
+   update the `from:` addresses in `convex/email.ts` to use it (see the
+   `TODO(ops)` comments there).
+4. **PayRex**: use your live `PAYREX_SECRET_KEY` and register the production
+   webhook endpoint — `https://<your-convex-deployment>.convex.site/webhooks/payrex`
+   (see `convex/http.ts`) — to get a live `PAYREX_WEBHOOK_SECRET`.
+5. Deploy the Next.js app (e.g. to [Vercel](https://vercel.com)) with all of
+   the above environment variables configured, plus `NEXT_PUBLIC_APP_URL` set
+   to your production URL.
+
+## Project structure
+
+- `app/` — Next.js App Router pages (landing page, dashboard, admin, shop,
+  public profile pages, auth)
+- `convex/` — backend: schema, queries/mutations/actions, billing, email,
+  PayRex webhook handling
+- `components/` — shared UI and profile-builder components
+- `lib/` — shared utilities (brand constants, plan limits, sanitization, etc.)
+- `types/` — shared TypeScript types
