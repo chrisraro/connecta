@@ -1,7 +1,94 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { requireUserMatching } from "./authz";
 import { planContext } from "./billing";
+import { slugify, isReservedSlug } from "../lib/slug";
+import { Doc } from "./_generated/dataModel";
+
+/** Find a slug for `name` that isn't reserved and isn't already taken. */
+async function assignUniqueSlug(ctx: MutationCtx, name: string): Promise<string> {
+    const base = slugify(name);
+    const candidates = [
+        base,
+        ...Array.from({ length: 12 }, (_, i) =>
+            slugify(name, Math.random().toString(36).slice(2, 5) + i)
+        ),
+    ];
+    for (const candidate of candidates) {
+        if (isReservedSlug(candidate)) continue;
+        const taken = await ctx.db
+            .query("profiles")
+            .withIndex("by_slug", (q) => q.eq("slug", candidate))
+            .first();
+        if (!taken) return candidate;
+    }
+    // Exhausted: fall back to something guaranteed free.
+    return slugify(name, Date.now().toString(36));
+}
+
+/**
+ * Shared enrichment applied to a raw profile document before it is exposed
+ * to any public reader — by id or by slug. Kept in one place so the two
+ * lookup paths (`getProfile`, `getProfileBySlug`) cannot drift.
+ */
+async function enrichProfile(ctx: QueryCtx, profile: Doc<"profiles">) {
+    // Compute the owner's effective plan server-side and expose ONLY a
+    // cosmetic boolean (showBranding) plus optional team branding — never
+    // leak the owner's plan/expiry internals to the public.
+    const owner = await ctx.db.get(profile.ownerId);
+    let showBranding = true;
+    let teamBranding: {
+        companyName?: string;
+        logoUrl?: string;
+        accentColor?: string;
+    } | null = null;
+
+    if (owner) {
+        const { plan, limits } = planContext(owner);
+        showBranding = limits.showBranding;
+        // Business members inherit shared team branding on their profile.
+        if (plan === "business" && owner.teamId) {
+            const team = await ctx.db.get(owner.teamId);
+            if (team) {
+                teamBranding = {
+                    companyName: team.companyName,
+                    logoUrl: team.logoUrl,
+                    accentColor: team.accentColor,
+                };
+            }
+        }
+    }
+
+    // Batch-resolve every Convex-storage-id image referenced by this
+    // profile in one pass, instead of leaving each <ProfileImage> to fire
+    // its own useQuery round-trip on the client (UI/UX audit P0 — this
+    // was the single biggest contributor to slow first paint on the
+    // public profile page).
+    const candidateIds = [
+        profile.agentInfo.avatarUrl,
+        ...(profile.agentInfo.gallery ?? []),
+    ].filter((id): id is string => {
+        if (!id) return false;
+        return !id.startsWith("http") && !id.startsWith("data:") && !id.startsWith("blob:");
+    });
+    const uniqueIds = Array.from(new Set(candidateIds));
+    const resolvedEntries = await Promise.all(
+        uniqueIds.map(async (id) => {
+            try {
+                const url = await ctx.storage.getUrl(id);
+                return url ? ([id, url] as const) : null;
+            } catch {
+                return null;
+            }
+        })
+    );
+    const resolvedImages: Record<string, string> = {};
+    for (const entry of resolvedEntries) {
+        if (entry) resolvedImages[entry[0]] = entry[1];
+    }
+
+    return { ...profile, showBranding, teamBranding, resolvedImages };
+}
 
 export const createProfile = mutation({
     args: {
@@ -155,11 +242,17 @@ export const createProfile = mutation({
             if (!existing || existing.ownerId !== user._id) {
                 throw new Error("Unauthorized or profile not found");
             }
+            // Slug is assigned once, at creation, and never touched on
+            // subsequent edits — a published /<slug> URL must never change
+            // underneath a card that's already printed.
             await ctx.db.patch(args.id, profileData);
             return args.id;
         }
 
-        const profileId = await ctx.db.insert("profiles", profileData);
+        const profileId = await ctx.db.insert("profiles", {
+            ...profileData,
+            slug: await assignUniqueSlug(ctx, args.name),
+        });
         return profileId;
     },
 });
@@ -183,63 +276,21 @@ export const getProfile = query({
     handler: async (ctx, args) => {
         const profile = await ctx.db.get(args.profileId);
         if (!profile) return null;
+        return await enrichProfile(ctx, profile);
+    },
+});
 
-        // Compute the owner's effective plan server-side and expose ONLY a
-        // cosmetic boolean (showBranding) plus optional team branding — never
-        // leak the owner's plan/expiry internals to the public.
-        const owner = await ctx.db.get(profile.ownerId);
-        let showBranding = true;
-        let teamBranding: {
-            companyName?: string;
-            logoUrl?: string;
-            accentColor?: string;
-        } | null = null;
-
-        if (owner) {
-            const { plan, limits } = planContext(owner);
-            showBranding = limits.showBranding;
-            // Business members inherit shared team branding on their profile.
-            if (plan === "business" && owner.teamId) {
-                const team = await ctx.db.get(owner.teamId);
-                if (team) {
-                    teamBranding = {
-                        companyName: team.companyName,
-                        logoUrl: team.logoUrl,
-                        accentColor: team.accentColor,
-                    };
-                }
-            }
-        }
-
-        // Batch-resolve every Convex-storage-id image referenced by this
-        // profile in one pass, instead of leaving each <ProfileImage> to fire
-        // its own useQuery round-trip on the client (UI/UX audit P0 — this
-        // was the single biggest contributor to slow first paint on the
-        // public profile page).
-        const candidateIds = [
-            profile.agentInfo.avatarUrl,
-            ...(profile.agentInfo.gallery ?? []),
-        ].filter((id): id is string => {
-            if (!id) return false;
-            return !id.startsWith("http") && !id.startsWith("data:") && !id.startsWith("blob:");
-        });
-        const uniqueIds = Array.from(new Set(candidateIds));
-        const resolvedEntries = await Promise.all(
-            uniqueIds.map(async (id) => {
-                try {
-                    const url = await ctx.storage.getUrl(id);
-                    return url ? ([id, url] as const) : null;
-                } catch {
-                    return null;
-                }
-            })
-        );
-        const resolvedImages: Record<string, string> = {};
-        for (const entry of resolvedEntries) {
-            if (entry) resolvedImages[entry[0]] = entry[1];
-        }
-
-        return { ...profile, showBranding, teamBranding, resolvedImages };
+// Vanity-URL lookup (/<slug>) — resolves through the same enrichment as
+// getProfile so the two public entry points can never drift apart.
+export const getProfileBySlug = query({
+    args: { slug: v.string() },
+    handler: async (ctx, args) => {
+        const profile = await ctx.db
+            .query("profiles")
+            .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+            .first();
+        if (!profile) return null;
+        return await enrichProfile(ctx, profile);
     },
 });
 

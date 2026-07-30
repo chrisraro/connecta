@@ -42,6 +42,7 @@ export default defineSchema({
   profiles: defineTable({
     ownerId: v.id("users"),
     name: v.string(),
+    slug: v.optional(v.string()),
     profileType: v.optional(v.union(v.literal("individual"), v.literal("company"), v.literal("business"))),
     agentInfo: v.object({
       fullName: v.string(),
@@ -142,7 +143,8 @@ export default defineSchema({
       image: v.optional(v.string()),
       link: v.optional(v.string()),
     }))),
-  }).index("by_owner", ["ownerId"]),
+  }).index("by_owner", ["ownerId"])
+    .index("by_slug", ["slug"]),
 
   properties: defineTable({
     ownerId: v.id("users"),
