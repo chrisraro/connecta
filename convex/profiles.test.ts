@@ -316,3 +316,57 @@ test("internalBackfillSlugs assigns a slug to a slugless profile and is a no-op 
   const afterSecond = await t.run(async (ctx) => ctx.db.get(profileId));
   expect(afterSecond?.slug).toBe(afterFirst?.slug);
 });
+
+test("internalBackfillSlugs pages through every profile via its cursor", async () => {
+  const t = convexTest(schema);
+  const TOTAL = 7;
+  await t.run(async (ctx) => {
+    const ownerId = await ctx.db.insert("users", {
+      email: "pager@test.dev", clerkId: "pager_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+    for (let i = 0; i < TOTAL; i++) {
+      await ctx.db.insert("profiles", {
+        ownerId,
+        name: `Pager Person ${i}`,
+        agentInfo: {
+          fullName: `Pager Person ${i}`, title: "Agent", company: "Co",
+          phone: "0917", email: `p${i}@old.dev`, services: [], socialLinks: [],
+        },
+        layoutConfig: {
+          themeId: "editorial",
+          colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+          componentOrder: ["Hero"], heroStyle: "default",
+        },
+        featuredProperties: [],
+      });
+    }
+  });
+
+  // Batch size below TOTAL, so completing requires following the cursor.
+  let cursor: string | null = null;
+  let backfilled = 0;
+  let pages = 0;
+  for (;;) {
+    const run: { backfilled: number; isDone: boolean; cursor: string | null } =
+      await t.mutation(internal.profiles.internalBackfillSlugs, {
+        cursor,
+        batchSize: 3,
+      });
+    backfilled += run.backfilled;
+    pages++;
+    if (run.isDone) break;
+    cursor = run.cursor;
+    if (pages > 10) throw new Error("cursor did not terminate");
+  }
+
+  expect(pages).toBeGreaterThan(1);
+  expect(backfilled).toBe(TOTAL);
+
+  const slugs = await t.run(async (ctx) => {
+    const all = await ctx.db.query("profiles").collect();
+    return all.map((p) => p.slug);
+  });
+  expect(slugs.every((s) => typeof s === "string" && s.length > 0)).toBe(true);
+  expect(new Set(slugs).size).toBe(TOTAL);
+});

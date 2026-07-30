@@ -112,9 +112,13 @@ deploy that silently ships with email and checkout both as no-ops.
    ```
    If this deploy is the first one to ship vanity-slug profile URLs, also
    run the one-time (idempotent, safe to re-run) backfill so profiles created
-   before the feature existed get a slug:
+   before the feature existed get a slug. It is paginated — keep calling it,
+   passing the returned `cursor` back in, until it reports `"isDone": true`:
    ```bash
-   npx convex run profiles:internalBackfillSlugs --prod
+   npx convex run profiles:internalBackfillSlugs '{}' --prod
+   # -> { "scanned": 200, "backfilled": 200, "isDone": false, "cursor": "..." }
+   npx convex run profiles:internalBackfillSlugs '{"cursor":"<cursor>"}' --prod
+   # repeat until "isDone": true
    ```
 2. **Clerk**: switch to a production Clerk instance and update the
    `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` Next.js/Vercel env

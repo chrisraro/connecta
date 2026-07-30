@@ -266,20 +266,40 @@ export const createProfile = mutation({
  * One-time (idempotent) backfill for profiles created before the slug
  * feature existed, or otherwise still missing one. Safe to re-run: any
  * profile that already has a slug is left untouched, so a second run is a
- * no-op. Run via `npx convex run profiles:internalBackfillSlugs`.
+ * no-op.
+ *
+ * Paginated rather than a single `.collect()`, because this runs once
+ * against a production table of unknown size and an unbounded scan would
+ * blow Convex's per-mutation read limit. Call repeatedly, passing the
+ * returned `cursor` back in, until `isDone` is true:
+ *   npx convex run profiles:internalBackfillSlugs '{}'
+ *   npx convex run profiles:internalBackfillSlugs '{"cursor":"<cursor>"}'
  */
 export const internalBackfillSlugs = internalMutation({
-    args: {},
-    handler: async (ctx) => {
-        const profiles = await ctx.db.query("profiles").collect();
+    args: {
+        cursor: v.optional(v.union(v.string(), v.null())),
+        batchSize: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        const numItems = Math.min(Math.max(args.batchSize ?? 200, 1), 500);
+        const page = await ctx.db
+            .query("profiles")
+            .paginate({ cursor: args.cursor ?? null, numItems });
+
         let backfilled = 0;
-        for (const profile of profiles) {
+        for (const profile of page.page) {
             if (profile.slug) continue;
             const slug = await assignUniqueSlug(ctx, profile.name);
             await ctx.db.patch(profile._id, { slug });
             backfilled++;
         }
-        return { scanned: profiles.length, backfilled };
+
+        return {
+            scanned: page.page.length,
+            backfilled,
+            isDone: page.isDone,
+            cursor: page.isDone ? null : page.continueCursor,
+        };
     },
 });
 
