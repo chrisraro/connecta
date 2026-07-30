@@ -1,14 +1,24 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isPublicRoute = createRouteMatcher([
-    '/',
-    '/auth(.*)',    // Unified auth route (includes callback)
-    '/p/(.*)',      // Public profiles
-    '/t/(.*)',      // NFC Tap redirects
-    '/shop(.*)',    // Public shop (browsing, cart, checkout)
-    '/api/webhooks(.*)', // Payment webhooks
+// Public surface now outnumbers the protected one: every top-level segment
+// that isn't one of the app's known static sections is a potential vanity
+// profile slug (see app/[slug]/page.tsx + lib/slug.ts RESERVED set) and must
+// be reachable by anonymous visitors tapping an NFC card. So instead of an
+// allow-list of public routes, we deny-list the areas that actually require
+// authentication and let everything else — including arbitrary vanity
+// slugs — fall through.
+const isProtectedRoute = createRouteMatcher([
+    '/dashboard(.*)', // Authenticated profile builder / account area
+    '/admin(.*)',     // Admin console (role-gated further below)
 ]);
+
+// All /api routes require auth EXCEPT payment webhooks, which Stripe/PayPal
+// call without a Clerk session and verify via their own signature checks.
+// Matched with a plain startsWith check (rather than a negative-lookahead
+// route-matcher pattern) so behavior doesn't depend on whether the
+// underlying path-to-regexp version supports that regex construct.
+const isPublicApiRoute = createRouteMatcher(['/api/webhooks(.*)']);
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 
@@ -23,8 +33,8 @@ export default clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(new URL('/auth', req.url));
     }
 
-    // Protect all non-public routes (requires authentication)
-    if (!isPublicRoute(req)) {
+    const needsAuth = isProtectedRoute(req) || (pathname.startsWith('/api') && !isPublicApiRoute(req));
+    if (needsAuth) {
         await auth.protect();
     }
 
