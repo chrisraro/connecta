@@ -1,15 +1,15 @@
-# TapFolio Development Setup & Integration Guide
+# Herald Development Setup & Integration Guide
 
-This document provides a comprehensive guide to understanding the TapFolio codebase, its backend/frontend architecture, and its integrations with third-party services. Follow these steps to connect and configure the external services required for local development and production.
+This document provides a comprehensive guide to understanding the Herald codebase, its backend/frontend architecture, and its integrations with third-party services. Follow these steps to connect and configure the external services required for local development and production.
 
 ---
 
 ## 1. System Architecture & Tech Stack
 
-TapFolio is a digital business card and CRM platform designed for modern professionals. It consists of the following components:
+Herald is a digital business card and CRM platform designed for modern professionals. It consists of the following components:
 
 ### Frontend
-- **Framework:** Next.js 15 (App Router, using React 19)
+- **Framework:** Next.js 16 (App Router, using React 19)
 - **Styling:** Tailwind CSS (v4 with PostCSS)
 - **UI Components:** Shadcn/ui for dashboards, and custom mobile-first layouts for public profiles
 - **Typography:** Uses Google Fonts (Inter, Space Grotesk, Noto Serif, Manrope) depending on the selected template.
@@ -32,7 +32,7 @@ TapFolio is a digital business card and CRM platform designed for modern profess
 
 ## 2. Database Schema (Convex)
 
-Convex is configured with strict relational data schema checks (defined in [schema.ts](file:///c:/Users/raroc/OneDrive/Desktop/Personal%20Project/TapFolio/Tapfolio/convex/schema.ts)):
+Convex is configured with strict relational data schema checks (defined in [`convex/schema.ts`](convex/schema.ts)):
 
 1. **`users`:** Holds user profiles, Clerk IDs, active plans (`free`, `pro`, `business`), subscriptions, and onboarding flags.
 2. **`cards`:** Represents physical NFC business cards (status: `inventory`, `active`, `lost`), mapped to a user and a digital profile.
@@ -54,7 +54,7 @@ To run the application, you must configure environment variables in two places: 
 
 ### A. Next.js App Environment (`.env.local` in root folder)
 
-Create a `.env.local` file in your workspace root (see [example](file:///c:/Users/raroc/OneDrive/Desktop/Personal%20Project/TapFolio/Tapfolio/.env.example)):
+Create a `.env.local` file in your workspace root (see [`.env.example`](.env.example)):
 
 ```bash
 # Clerk Authentication configuration
@@ -106,7 +106,7 @@ npm install
    ```bash
    npx convex dev
    ```
-2. Verify that Convex generates client-side files like [api.d.ts](file:///c:/Users/raroc/OneDrive/Desktop/Personal%20Project/TapFolio/Tapfolio/convex/_generated/api.d.ts) inside `convex/_generated/`.
+2. Verify that Convex generates client-side files like [`api.d.ts`](convex/_generated/api.d.ts) inside `convex/_generated/`.
 
 ### Step 4: Register PayRex Webhooks
 Since the PayRex Dashboard does not yet support a user interface for webhook configuration, you must register the webhook endpoint programmatically.
