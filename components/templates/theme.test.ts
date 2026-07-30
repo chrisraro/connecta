@@ -58,3 +58,24 @@ test("resolveTheme repairs a user palette that would fail contrast", () => {
   });
   expect(meetsAA(resolved.colors.ink, resolved.colors.background)).toBe(true);
 });
+
+test("resolveTheme keeps inkSoft readable on surface, not just background, when the user picks a dark background on a light template", () => {
+  // Editorial is a light template (light background, dark ink, a light
+  // `surface` tone). A user swapping in a dark background must not leave
+  // `surface` stale — six sections (About, TechStack, Experience,
+  // Testimonials, Products, Contact) render text directly on `surface`.
+  const resolved = resolveTheme("editorial", {
+    backgroundColor: "#0e0e10",
+    textColor: "#f2f0ee",
+  });
+  expect(meetsAA(resolved.colors.inkSoft, resolved.colors.surface)).toBe(true);
+  expect(meetsAA(resolved.colors.inkSoft, resolved.colors.background)).toBe(true);
+});
+
+test("resolveTheme still passes the existing default-palette assertions when no palette is given", () => {
+  for (const id of TEMPLATE_IDS) {
+    const t = TEMPLATE_THEMES[id];
+    const resolved = resolveTheme(id, undefined);
+    expect(resolved).toEqual(t);
+  }
+});

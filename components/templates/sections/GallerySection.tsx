@@ -18,7 +18,7 @@ export function GallerySection({
   resolvedImages?: ProfileData["resolvedImages"];
 }) {
   return (
-    <SectionShell theme={theme} index={index} heading="Gallery">
+    <SectionShell theme={theme} index={index} heading="Gallery" bleed={theme.composition.imagery === "bleed"}>
       <div className={galleryGridClass(theme)}>
         {gallery.slice(0, 6).map((img, i) => (
           <div key={i} className={galleryItemClass(theme, i)} style={{ backgroundColor: theme.colors.surface }}>

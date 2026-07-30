@@ -1,4 +1,4 @@
-import { meetsAA } from "@/lib/brand";
+import { meetsAA, relativeLuminance, mixHex } from "@/lib/brand";
 
 export const TEMPLATE_IDS = ["editorial", "kinetic", "architectural"] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
@@ -124,12 +124,25 @@ export interface UserPalette {
   accentColor?: string;
 }
 
+// Beyond this absolute difference in relative luminance (0-1 scale), a
+// user's background is considered a materially different tone from the
+// template default — e.g. swapping a light template to a dark background.
+// Past that point the template's preset `surface`/`line` (tuned for the
+// default background) are stale and must be re-derived.
+const MATERIAL_LUMINANCE_SHIFT = 0.3;
+
 /**
  * Merge a user's saved palette over a template's defaults. Composition is
  * never user-overridable — that's the template's identity. Contrast is
  * repaired: if the user's text colour fails AA against their background,
  * we fall back to the template's ink rather than shipping unreadable text
  * on someone's business card.
+ *
+ * `surface`/`line` are reconciled against the resolved background too —
+ * six sections (About, TechStack, Experience, Testimonials, Products,
+ * Contact) render directly on `surface`, not `background`, so a stale
+ * light `surface` under a user-chosen dark background would otherwise
+ * silently break readability even though `background`/`ink` look fine.
  */
 export function resolveTheme(
   templateId: string,
@@ -142,15 +155,30 @@ export function resolveTheme(
   const background = palette.backgroundColor || base.colors.background;
   const requestedInk = palette.textColor || base.colors.ink;
   const ink = meetsAA(requestedInk, background) ? requestedInk : base.colors.ink;
-  const inkSoft = meetsAA(base.colors.inkSoft, background)
-    ? base.colors.inkSoft
-    : ink;
+
+  // Has the user's background moved far enough from the template default
+  // that the preset surface/line (tuned for that default) no longer apply?
+  const backgroundShifted =
+    Math.abs(relativeLuminance(background) - relativeLuminance(base.colors.background)) >
+    MATERIAL_LUMINANCE_SHIFT;
+
+  // Derive fresh surface/line from the resolved background — a slight
+  // step toward `ink` — rather than keep the stale template value.
+  const surface = backgroundShifted ? mixHex(background, ink, 0.08) : base.colors.surface;
+  const line = backgroundShifted ? mixHex(background, ink, 0.16) : base.colors.line;
+
+  // inkSoft must clear AA against BOTH background and surface — falling
+  // back to the (already AA-safe) `ink` if either check fails.
+  let inkSoft = meetsAA(base.colors.inkSoft, background) ? base.colors.inkSoft : ink;
+  if (!meetsAA(inkSoft, surface)) inkSoft = ink;
 
   return {
     ...base,
     colors: {
       ...base.colors,
       background,
+      surface,
+      line,
       ink,
       inkSoft,
       accent: palette.primaryColor || base.colors.accent,

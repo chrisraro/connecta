@@ -3,6 +3,7 @@
 import { Fragment, ReactNode } from "react";
 import { ProfileData } from "@/types/profile";
 import { resolveTheme } from "./theme";
+import { resolveSectionSlots, SectionSlotSpec } from "./sectionSlots";
 import { HeroSection } from "./sections/HeroSection";
 import { AboutSection } from "./sections/AboutSection";
 import { CertificationSection } from "./sections/CertificationSection";
@@ -48,42 +49,130 @@ export function ProfileRenderer({ data, templateId }: { data: ProfileData; templ
   // Maps a builder block id to the section(s) it renders. Same shape as the
   // pre-refactor per-template sectionRenderers map — order (and whether an
   // id is present at all) is driven by componentOrder (Frontend audit #1).
-  const sections: Record<string, (i: number) => ReactNode> = {
-    Hero: () => <HeroSection agent={agent} theme={theme} resolvedImages={resolvedImages} />,
-    About: (i) => <AboutSection agent={agent} theme={theme} index={i} />,
-    Certification: (i) =>
-      agent.certification ? <CertificationSection certification={agent.certification} theme={theme} index={i} /> : null,
-    Education: (i) =>
-      agent.education?.length ? <EducationSection education={agent.education} theme={theme} index={i} /> : null,
-    TechStack: (i) =>
-      agent.techStack?.length ? <TechStackSection techStack={agent.techStack} theme={theme} index={i} /> : null,
-    Services: (i) =>
-      agent.services?.length ? <ServicesSection services={agent.services} theme={theme} index={i} /> : null,
-    Experience: (i) =>
-      agent.experience?.length ? <ExperienceSection experience={agent.experience} theme={theme} index={i} /> : null,
-    Projects: (i) => (
-      <Fragment>
-        {inlineProjects?.length ? <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} index={i} /> : null}
-        {projects?.length ? (
-          <ProjectsSection projects={projects} theme={theme} index={i} resolvedImages={resolvedImages} />
-        ) : null}
-      </Fragment>
-    ),
-    Products: (i) => (products?.length ? <ProductsSection products={products} theme={theme} index={i} /> : null),
-    Properties: (i) =>
-      propertyListings?.length ? (
-        <PropertyListingsSection propertyListings={propertyListings} theme={theme} index={i} />
-      ) : null,
-    Testimonials: (i) =>
-      agent.testimonials?.length ? <TestimonialsSection testimonials={agent.testimonials} theme={theme} index={i} /> : null,
-    Gallery: (i) =>
-      agent.gallery?.length ? <GallerySection gallery={agent.gallery} theme={theme} index={i} resolvedImages={resolvedImages} /> : null,
-    Contact: (i) => <ContactSection theme={theme} index={i} ownerId={ownerId} />,
+  //
+  // A single componentOrder id can fan out into more than one rendered slot
+  // (Projects -> inline projects + regular projects). Numbering is resolved
+  // by `resolveSectionSlots` below rather than from componentOrder position,
+  // so a hidden/empty section never leaves a gap in the visible numbered
+  // sequence, an unnumbered section (Hero, Certification — neither ever
+  // displays a number) never offsets it, and sibling slots from the same id
+  // get distinct numbers instead of sharing one (Task 2 review, finding #4).
+  type SlotDef = { hasContent: boolean; numbered?: boolean; render: (index: number) => ReactNode };
+  const slotsById: Record<string, SlotDef[]> = {
+    Hero: [
+      {
+        hasContent: true,
+        numbered: false,
+        render: () => <HeroSection agent={agent} theme={theme} resolvedImages={resolvedImages} />,
+      },
+    ],
+    About: [
+      { hasContent: !!agent.about, render: (i) => <AboutSection agent={agent} theme={theme} index={i} /> },
+    ],
+    Certification: [
+      {
+        hasContent: !!agent.certification,
+        numbered: false,
+        render: (i) =>
+          agent.certification ? (
+            <CertificationSection certification={agent.certification} theme={theme} index={i} />
+          ) : null,
+      },
+    ],
+    Education: [
+      {
+        hasContent: !!agent.education?.length,
+        render: (i) =>
+          agent.education?.length ? <EducationSection education={agent.education} theme={theme} index={i} /> : null,
+      },
+    ],
+    TechStack: [
+      {
+        hasContent: !!agent.techStack?.length,
+        render: (i) =>
+          agent.techStack?.length ? <TechStackSection techStack={agent.techStack} theme={theme} index={i} /> : null,
+      },
+    ],
+    Services: [
+      {
+        hasContent: !!agent.services?.length,
+        render: (i) =>
+          agent.services?.length ? <ServicesSection services={agent.services} theme={theme} index={i} /> : null,
+      },
+    ],
+    Experience: [
+      {
+        hasContent: !!agent.experience?.length,
+        render: (i) =>
+          agent.experience?.length ? <ExperienceSection experience={agent.experience} theme={theme} index={i} /> : null,
+      },
+    ],
+    Projects: [
+      {
+        hasContent: !!inlineProjects?.length,
+        render: (i) =>
+          inlineProjects?.length ? (
+            <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} index={i} />
+          ) : null,
+      },
+      {
+        hasContent: !!projects?.length,
+        render: (i) =>
+          projects?.length ? (
+            <ProjectsSection projects={projects} theme={theme} index={i} resolvedImages={resolvedImages} />
+          ) : null,
+      },
+    ],
+    Products: [
+      {
+        hasContent: !!products?.length,
+        render: (i) => (products?.length ? <ProductsSection products={products} theme={theme} index={i} /> : null),
+      },
+    ],
+    Properties: [
+      {
+        hasContent: !!propertyListings?.length,
+        render: (i) =>
+          propertyListings?.length ? (
+            <PropertyListingsSection propertyListings={propertyListings} theme={theme} index={i} />
+          ) : null,
+      },
+    ],
+    Testimonials: [
+      {
+        hasContent: !!agent.testimonials?.length,
+        render: (i) =>
+          agent.testimonials?.length ? (
+            <TestimonialsSection testimonials={agent.testimonials} theme={theme} index={i} />
+          ) : null,
+      },
+    ],
+    Gallery: [
+      {
+        hasContent: !!agent.gallery?.length,
+        render: (i) =>
+          agent.gallery?.length ? (
+            <GallerySection gallery={agent.gallery} theme={theme} index={i} resolvedImages={resolvedImages} />
+          ) : null,
+      },
+    ],
+    Contact: [{ hasContent: true, render: (i) => <ContactSection theme={theme} index={i} ownerId={ownerId} /> }],
   };
 
   // Legacy profiles saved before componentOrder existed fall back to today's
   // hardcoded order (the Object.keys insertion order above).
-  const order = componentOrder && componentOrder.length > 0 ? componentOrder : Object.keys(sections);
+  const order = componentOrder && componentOrder.length > 0 ? componentOrder : Object.keys(slotsById);
+
+  // Flatten componentOrder into individual slots (Projects -> 2), each
+  // tagged with its position among same-id siblings so it can be matched
+  // back up after resolveSectionSlots filters/numbers them.
+  const flatSlots = order.flatMap((id) =>
+    (slotsById[id] ?? []).map((slot, slotIndex) => ({ id, slotIndex, ...slot }))
+  );
+  const renderByKey = new Map(flatSlots.map((slot) => [`${slot.id}:${slot.slotIndex}`, slot.render]));
+  const resolvedSlots = resolveSectionSlots(
+    flatSlots.map(({ id, hasContent, numbered }): SectionSlotSpec => ({ id, hasContent, numbered }))
+  );
 
   return (
     <div
@@ -94,8 +183,8 @@ export function ProfileRenderer({ data, templateId }: { data: ProfileData; templ
         fontFamily: `var(${theme.fontVars.body})`,
       }}
     >
-      {order.map((id, i) => (
-        <Fragment key={id}>{sections[id]?.(i)}</Fragment>
+      {resolvedSlots.map(({ id, slotIndex, index }) => (
+        <Fragment key={`${id}-${slotIndex}`}>{renderByKey.get(`${id}:${slotIndex}`)?.(index)}</Fragment>
       ))}
       <SaveContactButton agent={agent} theme={theme} />
     </div>

@@ -12,7 +12,7 @@ export const HERALD = {
   domain: "herald.ph",
 } as const;
 
-function parseHex(hex: string): { r: number; g: number; b: number } | null {
+export function parseHex(hex: string): { r: number; g: number; b: number } | null {
   let c = hex.trim().toLowerCase().replace(/^#/, "");
   if (c.length === 3) c = c.split("").map((ch) => ch + ch).join("");
   if (!/^[0-9a-f]{6}$/.test(c)) return null;
@@ -23,7 +23,8 @@ function parseHex(hex: string): { r: number; g: number; b: number } | null {
   };
 }
 
-function relativeLuminance(hex: string): number {
+/** Relative luminance (WCAG 2.1 definition), 0 (black) to 1 (white). */
+export function relativeLuminance(hex: string): number {
   const rgb = parseHex(hex);
   if (!rgb) return 0;
   const toLinear = (v: number) => {
@@ -49,4 +50,14 @@ export function contrastRatio(a: string, b: string): number {
 /** True when fg on bg clears WCAG AA: 4.5:1 normal text, 3:1 large text. */
 export function meetsAA(fg: string, bg: string, large = false): boolean {
   return contrastRatio(fg, bg) >= (large ? 3 : 4.5);
+}
+
+/** Linear-blend two hex colors: `t=0` returns `a`, `t=1` returns `b`. */
+export function mixHex(a: string, b: string, t: number): string {
+  const ca = parseHex(a);
+  const cb = parseHex(b);
+  if (!ca || !cb) return a;
+  const lerp = (x: number, y: number) => Math.round(x + (y - x) * t);
+  const toHex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
+  return `#${toHex(lerp(ca.r, cb.r))}${toHex(lerp(ca.g, cb.g))}${toHex(lerp(ca.b, cb.b))}`;
 }

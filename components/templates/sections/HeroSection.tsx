@@ -140,13 +140,15 @@ function FullBleedPortraitHero({ agent, theme, resolvedImages }: Props) {
   return (
     <section style={{ backgroundColor: theme.colors.background }}>
       <div className="relative w-full aspect-[4/5] md:aspect-[16/9]">
-        <ProfileImage
-          src={agent.avatarUrl}
-          alt={agent.fullName}
-          fallbackSeed={agent.fullName}
-          className="absolute inset-0"
-          resolvedImages={resolvedImages}
-        />
+        <div className="absolute inset-0">
+          <ProfileImage
+            src={agent.avatarUrl}
+            alt={agent.fullName}
+            fallbackSeed={agent.fullName}
+            className="w-full h-full"
+            resolvedImages={resolvedImages}
+          />
+        </div>
         {/* Legibility scrim so the overlaid name/title clear contrast on any photo. */}
         <div
           className="absolute inset-0"

@@ -17,7 +17,7 @@ export function ProjectsSection({
   resolvedImages?: ProfileData["resolvedImages"];
 }) {
   return (
-    <SectionShell theme={theme} index={index} heading="Recent Work">
+    <SectionShell theme={theme} index={index} heading="Recent Work" bleed={theme.composition.imagery === "bleed"}>
       <div className={projectListClass(theme)}>
         {projects.slice(0, 3).map((project, i) => (
           <div

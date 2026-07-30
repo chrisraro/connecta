@@ -13,22 +13,36 @@ import { measureClass, rhythmClass } from "./measure";
  * - rule "none": no divider at all — only background alternation reads.
  * - headingPlacement "beside": heading sits in a narrow column to the left
  *   of the content (a magazine folio), instead of stacked above it.
+ *
+ * `bleed` (only meaningful when headingPlacement is "beside", i.e. only
+ * Editorial): the caller's content uses the `-mx-6` "bleed" imagery classes
+ * from sections/imagery.ts, which cancel exactly the measure container's
+ * own `px-6`. Nesting that inside the beside two-column flex row would only
+ * let it bleed on one side (the row's `gap-4` + the ~80px heading column
+ * eat into the other), producing a lopsided offset instead of a true
+ * edge-to-edge bleed, and risking visual collision with the heading text.
+ * When `bleed` is set, the heading is stacked above full-width content
+ * instead of sitting beside it, so the bleed classes cancel the same
+ * container padding every other layout does.
  */
 export function SectionShell({
   theme,
   index,
   heading,
   surface = false,
+  bleed = false,
   children,
 }: {
   theme: TemplateTheme;
   index: number;
   heading?: string;
   surface?: boolean;
+  bleed?: boolean;
   children: ReactNode;
 }) {
   const { rule, headingPlacement } = theme.composition;
   const background = surface ? theme.colors.surface : theme.colors.background;
+  const besideLayout = headingPlacement === "beside" && !bleed;
 
   const headingNode = heading ? (
     <h2
@@ -59,7 +73,7 @@ export function SectionShell({
       }}
     >
       <div className={`${measureClass(theme)} ${rhythmClass(theme)}`}>
-        {headingPlacement === "beside" && headingNode ? (
+        {besideLayout && headingNode ? (
           <div className="flex flex-row gap-4">
             {headingNode}
             <div className="min-w-0 flex-1">{children}</div>

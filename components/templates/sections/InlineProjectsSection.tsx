@@ -14,7 +14,7 @@ export function InlineProjectsSection({
   index: number;
 }) {
   return (
-    <SectionShell theme={theme} index={index} heading="Projects">
+    <SectionShell theme={theme} index={index} heading="Projects" bleed={theme.composition.imagery === "bleed"}>
       <div className={projectListClass(theme)}>
         {inlineProjects.map((project, i) => (
           <div
