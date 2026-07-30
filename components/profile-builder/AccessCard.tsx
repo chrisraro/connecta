@@ -7,18 +7,21 @@ import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { HERALD } from "@/lib/brand";
+import { profileUrl as buildProfileUrl } from "@/lib/profileUrl";
 
 interface AccessCardProps {
     profileId: string;
+    /** Vanity slug, when known — preferred over `profileId` for the QR target. */
+    profileSlug?: string | null;
     agent: ProfileInfo;
     className?: string;
 }
 
-export function AccessCard({ profileId, agent, className }: AccessCardProps) {
+export function AccessCard({ profileId, profileSlug, agent, className }: AccessCardProps) {
     const [profileUrl, setProfileUrl] = useState("");
     useEffect(() => {
-        setProfileUrl(`${window.location.origin}/p/${profileId}`);
-    }, [profileId]);
+        setProfileUrl(buildProfileUrl(window.location.origin, { _id: profileId, slug: profileSlug }));
+    }, [profileId, profileSlug]);
 
     return (
         <div className={cn(

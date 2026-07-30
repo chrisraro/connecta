@@ -22,6 +22,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { CountUp } from "@/components/ui/count-up";
 import { HERALD } from "@/lib/brand";
+import { TEMPLATES as TEMPLATE_METAS } from "@/components/templates/registry";
 
 export default function LandingPage() {
   return (
@@ -103,7 +104,10 @@ export default function LandingPage() {
               <SmartphoneNfc className="h-4 w-4" aria-hidden="true" />
               NFC + QR digital business cards
             </span>
-            <h1 className="mt-6 text-4xl font-black leading-[1.1] tracking-tighter sm:text-6xl lg:text-7xl">
+            <h1
+              className="mt-6 text-4xl font-black leading-[1.1] tracking-tighter sm:text-6xl lg:text-7xl"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
               <span className="word-rise inline-block" style={{ animationDelay: "120ms" }}>
                 Your{" "}
               </span>
@@ -201,7 +205,7 @@ export default function LandingPage() {
             <StatItem value={<CountUp to={100} suffix="%" />} label="No app for visitors" />
           </Reveal>
           <Reveal delay={160}>
-            <StatItem value={<CountUp to={4} />} label="Premium templates" />
+            <StatItem value={<CountUp to={TEMPLATE_METAS.length} />} label="Premium templates" />
           </Reveal>
           <Reveal delay={240}>
             <StatItem value={<CountUp to={0} prefix="₱" />} label="To get started" />
@@ -476,7 +480,10 @@ function SectionHeading({
       <p className="text-sm font-semibold uppercase tracking-widest text-primary">
         {eyebrow}
       </p>
-      <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+      <h2
+        className="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
         {title}
       </h2>
       {subtitle && (
@@ -573,12 +580,15 @@ function FeatureCard({
   );
 }
 
-const TEMPLATES = [
-  { name: "Editorial", tag: "Creatives & consultants", gradient: "linear-gradient(135deg, #fbf9f4 0%, #f5f3ee 50%, #705838 100%)" },
-  { name: "Kinetic", tag: "Tech & startups", gradient: "linear-gradient(135deg, #0e0e0e 0%, #1a1a1a 50%, #ba9eff 100%)" },
-  { name: "Architectural", tag: "Executives & real estate", gradient: "linear-gradient(135deg, #f7f9fb 0%, #f2f4f6 50%, #00193c 100%)" },
-  { name: "Default", tag: "Everyone, anywhere", gradient: "linear-gradient(135deg, #18181b 0%, #27272a 50%, #facc15 100%)" },
-];
+// Derived from TEMPLATE_THEMES/registry.ts — the single source of truth for
+// template names, colors and positioning — instead of a hand-maintained
+// list that drifts (this previously advertised a deleted 4th template in
+// pre-refactor colors; see components/templates/theme.ts for current colors).
+const TEMPLATES = TEMPLATE_METAS.map((t) => ({
+  name: t.name,
+  tag: t.bestFor.slice(0, 2).join(" & "),
+  gradient: t.thumbnail,
+}));
 
 function TemplateMarquee() {
   // Duplicate the list for a seamless -50% loop.

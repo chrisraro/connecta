@@ -172,6 +172,17 @@ export function resolveTheme(
   let inkSoft = meetsAA(base.colors.inkSoft, background) ? base.colors.inkSoft : ink;
   if (!meetsAA(inkSoft, surface)) inkSoft = ink;
 
+  // accent renders as TEXT (job title in HeroSection, the numbered section
+  // tag in SectionShell) as well as a button background (where
+  // readableTextColor already picks legible text over it, so no check is
+  // needed there). The text usage must clear AA the same way ink/inkSoft
+  // do — against BOTH background and surface — or a user picking a
+  // low-contrast accent (e.g. a pale yellow on a near-white template)
+  // renders their own job title unreadable.
+  const requestedAccent = palette.primaryColor || base.colors.accent;
+  let accent = meetsAA(requestedAccent, background) ? requestedAccent : base.colors.accent;
+  if (!meetsAA(accent, surface)) accent = base.colors.accent;
+
   return {
     ...base,
     colors: {
@@ -181,7 +192,7 @@ export function resolveTheme(
       line,
       ink,
       inkSoft,
-      accent: palette.primaryColor || base.colors.accent,
+      accent,
     },
   };
 }

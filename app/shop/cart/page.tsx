@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { formatPHP } from "@/lib/payment";
+import { DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
 
 const formatPrice = formatPHP;
 
@@ -75,9 +76,9 @@ export default function CartPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (discountResult?.valid) {
-      localStorage.setItem("tapfolio_discount_code", discountResult.code);
+      localStorage.setItem(DISCOUNT_CODE_KEY, discountResult.code);
     } else if (appliedCode && discountResult && !discountResult.valid) {
-      localStorage.removeItem("tapfolio_discount_code");
+      localStorage.removeItem(DISCOUNT_CODE_KEY);
     }
   }, [discountResult, appliedCode]);
 

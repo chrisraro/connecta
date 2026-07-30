@@ -102,6 +102,7 @@ export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string 
                         services={agentInfo.services}
                         about={agentInfo.about}
                         profileId={profileIdForCard}
+                        profileSlug={profile.slug}
                         config={(profile as any).digitalCard}
                     />
                 </div>

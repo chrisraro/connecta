@@ -6,11 +6,42 @@
  * coat of arms that identified them.
  */
 
-export const HERALD = {
-  name: "Herald",
-  tagline: "Announced properly.",
-  domain: "herald.ph",
-} as const;
+const FALLBACK_DOMAIN = "herald.ph";
+
+/** Bare host (no protocol/path) derived from a NEXT_PUBLIC_APP_URL-shaped value. */
+function domainFromAppUrl(raw: string | undefined): string | undefined {
+  const trimmed = raw?.trim();
+  if (!trimmed) return undefined;
+  try {
+    return new URL(trimmed).host;
+  } catch {
+    // Tolerate a bare host with no protocol (e.g. "app.example.com").
+    return trimmed.replace(/^https?:\/\//, "").replace(/\/.*$/, "") || undefined;
+  }
+}
+
+/**
+ * Builds the HERALD brand constant from env, defaulting to the literals
+ * below. `herald.ph` may not be a domain this project actually owns yet, so
+ * every customer-facing surface that used to hardcode it (order-confirmation
+ * emails, the OG image footer) must go through this instead — set
+ * `NEXT_PUBLIC_APP_URL` (already used for payment redirect URLs) and/or
+ * `SUPPORT_EMAIL` to override. Exported as a function (rather than only the
+ * computed constant below) so tests can exercise it against arbitrary env
+ * without reaching for module-reset tricks.
+ */
+export function buildHerald(env: Record<string, string | undefined>) {
+  const domain = domainFromAppUrl(env.NEXT_PUBLIC_APP_URL) || FALLBACK_DOMAIN;
+  const supportEmail = env.SUPPORT_EMAIL?.trim() || `support@${domain}`;
+  return {
+    name: "Herald",
+    tagline: "Announced properly.",
+    domain,
+    supportEmail,
+  };
+}
+
+export const HERALD = buildHerald(typeof process !== "undefined" ? process.env : {});
 
 export function parseHex(hex: string): { r: number; g: number; b: number } | null {
   let c = hex.trim().toLowerCase().replace(/^#/, "");

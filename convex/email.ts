@@ -161,7 +161,7 @@ export const sendOrderConfirmation = internalAction({
                             </table>
                         </div>
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
-                            <p>If you have any questions about your order, please contact us at support@${HERALD.domain}</p>
+                            <p>If you have any questions about your order, please contact us at ${HERALD.supportEmail}</p>
                             <p>&copy; ${new Date().getFullYear()} ${HERALD.name}. All rights reserved.</p>
                         </div>
                     </div>

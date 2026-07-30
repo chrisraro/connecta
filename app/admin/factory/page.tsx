@@ -41,6 +41,19 @@ interface NDEFReadingEvent extends Event {
     serialNumber: string;
 }
 
+// NOTE(herald-rebrand): intentionally NOT renamed — this is the real, live
+// Vercel deployment host that physical NFC tags are written to and that the
+// printed sticker's QR code must resolve to. Changing this string does not
+// move the deployment; it would just point every card at a dead URL — and a
+// brand-name-shaped replacement risks colliding with an unrelated, unowned
+// domain of the same name that is already live elsewhere. Rename only
+// alongside an actual domain/deployment migration. Hoisted to module scope
+// (was previously re-declared as a local inside the NFC write handler, and
+// duplicated as a bare string literal in the print-preview dialog) so every
+// place that needs the production host references the same one value. See
+// lib/brand.test.ts INFRA_EXCEPTIONS, which allowlists exactly this line.
+const PRODUCTION_DOMAIN = "https://tapfolio-beta.vercel.app";
+
 export default function AdminFactoryPage() {
     const { user, isLoaded } = useUser();
     const cardsList = useQuery(api.admin.getCards, user?.id ? { clerkId: user.id } : "skip");
@@ -99,12 +112,6 @@ export default function AdminFactoryPage() {
                     // Write ONLY the URL to the NFC tag
                     // This ensures maximum compatibility across all devices
                     // The vCard download will happen on the profile page when loaded
-                    // NOTE(herald-rebrand): intentionally NOT renamed — this is the real,
-                    // live Vercel deployment host that physical NFC tags are written to.
-                    // Changing this string does not move the deployment; it would just
-                    // point every card at a dead URL. Rename only alongside an actual
-                    // domain/deployment migration. See lib/brand.test.ts INFRA_EXCEPTIONS.
-                    const PRODUCTION_DOMAIN = "https://tapfolio-beta.vercel.app";
                     const url = `${PRODUCTION_DOMAIN}/t/${serialNumber}`;
                     console.log("Writing NDEF URL:", url);
                     
@@ -581,19 +588,16 @@ export default function AdminFactoryPage() {
                             style={{ width: '200px', height: '200px' }}
                         >
                             <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">Herald</div>
-                            
-                            {/* NOTE(herald-rebrand): domain intentionally NOT renamed — see
-                                PRODUCTION_DOMAIN above; this must match the real deployment
-                                the QR code actually resolves to. */}
+
                             <QRCodeSVG
-                                value={`https://tapfolio-beta.vercel.app/t/${selectedCard?.uuid || ""}`}
+                                value={`${PRODUCTION_DOMAIN}/t/${selectedCard?.uuid || ""}`}
                                 size={110}
                                 level="H"
                                 marginSize={1}
                             />
 
                             <div className="mt-2 text-black font-mono text-[9px] text-center px-2 truncate max-w-full">
-                                tapfolio.com/t/{selectedCard?.uuid?.substring(0, 8)}...
+                                {PRODUCTION_DOMAIN.replace(/^https?:\/\//, "")}/t/{selectedCard?.uuid?.substring(0, 8)}...
                             </div>
                         </div>
 

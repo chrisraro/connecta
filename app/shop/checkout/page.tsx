@@ -13,18 +13,19 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatPHP } from "@/lib/payment";
+import { GUEST_CART_ID_KEY, DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
 
 const formatPrice = formatPHP;
 
 // Mirror of the guest id used by CartContext so guest orders find their cart.
 function getGuestId(): string {
   if (typeof window === "undefined") return "";
-  return localStorage.getItem("tapfolio_guest_cart_id") || "";
+  return localStorage.getItem(GUEST_CART_ID_KEY) || "";
 }
 
 function getDiscountCode(): string {
   if (typeof window === "undefined") return "";
-  return localStorage.getItem("tapfolio_discount_code") || "";
+  return localStorage.getItem(DISCOUNT_CODE_KEY) || "";
 }
 
 function CheckoutItemImage({ storageId, alt }: { storageId: string; alt: string }) {
@@ -138,7 +139,7 @@ export default function CheckoutPage() {
 
       // Discount has been consumed into the order; clear the stored code.
       if (typeof window !== "undefined") {
-        localStorage.removeItem("tapfolio_discount_code");
+        localStorage.removeItem(DISCOUNT_CODE_KEY);
       }
 
       const { url } = await createCheckoutSession({

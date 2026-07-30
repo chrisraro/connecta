@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { resolveImageUrl } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { profilePath } from "@/lib/profileUrl";
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -108,7 +109,7 @@ export default function DashboardPage() {
                 <QuickAction href="/dashboard/cards" icon={SmartphoneNfc} label="Activate a card" />
                 <QuickAction href="/dashboard/builder" icon={Edit2} label="Edit profile" />
                 <QuickAction
-                    href={profiles && profiles.length > 0 ? `/p/${profiles[0]._id}` : "/dashboard/profiles"}
+                    href={profiles && profiles.length > 0 ? profilePath(profiles[0]) : "/dashboard/profiles"}
                     icon={ExternalLink}
                     label="View public profile"
                     external={!!(profiles && profiles.length > 0)}
@@ -167,7 +168,7 @@ export default function DashboardPage() {
 
                                 <div className="flex items-center gap-1">
                                     <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors" asChild title="Preview">
-                                        <Link href={`/p/${profile._id}`} target="_blank" aria-label={`Preview ${profile.name}`}>
+                                        <Link href={profilePath(profile)} target="_blank" aria-label={`Preview ${profile.name}`}>
                                             <ExternalLink className="w-4 h-4" />
                                         </Link>
                                     </Button>

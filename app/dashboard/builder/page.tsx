@@ -45,6 +45,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { Id } from "@/convex/_generated/dataModel";
+import { profilePath } from "@/lib/profileUrl";
 import { filterAgentInfoByEnabledBlocks } from "@/lib/profileSections";
 import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
 
@@ -774,7 +775,7 @@ function BuilderContent() {
                 link: p.link || undefined,
             })) : undefined;
 
-            const profileId = await createProfile({
+            const { id: profileId, slug } = await createProfile({
                 id: editingId ? (editingId as Id<"profiles">) : undefined,
                 clerkId: user.id,
                 name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
@@ -801,7 +802,7 @@ function BuilderContent() {
                 digitalCard: digitalCard,
             });
             captureSnapshot();
-            router.push(`/p/${profileId}`);
+            router.push(profilePath({ _id: profileId, slug }));
         } catch (error: any) {
             console.error("Save error:", error);
             alert(`Failed to save: ${error.message || "Unknown error"}`);
@@ -991,6 +992,7 @@ function BuilderContent() {
                                         services={agentInfo.services}
                                         about={agentInfo.about}
                                         profileId={editingId || undefined}
+                                        profileSlug={existingProfile?.slug}
                                         config={digitalCard}
                                         onPositionsChange={(newPos) => setDigitalCard({ ...digitalCard, positions: newPos })}
                                     />

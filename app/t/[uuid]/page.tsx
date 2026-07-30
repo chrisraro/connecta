@@ -5,6 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, use, useRef } from "react";
 import { Loader2, Smartphone } from "lucide-react";
+import { profilePath } from "@/lib/profileUrl";
 
 export default function TapRedirectPage({ params }: { params: Promise<{ uuid: string }> }) {
     const resolvedParams = use(params);
@@ -13,6 +14,13 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
     const card = useQuery(api.cards.getCardByUuid, { uuid });
     const incrementTap = useMutation(api.cards.incrementTapCount);
     const [error, setError] = useState<string | null>(null);
+
+    // Resolve the linked profile so we can redirect to its vanity slug
+    // instead of the bare /p/<id> fallback whenever one is set.
+    const linkedProfile = useQuery(
+        api.profiles.getProfile,
+        card?.linkedProfileId ? { profileId: card.linkedProfileId } : "skip"
+    );
 
     const incrementedRef = useRef(false);
 
@@ -27,14 +35,18 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
                 setError("This card is not available.");
             } else if (!card.linkedProfileId) {
                 setError("This card is activated but not linked to any profile yet.");
-            } else if (!incrementedRef.current) {
-                // Success! Increment count only once
+            } else if (linkedProfile !== undefined && !incrementedRef.current) {
+                // Success! Increment count only once. Wait for the linked
+                // profile query to settle so we redirect to its slug when it
+                // has one, rather than firing immediately on the bare id.
                 incrementedRef.current = true;
                 incrementTap({ cardId: card._id });
-                router.replace(`/p/${card.linkedProfileId}`);
+                router.replace(
+                    profilePath(linkedProfile ?? { _id: card.linkedProfileId, slug: undefined })
+                );
             }
         }
-    }, [card, router, incrementTap, uuid]);
+    }, [card, linkedProfile, router, incrementTap, uuid]);
 
     if (error) {
         return (

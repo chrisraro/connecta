@@ -72,6 +72,26 @@ test("resolveTheme keeps inkSoft readable on surface, not just background, when 
   expect(meetsAA(resolved.colors.inkSoft, resolved.colors.background)).toBe(true);
 });
 
+test("resolveTheme repairs a deliberately-awful user accent that would fail contrast", () => {
+  // #ffe066 (pale yellow) on Editorial's #fbf9f4 (near-white) background is
+  // ~1.3:1 — nowhere near AA. accent is rendered as TEXT (job title in
+  // HeroSection, numbered section tag in SectionShell), so it must be
+  // repaired exactly like ink/inkSoft rather than passed through raw.
+  const resolved = resolveTheme("editorial", {
+    primaryColor: "#ffe066",
+  });
+  expect(meetsAA(resolved.colors.accent, resolved.colors.background)).toBe(true);
+  expect(meetsAA(resolved.colors.accent, resolved.colors.surface)).toBe(true);
+  expect(resolved.colors.accent).toBe(TEMPLATE_THEMES.editorial.colors.accent);
+});
+
+test("resolveTheme keeps a user accent that clears AA against both background and surface", () => {
+  const resolved = resolveTheme("editorial", {
+    primaryColor: "#123456",
+  });
+  expect(resolved.colors.accent).toBe("#123456");
+});
+
 test("resolveTheme still passes the existing default-palette assertions when no palette is given", () => {
   for (const id of TEMPLATE_IDS) {
     const t = TEMPLATE_THEMES[id];

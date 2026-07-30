@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
+import { mutation, query, internalMutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { requireUserMatching } from "./authz";
 import { planContext } from "./billing";
 import { slugify, isReservedSlug } from "../lib/slug";
@@ -242,18 +242,44 @@ export const createProfile = mutation({
             if (!existing || existing.ownerId !== user._id) {
                 throw new Error("Unauthorized or profile not found");
             }
-            // Slug is assigned once, at creation, and never touched on
-            // subsequent edits — a published /<slug> URL must never change
-            // underneath a card that's already printed.
-            await ctx.db.patch(args.id, profileData);
-            return args.id;
+            // Slug is assigned once and never touched again once it exists —
+            // a published /<slug> URL must never change underneath a card
+            // that's already printed. But a LOT of profiles predate the slug
+            // feature entirely (it only ever assigned one in the INSERT
+            // branch above), so any legacy row still missing one gets it
+            // assigned here, the first time it's touched again.
+            const slug = existing.slug ?? (await assignUniqueSlug(ctx, args.name));
+            await ctx.db.patch(args.id, { ...profileData, slug });
+            return { id: args.id, slug };
         }
 
+        const slug = await assignUniqueSlug(ctx, args.name);
         const profileId = await ctx.db.insert("profiles", {
             ...profileData,
-            slug: await assignUniqueSlug(ctx, args.name),
+            slug,
         });
-        return profileId;
+        return { id: profileId, slug };
+    },
+});
+
+/**
+ * One-time (idempotent) backfill for profiles created before the slug
+ * feature existed, or otherwise still missing one. Safe to re-run: any
+ * profile that already has a slug is left untouched, so a second run is a
+ * no-op. Run via `npx convex run profiles:internalBackfillSlugs`.
+ */
+export const internalBackfillSlugs = internalMutation({
+    args: {},
+    handler: async (ctx) => {
+        const profiles = await ctx.db.query("profiles").collect();
+        let backfilled = 0;
+        for (const profile of profiles) {
+            if (profile.slug) continue;
+            const slug = await assignUniqueSlug(ctx, profile.name);
+            await ctx.db.patch(profile._id, { slug });
+            backfilled++;
+        }
+        return { scanned: profiles.length, backfilled };
     },
 });
 

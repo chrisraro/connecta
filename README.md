@@ -32,16 +32,25 @@ Copy `.env.example` to `.env.local` and fill in the values:
 cp .env.example .env.local
 ```
 
-| Variable | Where it comes from | Required for |
-| --- | --- | --- |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → API Keys | Sign-in/sign-up |
-| `CLERK_SECRET_KEY` | Clerk Dashboard → API Keys | Sign-in/sign-up |
-| `NEXT_PUBLIC_APP_URL` | Your app's base URL (`http://localhost:3000` in dev) | Payment redirect/callback URLs |
-| `NEXT_PUBLIC_CONVEX_URL` | Set automatically by `npx convex dev` | Talking to your Convex deployment |
-| `CONVEX_DEPLOYMENT` | Set automatically by `npx convex dev` | Convex CLI/deploy targeting |
-| `RESEND_API_KEY` | Resend Dashboard → API Keys | Lead notification & order confirmation emails |
-| `PAYREX_SECRET_KEY` | PayRex Dashboard → API Keys | Creating checkout sessions (`convex/billing.ts`, `convex/payrex.ts`) |
-| `PAYREX_WEBHOOK_SECRET` | PayRex Dashboard → Webhooks | Verifying webhook signatures (`convex/http.ts`) |
+**These two runtimes are separate and do not share environment variables.**
+Next.js (this repo's `app/`, deployed to Vercel) reads `.env.local` / the
+Vercel project's env settings. Convex (`convex/*.ts` — actions and mutations,
+run in Convex's own sandboxed backend) reads only what you push with
+`npx convex env set`. Setting a Convex-runtime variable in Vercel does
+nothing for that code, and vice versa — see the "Convex runtime" column
+below for which command actually sets each one.
+
+| Variable | Where it comes from | Required for | Set with |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → API Keys | Sign-in/sign-up | Next.js/Vercel env |
+| `CLERK_SECRET_KEY` | Clerk Dashboard → API Keys | Sign-in/sign-up | Next.js/Vercel env |
+| `NEXT_PUBLIC_APP_URL` | Your app's base URL (`http://localhost:3000` in dev) | Payment redirect/callback URLs, `metadataBase`, `lib/brand.ts`'s domain | Next.js/Vercel env |
+| `SUPPORT_EMAIL` | Your real support inbox | Order-confirmation email footer (`convex/email.ts`) — optional, falls back to `support@<NEXT_PUBLIC_APP_URL host>` | **`npx convex env set`** (read inside `convex/email.ts`, not by Next.js) |
+| `NEXT_PUBLIC_CONVEX_URL` | Set automatically by `npx convex dev` | Talking to your Convex deployment | Next.js/Vercel env |
+| `CONVEX_DEPLOYMENT` | Set automatically by `npx convex dev` | Convex CLI/deploy targeting | Next.js/Vercel env |
+| `RESEND_API_KEY` | Resend Dashboard → API Keys | Lead notification & order confirmation emails | **`npx convex env set`** |
+| `PAYREX_SECRET_KEY` | PayRex Dashboard → API Keys | Creating checkout sessions (`convex/billing.ts`, `convex/payrex.ts`) | **`npx convex env set`** |
+| `PAYREX_WEBHOOK_SECRET` | PayRex Dashboard → Webhooks | Verifying webhook signatures (`convex/http.ts`) | **`npx convex env set`** |
 
 Without `RESEND_API_KEY` set, email sends are skipped (a warning is logged)
 rather than failing. Without the `PAYREX_*` vars, billing/checkout actions
@@ -84,21 +93,42 @@ npm run lint
 
 ## Deploying
 
+Two separate places need env vars — see the table above for which var goes
+where. In short: `RESEND_API_KEY` and the `PAYREX_*` secrets are Convex-runtime
+vars pushed with `npx convex env set ... --prod`; everything else
+(`NEXT_PUBLIC_*`, `CLERK_SECRET_KEY`) is a Next.js/Vercel var configured in
+the Vercel project settings. Putting the Convex ones in Vercel instead is a
+deploy that silently ships with email and checkout both as no-ops.
+
 1. **Convex**: run `npx convex deploy` to push your schema/functions to a
    production Convex deployment, and note the production `NEXT_PUBLIC_CONVEX_URL`
-   / `CONVEX_DEPLOYMENT` it prints.
+   / `CONVEX_DEPLOYMENT` it prints. Then push the Convex-runtime secrets to
+   that same production deployment:
+   ```bash
+   npx convex env set RESEND_API_KEY <value> --prod
+   npx convex env set PAYREX_SECRET_KEY <value> --prod
+   npx convex env set PAYREX_WEBHOOK_SECRET <value> --prod
+   npx convex env set SUPPORT_EMAIL <value> --prod   # optional
+   ```
+   If this deploy is the first one to ship vanity-slug profile URLs, also
+   run the one-time (idempotent, safe to re-run) backfill so profiles created
+   before the feature existed get a slug:
+   ```bash
+   npx convex run profiles:internalBackfillSlugs --prod
+   ```
 2. **Clerk**: switch to a production Clerk instance and update the
-   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` env vars
-   accordingly.
+   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` Next.js/Vercel env
+   vars accordingly.
 3. **Resend**: verify a real sending domain in the Resend dashboard, then
    update the `from:` addresses in `convex/email.ts` to use it (see the
    `TODO(ops)` comments there).
 4. **PayRex**: use your live `PAYREX_SECRET_KEY` and register the production
    webhook endpoint — `https://<your-convex-deployment>.convex.site/webhooks/payrex`
    (see `convex/http.ts`) — to get a live `PAYREX_WEBHOOK_SECRET`.
-5. Deploy the Next.js app (e.g. to [Vercel](https://vercel.com)) with all of
-   the above environment variables configured, plus `NEXT_PUBLIC_APP_URL` set
-   to your production URL.
+5. Deploy the Next.js app (e.g. to [Vercel](https://vercel.com)) with the
+   Next.js/Vercel env vars from the table above configured — `NEXT_PUBLIC_APP_URL`
+   set to your production URL, plus the Clerk and Convex-URL vars. Do **not**
+   put `RESEND_API_KEY` / `PAYREX_*` here; they belong to Convex, set in step 1.
 
 ## Project structure
 

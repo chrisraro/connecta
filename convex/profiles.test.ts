@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 test("getProfile resolves storage-id avatar and gallery images into resolvedImages", async () => {
   const t = convexTest(schema);
@@ -94,7 +94,7 @@ test("createProfile assigns a unique slug derived from the profile name", async 
     });
   });
 
-  const id = await asUser.mutation(api.profiles.createProfile, {
+  const { id } = await asUser.mutation(api.profiles.createProfile, {
     clerkId: "slug_user_1",
     name: "Christian Raro",
     agentInfo: {
@@ -124,8 +124,8 @@ test("a second profile with the same name gets a distinct slug", async () => {
       });
     });
   }
-  const mk = (clerkId: string) =>
-    t.withIdentity({ subject: clerkId }).mutation(api.profiles.createProfile, {
+  const mk = async (clerkId: string) => {
+    const { id } = await t.withIdentity({ subject: clerkId }).mutation(api.profiles.createProfile, {
       clerkId,
       name: "Same Name",
       agentInfo: {
@@ -139,6 +139,8 @@ test("a second profile with the same name gets a distinct slug", async () => {
       },
       featuredProperties: [],
     });
+    return id;
+  };
 
   const a = await mk("dup_user_1");
   const b = await mk("dup_user_2");
@@ -157,7 +159,7 @@ test("getProfileBySlug resolves the same profile as getProfile", async () => {
       subscriptionStatus: "active", plan: "free",
     });
   });
-  const id = await asUser.mutation(api.profiles.createProfile, {
+  const { id } = await asUser.mutation(api.profiles.createProfile, {
     clerkId: "bs_user",
     name: "Bridget Solano",
     agentInfo: {
@@ -174,4 +176,143 @@ test("getProfileBySlug resolves the same profile as getProfile", async () => {
   const profile = await t.run(async (ctx) => ctx.db.get(id));
   const bySlug = await t.query(api.profiles.getProfileBySlug, { slug: profile!.slug! });
   expect(bySlug?._id).toBe(id);
+});
+
+test("createProfile UPDATE assigns a slug to a legacy profile that has none", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "legacy_user" });
+  const profileId = await t.run(async (ctx) => {
+    const ownerId = await ctx.db.insert("users", {
+      email: "legacy@test.dev", clerkId: "legacy_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+    // Simulate a pre-slug-feature row: inserted directly, bypassing
+    // createProfile, so it has no `slug` — exactly like every profile that
+    // existed before this feature shipped.
+    return await ctx.db.insert("profiles", {
+      ownerId,
+      name: "Legacy Profile",
+      agentInfo: {
+        fullName: "Legacy Person", title: "Agent", company: "Old Co",
+        phone: "0917", email: "legacy@old.dev", services: [], socialLinks: [],
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+        componentOrder: ["Hero"], heroStyle: "default",
+      },
+      featuredProperties: [],
+    });
+  });
+
+  const before = await t.run(async (ctx) => ctx.db.get(profileId));
+  expect(before?.slug).toBeUndefined();
+
+  const result = await asUser.mutation(api.profiles.createProfile, {
+    id: profileId,
+    clerkId: "legacy_user",
+    name: "Legacy Profile",
+    agentInfo: {
+      fullName: "Legacy Person", title: "Agent", company: "Old Co",
+      phone: "0917", email: "legacy@old.dev", services: [], socialLinks: [],
+    },
+    layoutConfig: {
+      themeId: "editorial",
+      colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+      componentOrder: ["Hero"], heroStyle: "default",
+    },
+    featuredProperties: [],
+  });
+
+  expect(result.slug).toBeDefined();
+  const after = await t.run(async (ctx) => ctx.db.get(profileId));
+  expect(after?.slug).toBe(result.slug);
+});
+
+test("createProfile UPDATE never changes a slug that already exists", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "stable_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "stable@test.dev", clerkId: "stable_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const created = await asUser.mutation(api.profiles.createProfile, {
+    clerkId: "stable_user",
+    name: "Stable Name",
+    agentInfo: {
+      fullName: "Stable Name", title: "T", company: "C",
+      phone: "0917", email: "stable@test.dev", services: [], socialLinks: [],
+    },
+    layoutConfig: {
+      themeId: "editorial",
+      colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+      componentOrder: ["Hero"], heroStyle: "default",
+    },
+    featuredProperties: [],
+  });
+  const originalSlug = created.slug;
+  expect(originalSlug).toBeDefined();
+
+  // A published /<slug> URL may already be printed on a physical card — an
+  // edit must never move it, even when the profile's name changes (which
+  // would otherwise produce a different slugify() result).
+  const updated = await asUser.mutation(api.profiles.createProfile, {
+    id: created.id,
+    clerkId: "stable_user",
+    name: "A Totally Different Name",
+    agentInfo: {
+      fullName: "A Totally Different Name", title: "T", company: "C",
+      phone: "0917", email: "stable@test.dev", services: [], socialLinks: [],
+    },
+    layoutConfig: {
+      themeId: "editorial",
+      colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+      componentOrder: ["Hero"], heroStyle: "default",
+    },
+    featuredProperties: [],
+  });
+
+  expect(updated.slug).toBe(originalSlug);
+  const profile = await t.run(async (ctx) => ctx.db.get(created.id));
+  expect(profile?.slug).toBe(originalSlug);
+});
+
+test("internalBackfillSlugs assigns a slug to a slugless profile and is a no-op on the second run", async () => {
+  const t = convexTest(schema);
+  const profileId = await t.run(async (ctx) => {
+    const ownerId = await ctx.db.insert("users", {
+      email: "backfill@test.dev", clerkId: "backfill_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+    return await ctx.db.insert("profiles", {
+      ownerId,
+      name: "Needs A Slug",
+      agentInfo: {
+        fullName: "Needs A Slug", title: "Agent", company: "Old Co",
+        phone: "0917", email: "needs@old.dev", services: [], socialLinks: [],
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+        componentOrder: ["Hero"], heroStyle: "default",
+      },
+      featuredProperties: [],
+    });
+  });
+
+  const firstRun = await t.mutation(internal.profiles.internalBackfillSlugs, {});
+  expect(firstRun.backfilled).toBe(1);
+
+  const afterFirst = await t.run(async (ctx) => ctx.db.get(profileId));
+  expect(afterFirst?.slug).toBeDefined();
+  expect(afterFirst?.slug).toMatch(/^needs-a-slug/);
+
+  const secondRun = await t.mutation(internal.profiles.internalBackfillSlugs, {});
+  expect(secondRun.backfilled).toBe(0);
+
+  const afterSecond = await t.run(async (ctx) => ctx.db.get(profileId));
+  expect(afterSecond?.slug).toBe(afterFirst?.slug);
 });

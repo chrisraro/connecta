@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Phone, Mail, Briefcase, Sparkles, GripHorizontal } from "lucide-react";
 import { DigitalCardConfig } from "@/types/profile";
 import { HERALD } from "@/lib/brand";
+import { profileUrl } from "@/lib/profileUrl";
 
 interface DigitalBusinessCardProps {
     fullName: string;
@@ -17,6 +18,8 @@ interface DigitalBusinessCardProps {
     services?: string[];
     about?: string;
     profileId?: string;
+    /** Vanity slug, when known — preferred over `profileId` for the QR target. */
+    profileSlug?: string | null;
     config?: Partial<DigitalCardConfig>;
     onPositionsChange?: (positions: any) => void;
 }
@@ -39,6 +42,7 @@ export function DigitalBusinessCard({
     services = [],
     about,
     profileId,
+    profileSlug,
     config,
     onPositionsChange,
 }: DigitalBusinessCardProps) {
@@ -49,10 +53,10 @@ export function DigitalBusinessCard({
     useEffect(() => {
         if (typeof window !== "undefined") {
             const host = window.location.origin;
-            const targetUrl = profileId ? `${host}/p/${profileId}` : `${host}`;
+            const targetUrl = profileId ? profileUrl(host, { _id: profileId, slug: profileSlug }) : host;
             setQrUrl(targetUrl);
         }
-    }, [profileId]);
+    }, [profileId, profileSlug]);
 
     // Defaults
     const activeTheme = config?.theme || "dark";
