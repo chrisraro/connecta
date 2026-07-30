@@ -43,6 +43,7 @@ import {
 } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { EditableList, type FieldDef } from "@/components/profile-builder/EditableList";
+import { InspectorPanel } from "@/components/profile-builder/InspectorPanel";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { Id } from "@/convex/_generated/dataModel";
@@ -206,10 +207,11 @@ function GalleryUploader({
                             className="w-full h-full object-cover"
                         />
                         <button
-                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white shadow-md"
+                            aria-label={`Remove gallery image ${i + 1}`}
+                            className="absolute -top-1 -right-1 flex size-11 items-center justify-center rounded-full bg-red-500 text-white shadow-md"
                             onClick={() => onRemove(i)}
                         >
-                            <X className="w-3 h-3" />
+                            <X className="w-3.5 h-3.5" />
                         </button>
                     </div>
                 ))}
@@ -264,7 +266,12 @@ function SortableBlockItem({ block, onToggle }: { block: Block; onToggle: (id: s
             style={style}
             className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border shadow-sm"
         >
-            <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
+            <div
+                {...attributes}
+                {...listeners}
+                aria-label={`Reorder ${block.label}`}
+                className="flex size-11 shrink-0 cursor-grab items-center justify-center text-muted-foreground hover:text-foreground"
+            >
                 <GripVertical className="w-4 h-4" />
             </div>
             <Icon className="w-4 h-4 text-muted-foreground" />
@@ -317,45 +324,6 @@ function TemplateSelector({
                         )}
                     </button>
                 ))}
-            </div>
-        </div>
-    );
-}
-
-// --- Section Editor Modal ---
-
-function SectionEditor({
-    isOpen,
-    onClose,
-    title,
-    children,
-    onSave
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    title: string;
-    children: React.ReactNode;
-    onSave?: () => void;
-}) {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[60] bg-background">
-            <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between gap-3 p-4 border-b bg-background">
-                    <div className="flex items-center gap-3">
-                        <button onClick={onClose} className="p-2 -ml-2 hover:bg-muted rounded-full">
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <h2 className="font-semibold text-foreground">{title}</h2>
-                    </div>
-                    <Button size="sm" onClick={onSave || onClose} className="bg-primary text-primary-foreground">
-                        <Save className="w-4 h-4 mr-2" /> Done
-                    </Button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 bg-background">
-                    {children}
-                </div>
             </div>
         </div>
     );
@@ -705,6 +673,53 @@ function BuilderContent() {
         }
     }, [selectedTemplate, editingId]);
 
+    // Manual "sticky" preview (desktop only — see the long comment at the
+    // render site for why CSS `position: sticky` doesn't work in this
+    // dashboard shell). `previewSpacerRef` is the in-flow placeholder that
+    // reserves the column's box; `previewContentRef` is the visible preview
+    // that gets pinned with `position: fixed` once the placeholder's top
+    // has scrolled above the header.
+    const previewSpacerRef = useRef<HTMLDivElement>(null);
+    const previewContentRef = useRef<HTMLDivElement>(null);
+    const [isPreviewPinned, setIsPreviewPinned] = useState(false);
+    const [pinnedGeometry, setPinnedGeometry] = useState<{ left: number; width: number; height: number } | null>(null);
+
+    useEffect(() => {
+        const HEADER_OFFSET = 96; // matches the fixed `top` applied while pinned
+        const desktopQuery = window.matchMedia("(min-width: 1024px)");
+        let rafId: number | null = null;
+
+        const measure = () => {
+            if (!desktopQuery.matches || !previewSpacerRef.current) {
+                setIsPreviewPinned(false);
+                return;
+            }
+            const rect = previewSpacerRef.current.getBoundingClientRect();
+            const contentHeight = previewContentRef.current?.offsetHeight ?? rect.height;
+            setIsPreviewPinned(rect.top <= HEADER_OFFSET);
+            setPinnedGeometry({ left: rect.left, width: rect.width, height: contentHeight });
+        };
+
+        const scheduleMeasure = () => {
+            if (rafId !== null) return;
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                measure();
+            });
+        };
+
+        measure();
+        window.addEventListener("scroll", scheduleMeasure, { passive: true });
+        window.addEventListener("resize", scheduleMeasure);
+        desktopQuery.addEventListener("change", measure);
+        return () => {
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            window.removeEventListener("scroll", scheduleMeasure);
+            window.removeEventListener("resize", scheduleMeasure);
+            desktopQuery.removeEventListener("change", measure);
+        };
+    }, []);
+
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -980,7 +995,7 @@ function BuilderContent() {
             
             {/* Header */}
             <header className="sticky top-0 z-40 bg-background border-b border-border px-4 py-3">
-                <div className="max-w-lg mx-auto flex items-center justify-between">
+                <div className="mx-auto flex w-full max-w-lg items-center justify-between lg:max-w-6xl">
                     <button
                         onClick={() => {
                             if (isDirty() && !window.confirm("You have unsaved changes. Leave without saving?")) {
@@ -988,7 +1003,8 @@ function BuilderContent() {
                             }
                             router.back();
                         }}
-                        className="p-2 -ml-2 hover:bg-muted rounded-full text-foreground"
+                        aria-label="Back"
+                        className="flex size-11 -ml-2 items-center justify-center hover:bg-muted rounded-full text-foreground"
                     >
                         <ChevronLeft className="w-5 h-5" />
                     </button>
@@ -1006,9 +1022,28 @@ function BuilderContent() {
                 </div>
             </header>
 
-            <div className="max-w-lg mx-auto pb-8">
+            <div className="mx-auto w-full max-w-lg pb-8 lg:max-w-6xl lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-8 lg:items-start">
+              {/* Preview column — stays visible & in view while the controls
+                  column (rendered alongside it at lg:) scrolls independently.
+                  `position: sticky` doesn't work here: the dashboard shell's
+                  <main className="overflow-y-auto"> (app/dashboard/layout.tsx)
+                  is a non-scrolling scroll-container (it never actually
+                  overflows, the window does), and per spec that still makes
+                  it the nearest scrolling ancestor for sticky's containing
+                  block — so a CSS-only sticky element inside it is inert.
+                  `previewPinned` reimplements the same behavior with a
+                  scroll listener: `previewSpacerRef` is a normal in-flow
+                  placeholder (it reserves the column's width/height); once
+                  its top scrolls above the header, the visible content
+                  switches to `position: fixed` at the same left/width. */}
+              <div ref={previewSpacerRef} style={isPreviewPinned && pinnedGeometry ? { height: pinnedGeometry.height } : undefined}>
+              <div
+                ref={previewContentRef}
+                className={isPreviewPinned ? "fixed z-30" : undefined}
+                style={isPreviewPinned && pinnedGeometry ? { top: 96, left: pinnedGeometry.left, width: pinnedGeometry.width } : undefined}
+              >
                 {/* Preview Switcher */}
-                <div className="px-4 pt-4 pb-2">
+                <div className="px-4 pt-4 pb-2 lg:px-0">
                     <div className="flex bg-muted p-1 rounded-xl">
                         <button
                             onClick={() => setPreviewMode("page")}
@@ -1034,11 +1069,13 @@ function BuilderContent() {
                 </div>
 
                 {/* Phone Preview */}
-                <div className="p-4">
-                    <div className="bg-gray-900 rounded-[2.5rem] p-3 shadow-2xl">
+                <div className="p-4 lg:px-0">
+                    <div
+                        className="bg-gray-900 rounded-[var(--r-lg)] p-3"
+                        style={{ boxShadow: "var(--e-overlay)" }}
+                    >
                         <div
-                            className="rounded-[2rem] overflow-hidden bg-white"
-                            style={{ maxHeight: "520px", overflowY: "auto" }}
+                            className="rounded-[var(--r-lg)] overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-8rem)]"
                         >
                             {previewMode === "card" ? (
                                 <div className="p-4 flex justify-center bg-neutral-900/5 min-h-[320px] items-center">
@@ -1064,7 +1101,11 @@ function BuilderContent() {
                         </div>
                     </div>
                 </div>
+              </div>
+              </div>
 
+              {/* Controls column */}
+              <div>
                 {/* Profile Page Configs */}
                 {previewMode === "page" && (
                     <>
@@ -1135,12 +1176,20 @@ function BuilderContent() {
                                             ) : (
                                                 <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">Hidden</span>
                                             )}
-                                            <button
-                                                onClick={() => setActiveModal(block.id)}
-                                                className="text-sm text-primary font-medium"
-                                            >
-                                                Edit
-                                            </button>
+                                            {/* The Contact block renders a static lead-capture form
+                                                (see components/templates/sections/ContactSection.tsx)
+                                                with no configurable content — there is nothing an
+                                                editor could change, so no Edit affordance is shown
+                                                for it (previously it opened a modal for an
+                                                activeModal value no editor matched, a dead click). */}
+                                            {block.id !== "Contact" && (
+                                                <button
+                                                    onClick={() => setActiveModal(block.id)}
+                                                    className="min-h-11 px-1 text-sm text-primary font-medium"
+                                                >
+                                                    Edit
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -1148,6 +1197,518 @@ function BuilderContent() {
                         </div>
                     )}
                 </div>
+
+                {/* Section Editor Modals */}
+                <InspectorPanel
+                    isOpen={activeModal === "Hero"}
+                onClose={() => setActiveModal(null)}
+                title="Hero Section"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <Label className="text-sm">Full Name</Label>
+                        <Input
+                            value={agentInfo.fullName}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, fullName: e.target.value })}
+                            placeholder="John Doe"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Title</Label>
+                        <Input
+                            value={agentInfo.title}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, title: e.target.value })}
+                            placeholder="Software Engineer"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Company</Label>
+                        <Input
+                            value={agentInfo.company}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, company: e.target.value })}
+                            placeholder="Company Name"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Profile Picture</Label>
+                        <ImageUploader
+                            value={agentInfo.avatarUrl || ""}
+                            onChange={(val) => setAgentInfo({ ...agentInfo, avatarUrl: val })}
+                            onRemove={() => setAgentInfo({ ...agentInfo, avatarUrl: "" })}
+                            placeholder="Upload Photo"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Phone</Label>
+                        <Input
+                            value={agentInfo.phone}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, phone: e.target.value })}
+                            placeholder="+1 234 567 890"
+                        />
+                        {/* Additional Phones */}
+                        <div className="space-y-1.5 mt-2">
+                            {additionalPhones.map((ph, idx) => (
+                                <div key={`add-phone-${idx}`} className="flex items-center gap-2">
+                                    <Input
+                                        value={ph}
+                                        onChange={(e) => {
+                                            const newPhs = [...additionalPhones];
+                                            newPhs[idx] = e.target.value;
+                                            setAdditionalPhones(newPhs);
+                                        }}
+                                        className="text-xs flex-1"
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-label={`Remove phone number ${idx + 1}`}
+                                        onClick={() => setAdditionalPhones(additionalPhones.filter((_, i) => i !== idx))}
+                                        className="flex size-11 shrink-0 items-center justify-center text-red-500 hover:text-red-600"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setAdditionalPhones([...additionalPhones, ""])}
+                                className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+                            >
+                                <Plus className="w-3 h-3" /> Add phone number
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <Label className="text-sm">Email</Label>
+                        <Input
+                            type="email"
+                            value={agentInfo.email}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, email: e.target.value })}
+                            placeholder="john@example.com"
+                        />
+                        {/* Additional Emails */}
+                        <div className="space-y-1.5 mt-2">
+                            {additionalEmails.map((em, idx) => (
+                                <div key={`add-email-${idx}`} className="flex items-center gap-2">
+                                    <Input
+                                        type="email"
+                                        value={em}
+                                        onChange={(e) => {
+                                            const newEms = [...additionalEmails];
+                                            newEms[idx] = e.target.value;
+                                            setAdditionalEmails(newEms);
+                                        }}
+                                        className="text-xs flex-1"
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-label={`Remove email address ${idx + 1}`}
+                                        onClick={() => setAdditionalEmails(additionalEmails.filter((_, i) => i !== idx))}
+                                        className="flex size-11 shrink-0 items-center justify-center text-red-500 hover:text-red-600"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setAdditionalEmails([...additionalEmails, ""])}
+                                className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+                            >
+                                <Plus className="w-3 h-3" /> Add email address
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <Label className="text-sm">Website</Label>
+                        <Input
+                            value={agentInfo.website || ""}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, website: e.target.value })}
+                            placeholder="https://example.com"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Social Links</Label>
+                        <div className="space-y-2 mt-2">
+                            {agentInfo.socialLinks?.map((link, idx) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                                    <span className="text-sm flex-1 text-foreground">{link.platform}: {link.url}</span>
+                                    <button
+                                        aria-label={`Remove ${link.platform} link`}
+                                        onClick={() => {
+                                            const newLinks = [...agentInfo.socialLinks];
+                                            newLinks.splice(idx, 1);
+                                            setAgentInfo({ ...agentInfo, socialLinks: newLinks });
+                                        }}
+                                        className="flex size-11 shrink-0 items-center justify-center text-red-500"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                            <div className="flex gap-2">
+                                <select
+                                    id="social-platform"
+                                    className="flex-1 h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                                >
+                                    <option value="Instagram">Instagram</option>
+                                    <option value="Facebook">Facebook</option>
+                                    <option value="LinkedIn">LinkedIn</option>
+                                    <option value="Twitter">Twitter</option>
+                                    <option value="TikTok">TikTok</option>
+                                    <option value="YouTube">YouTube</option>
+                                    <option value="Website">Website</option>
+                                </select>
+                                <Input
+                                    id="social-url"
+                                    placeholder="URL or username"
+                                    className="flex-[2]"
+                                />
+                                <Button
+                                    size="sm"
+                                    aria-label="Add social link"
+                                    onClick={() => {
+                                        const platform = (document.getElementById('social-platform') as HTMLSelectElement).value;
+                                        const url = (document.getElementById('social-url') as HTMLInputElement).value;
+                                        if (platform && url) {
+                                            setAgentInfo({
+                                                ...agentInfo,
+                                                socialLinks: [...(agentInfo.socialLinks || []), { platform, url }]
+                                            });
+                                            (document.getElementById('social-url') as HTMLInputElement).value = '';
+                                        }
+                                    }}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </InspectorPanel>
+
+            <InspectorPanel
+                isOpen={activeModal === "About"}
+                onClose={() => setActiveModal(null)}
+                title="About Section"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <Label className="text-sm">About Me</Label>
+                        <textarea
+                            className="w-full min-h-[150px] mt-1 p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                            placeholder="Tell your story..."
+                            value={agentInfo.about || ""}
+                            onChange={(e) => setAgentInfo({ ...agentInfo, about: e.target.value })}
+                        />
+                    </div>
+                </div>
+            </InspectorPanel>
+
+            <InspectorPanel
+                isOpen={activeModal === "Services"}
+                onClose={() => setActiveModal(null)}
+                title="Services"
+            >
+                <div className="space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                        {agentInfo.services?.map((service, i) => (
+                            <span
+                                key={i}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm"
+                            >
+                                {service}
+                                <button
+                                    aria-label={`Remove ${service} service`}
+                                    onClick={() => setAgentInfo({
+                                        ...agentInfo,
+                                        services: agentInfo.services?.filter((_, idx) => idx !== i)
+                                    })}
+                                    className="ml-1"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                        <Input
+                            id="new-service"
+                            placeholder="Add a service (e.g., Web Design)"
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const input = e.target as HTMLInputElement;
+                                    if (input.value.trim()) {
+                                        setAgentInfo({
+                                            ...agentInfo,
+                                            services: [...(agentInfo.services || []), input.value.trim()]
+                                        });
+                                        input.value = "";
+                                    }
+                                }
+                            }}
+                        />
+                        <Button
+                            aria-label="Add service"
+                            onClick={() => {
+                                const input = document.getElementById('new-service') as HTMLInputElement;
+                                if (input.value.trim()) {
+                                    setAgentInfo({
+                                        ...agentInfo,
+                                        services: [...(agentInfo.services || []), input.value.trim()]
+                                    });
+                                    input.value = "";
+                                }
+                            }}
+                        >
+                            <Plus className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+            </InspectorPanel>
+
+            <InspectorPanel
+                isOpen={activeModal === "Certification"}
+                onClose={() => setActiveModal(null)}
+                title="Certification"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <Label className="text-sm">Title</Label>
+                        <Input
+                            value={certification.title}
+                            onChange={(e) => setCertification({ ...certification, title: e.target.value })}
+                            placeholder="e.g., Certified Software Engineer"
+                        />
+                    </div>
+                    <div>
+                        <Label className="text-sm">Description</Label>
+                        <textarea
+                            className="w-full min-h-[100px] mt-1 p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                            value={certification.description}
+                            onChange={(e) => setCertification({ ...certification, description: e.target.value })}
+                            placeholder="Description..."
+                        />
+                    </div>
+                </div>
+            </InspectorPanel>
+
+            <InspectorPanel
+                isOpen={activeModal === "Education"}
+                onClose={() => setActiveModal(null)}
+                title="Education"
+            >
+                <EditableList<EducationItem>
+                    items={education}
+                    fields={EDUCATION_FIELDS}
+                    onChange={setEducation}
+                    itemLabel="education entry"
+                    onAdd={addEducation}
+                    addLabel="Add Education"
+                    emptyHint="No education entries yet."
+                >
+                    <Input placeholder="Degree" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
+                    <Input placeholder="School" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
+                    <Input placeholder="Year" value={newEducation.year} onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })} />
+                </EditableList>
+            </InspectorPanel>
+
+            <InspectorPanel
+                isOpen={activeModal === "TechStack"}
+                onClose={() => setActiveModal(null)}
+                title="Tech Stack"
+            >
+                <EditableList<TechStackDisplayItem>
+                    items={techStack.map((stack) => ({ category: stack.category, skills: stack.skills.join(", ") }))}
+                    fields={TECH_STACK_FIELDS}
+                    onChange={(next) =>
+                        setTechStack(
+                            next.map((stack) => ({
+                                category: stack.category,
+                                skills: stack.skills.split(",").map((s) => s.trim()).filter(Boolean),
+                            }))
+                        )
+                    }
+                    itemLabel="tech stack category"
+                    onAdd={addTechStack}
+                    addLabel="Add Category"
+                    emptyHint="No tech stack categories yet."
+                >
+                    <Input placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })} />
+                    <Input placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })} />
+                </EditableList>
+            </InspectorPanel>
+
+            <InspectorPanel
+                isOpen={activeModal === "Experience"}
+                onClose={() => setActiveModal(null)}
+                title="Experience"
+            >
+                <EditableList<ExperienceItem>
+                    items={experience}
+                    fields={EXPERIENCE_FIELDS}
+                    onChange={setExperience}
+                    itemLabel="experience entry"
+                    onAdd={addExperience}
+                    addLabel="Add Experience"
+                    emptyHint="No experience entries yet."
+                >
+                    <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
+                    <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
+                    <Input placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })} />
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Description"
+                        value={newExperience.description}
+                        onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                    />
+                </EditableList>
+            </InspectorPanel>
+
+            {/* Projects Section Editor */}
+            <InspectorPanel
+                isOpen={activeModal === "Projects"}
+                onClose={() => setActiveModal(null)}
+                title="Projects"
+            >
+                <EditableList<InlineProject>
+                    items={inlineProjects}
+                    fields={INLINE_PROJECT_FIELDS}
+                    onChange={setInlineProjects}
+                    itemLabel="project"
+                    onAdd={addInlineProject}
+                    addLabel="Add Project"
+                    emptyHint="No projects yet."
+                >
+                    <Label className="text-xs text-muted-foreground">Add New Project</Label>
+                    <Input placeholder="Project Title" value={newInlineProject.title} onChange={(e) => setNewInlineProject({ ...newInlineProject, title: e.target.value })} />
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Short description"
+                        value={newInlineProject.description}
+                        onChange={(e) => setNewInlineProject({ ...newInlineProject, description: e.target.value })}
+                    />
+                    <select
+                        value={newInlineProject.category}
+                        onChange={(e) => setNewInlineProject({ ...newInlineProject, category: e.target.value })}
+                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                    >
+                        <option value="">Select Category</option>
+                        {Object.entries(PROJECT_CATEGORY_LABELS).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                        ))}
+                    </select>
+                    <Input placeholder="External URL (optional)" value={newInlineProject.link} onChange={(e) => setNewInlineProject({ ...newInlineProject, link: e.target.value })} />
+                </EditableList>
+            </InspectorPanel>
+
+            {/* Products / Store Listing Editor */}
+            <InspectorPanel
+                isOpen={activeModal === "Products"}
+                onClose={() => setActiveModal(null)}
+                title="Store / Business Listing"
+            >
+                <EditableList<ProductItem>
+                    items={products}
+                    fields={PRODUCT_FIELDS}
+                    onChange={setProducts}
+                    itemLabel="product"
+                    onAdd={addProduct}
+                    addLabel="Add Product"
+                    emptyHint="No products yet."
+                >
+                    <Label className="text-xs text-muted-foreground">Add New Product / Listing</Label>
+                    <Input placeholder="Product Title" value={newProduct.title} onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })} />
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Description"
+                        value={newProduct.description}
+                        onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    />
+                    <Input type="number" placeholder="Price (optional)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} />
+                    <Input placeholder="Link (optional)" value={newProduct.link} onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })} />
+                </EditableList>
+            </InspectorPanel>
+
+            {/* Property Listing Editor */}
+            <InspectorPanel
+                isOpen={activeModal === "Properties"}
+                onClose={() => setActiveModal(null)}
+                title="Property Listing"
+            >
+                <EditableList<PropertyListingItem>
+                    items={propertyListings}
+                    fields={PROPERTY_LISTING_FIELDS}
+                    onChange={setPropertyListings}
+                    itemLabel="property"
+                    onAdd={addPropertyListing}
+                    addLabel="Add Property"
+                    emptyHint="No properties yet."
+                >
+                    <Label className="text-xs text-muted-foreground">Add New Property</Label>
+                    <Input placeholder="Property Title" value={newPropertyListing.title} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, title: e.target.value })} />
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Description (optional)"
+                        value={newPropertyListing.description}
+                        onChange={(e) => setNewPropertyListing({ ...newPropertyListing, description: e.target.value })}
+                    />
+                    <Input placeholder="Price (e.g., $250,000)" value={newPropertyListing.price} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, price: e.target.value })} />
+                    <Input placeholder="Location" value={newPropertyListing.location} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, location: e.target.value })} />
+                    <select
+                        value={newPropertyListing.status}
+                        onChange={(e) => setNewPropertyListing({ ...newPropertyListing, status: e.target.value })}
+                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                    >
+                        <option value="for-sale">For Sale</option>
+                        <option value="for-rent">For Rent</option>
+                        <option value="sold">Sold</option>
+                    </select>
+                    <Input placeholder="Listing URL (optional)" value={newPropertyListing.link} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, link: e.target.value })} />
+                </EditableList>
+            </InspectorPanel>
+
+            <InspectorPanel
+                isOpen={activeModal === "Testimonials"}
+                onClose={() => setActiveModal(null)}
+                title="Recommendations"
+            >
+                <EditableList<TestimonialItem>
+                    items={testimonials}
+                    fields={TESTIMONIAL_FIELDS}
+                    onChange={setTestimonials}
+                    itemLabel="recommendation"
+                    onAdd={addTestimonial}
+                    addLabel="Add Recommendation"
+                    emptyHint="No recommendations yet."
+                >
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Quote"
+                        value={newTestimonial.quote}
+                        onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
+                    />
+                    <Input placeholder="Author Name" value={newTestimonial.author} onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })} />
+                    <Input placeholder="Role/Title" value={newTestimonial.role} onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })} />
+                </EditableList>
+            </InspectorPanel>
+
+            {/* Gallery Section Editor - Fixed with GalleryUploader */}
+            <InspectorPanel
+                isOpen={activeModal === "Gallery"}
+                onClose={() => setActiveModal(null)}
+                title="Gallery"
+            >
+                <div className="space-y-4">
+                    <GalleryUploader
+                        gallery={gallery}
+                        onAdd={addGalleryImage}
+                        onRemove={removeGalleryImage}
+                        maxImages={3}
+                        maxSizeMB={1}
+                    />
+                </div>
+            </InspectorPanel>
 
                 {/* Customize Colors - Expanded */}
                 <div className="px-4 py-4">
@@ -1398,513 +1959,9 @@ function BuilderContent() {
                     </div>
                 </div>
                 )}
+
+              </div>
             </div>
-
-            {/* Section Editor Modals */}
-            <SectionEditor
-                isOpen={activeModal === "Hero"}
-                onClose={() => setActiveModal(null)}
-                title="Hero Section"
-            >
-                <div className="space-y-4">
-                    <div>
-                        <Label className="text-sm">Full Name</Label>
-                        <Input
-                            value={agentInfo.fullName}
-                            onChange={(e) => setAgentInfo({ ...agentInfo, fullName: e.target.value })}
-                            placeholder="John Doe"
-                        />
-                    </div>
-                    <div>
-                        <Label className="text-sm">Title</Label>
-                        <Input
-                            value={agentInfo.title}
-                            onChange={(e) => setAgentInfo({ ...agentInfo, title: e.target.value })}
-                            placeholder="Software Engineer"
-                        />
-                    </div>
-                    <div>
-                        <Label className="text-sm">Company</Label>
-                        <Input
-                            value={agentInfo.company}
-                            onChange={(e) => setAgentInfo({ ...agentInfo, company: e.target.value })}
-                            placeholder="Company Name"
-                        />
-                    </div>
-                    <div>
-                        <Label className="text-sm">Profile Picture</Label>
-                        <ImageUploader
-                            value={agentInfo.avatarUrl || ""}
-                            onChange={(val) => setAgentInfo({ ...agentInfo, avatarUrl: val })}
-                            onRemove={() => setAgentInfo({ ...agentInfo, avatarUrl: "" })}
-                            placeholder="Upload Photo"
-                        />
-                    </div>
-                    <div>
-                        <Label className="text-sm">Phone</Label>
-                        <Input
-                            value={agentInfo.phone}
-                            onChange={(e) => setAgentInfo({ ...agentInfo, phone: e.target.value })}
-                            placeholder="+1 234 567 890"
-                        />
-                        {/* Additional Phones */}
-                        <div className="space-y-1.5 mt-2">
-                            {additionalPhones.map((ph, idx) => (
-                                <div key={`add-phone-${idx}`} className="flex items-center gap-2">
-                                    <Input
-                                        value={ph}
-                                        onChange={(e) => {
-                                            const newPhs = [...additionalPhones];
-                                            newPhs[idx] = e.target.value;
-                                            setAdditionalPhones(newPhs);
-                                        }}
-                                        className="text-xs flex-1"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setAdditionalPhones(additionalPhones.filter((_, i) => i !== idx))}
-                                        className="text-red-500 hover:text-red-600 p-1"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                            ))}
-                            <button
-                                type="button"
-                                onClick={() => setAdditionalPhones([...additionalPhones, ""])}
-                                className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
-                            >
-                                <Plus className="w-3 h-3" /> Add phone number
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <Label className="text-sm">Email</Label>
-                        <Input
-                            type="email"
-                            value={agentInfo.email}
-                            onChange={(e) => setAgentInfo({ ...agentInfo, email: e.target.value })}
-                            placeholder="john@example.com"
-                        />
-                        {/* Additional Emails */}
-                        <div className="space-y-1.5 mt-2">
-                            {additionalEmails.map((em, idx) => (
-                                <div key={`add-email-${idx}`} className="flex items-center gap-2">
-                                    <Input
-                                        type="email"
-                                        value={em}
-                                        onChange={(e) => {
-                                            const newEms = [...additionalEmails];
-                                            newEms[idx] = e.target.value;
-                                            setAdditionalEmails(newEms);
-                                        }}
-                                        className="text-xs flex-1"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setAdditionalEmails(additionalEmails.filter((_, i) => i !== idx))}
-                                        className="text-red-500 hover:text-red-600 p-1"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                            ))}
-                            <button
-                                type="button"
-                                onClick={() => setAdditionalEmails([...additionalEmails, ""])}
-                                className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
-                            >
-                                <Plus className="w-3 h-3" /> Add email address
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <Label className="text-sm">Website</Label>
-                        <Input
-                            value={agentInfo.website || ""}
-                            onChange={(e) => setAgentInfo({ ...agentInfo, website: e.target.value })}
-                            placeholder="https://example.com"
-                        />
-                    </div>
-                    <div>
-                        <Label className="text-sm">Social Links</Label>
-                        <div className="space-y-2 mt-2">
-                            {agentInfo.socialLinks?.map((link, idx) => (
-                                <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                                    <span className="text-sm flex-1 text-foreground">{link.platform}: {link.url}</span>
-                                    <button
-                                        onClick={() => {
-                                            const newLinks = [...agentInfo.socialLinks];
-                                            newLinks.splice(idx, 1);
-                                            setAgentInfo({ ...agentInfo, socialLinks: newLinks });
-                                        }}
-                                        className="text-red-500"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ))}
-                            <div className="flex gap-2">
-                                <select
-                                    id="social-platform"
-                                    className="flex-1 h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                                >
-                                    <option value="Instagram">Instagram</option>
-                                    <option value="Facebook">Facebook</option>
-                                    <option value="LinkedIn">LinkedIn</option>
-                                    <option value="Twitter">Twitter</option>
-                                    <option value="TikTok">TikTok</option>
-                                    <option value="YouTube">YouTube</option>
-                                    <option value="Website">Website</option>
-                                </select>
-                                <Input
-                                    id="social-url"
-                                    placeholder="URL or username"
-                                    className="flex-[2]"
-                                />
-                                <Button
-                                    size="sm"
-                                    onClick={() => {
-                                        const platform = (document.getElementById('social-platform') as HTMLSelectElement).value;
-                                        const url = (document.getElementById('social-url') as HTMLInputElement).value;
-                                        if (platform && url) {
-                                            setAgentInfo({
-                                                ...agentInfo,
-                                                socialLinks: [...(agentInfo.socialLinks || []), { platform, url }]
-                                            });
-                                            (document.getElementById('social-url') as HTMLInputElement).value = '';
-                                        }
-                                    }}
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </SectionEditor>
-
-            <SectionEditor
-                isOpen={activeModal === "About"}
-                onClose={() => setActiveModal(null)}
-                title="About Section"
-            >
-                <div className="space-y-4">
-                    <div>
-                        <Label className="text-sm">About Me</Label>
-                        <textarea
-                            className="w-full min-h-[150px] mt-1 p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                            placeholder="Tell your story..."
-                            value={agentInfo.about || ""}
-                            onChange={(e) => setAgentInfo({ ...agentInfo, about: e.target.value })}
-                        />
-                    </div>
-                </div>
-            </SectionEditor>
-
-            <SectionEditor
-                isOpen={activeModal === "Services"}
-                onClose={() => setActiveModal(null)}
-                title="Services"
-            >
-                <div className="space-y-4">
-                    <div className="flex flex-wrap gap-2">
-                        {agentInfo.services?.map((service, i) => (
-                            <span
-                                key={i}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm"
-                            >
-                                {service}
-                                <button
-                                    onClick={() => setAgentInfo({
-                                        ...agentInfo,
-                                        services: agentInfo.services?.filter((_, idx) => idx !== i)
-                                    })}
-                                    className="ml-1"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </span>
-                        ))}
-                    </div>
-                    <div className="flex gap-2">
-                        <Input
-                            id="new-service"
-                            placeholder="Add a service (e.g., Web Design)"
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    const input = e.target as HTMLInputElement;
-                                    if (input.value.trim()) {
-                                        setAgentInfo({
-                                            ...agentInfo,
-                                            services: [...(agentInfo.services || []), input.value.trim()]
-                                        });
-                                        input.value = "";
-                                    }
-                                }
-                            }}
-                        />
-                        <Button
-                            onClick={() => {
-                                const input = document.getElementById('new-service') as HTMLInputElement;
-                                if (input.value.trim()) {
-                                    setAgentInfo({
-                                        ...agentInfo,
-                                        services: [...(agentInfo.services || []), input.value.trim()]
-                                    });
-                                    input.value = "";
-                                }
-                            }}
-                        >
-                            <Plus className="w-4 h-4" />
-                        </Button>
-                    </div>
-                </div>
-            </SectionEditor>
-
-            <SectionEditor
-                isOpen={activeModal === "Certification"}
-                onClose={() => setActiveModal(null)}
-                title="Certification"
-            >
-                <div className="space-y-4">
-                    <div>
-                        <Label className="text-sm">Title</Label>
-                        <Input
-                            value={certification.title}
-                            onChange={(e) => setCertification({ ...certification, title: e.target.value })}
-                            placeholder="e.g., Certified Software Engineer"
-                        />
-                    </div>
-                    <div>
-                        <Label className="text-sm">Description</Label>
-                        <textarea
-                            className="w-full min-h-[100px] mt-1 p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                            value={certification.description}
-                            onChange={(e) => setCertification({ ...certification, description: e.target.value })}
-                            placeholder="Description..."
-                        />
-                    </div>
-                </div>
-            </SectionEditor>
-
-            <SectionEditor
-                isOpen={activeModal === "Education"}
-                onClose={() => setActiveModal(null)}
-                title="Education"
-            >
-                <EditableList<EducationItem>
-                    items={education}
-                    fields={EDUCATION_FIELDS}
-                    onChange={setEducation}
-                    itemLabel="education entry"
-                    onAdd={addEducation}
-                    addLabel="Add Education"
-                    emptyHint="No education entries yet."
-                >
-                    <Input placeholder="Degree" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
-                    <Input placeholder="School" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
-                    <Input placeholder="Year" value={newEducation.year} onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })} />
-                </EditableList>
-            </SectionEditor>
-
-            <SectionEditor
-                isOpen={activeModal === "TechStack"}
-                onClose={() => setActiveModal(null)}
-                title="Tech Stack"
-            >
-                <EditableList<TechStackDisplayItem>
-                    items={techStack.map((stack) => ({ category: stack.category, skills: stack.skills.join(", ") }))}
-                    fields={TECH_STACK_FIELDS}
-                    onChange={(next) =>
-                        setTechStack(
-                            next.map((stack) => ({
-                                category: stack.category,
-                                skills: stack.skills.split(",").map((s) => s.trim()).filter(Boolean),
-                            }))
-                        )
-                    }
-                    itemLabel="tech stack category"
-                    onAdd={addTechStack}
-                    addLabel="Add Category"
-                    emptyHint="No tech stack categories yet."
-                >
-                    <Input placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })} />
-                    <Input placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })} />
-                </EditableList>
-            </SectionEditor>
-
-            <SectionEditor
-                isOpen={activeModal === "Experience"}
-                onClose={() => setActiveModal(null)}
-                title="Experience"
-            >
-                <EditableList<ExperienceItem>
-                    items={experience}
-                    fields={EXPERIENCE_FIELDS}
-                    onChange={setExperience}
-                    itemLabel="experience entry"
-                    onAdd={addExperience}
-                    addLabel="Add Experience"
-                    emptyHint="No experience entries yet."
-                >
-                    <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
-                    <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
-                    <Input placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })} />
-                    <textarea
-                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                        placeholder="Description"
-                        value={newExperience.description}
-                        onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
-                    />
-                </EditableList>
-            </SectionEditor>
-
-            {/* Projects Section Editor */}
-            <SectionEditor
-                isOpen={activeModal === "Projects"}
-                onClose={() => setActiveModal(null)}
-                title="Projects"
-            >
-                <EditableList<InlineProject>
-                    items={inlineProjects}
-                    fields={INLINE_PROJECT_FIELDS}
-                    onChange={setInlineProjects}
-                    itemLabel="project"
-                    onAdd={addInlineProject}
-                    addLabel="Add Project"
-                    emptyHint="No projects yet."
-                >
-                    <Label className="text-xs text-muted-foreground">Add New Project</Label>
-                    <Input placeholder="Project Title" value={newInlineProject.title} onChange={(e) => setNewInlineProject({ ...newInlineProject, title: e.target.value })} />
-                    <textarea
-                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                        placeholder="Short description"
-                        value={newInlineProject.description}
-                        onChange={(e) => setNewInlineProject({ ...newInlineProject, description: e.target.value })}
-                    />
-                    <select
-                        value={newInlineProject.category}
-                        onChange={(e) => setNewInlineProject({ ...newInlineProject, category: e.target.value })}
-                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                    >
-                        <option value="">Select Category</option>
-                        {Object.entries(PROJECT_CATEGORY_LABELS).map(([key, label]) => (
-                            <option key={key} value={key}>{label}</option>
-                        ))}
-                    </select>
-                    <Input placeholder="External URL (optional)" value={newInlineProject.link} onChange={(e) => setNewInlineProject({ ...newInlineProject, link: e.target.value })} />
-                </EditableList>
-            </SectionEditor>
-
-            {/* Products / Store Listing Editor */}
-            <SectionEditor
-                isOpen={activeModal === "Products"}
-                onClose={() => setActiveModal(null)}
-                title="Store / Business Listing"
-            >
-                <EditableList<ProductItem>
-                    items={products}
-                    fields={PRODUCT_FIELDS}
-                    onChange={setProducts}
-                    itemLabel="product"
-                    onAdd={addProduct}
-                    addLabel="Add Product"
-                    emptyHint="No products yet."
-                >
-                    <Label className="text-xs text-muted-foreground">Add New Product / Listing</Label>
-                    <Input placeholder="Product Title" value={newProduct.title} onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })} />
-                    <textarea
-                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                        placeholder="Description"
-                        value={newProduct.description}
-                        onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                    />
-                    <Input type="number" placeholder="Price (optional)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} />
-                    <Input placeholder="Link (optional)" value={newProduct.link} onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })} />
-                </EditableList>
-            </SectionEditor>
-
-            {/* Property Listing Editor */}
-            <SectionEditor
-                isOpen={activeModal === "Properties"}
-                onClose={() => setActiveModal(null)}
-                title="Property Listing"
-            >
-                <EditableList<PropertyListingItem>
-                    items={propertyListings}
-                    fields={PROPERTY_LISTING_FIELDS}
-                    onChange={setPropertyListings}
-                    itemLabel="property"
-                    onAdd={addPropertyListing}
-                    addLabel="Add Property"
-                    emptyHint="No properties yet."
-                >
-                    <Label className="text-xs text-muted-foreground">Add New Property</Label>
-                    <Input placeholder="Property Title" value={newPropertyListing.title} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, title: e.target.value })} />
-                    <textarea
-                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                        placeholder="Description (optional)"
-                        value={newPropertyListing.description}
-                        onChange={(e) => setNewPropertyListing({ ...newPropertyListing, description: e.target.value })}
-                    />
-                    <Input placeholder="Price (e.g., $250,000)" value={newPropertyListing.price} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, price: e.target.value })} />
-                    <Input placeholder="Location" value={newPropertyListing.location} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, location: e.target.value })} />
-                    <select
-                        value={newPropertyListing.status}
-                        onChange={(e) => setNewPropertyListing({ ...newPropertyListing, status: e.target.value })}
-                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                    >
-                        <option value="for-sale">For Sale</option>
-                        <option value="for-rent">For Rent</option>
-                        <option value="sold">Sold</option>
-                    </select>
-                    <Input placeholder="Listing URL (optional)" value={newPropertyListing.link} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, link: e.target.value })} />
-                </EditableList>
-            </SectionEditor>
-
-            <SectionEditor
-                isOpen={activeModal === "Testimonials"}
-                onClose={() => setActiveModal(null)}
-                title="Recommendations"
-            >
-                <EditableList<TestimonialItem>
-                    items={testimonials}
-                    fields={TESTIMONIAL_FIELDS}
-                    onChange={setTestimonials}
-                    itemLabel="recommendation"
-                    onAdd={addTestimonial}
-                    addLabel="Add Recommendation"
-                    emptyHint="No recommendations yet."
-                >
-                    <textarea
-                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                        placeholder="Quote"
-                        value={newTestimonial.quote}
-                        onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
-                    />
-                    <Input placeholder="Author Name" value={newTestimonial.author} onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })} />
-                    <Input placeholder="Role/Title" value={newTestimonial.role} onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })} />
-                </EditableList>
-            </SectionEditor>
-
-            {/* Gallery Section Editor - Fixed with GalleryUploader */}
-            <SectionEditor
-                isOpen={activeModal === "Gallery"}
-                onClose={() => setActiveModal(null)}
-                title="Gallery"
-            >
-                <div className="space-y-4">
-                    <GalleryUploader
-                        gallery={gallery}
-                        onAdd={addGalleryImage}
-                        onRemove={removeGalleryImage}
-                        maxImages={3}
-                        maxSizeMB={1}
-                    />
-                </div>
-            </SectionEditor>
         </div>
     );
 }
