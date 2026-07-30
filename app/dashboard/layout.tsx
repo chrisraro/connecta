@@ -254,7 +254,16 @@ export default function DashboardLayout({
             {/* Desktop Sidebar */}
             <DashboardSidebar className="hidden md:flex w-72" />
 
-            <main className="flex-1 overflow-y-auto flex flex-col relative pb-32 md:pb-0">
+            {/* No `overflow-y-auto` here: `main` never actually overflows (it's
+                a flex item that auto-sizes to its content, so the *window*
+                is what scrolls) — but `overflow-y: auto` still makes this
+                element `position: sticky`'s containing block per spec, which
+                makes every sticky descendant (this file's own MobileHeader,
+                the builder page's header, the builder's pinned preview
+                column) inert. Removing it is a no-op for scrolling and lets
+                sticky work the way it's supposed to (Task 2 review, Critical
+                #1/#2 + Important #3/#6 — see app/dashboard/builder/page.tsx). */}
+            <main className="flex-1 flex flex-col relative pb-32 md:pb-0">
                 {/* Mobile Header */}
                 <MobileHeader />
 

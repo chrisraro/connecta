@@ -48,7 +48,7 @@ import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { Id } from "@/convex/_generated/dataModel";
 import { profilePath } from "@/lib/profileUrl";
-import { filterAgentInfoByEnabledBlocks } from "@/lib/profileSections";
+import { deriveBuilderProfileFields, getBlocksForProfileType } from "@/lib/profileSections";
 import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
 
 // --- Types & Defaults ---
@@ -100,19 +100,6 @@ const INITIAL_BLOCKS: Block[] = [
     { id: "Gallery", label: "Gallery", icon: ImageIcon, isEnabled: false },
     { id: "Contact", label: "Contact Form", icon: User, isEnabled: true },
 ];
-
-const getBlocksForProfileType = (type: ProfileType, currentBlocks: Block[]) => {
-    return currentBlocks.filter(block => {
-        if (type === "individual") {
-            return block.id !== "Products" && block.id !== "Properties";
-        } else if (type === "company") {
-            return block.id !== "Education" && block.id !== "TechStack" && block.id !== "Experience" && block.id !== "Properties";
-        } else if (type === "business") {
-            return block.id !== "Education" && block.id !== "TechStack" && block.id !== "Experience";
-        }
-        return true;
-    });
-};
 
 // --- Gallery Uploader Component ---
 
@@ -673,53 +660,6 @@ function BuilderContent() {
         }
     }, [selectedTemplate, editingId]);
 
-    // Manual "sticky" preview (desktop only — see the long comment at the
-    // render site for why CSS `position: sticky` doesn't work in this
-    // dashboard shell). `previewSpacerRef` is the in-flow placeholder that
-    // reserves the column's box; `previewContentRef` is the visible preview
-    // that gets pinned with `position: fixed` once the placeholder's top
-    // has scrolled above the header.
-    const previewSpacerRef = useRef<HTMLDivElement>(null);
-    const previewContentRef = useRef<HTMLDivElement>(null);
-    const [isPreviewPinned, setIsPreviewPinned] = useState(false);
-    const [pinnedGeometry, setPinnedGeometry] = useState<{ left: number; width: number; height: number } | null>(null);
-
-    useEffect(() => {
-        const HEADER_OFFSET = 96; // matches the fixed `top` applied while pinned
-        const desktopQuery = window.matchMedia("(min-width: 1024px)");
-        let rafId: number | null = null;
-
-        const measure = () => {
-            if (!desktopQuery.matches || !previewSpacerRef.current) {
-                setIsPreviewPinned(false);
-                return;
-            }
-            const rect = previewSpacerRef.current.getBoundingClientRect();
-            const contentHeight = previewContentRef.current?.offsetHeight ?? rect.height;
-            setIsPreviewPinned(rect.top <= HEADER_OFFSET);
-            setPinnedGeometry({ left: rect.left, width: rect.width, height: contentHeight });
-        };
-
-        const scheduleMeasure = () => {
-            if (rafId !== null) return;
-            rafId = requestAnimationFrame(() => {
-                rafId = null;
-                measure();
-            });
-        };
-
-        measure();
-        window.addEventListener("scroll", scheduleMeasure, { passive: true });
-        window.addEventListener("resize", scheduleMeasure);
-        desktopQuery.addEventListener("change", measure);
-        return () => {
-            if (rafId !== null) cancelAnimationFrame(rafId);
-            window.removeEventListener("scroll", scheduleMeasure);
-            window.removeEventListener("resize", scheduleMeasure);
-            desktopQuery.removeEventListener("change", measure);
-        };
-    }, []);
-
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -807,16 +747,22 @@ function BuilderContent() {
                 gallery: gallery.length > 0 ? gallery : undefined,
             };
 
-            const enabledBlockIds = getBlocksForProfileType(profileType, blocks)
-                .filter(b => b.isEnabled)
-                .map(b => b.id);
+            // Shared with renderPreview() below — Save and the live preview
+            // must agree on which blocks are visible and what data they
+            // carry, or the preview lies about what gets published (Task 2
+            // review, preview-fidelity product bug).
+            const { componentOrder, filteredAgentInfo: filteredCleanAgentInfo } = deriveBuilderProfileFields(
+                profileType,
+                blocks,
+                cleanAgentInfo
+            );
             // filterAgentInfoByEnabledBlocks only ever strips the optional
             // block-owned fields (certification/education/etc.) — the
             // required identity fields below are never touched by it, so
             // re-asserting them here just narrows the return type back from
             // ProfileInfo's optional `company` etc. to what createProfile expects.
             const filteredAgentInfo = {
-                ...filterAgentInfoByEnabledBlocks(cleanAgentInfo, enabledBlockIds),
+                ...filteredCleanAgentInfo,
                 fullName: cleanAgentInfo.fullName,
                 title: cleanAgentInfo.title,
                 company: cleanAgentInfo.company,
@@ -866,7 +812,7 @@ function BuilderContent() {
                         secondary: customColors.secondary !== customColors.primary ? customColors.secondary : undefined,
                         accent: customColors.accent !== customColors.primary ? customColors.accent : undefined,
                     },
-                    componentOrder: getBlocksForProfileType(profileType, blocks).filter(b => b.isEnabled).map(b => b.id),
+                    componentOrder,
                     heroStyle: "default"
                 },
                 featuredProperties: [],
@@ -960,19 +906,30 @@ function BuilderContent() {
         setGallery(gallery.filter((_, i) => i !== index));
     };
 
-    // Render preview based on selected template
+    // Render preview based on selected template. Must go through the same
+    // deriveBuilderProfileFields() that handleSave uses (above) — otherwise
+    // the preview renders every section that has data, regardless of the
+    // Hidden badge or the drag order, and what the user sees stops matching
+    // what actually gets published (Task 2 review, preview-fidelity bug).
     const renderPreview = () => {
+        const { componentOrder, filteredAgentInfo } = deriveBuilderProfileFields(
+            profileType,
+            blocks,
+            { ...agentInfo, certification, education, techStack, experience, testimonials, gallery }
+        );
+
         const data: ProfileData = {
             ownerId: user?.id || "",
             name: agentInfo.fullName,
             profileType: profileType,
-            agent: { ...agentInfo, certification, education, techStack, experience, testimonials, gallery },
+            agent: filteredAgentInfo,
             properties: [],
             projects: projects,
             products: products,
             services: [],
             propertyListings: propertyListings,
             inlineProjects: inlineProjects,
+            componentOrder,
             theme: {
                 primaryColor: customColors.primary,
                 backgroundColor: customColors.background,
@@ -1025,23 +982,23 @@ function BuilderContent() {
             <div className="mx-auto w-full max-w-lg pb-8 lg:max-w-6xl lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-8 lg:items-start">
               {/* Preview column — stays visible & in view while the controls
                   column (rendered alongside it at lg:) scrolls independently.
-                  `position: sticky` doesn't work here: the dashboard shell's
-                  <main className="overflow-y-auto"> (app/dashboard/layout.tsx)
-                  is a non-scrolling scroll-container (it never actually
-                  overflows, the window does), and per spec that still makes
-                  it the nearest scrolling ancestor for sticky's containing
-                  block — so a CSS-only sticky element inside it is inert.
-                  `previewPinned` reimplements the same behavior with a
-                  scroll listener: `previewSpacerRef` is a normal in-flow
-                  placeholder (it reserves the column's width/height); once
-                  its top scrolls above the header, the visible content
-                  switches to `position: fixed` at the same left/width. */}
-              <div ref={previewSpacerRef} style={isPreviewPinned && pinnedGeometry ? { height: pinnedGeometry.height } : undefined}>
-              <div
-                ref={previewContentRef}
-                className={isPreviewPinned ? "fixed z-30" : undefined}
-                style={isPreviewPinned && pinnedGeometry ? { top: 96, left: pinnedGeometry.left, width: pinnedGeometry.width } : undefined}
-              >
+                  Plain CSS `position: sticky`. An earlier version of this hand
+                  -rolled the same behavior with a scroll/resize listener and a
+                  `position: fixed` toggle because sticky appeared to be inert
+                  here — the real cause was app/dashboard/layout.tsx's <main>
+                  having `overflow-y-auto`: `main` never actually overflows
+                  (it's a flex item that auto-sizes to content, the window is
+                  what scrolls), but a non-`visible` overflow value still
+                  makes an element the containing block for its sticky
+                  descendants per spec, which made this sticky column (and
+                  every other sticky header in the dashboard shell) inert.
+                  Removing that class restored plain sticky (Task 2 review,
+                  Critical #1/#2, Important #3/#6 — ~40 lines of scroll-JS,
+                  a spacer div, and a `pinnedGeometry` re-render on every
+                  scroll frame all went away with it). `lg:top-[4.5rem]`
+                  matches the rendered height of the header directly above
+                  (measured, not guessed — see task-2-fixes-report.md). */}
+              <div className="lg:sticky lg:top-[4.5rem]">
                 {/* Preview Switcher */}
                 <div className="px-4 pt-4 pb-2 lg:px-0">
                     <div className="flex bg-muted p-1 rounded-xl">
@@ -1075,7 +1032,7 @@ function BuilderContent() {
                         style={{ boxShadow: "var(--e-overlay)" }}
                     >
                         <div
-                            className="rounded-[var(--r-lg)] overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-8rem)]"
+                            className="rounded-[var(--r-lg)] overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]"
                         >
                             {previewMode === "card" ? (
                                 <div className="p-4 flex justify-center bg-neutral-900/5 min-h-[320px] items-center">
@@ -1101,7 +1058,6 @@ function BuilderContent() {
                         </div>
                     </div>
                 </div>
-              </div>
               </div>
 
               {/* Controls column */}

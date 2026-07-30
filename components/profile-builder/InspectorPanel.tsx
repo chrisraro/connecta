@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -22,6 +22,8 @@ interface InspectorPanelProps {
  * preview column, so it never covers the preview at any width.
  */
 export function InspectorPanel({ isOpen, onClose, title, children, onSave }: InspectorPanelProps) {
+    const panelRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         if (!isOpen) return;
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -31,10 +33,30 @@ export function InspectorPanel({ isOpen, onClose, title, children, onSave }: Ins
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [isOpen, onClose]);
 
+    // At `lg:` this panel docks `static` into the controls column, wherever
+    // it happens to sit in document order — with a dozen sibling panels
+    // rendering above it (only the open one is non-null), that can easily
+    // land below the fold, so the user has to go hunting for the editor
+    // they just opened (Task 2 review, Important #5). Below `lg:` it's a
+    // `fixed` bottom sheet and is already fully in the viewport the moment
+    // it mounts, so this is a no-op there.
+    useEffect(() => {
+        if (!isOpen) return;
+        const prefersReducedMotion =
+            typeof window !== "undefined" &&
+            typeof window.matchMedia === "function" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        panelRef.current?.scrollIntoView({
+            block: "nearest",
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (
         <div
+            ref={panelRef}
             role="dialog"
             aria-label={title}
             className="fixed inset-x-0 bottom-0 z-[60] flex max-h-[70dvh] flex-col rounded-t-[var(--r-lg)] border border-border bg-background motion-safe:animate-in motion-safe:slide-in-from-bottom motion-safe:duration-200

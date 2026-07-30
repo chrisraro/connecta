@@ -159,8 +159,24 @@
 }
 
 @layer base {
+  /* `overflow-x: clip`, not Tailwind's `overflow-x-hidden` (`overflow-x:
+     hidden`). Setting `overflow-x: hidden` on an element while leaving
+     `overflow-y` unset makes the browser silently compute the unset axis
+     as `auto` instead of `visible` (the "mismatched axis" quirk in the CSS
+     Overflow spec) — and any element with a non-`visible` computed
+     overflow on either axis is a scroll container, which becomes the
+     containing block for any `position: sticky` descendant. On `body`
+     specifically that turned it into an inert sticky-blocking scroll
+     container exactly like app/dashboard/layout.tsx's `<main>` used to be
+     (Task 2 review, Critical #1/#2 verification — this was hiding behind
+     that bug and only surfaced in browser testing once `main` was fixed).
+     `clip` is explicitly exempt from that quirk (confirmed empirically:
+     `getComputedStyle` never reports the other axis as `auto`) and, unlike
+     `hidden`, never establishes a scroll container at all — so it blocks
+     horizontal scroll without ever being able to break sticky, on `html`
+     or `body`. */
   html, body {
-    @apply overflow-x-hidden;
+    overflow-x: clip;
   }
   * {
     @apply border-border outline-ring/50;
