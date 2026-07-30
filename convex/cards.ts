@@ -3,6 +3,7 @@ import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { requireUserMatching } from "./authz";
 import { planContext } from "./billing";
+import { checkRateLimit } from "./rateLimit";
 
 async function getUser(ctx: QueryCtx, clerkId: string) {
     return await ctx.db
@@ -96,6 +97,7 @@ export const getCardByUuid = query({
 export const incrementTapCount = mutation({
     args: { cardId: v.id("cards") },
     handler: async (ctx, args) => {
+        await checkRateLimit(ctx, `tap:${args.cardId}`, { max: 20, windowMs: 60_000 });
         const card = await ctx.db.get(args.cardId);
         if (card) {
             await ctx.db.patch(args.cardId, {

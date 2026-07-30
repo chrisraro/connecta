@@ -176,6 +176,8 @@ export interface ProfileData {
     services?: ServiceItem[];
     propertyListings?: PropertyListingItem[];
     inlineProjects?: InlineProject[];
+    componentOrder?: string[];
+    resolvedImages?: Record<string, string>;
     theme: {
         primaryColor: string;
         backgroundColor: string;

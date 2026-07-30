@@ -165,6 +165,42 @@ export const createPendingInvoice = internalMutation({
   },
 });
 
+// Idempotent version of createPendingInvoice: reuses an existing PENDING
+// invoice for the same (userId, plan) instead of always inserting a new one.
+// This closes the double-charge hole where a double-click / tab reload /
+// network retry on the upgrade button created two independent invoices that
+// could both be paid (Payments audit #2).
+export const findOrCreatePendingInvoice = internalMutation({
+  args: {
+    userId: v.id("users"),
+    plan: v.union(v.literal("pro"), v.literal("business")),
+    amountCentavos: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("subscriptionInvoices")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("plan"), args.plan),
+          q.eq(q.field("status"), "pending")
+        )
+      )
+      .first();
+    if (existing) {
+      return existing._id;
+    }
+    return await ctx.db.insert("subscriptionInvoices", {
+      userId: args.userId,
+      plan: args.plan,
+      amountCentavos: args.amountCentavos,
+      periodDays: PLAN_PERIOD_DAYS,
+      status: "pending",
+      createdAt: Date.now(),
+    });
+  },
+});
+
 // Attach the PayRex session ids to the pending invoice (after creation).
 export const attachInvoiceSession = internalMutation({
   args: {
@@ -209,7 +245,7 @@ export const createUpgradeCheckout = action({
     const planName = PLAN_LIMITS[args.plan].name;
 
     const invoiceId = await ctx.runMutation(
-      internal.billing.createPendingInvoice,
+      internal.billing.findOrCreatePendingInvoice,
       { userId: me.userId, plan: args.plan, amountCentavos: amount }
     );
 
@@ -236,6 +272,7 @@ export const createUpgradeCheckout = action({
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Authorization: "Basic " + btoa(`${secretKey}:`),
+        "Idempotency-Key": `upgrade-invoice-${invoiceId}`,
       },
       body,
     });
@@ -302,7 +339,9 @@ export const internalActivateInvoice = internalMutation({
     if (!invoice && args.paymentIntentId) {
       invoice = await ctx.db
         .query("subscriptionInvoices")
-        .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
+        .withIndex("by_paymentIntentId", (q) =>
+          q.eq("paymentIntentId", args.paymentIntentId)
+        )
         .first();
     }
     if (!invoice) {
@@ -352,6 +391,21 @@ export const internalActivateInvoice = internalMutation({
     await ctx.db.patch(user._id, userPatch);
 
     return { success: true, plan: invoice.plan, periodEnd };
+  },
+});
+
+// Called by the webhook when PayRex reports a failed/expired checkout for a
+// subscription invoice, so the invoice stops showing as permanently
+// "pending" and the user can see (and retry) the failure (Payments #1).
+export const internalFailInvoice = internalMutation({
+  args: { invoiceId: v.id("subscriptionInvoices") },
+  handler: async (ctx, args) => {
+    const invoice = await ctx.db.get(args.invoiceId);
+    if (!invoice || invoice.status !== "pending") {
+      return { success: false, reason: "not_pending" };
+    }
+    await ctx.db.patch(args.invoiceId, { status: "expired" });
+    return { success: true };
   },
 });
 

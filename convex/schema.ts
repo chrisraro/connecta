@@ -25,7 +25,8 @@ export default defineSchema({
       services: v.array(v.string()),
       socialLinks: v.optional(v.array(v.object({ platform: v.string(), url: v.string() }))),
     })),
-  }).index("by_clerkId", ["clerkId"]),
+  }).index("by_clerkId", ["clerkId"])
+    .index("by_teamId", ["teamId"]),
 
   cards: defineTable({
     ownerId: v.id("users"),
@@ -368,7 +369,8 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"])
     .index("by_paymentStatus", ["paymentStatus"])
-    .index("by_createdAt", ["createdAt"]),
+    .index("by_createdAt", ["createdAt"])
+    .index("by_paymentIntentId", ["paymentIntentId"]),
 
   discounts: defineTable({
     code: v.string(),
@@ -390,6 +392,12 @@ export default defineSchema({
     value: v.any(),
     updatedAt: v.number(),
     updatedBy: v.optional(v.id("users")),
+  }).index("by_key", ["key"]),
+
+  rateLimits: defineTable({
+    key: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
   }).index("by_key", ["key"]),
 
   // --- SaaS layer (Phase 4): teams, invites, subscription invoices ---
@@ -434,5 +442,6 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_user", ["userId"])
     .index("by_checkoutId", ["payrexCheckoutId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_paymentIntentId", ["paymentIntentId"]),
 });

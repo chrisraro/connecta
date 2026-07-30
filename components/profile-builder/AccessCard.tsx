@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { ProfileInfo } from "@/types/profile";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
+import { ProfileImage } from "@/components/templates/ProfileImage";
 
 interface AccessCardProps {
     profileId: string;
@@ -12,9 +14,10 @@ interface AccessCardProps {
 }
 
 export function AccessCard({ profileId, agent, className }: AccessCardProps) {
-    const profileUrl = typeof window !== "undefined" 
-        ? `${window.location.origin}/p/${profileId}`
-        : "";
+    const [profileUrl, setProfileUrl] = useState("");
+    useEffect(() => {
+        setProfileUrl(`${window.location.origin}/p/${profileId}`);
+    }, [profileId]);
 
     return (
         <div className={cn(
@@ -67,9 +70,9 @@ export function AccessCard({ profileId, agent, className }: AccessCardProps) {
                 <div className="flex-shrink-0">
                     {agent.avatarUrl ? (
                         <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/10 bg-zinc-900 shadow-xl">
-                            <img 
-                                src={agent.avatarUrl} 
-                                alt={agent.fullName} 
+                            <ProfileImage
+                                src={agent.avatarUrl}
+                                alt={agent.fullName}
                                 className="w-full h-full object-cover"
                             />
                         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -47,6 +47,8 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { Id } from "@/convex/_generated/dataModel";
+import { filterAgentInfoByEnabledBlocks } from "@/lib/profileSections";
+import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
 
 // --- Types & Defaults ---
 
@@ -424,6 +426,40 @@ function BuilderContent() {
     const [newExperience, setNewExperience] = useState({ title: "", company: "", period: "", description: "" });
     const [newTestimonial, setNewTestimonial] = useState({ quote: "", author: "", role: "" });
 
+    const captureSnapshot = useCallback(() => {
+        savedSnapshotRef.current = JSON.stringify({
+            agentInfo, additionalPhones, additionalEmails, digitalCard,
+            blocks, selectedTemplate, customColors, certification, education,
+            techStack, experience, testimonials, gallery, products,
+            propertyListings, inlineProjects,
+        });
+    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, blocks,
+        selectedTemplate, customColors, certification, education, techStack,
+        experience, testimonials, gallery, products, propertyListings, inlineProjects]);
+
+    const isDirty = useCallback(() => {
+        if (savedSnapshotRef.current === null) return false;
+        const current = JSON.stringify({
+            agentInfo, additionalPhones, additionalEmails, digitalCard,
+            blocks, selectedTemplate, customColors, certification, education,
+            techStack, experience, testimonials, gallery, products,
+            propertyListings, inlineProjects,
+        });
+        return hasUnsavedChanges(savedSnapshotRef.current, current);
+    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, blocks,
+        selectedTemplate, customColors, certification, education, techStack,
+        experience, testimonials, gallery, products, propertyListings, inlineProjects]);
+
+    useEffect(() => {
+        const handler = (e: BeforeUnloadEvent) => {
+            if (isDirty()) {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [isDirty]);
+
     const handleCardThemeChange = (theme: "light" | "dark" | "glass" | "carbon") => {
         let colors = {};
         if (theme === "light") {
@@ -464,6 +500,27 @@ function BuilderContent() {
 
     // Prefill logic
     const [hasPrefilled, setHasPrefilled] = useState(false);
+    const savedSnapshotRef = useRef<string | null>(null);
+
+    // Brand-new profiles (no existingProfile to edit AND no completed
+    // onboarding data) never satisfy either branch of the prefill effect
+    // below, so hasPrefilled never flips to true and the recapture effect
+    // further down never runs. Without this, savedSnapshotRef.current would
+    // stay null for the entire session and isDirty() (which short-circuits
+    // to false when the ref is null) would never report unsaved changes —
+    // silently losing a first-time user's typed data on navigation. Capture
+    // the initial (default/empty) state as the baseline unconditionally on
+    // mount so edits made from a blank profile are correctly detected as
+    // dirty. When prefill data does load (existing profile or onboarding),
+    // the hasPrefilled-triggered captureSnapshot() calls below run afterward
+    // and correctly overwrite this baseline with the loaded state.
+    useEffect(() => {
+        if (savedSnapshotRef.current === null) {
+            captureSnapshot();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     useEffect(() => {
         if (hasPrefilled) return;
 
@@ -535,6 +592,7 @@ function BuilderContent() {
                     });
                 }
                 setHasPrefilled(true);
+                captureSnapshot();
             } else if (!editingId && onboarding?.data) {
                 const data = onboarding.data;
                 const type = (data.profileCategory || "individual") as ProfileType;
@@ -553,11 +611,27 @@ function BuilderContent() {
                     socialLinks: data.socialLinks || [],
                 }));
                 setHasPrefilled(true);
+                captureSnapshot();
             }
         } catch (err) {
             console.error("Prefill error:", err);
         }
     }, [onboarding, hasPrefilled, user, existingProfile, editingId]);
+
+    // The prefill effect above calls captureSnapshot() synchronously right after
+    // its setXxx(...) calls, in the same tick — but those state updates are
+    // batched, so that call still closes over the pre-prefill state and would
+    // record a stale baseline. Re-capture once hasPrefilled actually flips to
+    // true and the prefilled state has committed, so isDirty() starts out
+    // false instead of false-alarming on the very first back click.
+    // (captureSnapshot is intentionally omitted from the deps below — the
+    // same pattern the prefill effect above uses — so this only re-fires
+    // when hasPrefilled itself flips, not on every subsequent form edit.)
+    useEffect(() => {
+        if (hasPrefilled) {
+            captureSnapshot();
+        }
+    }, [hasPrefilled]);
 
     // Update colors when template changes
     useEffect(() => {
@@ -658,6 +732,24 @@ function BuilderContent() {
                 gallery: gallery.length > 0 ? gallery : undefined,
             };
 
+            const enabledBlockIds = getBlocksForProfileType(profileType, blocks)
+                .filter(b => b.isEnabled)
+                .map(b => b.id);
+            // filterAgentInfoByEnabledBlocks only ever strips the optional
+            // block-owned fields (certification/education/etc.) — the
+            // required identity fields below are never touched by it, so
+            // re-asserting them here just narrows the return type back from
+            // ProfileInfo's optional `company` etc. to what createProfile expects.
+            const filteredAgentInfo = {
+                ...filterAgentInfoByEnabledBlocks(cleanAgentInfo, enabledBlockIds),
+                fullName: cleanAgentInfo.fullName,
+                title: cleanAgentInfo.title,
+                company: cleanAgentInfo.company,
+                phone: cleanAgentInfo.phone,
+                email: cleanAgentInfo.email,
+                socialLinks: cleanAgentInfo.socialLinks,
+            };
+
             const cleanProducts = products.length > 0 ? products.map(p => ({
                 title: p.title,
                 description: p.description,
@@ -689,7 +781,7 @@ function BuilderContent() {
                 clerkId: user.id,
                 name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
                 profileType: profileType,
-                agentInfo: cleanAgentInfo,
+                agentInfo: filteredAgentInfo,
                 layoutConfig: {
                     themeId: selectedTemplate,
                     colorPalette: {
@@ -710,6 +802,7 @@ function BuilderContent() {
                 inlineProjects: cleanInlineProjects,
                 digitalCard: digitalCard,
             });
+            captureSnapshot();
             router.push(`/p/${profileId}`);
         } catch (error: any) {
             console.error("Save error:", error);
@@ -837,7 +930,12 @@ function BuilderContent() {
             <header className="sticky top-0 z-40 bg-background border-b border-border px-4 py-3">
                 <div className="max-w-lg mx-auto flex items-center justify-between">
                     <button
-                        onClick={() => router.back()}
+                        onClick={() => {
+                            if (isDirty() && !window.confirm("You have unsaved changes. Leave without saving?")) {
+                                return;
+                            }
+                            router.back();
+                        }}
                         className="p-2 -ml-2 hover:bg-muted rounded-full text-foreground"
                     >
                         <ChevronLeft className="w-5 h-5" />

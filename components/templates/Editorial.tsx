@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { downloadVCard } from "@/lib/vcard";
 import { resolveImageUrl, readableTextColor } from "@/lib/utils";
-import { useState } from "react";
+import { useState, Fragment, ReactNode } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -42,7 +42,35 @@ const COLORS = {
 };
 
 export default function Editorial({ data }: TemplateProps) {
-  const { agent, theme, projects, ownerId, products, propertyListings, inlineProjects } = data;
+  const { agent, theme, projects, ownerId, products, propertyListings, inlineProjects, componentOrder, resolvedImages } = data;
+
+  // Maps a builder block id to the section(s) it renders. Same JSX/conditions
+  // as the previous hardcoded sequence — only the order (and whether an id is
+  // present at all) is now driven by componentOrder (Frontend audit #1).
+  const sectionRenderers: Record<string, () => ReactNode> = {
+    Hero: () => <HeroSection agent={agent} theme={theme} resolvedImages={resolvedImages} />,
+    About: () => <AboutSection agent={agent} theme={theme} />,
+    Certification: () => agent.certification ? <CertificationSection certification={agent.certification} theme={theme} /> : null,
+    Education: () => agent.education && agent.education.length > 0 ? <EducationSection education={agent.education} theme={theme} /> : null,
+    TechStack: () => agent.techStack && agent.techStack.length > 0 ? <TechStackSection techStack={agent.techStack} theme={theme} /> : null,
+    Services: () => agent.services && agent.services.length > 0 ? <ServicesSection services={agent.services} theme={theme} /> : null,
+    Experience: () => agent.experience && agent.experience.length > 0 ? <ExperienceSection experience={agent.experience} theme={theme} /> : null,
+    Projects: () => (
+      <>
+        {inlineProjects && inlineProjects.length > 0 && <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} />}
+        {projects && projects.length > 0 && <ProjectsSection projects={projects} theme={theme} resolvedImages={resolvedImages} />}
+      </>
+    ),
+    Products: () => products && products.length > 0 ? <ProductsSection products={products} theme={theme} /> : null,
+    Properties: () => propertyListings && propertyListings.length > 0 ? <PropertyListingsSection propertyListings={propertyListings} theme={theme} /> : null,
+    Testimonials: () => agent.testimonials && agent.testimonials.length > 0 ? <TestimonialsSection testimonials={agent.testimonials} theme={theme} /> : null,
+    Gallery: () => agent.gallery && agent.gallery.length > 0 ? <GallerySection gallery={agent.gallery} theme={theme} resolvedImages={resolvedImages} /> : null,
+    Contact: () => <ContactSection theme={theme} ownerId={ownerId} />,
+  };
+
+  // Legacy profiles saved before componentOrder existed fall back to today's
+  // hardcoded order (the Object.keys insertion order above).
+  const order = componentOrder && componentOrder.length > 0 ? componentOrder : Object.keys(sectionRenderers);
 
   return (
     <div
@@ -53,20 +81,9 @@ export default function Editorial({ data }: TemplateProps) {
         fontFamily: "'Manrope', sans-serif",
       }}
     >
-      <HeroSection agent={agent} theme={theme} />
-      <AboutSection agent={agent} theme={theme} />
-      {agent.certification && <CertificationSection certification={agent.certification} theme={theme} />}
-      {agent.education && agent.education.length > 0 && <EducationSection education={agent.education} theme={theme} />}
-      {agent.techStack && agent.techStack.length > 0 && <TechStackSection techStack={agent.techStack} theme={theme} />}
-      {agent.services && agent.services.length > 0 && <ServicesSection services={agent.services} theme={theme} />}
-      {agent.experience && agent.experience.length > 0 && <ExperienceSection experience={agent.experience} theme={theme} />}
-      {inlineProjects && inlineProjects.length > 0 && <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} />}
-      {projects && projects.length > 0 && <ProjectsSection projects={projects} theme={theme} />}
-      {products && products.length > 0 && <ProductsSection products={products} theme={theme} />}
-      {propertyListings && propertyListings.length > 0 && <PropertyListingsSection propertyListings={propertyListings} theme={theme} />}
-      {agent.testimonials && agent.testimonials.length > 0 && <TestimonialsSection testimonials={agent.testimonials} theme={theme} />}
-      {agent.gallery && agent.gallery.length > 0 && <GallerySection gallery={agent.gallery} theme={theme} />}
-      <ContactSection theme={theme} ownerId={ownerId} />
+      {order.map((id) => (
+        <Fragment key={id}>{sectionRenderers[id]?.()}</Fragment>
+      ))}
       <SaveContactButton agent={agent} theme={theme} variant="editorial" />
     </div>
   );
@@ -74,7 +91,7 @@ export default function Editorial({ data }: TemplateProps) {
 
 // ─── Hero Section ────────────────────────────────────────────────────────────
 
-function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; theme: TemplateProps["data"]["theme"] }) {
+function HeroSection({ agent, theme, resolvedImages }: { agent: TemplateProps["data"]["agent"]; theme: TemplateProps["data"]["theme"]; resolvedImages?: TemplateProps["data"]["resolvedImages"] }) {
   return (
     <section className="px-6 pt-12 pb-8" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
@@ -92,6 +109,7 @@ function HeroSection({ agent, theme }: { agent: TemplateProps["data"]["agent"]; 
               alt={agent.fullName}
               fallbackSeed={agent.fullName}
               className="w-full h-full object-cover"
+              resolvedImages={resolvedImages}
             />
           </div>
         </div>
@@ -427,7 +445,7 @@ function ExperienceSection({ experience, theme }: { experience: NonNullable<Temp
 
 // ─── Projects Section ────────────────────────────────────────────────────────
 
-function ProjectsSection({ projects, theme }: { projects: TemplateProps["data"]["projects"]; theme: TemplateProps["data"]["theme"] }) {
+function ProjectsSection({ projects, theme, resolvedImages }: { projects: TemplateProps["data"]["projects"]; theme: TemplateProps["data"]["theme"]; resolvedImages?: TemplateProps["data"]["resolvedImages"] }) {
   return (
     <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
@@ -458,6 +476,7 @@ function ProjectsSection({ projects, theme }: { projects: TemplateProps["data"][
                     src={project.images[0]}
                     alt={project.title}
                     className="w-full h-full object-cover"
+                    resolvedImages={resolvedImages}
                   />
                 </div>
               )}
@@ -652,7 +671,7 @@ function PropertyListingsSection({ propertyListings, theme }: { propertyListings
 
 // ─── Gallery Section ─────────────────────────────────────────────────────────
 
-function GallerySection({ gallery, theme }: { gallery: NonNullable<TemplateProps["data"]["agent"]["gallery"]>; theme: TemplateProps["data"]["theme"] }) {
+function GallerySection({ gallery, theme, resolvedImages }: { gallery: NonNullable<TemplateProps["data"]["agent"]["gallery"]>; theme: TemplateProps["data"]["theme"]; resolvedImages?: TemplateProps["data"]["resolvedImages"] }) {
   return (
     <section className="px-6 py-10" style={{ backgroundColor: theme.backgroundColor }}>
       <div className="max-w-md mx-auto">
@@ -676,6 +695,7 @@ function GallerySection({ gallery, theme }: { gallery: NonNullable<TemplateProps
                 src={img}
                 alt={`Gallery ${i + 1}`}
                 className="w-full h-full object-cover"
+                resolvedImages={resolvedImages}
               />
             </div>
           ))}

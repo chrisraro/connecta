@@ -156,13 +156,9 @@ export const listAdmins = query({
 export const setupFirstAdmin = mutation({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
-      .unique();
-    if (!user) {
-      throw new Error(`User not found with Clerk ID: ${args.clerkId}. Make sure the user has logged in at least once.`);
-    }
+    // SECURITY: this bootstraps the platform's first superadmin — it must
+    // never trust the clerkId argument alone (Auth audit #1).
+    const user = await requireUserMatching(ctx, args.clerkId);
     const existingAdmins = await ctx.db
       .query("admins")
       .withIndex("by_active", (q) => q.eq("revokedAt", undefined))

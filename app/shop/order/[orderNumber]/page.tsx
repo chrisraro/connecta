@@ -26,6 +26,7 @@ export default function OrderDetailsPage() {
   const orderNumber = params.orderNumber as string;
   const justPaid = searchParams.get("paid") === "1";
 
+  // TODO(follow-up): guest checkout users need a signed access token for this page — see Auth audit #2 follow-up.
   const order = useQuery(api.checkout.getOrderByNumber, { orderNumber });
 
   if (order === undefined) {

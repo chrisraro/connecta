@@ -7,8 +7,9 @@ import {
 } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { getAuthedUser } from "./authz";
+import { getAuthedUser, isActiveAdmin } from "./authz";
 import { readShopSettings, computeTotals } from "./settings";
+import { checkRateLimit } from "./rateLimit";
 
 /**
  * Compute the discount amount (centavos) for a given code + subtotal.
@@ -148,6 +149,10 @@ export const createOrder = mutation({
   handler: async (ctx, args) => {
     const authedUser = await getAuthedUser(ctx);
     const userId = authedUser?._id;
+    await checkRateLimit(ctx, `order:${userId ?? args.guestId ?? "anon"}`, {
+      max: 5,
+      windowMs: 60_000,
+    });
 
     if (!userId && !args.guestEmail) {
       throw new Error("Authentication or guest email is required");
@@ -284,10 +289,22 @@ function generateOrderNumber(): string {
 export const getOrderByNumber = query({
   args: { orderNumber: v.string() },
   handler: async (ctx, args) => {
+    // SECURITY: order numbers are not secret (predictable timestamp + 3-char
+    // suffix) — never return an order without verifying ownership (Auth #2).
+    const user = await getAuthedUser(ctx);
+    if (!user) {
+      throw new Error("Unauthorized: sign in to view this order");
+    }
     const order = await ctx.db
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", args.orderNumber))
       .first();
+    if (!order) return null;
+    const isOwner = order.userId === user._id;
+    const isAdmin = await isActiveAdmin(ctx, user._id);
+    if (!isOwner && !isAdmin) {
+      throw new Error("Unauthorized: you do not have access to this order");
+    }
     return order;
   },
 });
@@ -360,7 +377,9 @@ export const internalConfirmOrderPayment = internalMutation({
     if (!order && args.paymentIntentId) {
       order = await ctx.db
         .query("orders")
-        .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
+        .withIndex("by_paymentIntentId", (q) =>
+          q.eq("paymentIntentId", args.paymentIntentId)
+        )
         .first();
     }
 
@@ -370,6 +389,14 @@ export const internalConfirmOrderPayment = internalMutation({
 
     if (order.paymentStatus === "paid" && args.paymentStatus === "paid") {
       return { success: true, alreadyProcessed: true };
+    }
+
+    // A stale/duplicate/out-of-order "failed" webhook must never regress an
+    // order that has already been marked "paid" — inventory/discount/email
+    // side effects already ran and must not be silently undone (Payments #1
+    // follow-up finding from task-2 review).
+    if (order.paymentStatus === "paid" && args.paymentStatus !== "paid") {
+      return { success: true, alreadyProcessed: true, note: "ignored_stale_status_after_paid" };
     }
 
     const now = Date.now();
@@ -384,6 +411,65 @@ export const internalConfirmOrderPayment = internalMutation({
 
     if (args.paymentStatus !== "paid") {
       return { success: true };
+    }
+
+    // Re-validate stock and the discount's usage limit HERE, immediately
+    // before committing, instead of trusting the create-time check — closes
+    // the overselling / usage-limit-bypass race between two orders paid
+    // concurrently for the same last-unit product or single-use code
+    // (Backend #1/#2/#3, Payments #3/#4). This only runs on the pending->paid
+    // path: the guards above already returned early for paid->paid and
+    // paid->non-paid, so an order can't be re-decremented or double-failed.
+    for (const item of order.items) {
+      const product = await ctx.db.get(item.productId);
+      if (product && product.trackInventory && product.inventory < item.quantity) {
+        await ctx.db.patch(order._id, {
+          paymentStatus: "failed",
+          status: order.status,
+          updatedAt: Date.now(),
+        });
+        return { success: false, reason: "insufficient_stock" };
+      }
+      if (item.variationId) {
+        const variation = await ctx.db.get(item.variationId);
+        if (variation && variation.inventory < item.quantity) {
+          await ctx.db.patch(order._id, {
+            paymentStatus: "failed",
+            status: order.status,
+            updatedAt: Date.now(),
+          });
+          return { success: false, reason: "insufficient_stock" };
+        }
+      }
+    }
+
+    if (order.appliedDiscountCode) {
+      const discount = await ctx.db
+        .query("discounts")
+        .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
+        .first();
+      // Mirror every create-time check from `resolveDiscount` above, not just
+      // usageLimit — an admin can deactivate a code or it can pass its
+      // validUntil expiry while an order sits "pending" with that code
+      // already applied. Re-checking only usageLimit here would let a
+      // since-deactivated/expired code still be honored (and usedCount still
+      // incremented) at payment-confirmation time (Task 3 review finding).
+      const discountNow = Date.now();
+      if (
+        discount &&
+        ((discount.usageLimit !== undefined &&
+          discount.usedCount >= discount.usageLimit) ||
+          discount.isActive === false ||
+          discountNow < discount.validFrom ||
+          (discount.validUntil && discountNow > discount.validUntil))
+      ) {
+        await ctx.db.patch(order._id, {
+          paymentStatus: "failed",
+          status: order.status,
+          updatedAt: Date.now(),
+        });
+        return { success: false, reason: "discount_limit_reached" };
+      }
     }
 
     for (const item of order.items) {
