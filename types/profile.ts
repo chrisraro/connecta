@@ -187,8 +187,3 @@ export interface ProfileData {
     };
     digitalCard?: DigitalCardConfig;
 }
-
-// Props compliant with all template components
-export interface TemplateProps {
-    data: ProfileData;
-}

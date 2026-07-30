@@ -3,21 +3,12 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import Editorial from "@/components/templates/Editorial";
-import Kinetic from "@/components/templates/Kinetic";
-import Architectural from "@/components/templates/Architectural";
+import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
 import { ProfileData, ProfileType } from "@/types/profile";
 import { Loader2, SmartphoneNfc, SearchX } from "lucide-react";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import Link from "next/link";
 import { use } from "react";
-
-// Template component map
-const TEMPLATE_COMPONENTS = {
-    editorial: Editorial,
-    kinetic: Kinetic,
-    architectural: Architectural,
-};
 
 export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params);
@@ -82,10 +73,6 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
         digitalCard: (profile as any).digitalCard,
     };
 
-    // Get the template component based on themeId, fallback to Editorial
-    const templateId = layoutConfig.themeId as keyof typeof TEMPLATE_COMPONENTS;
-    const TemplateComponent = TEMPLATE_COMPONENTS[templateId] || Editorial;
-
     return (
         <div
             className="min-h-screen flex flex-col"
@@ -109,7 +96,7 @@ function PublicProfileContent({ profileId }: { profileId: string }) {
                 </div>
             )}
             
-            <TemplateComponent data={data} />
+            <ProfileRenderer data={data} templateId={layoutConfig.themeId} />
 
             {(profile as { showBranding?: boolean }).showBranding !== false && (
                 <div className="py-6 text-center text-xs mt-auto" style={{ color: layoutConfig.colorPalette.text }}>

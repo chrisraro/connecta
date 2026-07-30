@@ -34,9 +34,7 @@ import {
 } from "lucide-react";
 
 // Templates
-import Editorial from "@/components/templates/Editorial";
-import Kinetic from "@/components/templates/Kinetic";
-import Architectural from "@/components/templates/Architectural";
+import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
 import { TEMPLATES, getTemplateMeta } from "@/components/templates/registry";
 import {
     ProfileData, ProfileInfo, ProjectItem,
@@ -907,15 +905,7 @@ function BuilderContent() {
             }
         };
 
-        switch (selectedTemplate) {
-            case "kinetic":
-                return <Kinetic data={data} />;
-            case "architectural":
-                return <Architectural data={data} />;
-            case "editorial":
-            default:
-                return <Editorial data={data} />;
-        }
+        return <ProfileRenderer data={data} templateId={selectedTemplate} />;
     };
 
     return (
