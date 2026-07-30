@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
-import { requireUserMatching } from "./authz";
+import { requireUser, requireUserMatching } from "./authz";
 import { acceptInvitesForCurrentUser } from "./teams";
+import { logAudit } from "./audit";
 
 export const syncUser = mutation({
     args: {
@@ -214,6 +215,142 @@ export const internalStripLegacyCredits = internalMutation({
             stripped,
             isDone: page.isDone,
             cursor: page.isDone ? null : page.continueCursor,
+        };
+    },
+});
+
+/**
+ * Self-service account deletion (RA 10173 erasure right).
+ *
+ * The security audit that produced app/privacy and app/terms found there was
+ * NO erasure path anywhere in this codebase. This mutation is the backend
+ * half of that fix (the settings-page delete button is an explicit
+ * follow-up, not in scope here — see the privacy policy's "Honest gap" note
+ * under "Your rights under RA 10173").
+ *
+ * SAFETY MODEL
+ * ------------
+ *  - The caller can ONLY delete themselves. There is no id argument to spoof;
+ *    the target user is always derived from `ctx.auth` via `requireUser`,
+ *    the same pattern used everywhere else in this codebase to close the
+ *    "clerkId argument is spoofable" hole (see convex/authz.ts).
+ *
+ * REFERENCE GRAPH
+ * ----------------
+ * This reuses the reference graph enumerated in convex/maintenance.ts
+ * (internalPurgeTestAccounts), which walks every table that points at
+ * `users` rather than deleting the user row alone and orphaning its
+ * dependents:
+ *  - profiles, leads, notifications, properties, projects, carts,
+ *    subscriptionInvoices, orders: deleted outright — this is the user's own
+ *    data, with no other party's rights attached to it.
+ *  - cards: NEVER deleted. They are real hardware sitting in the physical
+ *    world; deleting the row would not reclaim the object. They are
+ *    returned to unassigned inventory (status "inventory", tap count reset,
+ *    link to the now-deleted profile cleared) so they can be reissued.
+ *  - auditLogs: deliberately RETAINED, including a final entry recording
+ *    the deletion itself. An audit trail that erases itself when its
+ *    subject is removed is not an audit trail — this is the one category of
+ *    "personal data" that legitimately survives account deletion as a
+ *    security record.
+ *  - admins: any admin grant belonging to this user is revoked/removed too,
+ *    since it is specifically about this person, not shared data.
+ *
+ * KNOWN LIMITATION (documented rather than papered over): this does not
+ * handle team ownership. If the caller owns a `teams` row, that team and its
+ * `teamInvites` are left as-is — reassigning or winding down a shared team
+ * workspace is a separate, harder problem (other members have a stake in
+ * that data) than erasing one person's own records, and is out of scope for
+ * this pass.
+ */
+export const deleteMyAccount = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const user = await requireUser(ctx);
+        const userId = user._id;
+
+        const [
+            profiles,
+            cards,
+            leads,
+            notifications,
+            properties,
+            projects,
+            carts,
+            invoices,
+            orders,
+            adminGrants,
+        ] = await Promise.all([
+            ctx.db.query("profiles").withIndex("by_owner", (q) => q.eq("ownerId", userId)).collect(),
+            ctx.db.query("cards").withIndex("by_owner", (q) => q.eq("ownerId", userId)).collect(),
+            ctx.db.query("leads").withIndex("by_owner", (q) => q.eq("ownerId", userId)).collect(),
+            ctx.db.query("notifications").withIndex("by_user", (q) => q.eq("userId", userId)).collect(),
+            ctx.db.query("properties").withIndex("by_owner", (q) => q.eq("ownerId", userId)).collect(),
+            ctx.db.query("projects").withIndex("by_owner", (q) => q.eq("ownerId", userId)).collect(),
+            ctx.db.query("carts").withIndex("by_user", (q) => q.eq("userId", userId)).collect(),
+            ctx.db.query("subscriptionInvoices").withIndex("by_user", (q) => q.eq("userId", userId)).collect(),
+            ctx.db.query("orders").withIndex("by_user", (q) => q.eq("userId", userId)).collect(),
+            ctx.db.query("admins").withIndex("by_user", (q) => q.eq("userId", userId)).collect(),
+        ]);
+
+        // Record the deletion in the (retained) audit trail before the user
+        // row disappears, so there is a durable record of who requested it
+        // and when — and what it touched.
+        await logAudit(ctx, {
+            userId,
+            action: "delete",
+            resourceType: "user",
+            resourceId: userId,
+            changes: {
+                profilesDeleted: profiles.length,
+                leadsDeleted: leads.length,
+                notificationsDeleted: notifications.length,
+                propertiesDeleted: properties.length,
+                projectsDeleted: projects.length,
+                cartsDeleted: carts.length,
+                invoicesDeleted: invoices.length,
+                ordersDeleted: orders.length,
+                cardsReturnedToInventory: cards.length,
+            },
+        });
+
+        for (const p of profiles) await ctx.db.delete(p._id);
+        for (const l of leads) await ctx.db.delete(l._id);
+        for (const n of notifications) await ctx.db.delete(n._id);
+        for (const p of properties) await ctx.db.delete(p._id);
+        for (const p of projects) await ctx.db.delete(p._id);
+        for (const c of carts) await ctx.db.delete(c._id);
+        for (const i of invoices) await ctx.db.delete(i._id);
+        for (const o of orders) await ctx.db.delete(o._id);
+        for (const a of adminGrants) await ctx.db.delete(a._id);
+
+        // Physical cards survive as unassigned inventory — never deleted.
+        for (const c of cards) {
+            await ctx.db.patch(c._id, {
+                status: "inventory",
+                linkedProfileId: undefined,
+                tapCount: 0,
+            });
+        }
+
+        // auditLogs are deliberately RETAINED (see doc comment above).
+
+        await ctx.db.delete(userId);
+
+        return {
+            success: true,
+            deleted: {
+                profiles: profiles.length,
+                leads: leads.length,
+                notifications: notifications.length,
+                properties: properties.length,
+                projects: projects.length,
+                carts: carts.length,
+                invoices: invoices.length,
+                orders: orders.length,
+                adminGrants: adminGrants.length,
+            },
+            cardsReturnedToInventory: cards.length,
         };
     },
 });

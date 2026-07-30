@@ -415,9 +415,9 @@ export default function LandingPage() {
             <FooterCol
               title="Company"
               links={[
-                { label: "Privacy", href: "#" },
-                { label: "Terms", href: "#" },
-                { label: "Support", href: "#" },
+                { label: "Privacy", href: "/privacy" },
+                { label: "Terms", href: "/terms" },
+                { label: "Support", href: `mailto:${HERALD.supportEmail}` },
               ]}
             />
           </div>
