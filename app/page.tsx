@@ -14,16 +14,14 @@ import {
   UserRound,
   Inbox,
   Check,
-  Star,
 } from "lucide-react";
 import Link from "next/link";
 import { HeraldMark } from "@/components/brand/HeraldMark";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Reveal } from "@/components/ui/reveal";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { CountUp } from "@/components/ui/count-up";
 import { HERALD } from "@/lib/brand";
 import { TEMPLATES as TEMPLATE_METAS } from "@/components/templates/registry";
+import { HeroProfilePreview } from "@/components/marketing/HeroProfilePreview";
 
 export default function LandingPage() {
   return (
@@ -110,15 +108,15 @@ export default function LandingPage() {
               style={{ fontFamily: "var(--font-display)" }}
             >
               <span className="word-rise inline-block" style={{ animationDelay: "120ms" }}>
-                Your{" "}
-              </span>
+                Your
+              </span>{" "}
               <span className="word-rise inline-block" style={{ animationDelay: "200ms" }}>
-                business{" "}
-              </span>
+                business
+              </span>{" "}
               <span className="word-rise inline-block" style={{ animationDelay: "280ms" }}>
-                card,{" "}
-              </span>
-              <span className="word-rise inline-block text-gradient-brand" style={{ animationDelay: "380ms" }}>
+                card,
+              </span>{" "}
+              <span className="word-rise inline-block" style={{ animationDelay: "380ms" }}>
                 reinvented.
               </span>
             </h1>
@@ -171,9 +169,11 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* NFC Card visual with 3D tilt parallax */}
+          {/* Real product preview: an actual profile template rendered at
+              phone scale, not a placeholder mockup (audit: "you're selling
+              a look; show the look"). */}
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-            <NfcCardVisual />
+            <HeroProfilePreview />
           </div>
         </div>
       </section>
@@ -193,24 +193,6 @@ export default function LandingPage() {
             />
           </Reveal>
           <Steps />
-        </div>
-      </section>
-
-      {/* ─── Stats strip ─────────────────────────────────────────────── */}
-      <section className="border-t border-border px-4 py-14 sm:px-6">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 text-center sm:grid-cols-4">
-          <Reveal delay={0}>
-            <StatItem value={<CountUp to={3} suffix="s" />} label="Avg. tap-to-profile" />
-          </Reveal>
-          <Reveal delay={80}>
-            <StatItem value={<CountUp to={100} suffix="%" />} label="No app for visitors" />
-          </Reveal>
-          <Reveal delay={160}>
-            <StatItem value={<CountUp to={TEMPLATE_METAS.length} />} label="Premium templates" />
-          </Reveal>
-          <Reveal delay={240}>
-            <StatItem value={<CountUp to={0} prefix="₱" />} label="To get started" />
-          </Reveal>
         </div>
       </section>
 
@@ -316,29 +298,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Testimonials ────────────────────────────────────────────── */}
-      <section className="px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <SectionHeading
-              eyebrow="Loved by professionals"
-              title="Networking that actually converts"
-            />
-          </Reveal>
-          <div className="mt-14 grid gap-5 md:grid-cols-3">
-            {[
-              { quote: "I stopped carrying paper cards. One tap and the lead is already in my inbox before the conversation ends.", role: "Real estate broker, Manila" },
-              { quote: "My profile looks like a premium brand. Clients take me more seriously the moment they see it.", role: "Brand designer, Cebu" },
-              { quote: "The lead capture form is the killer feature. No more lost contacts after events.", role: "Insurance advisor, Davao" },
-            ].map((t, i) => (
-              <Reveal key={t.role} delay={i * 90}>
-                <TestimonialCard quote={t.quote} role={t.role} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ─── Final CTA ───────────────────────────────────────────────── */}
       <section className="px-4 pb-24 sm:px-6">
         <Reveal>
@@ -351,7 +310,7 @@ export default function LandingPage() {
               aria-hidden="true"
               className="aurora-blob aurora-c absolute left-0 bottom-0 h-56 w-56 bg-primary/20 blur-[80px]"
             />
-            <h2 className="relative z-10 text-3xl font-black tracking-tight sm:text-5xl bg-gradient-to-r from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent">
+            <h2 className="relative z-10 text-3xl font-black tracking-tight text-white sm:text-5xl">
               Ready to make a lasting impression?
             </h2>
             <p className="relative z-10 mx-auto mt-5 max-w-xl text-neutral-400">
@@ -433,40 +392,6 @@ export default function LandingPage() {
 
 /* ─── Building blocks ─────────────────────────────────────────────── */
 
-function NfcCardVisual() {
-  return (
-    <div className="relative" aria-hidden="true">
-      {/* Layered soft glow under the card */}
-      <div className="aurora-blob aurora-b absolute inset-0 -z-10 bg-primary/20" />
-      <TiltCard className="relative aspect-[1.586/1] w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-7 shadow-2xl">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
-        <div className="flex h-full flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
-              <HeraldMark className="h-5 w-5 text-primary" />
-              {HERALD.name}
-            </span>
-            <div className="flex flex-col gap-1">
-              <span className="h-3 w-3 rounded-full border border-white/40" />
-              <span className="h-3 w-3 rounded-full border border-white/30" />
-            </div>
-          </div>
-          <div>
-            <div className="h-2.5 w-32 rounded-full bg-white/80" />
-            <div className="mt-2 h-2 w-24 rounded-full bg-white/40" />
-            <div className="mt-5 flex items-center gap-2">
-              <span className="rounded-md bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground">
-                TAP TO CONNECT
-              </span>
-              <span className="h-8 w-8 rounded-md border border-white/20 bg-white/10" />
-            </div>
-          </div>
-        </div>
-      </TiltCard>
-    </div>
-  );
-}
-
 function SectionHeading({
   eyebrow,
   title,
@@ -538,25 +463,6 @@ function StepCard({
       </div>
       <h3 className="mt-5 text-xl font-bold tracking-tight">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-    </div>
-  );
-}
-
-function StatItem({
-  value,
-  label,
-}: {
-  value: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <div>
-      <div className="text-3xl font-black tracking-tighter text-foreground sm:text-4xl">
-        {value}
-      </div>
-      <div className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground sm:text-sm">
-        {label}
-      </div>
     </div>
   );
 }
@@ -675,24 +581,6 @@ function PricingCard({
         </Button>
       </Link>
     </div>
-  );
-}
-
-function TestimonialCard({ quote, role }: { quote: string; role: string }) {
-  return (
-    <figure className="card-glow flex h-full flex-col rounded-3xl border border-border bg-card p-7">
-      <div className="flex gap-0.5 text-primary" aria-hidden="true">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star key={i} className="h-4 w-4 fill-current" />
-        ))}
-      </div>
-      <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
-        &ldquo;{quote}&rdquo;
-      </blockquote>
-      <figcaption className="mt-5 text-sm font-medium text-muted-foreground">
-        {role}
-      </figcaption>
-    </figure>
   );
 }
 

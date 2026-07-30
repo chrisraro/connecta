@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Herald">
+  <title>Herald</title>
+  <!--
+    The Herald monogram.
+
+    An "H" whose crossbar is a chevron — the most fundamental charge in
+    heraldry. The medieval herald had two duties, and the mark carries both:
+    announcing a person (the chevron rising) and designing the arms that
+    identified them (the charge itself).
+
+    Drawn as a single path in currentColor so it inherits from context and
+    works on any surface. Geometry sits on a 64-unit grid with the stems at
+    x=17-24 and x=40-47, giving even optical sidebearings at small sizes.
+  -->
+  <path
+    fill="currentColor"
+    d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"
+  />
+</svg>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herald — Brand Sheet</title>
+<style>
+  @font-face {
+    font-family: "Fraunces-fallback";
+    src: local("Georgia");
+  }
+  :root {
+    --seal: #8d2c27;
+    --seal-hover: #7f1817;
+    --ink: #201916;
+    --ink-soft: #5f5652;
+    --paper: #fcfaf8;
+    --surface: #f5f1ef;
+    --line: #e3ddd9;
+    --dark-bg: #030609;
+    --dark-fg: #f0f6fa;
+    --r-sm: 6px;
+    --r-md: 12px;
+    --r-lg: 20px;
+    --e-raised: 0 1px 2px rgb(28 22 20 / 0.04), 0 2px 8px rgb(28 22 20 / 0.06);
+    --e-overlay: 0 4px 12px rgb(28 22 20 / 0.08), 0 12px 32px rgb(28 22 20 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem 6rem;
+  }
+  header.page-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  header.page-head svg { width: 40px; height: 40px; color: var(--seal); }
+  header.page-head h1 {
+    font-size: 1.75rem;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    color: var(--ink-soft);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.95rem;
+    margin: 0 0 3.5rem;
+  }
+  section { margin-bottom: 4rem; }
+  section h2 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--seal);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.75rem;
+  }
+  p.note {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    line-height: 1.6;
+  }
+
+  /* ── Mark at multiple sizes, light + dark ───────────────────────── */
+  .mark-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-end;
+  }
+  .mark-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-radius: var(--r-md);
+    box-shadow: var(--e-raised);
+  }
+  .mark-tile.light { background: var(--surface); color: var(--seal); }
+  .mark-tile.dark { background: var(--dark-bg); color: var(--dark-fg); }
+  .mark-tile span {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.7rem;
+    color: inherit;
+    opacity: 0.6;
+  }
+
+  /* ── Seal icon on assorted grounds ───────────────────────────────── */
+  .seal-row { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  .seal-tile {
+    width: 96px; height: 96px;
+    border-radius: var(--r-lg);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--e-raised);
+  }
+  .seal-tile.on-paper { background: var(--paper); border: 1px solid var(--line); }
+  .seal-tile.on-surface { background: var(--surface); }
+  .seal-tile.on-dark { background: var(--dark-bg); }
+  .seal-tile.on-seal { background: var(--seal); }
+  .seal-tile svg { width: 56px; height: 56px; }
+
+  /* ── Color ramp ───────────────────────────────────────────────────── */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .swatch {
+    border-radius: var(--r-md);
+    overflow: hidden;
+    box-shadow: var(--e-raised);
+    border: 1px solid var(--line);
+  }
+  .swatch .chip { height: 88px; }
+  .swatch .label {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--paper);
+    padding: 0.6rem 0.8rem;
+  }
+  .swatch .label .name { font-size: 0.8rem; font-weight: 700; display: block; }
+  .swatch .label .hex {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    font-family: "Courier New", monospace;
+  }
+  .swatch .label .token {
+    font-size: 0.7rem;
+    color: var(--seal);
+    font-family: "Courier New", monospace;
+    display: block;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Type scale ───────────────────────────────────────────────────── */
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-row .sample { font-family: Georgia, "Times New Roman", serif; }
+  .type-row .meta {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .stack-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .stack-card {
+    padding: 1.25rem;
+    border-radius: var(--r-md);
+    background: var(--surface);
+    box-shadow: var(--e-raised);
+  }
+  .stack-card .role {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--seal);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .stack-card .face { font-size: 1.6rem; margin: 0 0 0.15rem; }
+  .stack-card .use {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+
+  /* ── Usage: correct / incorrect ─────────────────────────────────── */
+  .usage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+  }
+  .usage-card {
+    border-radius: var(--r-md);
+    box-shadow: var(--e-raised);
+    overflow: hidden;
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+  .usage-card .stage {
+    height: 140px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .usage-card .verdict {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.85rem;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .usage-card.good .verdict { color: #1a6b3d; }
+  .usage-card.bad .verdict { color: var(--seal); }
+  .usage-card .verdict b { font-size: 1rem; }
+
+  footer.page-foot {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body { background: #0b0908; color: #f1ece7; }
+    .subtitle, p.note { color: #b9aea6; }
+    .swatch .label, .stack-card, .usage-card { background: #17130f; }
+    .swatch, .usage-card { border-color: #332a24; }
+    section h2 { border-color: #332a24; }
+    footer.page-foot { border-color: #332a24; color: #b9aea6; }
+  }
+
+  @media print {
+    body { background: #fff; }
+    .mark-tile.dark, .seal-tile.on-dark { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+    <h1>Herald — Brand Sheet</h1>
+  </header>
+  <p class="subtitle">Reference sheet for printers and designers. Generated from the tokens in <code>app/globals.css</code> and the source marks in <code>public/brand/</code>. See <code>marketing/README.md</code> for how to regenerate this file.</p>
+
+  <section>
+    <h2>01 · The mark</h2>
+    <p class="note">An “H” whose crossbar is a heraldic chevron — the most fundamental charge in heraldry. It carries both of the medieval herald's duties: <em>announcing</em> a person (the chevron rising) and <em>designing</em> the arms that identified them (the charge itself). One path, drawn in <code>currentColor</code>, so it inherits from any surface.</p>
+    <div class="mark-row">
+      <div class="mark-tile light" style="width:220px;height:220px;">
+        <svg viewBox="0 0 64 64" fill="none" style="width:120px;height:120px;"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        <span>220px · on paper</span>
+      </div>
+      <div class="mark-tile dark" style="width:160px;height:160px;">
+        <svg viewBox="0 0 64 64" fill="none" style="width:80px;height:80px;"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        <span>160px · on dark</span>
+      </div>
+      <div class="mark-tile light" style="width:96px;height:96px;">
+        <svg viewBox="0 0 64 64" fill="none" style="width:44px;height:44px;"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        <span>96px</span>
+      </div>
+      <div class="mark-tile dark" style="width:56px;height:56px;">
+        <svg viewBox="0 0 64 64" fill="none" style="width:24px;height:24px;"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        <span>56px</span>
+      </div>
+      <div class="mark-tile light" style="width:40px;height:40px;">
+        <svg viewBox="0 0 64 64" fill="none" style="width:16px;height:16px;"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        <span>32px</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>02 · The seal (app icon)</h2>
+    <p class="note">A wax seal's design is pressed <em>into</em> the wax — the mark is knocked out of the disc rather than sitting on top of it. One path, <code>fill-rule="evenodd"</code>: the disc and the monogram are subpaths of the same shape, so the knockout is real transparency and it composites correctly on any background.</p>
+    <div class="seal-row">
+      <div class="seal-tile on-paper">
+        <svg viewBox="0 0 64 64"><path fill="#8a2f22" fill-rule="evenodd" clip-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM17 16h7v32h-7V16Zm23 0h7v32h-7V16ZM24 32l8-4 8 4v6l-8-4-8 4v-6Z"/></svg>
+      </div>
+      <div class="seal-tile on-surface">
+        <svg viewBox="0 0 64 64"><path fill="#8a2f22" fill-rule="evenodd" clip-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM17 16h7v32h-7V16Zm23 0h7v32h-7V16ZM24 32l8-4 8 4v6l-8-4-8 4v-6Z"/></svg>
+      </div>
+      <div class="seal-tile on-dark">
+        <svg viewBox="0 0 64 64"><path fill="#8a2f22" fill-rule="evenodd" clip-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM17 16h7v32h-7V16Zm23 0h7v32h-7V16ZM24 32l8-4 8 4v6l-8-4-8 4v-6Z"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>03 · Colour</h2>
+    <p class="note">One saturated brand colour carrying real surface area (the seal), warm neutrals tinted toward its own hue rather than toward generic warmth, plus the light/dark surface pair the product ships with. Hex values below are computed sRGB, read live from <code>app/globals.css</code>'s OKLCH tokens.</p>
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="chip" style="background:#8d2c27"></div>
+        <div class="label"><span class="name">Seal</span><span class="hex">#8d2c27</span><span class="token">--herald-seal</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#7f1817"></div>
+        <div class="label"><span class="name">Seal — hover</span><span class="hex">#7f1817</span><span class="token">--herald-seal-hover</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#201916"></div>
+        <div class="label"><span class="name">Ink</span><span class="hex">#201916</span><span class="token">--herald-ink</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#5f5652"></div>
+        <div class="label"><span class="name">Ink — soft</span><span class="hex">#5f5652</span><span class="token">--herald-ink-soft</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#fcfaf8;border-bottom:1px solid #e3ddd9"></div>
+        <div class="label"><span class="name">Paper</span><span class="hex">#fcfaf8</span><span class="token">--herald-paper</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#f5f1ef"></div>
+        <div class="label"><span class="name">Surface</span><span class="hex">#f5f1ef</span><span class="token">--herald-surface</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#e3ddd9"></div>
+        <div class="label"><span class="name">Line</span><span class="hex">#e3ddd9</span><span class="token">--herald-line</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#fbfaf7;border-bottom:1px solid #e3ddd9"></div>
+        <div class="label"><span class="name">Background — light</span><span class="hex">#fbfaf7</span><span class="token">--background</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#100d09"></div>
+        <div class="label"><span class="name">Foreground — light</span><span class="hex">#100d09</span><span class="token">--foreground</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#030609"></div>
+        <div class="label"><span class="name">Background — dark</span><span class="hex">#030609</span><span class="token">--background (.dark)</span></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#f0f6fa"></div>
+        <div class="label"><span class="name">Foreground — dark</span><span class="hex">#f0f6fa</span><span class="token">--foreground (.dark)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>04 · Type stack</h2>
+    <p class="note">Fraunces (display) and Geist (body) carry the app shell everywhere except the three profile templates, each of which loads its own display face for typographic distinction (Newsreader / Space Grotesk / Manrope — see <code>lib/fonts.ts</code>).</p>
+    <div class="stack-cards">
+      <div class="stack-card">
+        <span class="role">Display</span>
+        <div class="face" style="font-family: Georgia, serif;">Fraunces</div>
+        <div class="use">Headlines, hero copy. High-contrast variable serif with real character (SOFT/WONK/opsz axes).</div>
+      </div>
+      <div class="stack-card">
+        <span class="role">Body / UI</span>
+        <div class="face" style="font-family: Arial, sans-serif;">Geist</div>
+        <div class="use">App shell, dashboard, forms. Serif is banned on dashboard surfaces.</div>
+      </div>
+      <div class="stack-card">
+        <span class="role">Template — Editorial</span>
+        <div class="face" style="font-family: Georgia, serif; font-style: italic;">Newsreader</div>
+        <div class="use">Magazine typography for writers, consultants, photographers.</div>
+      </div>
+      <div class="stack-card">
+        <span class="role">Template — Kinetic</span>
+        <div class="face" style="font-family: 'Courier New', monospace;">Space Grotesk</div>
+        <div class="use">Dark, oversized type for developers and studios.</div>
+      </div>
+      <div class="stack-card">
+        <span class="role">Template — Architectural</span>
+        <div class="face" style="font-family: Arial, sans-serif; font-weight:700;">Manrope</div>
+        <div class="use">Strict grid sans for executives and firms.</div>
+      </div>
+    </div>
+    <div style="margin-top:1.75rem;">
+      <div class="type-row"><div class="sample" style="font-size:3.5rem;font-weight:700;">Aa Bb</div><div class="meta">Display / 56px / 700</div></div>
+      <div class="type-row"><div class="sample" style="font-size:2.25rem;font-weight:700;">Aa Bb Cc</div><div class="meta">H2 / 36px / 700</div></div>
+      <div class="type-row"><div class="sample" style="font-size:1.5rem;font-weight:600;">Aa Bb Cc Dd</div><div class="meta">H3 / 24px / 600</div></div>
+      <div class="type-row"><div class="sample" style="font-size:1.125rem;">The quick brown fox jumps.</div><div class="meta">Body — large / 18px / 400</div></div>
+      <div class="type-row"><div class="sample" style="font-size:1rem;">The quick brown fox jumps.</div><div class="meta">Body / 16px / 400</div></div>
+      <div class="type-row"><div class="sample" style="font-size:0.875rem;color:var(--ink-soft);">The quick brown fox jumps over the lazy dog.</div><div class="meta">Body — small / 14px / 400</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>05 · Correct &amp; incorrect usage</h2>
+    <div class="usage-grid">
+      <div class="usage-card good">
+        <div class="stage" style="background:var(--surface);">
+          <svg viewBox="0 0 64 64" fill="none" style="width:56px;height:56px;color:var(--seal);"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        </div>
+        <div class="verdict"><b>✓</b> Single colour, clear space, on a calm ground.</div>
+      </div>
+      <div class="usage-card good">
+        <div class="stage" style="background:var(--dark-bg);">
+          <svg viewBox="0 0 64 64" fill="none" style="width:56px;height:56px;color:var(--dark-fg);"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        </div>
+        <div class="verdict"><b>✓</b> Inherits <code>currentColor</code> — works on dark grounds unmodified.</div>
+      </div>
+      <div class="usage-card bad">
+        <div class="stage" style="background:linear-gradient(135deg,#8d2c27,#1f3d5c,#c9a227);">
+          <svg viewBox="0 0 64 64" fill="none" style="width:56px;height:56px;color:#fff;opacity:0.9;"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        </div>
+        <div class="verdict"><b>✗</b> Never recolour with a gradient or drop it on a busy photo/background.</div>
+      </div>
+      <div class="usage-card bad">
+        <div class="stage" style="background:var(--surface);">
+          <svg viewBox="0 0 64 64" fill="none" style="width:56px;height:56px;color:var(--seal);transform:scaleX(-1) rotate(12deg);"><path fill="currentColor" d="M17 16h7v32h-7zM40 16h7v32h-7zM24 32l8-4 8 4v6l-8-4-8 4v-6z"/></svg>
+        </div>
+        <div class="verdict"><b>✗</b> Never mirror, skew, rotate, or otherwise distort the geometry.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page-foot">
+    Herald — “Announced properly.” · Generated from <code>app/globals.css</code> and <code>public/brand/</code>. See <code>marketing/README.md</code>.
+  </footer>
+
+</div>
+</body>
+</html>
