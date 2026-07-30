@@ -42,6 +42,7 @@ import {
     PropertyListingItem, InlineProject, DigitalCardConfig
 } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { EditableList, type FieldDef } from "@/components/profile-builder/EditableList";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { Id } from "@/convex/_generated/dataModel";
@@ -359,6 +360,66 @@ function SectionEditor({
         </div>
     );
 }
+
+// --- EditableList field definitions ---
+// One FieldDef set per list, matching each item type's real shape in
+// types/profile.ts. Kept at module scope since they don't depend on
+// component state.
+
+type EducationItem = NonNullable<ProfileInfo["education"]>[number];
+const EDUCATION_FIELDS: FieldDef<EducationItem>[] = [
+    { key: "degree", label: "Degree", placeholder: "Degree", required: true },
+    { key: "school", label: "School", placeholder: "School", required: true },
+    { key: "year", label: "Year", placeholder: "Year" },
+];
+
+// techStack items store `skills` as a string[]; EditableList works over a
+// display item shaped like `{ category, skills: string }` (comma-separated),
+// converted to/from the real `{ category, skills: string[] }` shape at the
+// call site — mirroring how `addTechStack` already parses the draft input.
+type TechStackDisplayItem = { category: string; skills: string };
+const TECH_STACK_FIELDS: FieldDef<TechStackDisplayItem>[] = [
+    { key: "category", label: "Category", placeholder: "e.g., Frontend", required: true },
+    { key: "skills", label: "Skills (comma separated)", placeholder: "Skills (comma separated)", required: true },
+];
+
+type ExperienceItem = NonNullable<ProfileInfo["experience"]>[number];
+const EXPERIENCE_FIELDS: FieldDef<ExperienceItem>[] = [
+    { key: "title", label: "Job Title", placeholder: "Job Title", required: true },
+    { key: "company", label: "Company", placeholder: "Company", required: true },
+    { key: "period", label: "Period", placeholder: "e.g., 2020 - Present" },
+    { key: "description", label: "Description", placeholder: "Description", type: "textarea" },
+];
+
+const INLINE_PROJECT_FIELDS: FieldDef<InlineProject>[] = [
+    { key: "title", label: "Project Title", placeholder: "Project Title", required: true },
+    { key: "description", label: "Description", placeholder: "Short description", type: "textarea" },
+    { key: "category", label: "Category", placeholder: "e.g., web-design" },
+    { key: "link", label: "External URL", placeholder: "External URL (optional)", type: "url" },
+];
+
+const PRODUCT_FIELDS: FieldDef<ProductItem>[] = [
+    { key: "title", label: "Product Title", placeholder: "Product Title", required: true },
+    { key: "description", label: "Description", placeholder: "Description", type: "textarea", required: true },
+    { key: "price", label: "Price", placeholder: "Price (optional)", type: "number" },
+    { key: "link", label: "Link", placeholder: "Link (optional)", type: "url" },
+];
+
+const PROPERTY_LISTING_FIELDS: FieldDef<PropertyListingItem>[] = [
+    { key: "title", label: "Property Title", placeholder: "Property Title", required: true },
+    { key: "description", label: "Description", placeholder: "Description (optional)", type: "textarea" },
+    { key: "price", label: "Price", placeholder: "e.g., $250,000" },
+    { key: "location", label: "Location", placeholder: "Location" },
+    { key: "status", label: "Status", placeholder: "for-sale / for-rent / sold" },
+    { key: "link", label: "Listing URL", placeholder: "Listing URL (optional)", type: "url" },
+];
+
+type TestimonialItem = NonNullable<ProfileInfo["testimonials"]>[number];
+const TESTIMONIAL_FIELDS: FieldDef<TestimonialItem>[] = [
+    { key: "quote", label: "Quote", placeholder: "Quote", type: "textarea", required: true },
+    { key: "author", label: "Author Name", placeholder: "Author Name", required: true },
+    { key: "role", label: "Role/Title", placeholder: "Role/Title" },
+];
 
 // --- Main Page Component ---
 
@@ -1633,26 +1694,19 @@ function BuilderContent() {
                 onClose={() => setActiveModal(null)}
                 title="Education"
             >
-                <div className="space-y-4">
-                    {education.map((edu, i) => (
-                        <div key={i} className="p-3 bg-muted rounded-lg flex items-center justify-between">
-                            <div>
-                                <p className="font-medium text-sm text-foreground">{edu.degree}</p>
-                                <p className="text-sm text-muted-foreground">{edu.school}</p>
-                                {edu.year && <p className="text-xs text-muted-foreground">{edu.year}</p>}
-                            </div>
-                            <button onClick={() => setEducation(education.filter((_, idx) => idx !== i))} className="text-red-500">
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ))}
-                    <div className="space-y-2">
-                        <Input placeholder="Degree" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
-                        <Input placeholder="School" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
-                        <Input placeholder="Year" value={newEducation.year} onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })} />
-                        <Button onClick={addEducation} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Education</Button>
-                    </div>
-                </div>
+                <EditableList<EducationItem>
+                    items={education}
+                    fields={EDUCATION_FIELDS}
+                    onChange={setEducation}
+                    itemLabel="education entry"
+                    onAdd={addEducation}
+                    addLabel="Add Education"
+                    emptyHint="No education entries yet."
+                >
+                    <Input placeholder="Degree" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
+                    <Input placeholder="School" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
+                    <Input placeholder="Year" value={newEducation.year} onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })} />
+                </EditableList>
             </SectionEditor>
 
             <SectionEditor
@@ -1660,24 +1714,25 @@ function BuilderContent() {
                 onClose={() => setActiveModal(null)}
                 title="Tech Stack"
             >
-                <div className="space-y-4">
-                    {techStack.map((stack, i) => (
-                        <div key={i} className="p-3 bg-muted rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm text-foreground">{stack.category}</p>
-                                <button onClick={() => setTechStack(techStack.filter((_, idx) => idx !== i))} className="text-red-500">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{stack.skills.join(", ")}</p>
-                        </div>
-                    ))}
-                    <div className="space-y-2">
-                        <Input placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })} />
-                        <Input placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })} />
-                        <Button onClick={addTechStack} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Category</Button>
-                    </div>
-                </div>
+                <EditableList<TechStackDisplayItem>
+                    items={techStack.map((stack) => ({ category: stack.category, skills: stack.skills.join(", ") }))}
+                    fields={TECH_STACK_FIELDS}
+                    onChange={(next) =>
+                        setTechStack(
+                            next.map((stack) => ({
+                                category: stack.category,
+                                skills: stack.skills.split(",").map((s) => s.trim()).filter(Boolean),
+                            }))
+                        )
+                    }
+                    itemLabel="tech stack category"
+                    onAdd={addTechStack}
+                    addLabel="Add Category"
+                    emptyHint="No tech stack categories yet."
+                >
+                    <Input placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })} />
+                    <Input placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })} />
+                </EditableList>
             </SectionEditor>
 
             <SectionEditor
@@ -1685,33 +1740,25 @@ function BuilderContent() {
                 onClose={() => setActiveModal(null)}
                 title="Experience"
             >
-                <div className="space-y-4">
-                    {experience.map((exp, i) => (
-                        <div key={i} className="p-3 bg-muted rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm text-foreground">{exp.title}</p>
-                                <button onClick={() => setExperience(experience.filter((_, idx) => idx !== i))} className="text-red-500">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{exp.company}</p>
-                            <p className="text-xs text-muted-foreground">{exp.period}</p>
-                            {exp.description && <p className="text-sm text-muted-foreground mt-1">{exp.description}</p>}
-                        </div>
-                    ))}
-                    <div className="space-y-2">
-                        <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
-                        <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
-                        <Input placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })} />
-                        <textarea
-                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                            placeholder="Description"
-                            value={newExperience.description}
-                            onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
-                        />
-                        <Button onClick={addExperience} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Experience</Button>
-                    </div>
-                </div>
+                <EditableList<ExperienceItem>
+                    items={experience}
+                    fields={EXPERIENCE_FIELDS}
+                    onChange={setExperience}
+                    itemLabel="experience entry"
+                    onAdd={addExperience}
+                    addLabel="Add Experience"
+                    emptyHint="No experience entries yet."
+                >
+                    <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
+                    <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
+                    <Input placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })} />
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Description"
+                        value={newExperience.description}
+                        onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                    />
+                </EditableList>
             </SectionEditor>
 
             {/* Projects Section Editor */}
@@ -1720,43 +1767,35 @@ function BuilderContent() {
                 onClose={() => setActiveModal(null)}
                 title="Projects"
             >
-                <div className="space-y-4">
-                    {inlineProjects.map((project, i) => (
-                        <div key={i} className="p-3 bg-muted rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm text-foreground">{project.title}</p>
-                                <button onClick={() => setInlineProjects(inlineProjects.filter((_, idx) => idx !== i))} className="text-red-500">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                            {project.category && <p className="text-xs text-primary mt-1">{project.category}</p>}
-                            {project.description && <p className="text-sm text-muted-foreground mt-1">{project.description}</p>}
-                            {project.link && <p className="text-xs text-blue-500 mt-1">{project.link}</p>}
-                        </div>
-                    ))}
-                    <div className="space-y-2 pt-2 border-t border-border">
-                        <Label className="text-xs text-muted-foreground">Add New Project</Label>
-                        <Input placeholder="Project Title" value={newInlineProject.title} onChange={(e) => setNewInlineProject({ ...newInlineProject, title: e.target.value })} />
-                        <textarea
-                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                            placeholder="Short description"
-                            value={newInlineProject.description}
-                            onChange={(e) => setNewInlineProject({ ...newInlineProject, description: e.target.value })}
-                        />
-                        <select
-                            value={newInlineProject.category}
-                            onChange={(e) => setNewInlineProject({ ...newInlineProject, category: e.target.value })}
-                            className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                        >
-                            <option value="">Select Category</option>
-                            {Object.entries(PROJECT_CATEGORY_LABELS).map(([key, label]) => (
-                                <option key={key} value={key}>{label}</option>
-                            ))}
-                        </select>
-                        <Input placeholder="External URL (optional)" value={newInlineProject.link} onChange={(e) => setNewInlineProject({ ...newInlineProject, link: e.target.value })} />
-                        <Button onClick={addInlineProject} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Project</Button>
-                    </div>
-                </div>
+                <EditableList<InlineProject>
+                    items={inlineProjects}
+                    fields={INLINE_PROJECT_FIELDS}
+                    onChange={setInlineProjects}
+                    itemLabel="project"
+                    onAdd={addInlineProject}
+                    addLabel="Add Project"
+                    emptyHint="No projects yet."
+                >
+                    <Label className="text-xs text-muted-foreground">Add New Project</Label>
+                    <Input placeholder="Project Title" value={newInlineProject.title} onChange={(e) => setNewInlineProject({ ...newInlineProject, title: e.target.value })} />
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Short description"
+                        value={newInlineProject.description}
+                        onChange={(e) => setNewInlineProject({ ...newInlineProject, description: e.target.value })}
+                    />
+                    <select
+                        value={newInlineProject.category}
+                        onChange={(e) => setNewInlineProject({ ...newInlineProject, category: e.target.value })}
+                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                    >
+                        <option value="">Select Category</option>
+                        {Object.entries(PROJECT_CATEGORY_LABELS).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                        ))}
+                    </select>
+                    <Input placeholder="External URL (optional)" value={newInlineProject.link} onChange={(e) => setNewInlineProject({ ...newInlineProject, link: e.target.value })} />
+                </EditableList>
             </SectionEditor>
 
             {/* Products / Store Listing Editor */}
@@ -1765,34 +1804,26 @@ function BuilderContent() {
                 onClose={() => setActiveModal(null)}
                 title="Store / Business Listing"
             >
-                <div className="space-y-4">
-                    {products.map((product, i) => (
-                        <div key={i} className="p-3 bg-muted rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm text-foreground">{product.title}</p>
-                                <button onClick={() => setProducts(products.filter((_, idx) => idx !== i))} className="text-red-500">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
-                            {product.price !== undefined && <p className="text-sm font-semibold text-foreground mt-1">${product.price}</p>}
-                            {product.link && <p className="text-xs text-blue-500 mt-1">{product.link}</p>}
-                        </div>
-                    ))}
-                    <div className="space-y-2 pt-2 border-t border-border">
-                        <Label className="text-xs text-muted-foreground">Add New Product / Listing</Label>
-                        <Input placeholder="Product Title" value={newProduct.title} onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })} />
-                        <textarea
-                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                            placeholder="Description"
-                            value={newProduct.description}
-                            onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                        />
-                        <Input type="number" placeholder="Price (optional)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} />
-                        <Input placeholder="Link (optional)" value={newProduct.link} onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })} />
-                        <Button onClick={addProduct} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Product</Button>
-                    </div>
-                </div>
+                <EditableList<ProductItem>
+                    items={products}
+                    fields={PRODUCT_FIELDS}
+                    onChange={setProducts}
+                    itemLabel="product"
+                    onAdd={addProduct}
+                    addLabel="Add Product"
+                    emptyHint="No products yet."
+                >
+                    <Label className="text-xs text-muted-foreground">Add New Product / Listing</Label>
+                    <Input placeholder="Product Title" value={newProduct.title} onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })} />
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Description"
+                        value={newProduct.description}
+                        onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    />
+                    <Input type="number" placeholder="Price (optional)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} />
+                    <Input placeholder="Link (optional)" value={newProduct.link} onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })} />
+                </EditableList>
             </SectionEditor>
 
             {/* Property Listing Editor */}
@@ -1801,48 +1832,36 @@ function BuilderContent() {
                 onClose={() => setActiveModal(null)}
                 title="Property Listing"
             >
-                <div className="space-y-4">
-                    {propertyListings.map((property, i) => (
-                        <div key={i} className="p-3 bg-muted rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm text-foreground">{property.title}</p>
-                                <button onClick={() => setPropertyListings(propertyListings.filter((_, idx) => idx !== i))} className="text-red-500">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                            {property.location && <p className="text-xs text-muted-foreground mt-1">{property.location}</p>}
-                            {property.price && <p className="text-sm font-semibold text-foreground mt-1">{property.price}</p>}
-                            {property.status && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary mt-1 inline-block capitalize">
-                                    {property.status.replace("-", " ")}
-                                </span>
-                            )}
-                        </div>
-                    ))}
-                    <div className="space-y-2 pt-2 border-t border-border">
-                        <Label className="text-xs text-muted-foreground">Add New Property</Label>
-                        <Input placeholder="Property Title" value={newPropertyListing.title} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, title: e.target.value })} />
-                        <textarea
-                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                            placeholder="Description (optional)"
-                            value={newPropertyListing.description}
-                            onChange={(e) => setNewPropertyListing({ ...newPropertyListing, description: e.target.value })}
-                        />
-                        <Input placeholder="Price (e.g., $250,000)" value={newPropertyListing.price} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, price: e.target.value })} />
-                        <Input placeholder="Location" value={newPropertyListing.location} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, location: e.target.value })} />
-                        <select
-                            value={newPropertyListing.status}
-                            onChange={(e) => setNewPropertyListing({ ...newPropertyListing, status: e.target.value })}
-                            className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
-                        >
-                            <option value="for-sale">For Sale</option>
-                            <option value="for-rent">For Rent</option>
-                            <option value="sold">Sold</option>
-                        </select>
-                        <Input placeholder="Listing URL (optional)" value={newPropertyListing.link} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, link: e.target.value })} />
-                        <Button onClick={addPropertyListing} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Property</Button>
-                    </div>
-                </div>
+                <EditableList<PropertyListingItem>
+                    items={propertyListings}
+                    fields={PROPERTY_LISTING_FIELDS}
+                    onChange={setPropertyListings}
+                    itemLabel="property"
+                    onAdd={addPropertyListing}
+                    addLabel="Add Property"
+                    emptyHint="No properties yet."
+                >
+                    <Label className="text-xs text-muted-foreground">Add New Property</Label>
+                    <Input placeholder="Property Title" value={newPropertyListing.title} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, title: e.target.value })} />
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Description (optional)"
+                        value={newPropertyListing.description}
+                        onChange={(e) => setNewPropertyListing({ ...newPropertyListing, description: e.target.value })}
+                    />
+                    <Input placeholder="Price (e.g., $250,000)" value={newPropertyListing.price} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, price: e.target.value })} />
+                    <Input placeholder="Location" value={newPropertyListing.location} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, location: e.target.value })} />
+                    <select
+                        value={newPropertyListing.status}
+                        onChange={(e) => setNewPropertyListing({ ...newPropertyListing, status: e.target.value })}
+                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                    >
+                        <option value="for-sale">For Sale</option>
+                        <option value="for-rent">For Rent</option>
+                        <option value="sold">Sold</option>
+                    </select>
+                    <Input placeholder="Listing URL (optional)" value={newPropertyListing.link} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, link: e.target.value })} />
+                </EditableList>
             </SectionEditor>
 
             <SectionEditor
@@ -1850,31 +1869,24 @@ function BuilderContent() {
                 onClose={() => setActiveModal(null)}
                 title="Recommendations"
             >
-                <div className="space-y-4">
-                    {testimonials.map((t, i) => (
-                        <div key={i} className="p-3 bg-muted rounded-lg">
-                            <div className="flex items-center justify-between">
-                                <p className="font-medium text-sm text-foreground">{t.author}</p>
-                                <button onClick={() => setTestimonials(testimonials.filter((_, idx) => idx !== i))} className="text-red-500">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                            {t.role && <p className="text-xs text-muted-foreground">{t.role}</p>}
-                            <p className="text-sm text-muted-foreground mt-1 italic">&ldquo;{t.quote}&rdquo;</p>
-                        </div>
-                    ))}
-                    <div className="space-y-2">
-                        <textarea
-                            className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
-                            placeholder="Quote"
-                            value={newTestimonial.quote}
-                            onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
-                        />
-                        <Input placeholder="Author Name" value={newTestimonial.author} onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })} />
-                        <Input placeholder="Role/Title" value={newTestimonial.role} onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })} />
-                        <Button onClick={addTestimonial} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Recommendation</Button>
-                    </div>
-                </div>
+                <EditableList<TestimonialItem>
+                    items={testimonials}
+                    fields={TESTIMONIAL_FIELDS}
+                    onChange={setTestimonials}
+                    itemLabel="recommendation"
+                    onAdd={addTestimonial}
+                    addLabel="Add Recommendation"
+                    emptyHint="No recommendations yet."
+                >
+                    <textarea
+                        className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
+                        placeholder="Quote"
+                        value={newTestimonial.quote}
+                        onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
+                    />
+                    <Input placeholder="Author Name" value={newTestimonial.author} onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })} />
+                    <Input placeholder="Role/Title" value={newTestimonial.role} onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })} />
+                </EditableList>
             </SectionEditor>
 
             {/* Gallery Section Editor - Fixed with GalleryUploader */}
