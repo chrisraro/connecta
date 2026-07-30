@@ -3,15 +3,36 @@ import { mutation, query, internalMutation, QueryCtx, MutationCtx } from "./_gen
 import { requireUserMatching } from "./authz";
 import { planContext } from "./billing";
 import { slugify, isReservedSlug } from "../lib/slug";
-import { Doc } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 
-/** Find a slug for `name` that isn't reserved and isn't already taken. */
-async function assignUniqueSlug(ctx: MutationCtx, name: string): Promise<string> {
-    const base = slugify(name);
+/**
+ * The string a profile's vanity slug is derived from.
+ *
+ * Deliberately the PERSON'S NAME, not `profile.name` — the builder sets
+ * `profile.name` to "<fullName>'s Profile", which would yield the clumsy
+ * `/christian-raros-profile` instead of `/christian-raro`. The slug is printed
+ * on and shared alongside a premium card, so it reads as an identity, not a
+ * record label.
+ */
+function slugSourceFor(profile: {
+    name: string;
+    agentInfo?: { fullName?: string };
+}): string {
+    const fullName = profile.agentInfo?.fullName?.trim();
+    return fullName || profile.name;
+}
+
+/** Find a slug for `source` that isn't reserved and isn't already taken. */
+async function assignUniqueSlug(
+    ctx: MutationCtx,
+    source: string,
+    opts?: { excludeProfileId?: Id<"profiles"> }
+): Promise<string> {
+    const base = slugify(source);
     const candidates = [
         base,
         ...Array.from({ length: 12 }, (_, i) =>
-            slugify(name, Math.random().toString(36).slice(2, 5) + i)
+            slugify(source, Math.random().toString(36).slice(2, 5) + i)
         ),
     ];
     for (const candidate of candidates) {
@@ -20,10 +41,11 @@ async function assignUniqueSlug(ctx: MutationCtx, name: string): Promise<string>
             .query("profiles")
             .withIndex("by_slug", (q) => q.eq("slug", candidate))
             .first();
-        if (!taken) return candidate;
+        // A profile never collides with its own current slug.
+        if (!taken || taken._id === opts?.excludeProfileId) return candidate;
     }
     // Exhausted: fall back to something guaranteed free.
-    return slugify(name, Date.now().toString(36));
+    return slugify(source, Date.now().toString(36));
 }
 
 /**
@@ -248,12 +270,16 @@ export const createProfile = mutation({
             // feature entirely (it only ever assigned one in the INSERT
             // branch above), so any legacy row still missing one gets it
             // assigned here, the first time it's touched again.
-            const slug = existing.slug ?? (await assignUniqueSlug(ctx, args.name));
+            const slug =
+                existing.slug ??
+                (await assignUniqueSlug(ctx, slugSourceFor(args), {
+                    excludeProfileId: args.id,
+                }));
             await ctx.db.patch(args.id, { ...profileData, slug });
             return { id: args.id, slug };
         }
 
-        const slug = await assignUniqueSlug(ctx, args.name);
+        const slug = await assignUniqueSlug(ctx, slugSourceFor(args));
         const profileId = await ctx.db.insert("profiles", {
             ...profileData,
             slug,
@@ -279,6 +305,16 @@ export const internalBackfillSlugs = internalMutation({
     args: {
         cursor: v.optional(v.union(v.string(), v.null())),
         batchSize: v.optional(v.number()),
+        /**
+         * Re-derive slugs that ALREADY exist, when the current slug doesn't
+         * match what today's derivation would produce.
+         *
+         * Off by default and must be passed explicitly, because this CHANGES
+         * LIVE URLS — any link already shared by a user breaks. Only safe
+         * before launch. Physical NFC cards are unaffected either way: they
+         * encode /t/<card-uuid>, never the profile slug.
+         */
+        reslugExisting: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
         const numItems = Math.min(Math.max(args.batchSize ?? 200, 1), 500);
@@ -287,16 +323,42 @@ export const internalBackfillSlugs = internalMutation({
             .paginate({ cursor: args.cursor ?? null, numItems });
 
         let backfilled = 0;
+        let reslugged = 0;
+        const changes: Array<{ from: string; to: string }> = [];
+
         for (const profile of page.page) {
-            if (profile.slug) continue;
-            const slug = await assignUniqueSlug(ctx, profile.name);
+            const source = slugSourceFor(profile);
+
+            if (!profile.slug) {
+                const slug = await assignUniqueSlug(ctx, source, {
+                    excludeProfileId: profile._id,
+                });
+                await ctx.db.patch(profile._id, { slug });
+                backfilled++;
+                continue;
+            }
+
+            if (!args.reslugExisting) continue;
+
+            // Only rewrite when the existing slug isn't already the ideal one
+            // (ignoring any uniqueness suffix this profile legitimately needs).
+            const ideal = slugify(source);
+            if (profile.slug === ideal || profile.slug.startsWith(`${ideal}-`)) continue;
+
+            const slug = await assignUniqueSlug(ctx, source, {
+                excludeProfileId: profile._id,
+            });
+            if (slug === profile.slug) continue;
+            changes.push({ from: profile.slug, to: slug });
             await ctx.db.patch(profile._id, { slug });
-            backfilled++;
+            reslugged++;
         }
 
         return {
             scanned: page.page.length,
             backfilled,
+            reslugged,
+            changes,
             isDone: page.isDone,
             cursor: page.isDone ? null : page.continueCursor,
         };

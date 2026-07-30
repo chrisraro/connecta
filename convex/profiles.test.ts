@@ -370,3 +370,78 @@ test("internalBackfillSlugs pages through every profile via its cursor", async (
   expect(slugs.every((s) => typeof s === "string" && s.length > 0)).toBe(true);
   expect(new Set(slugs).size).toBe(TOTAL);
 });
+
+test("slug derives from the person's name, not the \"X's Profile\" record label", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "derive_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "derive@test.dev", clerkId: "derive_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const { slug } = await asUser.mutation(api.profiles.createProfile, {
+    clerkId: "derive_user",
+    // Exactly what the builder writes: "<fullName>'s Profile".
+    name: "Christian Raro's Profile",
+    agentInfo: {
+      fullName: "Christian Raro", title: "Developer", company: "Herald",
+      phone: "0917", email: "c@test.dev", services: [], socialLinks: [],
+    },
+    layoutConfig: {
+      themeId: "editorial",
+      colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+      componentOrder: ["Hero"], heroStyle: "default",
+    },
+    featuredProperties: [],
+  });
+
+  expect(slug).toBe("christian-raro");
+  expect(slug).not.toContain("profile");
+});
+
+test("internalBackfillSlugs re-slugs a stale possessive slug only when asked", async () => {
+  const t = convexTest(schema);
+  const profileId = await t.run(async (ctx) => {
+    const ownerId = await ctx.db.insert("users", {
+      email: "stale@test.dev", clerkId: "stale_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+    return await ctx.db.insert("profiles", {
+      ownerId,
+      name: "Judy Ann Balilla's Profile",
+      slug: "judy-ann-balillas-profile", // legacy derivation
+      agentInfo: {
+        fullName: "Judy Ann Balilla", title: "Teacher", company: "NCF",
+        phone: "0917", email: "j@test.dev", services: [], socialLinks: [],
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+        componentOrder: ["Hero"], heroStyle: "default",
+      },
+      featuredProperties: [],
+    });
+  });
+
+  // Default run must NOT touch an existing slug.
+  const noop = await t.mutation(internal.profiles.internalBackfillSlugs, {});
+  expect(noop.reslugged).toBe(0);
+  const unchanged = await t.run(async (ctx) => ctx.db.get(profileId));
+  expect(unchanged?.slug).toBe("judy-ann-balillas-profile");
+
+  // Explicit opt-in rewrites it.
+  const run = await t.mutation(internal.profiles.internalBackfillSlugs, {
+    reslugExisting: true,
+  });
+  expect(run.reslugged).toBe(1);
+  const after = await t.run(async (ctx) => ctx.db.get(profileId));
+  expect(after?.slug).toBe("judy-ann-balilla");
+
+  // Second opt-in run is a no-op — already ideal.
+  const second = await t.mutation(internal.profiles.internalBackfillSlugs, {
+    reslugExisting: true,
+  });
+  expect(second.reslugged).toBe(0);
+});
