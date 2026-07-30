@@ -45,3 +45,6 @@ next-env.d.ts
 *.new
 *.build
 SENTINEL_TEST.txt
+
+# firecrawl scrape cache
+.firecrawl/
