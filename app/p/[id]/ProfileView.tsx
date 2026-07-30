@@ -5,9 +5,10 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
 import { ProfileData, ProfileType } from "@/types/profile";
-import { Loader2, SmartphoneNfc, SearchX } from "lucide-react";
+import { Loader2, SearchX } from "lucide-react";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import Link from "next/link";
+import { HeraldMark } from "@/components/brand/HeraldMark";
 import { HERALD } from "@/lib/brand";
 
 /**
@@ -52,7 +53,7 @@ export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string 
                     href="/"
                     className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                    <SmartphoneNfc className="h-4 w-4" aria-hidden="true" />
+                    <HeraldMark className="h-4 w-4" />
                     Go to {HERALD.name}
                 </Link>
             </div>

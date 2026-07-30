@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { HeraldMark } from "@/components/brand/HeraldMark";
 import { HERALD } from "@/lib/brand";
 
 export default function AdminLayout({
@@ -95,7 +96,7 @@ export default function AdminLayout({
             {/* Mobile Header */}
             <header className="md:hidden flex items-center justify-between p-4 border-b border-zinc-900 bg-zinc-950 sticky top-0 z-40">
                 <div className="flex items-center gap-2 font-bold text-lg text-red-600">
-                    <SmartphoneNfc className="h-5 w-5" />
+                    <HeraldMark className="h-5 w-5" />
                     <span>{HERALD.name} Admin</span>
                 </div>
                 <Sheet>
@@ -106,7 +107,7 @@ export default function AdminLayout({
                     </SheetTrigger>
                     <SheetContent side="left" className="bg-zinc-950 border-zinc-900 text-white w-72 p-0">
                         <div className="p-6 flex items-center gap-2 font-bold text-xl text-red-600 border-b border-zinc-900">
-                            <SmartphoneNfc />
+                            <HeraldMark className="h-5 w-5" />
                             <span>{HERALD.name} Admin</span>
                         </div>
                         <nav className="p-4 space-y-2">
@@ -166,7 +167,7 @@ export default function AdminLayout({
             {/* Admin Sidebar (Desktop) */}
             <aside className="w-64 bg-zinc-950 border-r border-zinc-900 hidden md:flex flex-col">
                 <div className="p-6 flex items-center gap-2 font-bold text-xl text-red-600">
-                    <SmartphoneNfc />
+                    <HeraldMark className="h-5 w-5" />
                     <span>{HERALD.name} Admin</span>
                 </div>
 

@@ -19,10 +19,27 @@ export const metadata: Metadata = {
   description:
     "Premium NFC digital business cards for modern professionals. Tap to share a stunning profile and capture leads instantly.",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
+  // Default OG/Twitter card for every page that doesn't generate its own
+  // (the /p/[id] and /[slug] profile routes each have their own dynamic
+  // opengraph-image.tsx, which Next uses in place of this per-route).
+  openGraph: {
+    title: "Herald — Your business card, reinvented",
+    description:
+      "Premium NFC digital business cards for modern professionals. Tap to share a stunning profile and capture leads instantly.",
+    images: ["/og-fallback.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og-fallback.png"],
+  },
 };
 
 export default function RootLayout({

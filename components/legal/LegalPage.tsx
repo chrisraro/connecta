@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { SmartphoneNfc, ArrowLeft, TriangleAlert } from "lucide-react";
+import { ArrowLeft, TriangleAlert } from "lucide-react";
+import { HeraldMark } from "@/components/brand/HeraldMark";
 import { HERALD } from "@/lib/brand";
 
 /**
@@ -34,7 +35,7 @@ export function LegalPage({
             href="/"
             className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
           >
-            <SmartphoneNfc className="text-primary" aria-hidden="true" />
+            <HeraldMark className="h-5 w-5 text-primary" />
             <span>{HERALD.name}</span>
           </Link>
           <Link

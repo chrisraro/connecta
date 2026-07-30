@@ -1,7 +1,8 @@
 import { SignIn, SignUp } from '@clerk/nextjs';
-import { SmartphoneNfc, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { HeraldMark } from '@/components/brand/HeraldMark';
 import { HERALD } from '@/lib/brand';
 
 export default function AuthPage({
@@ -51,8 +52,8 @@ async function AuthContent({
         {/* Logo and Header */}
         <div className="w-full mb-6 sm:mb-8">
           <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-yellow-500/10 dark:bg-yellow-500/10 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 ring-1 ring-yellow-500/20">
-              <SmartphoneNfc className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-600 dark:text-yellow-500" strokeWidth={1.5} />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 ring-1 ring-primary/20">
+              <HeraldMark className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-2 tracking-tight">
               {HERALD.name}

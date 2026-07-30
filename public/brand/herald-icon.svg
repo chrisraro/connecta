@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Herald">
+  <title>Herald</title>
+  <!--
+    The Herald app icon: the monogram struck into a seal.
+
+    A wax seal's design is pressed INTO the wax, so the mark is knocked out
+    of the disc rather than sitting on top of it — that negative-space
+    relationship is the whole point, and it's what stops this reading as
+    "a logo on a coloured circle".
+
+    One path, fill-rule="evenodd": the disc and the monogram are subpaths of
+    the same shape, so the knockout is real transparency. That means the icon
+    composites correctly on any background and can be recoloured by changing
+    a single fill.
+
+    Colour is the brand seal red (the herald-seal token, oklch 0.44 0.132 27),
+    inlined as hex here because SVG assets are consumed by contexts that
+    never see the stylesheet (favicon, manifest, OG image, app stores).
+  -->
+  <path
+    fill="#8a2f22"
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM17 16h7v32h-7V16Zm23 0h7v32h-7V16ZM24 32l8-4 8 4v6l-8-4-8 4v-6Z"
+  />
+</svg>

@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SmartphoneNfc, Home, RotateCw } from "lucide-react";
+import { Home, RotateCw } from "lucide-react";
+import { HeraldMark } from "@/components/brand/HeraldMark";
 import { HERALD } from "@/lib/brand";
 
 export default function Error({
@@ -26,7 +27,7 @@ export default function Error({
       />
 
       <div className="mb-8 flex items-center gap-2 text-lg font-bold tracking-tight">
-        <SmartphoneNfc className="h-5 w-5 text-primary" aria-hidden="true" />
+        <HeraldMark className="h-5 w-5 text-primary" />
         <span>{HERALD.name}</span>
       </div>
 

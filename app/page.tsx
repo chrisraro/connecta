@@ -17,6 +17,7 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
+import { HeraldMark } from "@/components/brand/HeraldMark";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Reveal } from "@/components/ui/reveal";
 import { TiltCard } from "@/components/ui/tilt-card";
@@ -37,7 +38,7 @@ export default function LandingPage() {
             href="/"
             className="flex shrink-0 items-center gap-2 text-xl font-bold tracking-tight"
           >
-            <SmartphoneNfc className="text-primary" aria-hidden="true" />
+            <HeraldMark className="h-6 w-6 text-primary" />
             <span>{HERALD.name}</span>
           </Link>
 
@@ -389,7 +390,7 @@ export default function LandingPage() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
-                <SmartphoneNfc className="text-primary" aria-hidden="true" />
+                <HeraldMark className="h-5 w-5 text-primary" />
                 <span>{HERALD.name}</span>
               </Link>
               <p className="mt-3 max-w-xs text-sm text-muted-foreground">
@@ -442,7 +443,7 @@ function NfcCardVisual() {
         <div className="flex h-full flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
-              <SmartphoneNfc className="h-5 w-5 text-primary" />
+              <HeraldMark className="h-5 w-5 text-primary" />
               {HERALD.name}
             </span>
             <div className="flex flex-col gap-1">
