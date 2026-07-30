@@ -33,7 +33,10 @@ export default clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(new URL('/auth', req.url));
     }
 
-    const needsAuth = isProtectedRoute(req) || (pathname.startsWith('/api') && !isPublicApiRoute(req));
+    // Segment-aware, so a vanity slug like /apikeys is not mistaken for an
+    // API route and hidden behind auth.
+    const isApiRoute = pathname === '/api' || pathname.startsWith('/api/');
+    const needsAuth = isProtectedRoute(req) || (isApiRoute && !isPublicApiRoute(req));
     if (needsAuth) {
         await auth.protect();
     }
