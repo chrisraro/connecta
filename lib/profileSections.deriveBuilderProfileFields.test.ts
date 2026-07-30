@@ -1,4 +1,6 @@
 import { expect, test } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   BuilderBlock,
   deriveBuilderProfileFields,
@@ -71,10 +73,50 @@ test("deriveBuilderProfileFields strips agentInfo fields owned by disabled block
 // would. Calling the shared derivation twice with the same inputs, the way
 // "preview render" and "handleSave" each do, must always produce identical
 // results.
-test("calling the derivation independently for preview and for save always agrees", () => {
-  const previewResult = deriveBuilderProfileFields("company", blocks, baseAgentInfo);
-  const saveResult = deriveBuilderProfileFields("company", blocks, baseAgentInfo);
-  expect(previewResult).toEqual(saveResult);
+/**
+ * The invariant that actually matters is NOT that this pure function is
+ * deterministic (it trivially is) — it's that the builder's two consumers,
+ * `handleSave` and `renderPreview`, both route through it. That was the real
+ * bug: the preview rendered every section with data while save applied
+ * componentOrder + filtering, so the preview lied about what would publish.
+ *
+ * A unit test on the function alone cannot catch a regression where someone
+ * inlines a second, divergent derivation back into one of those call sites.
+ * `app/dashboard/builder/page.tsx` is a ~1,900-line client component with 30
+ * pieces of state, so exercising it through the React tree is impractical;
+ * asserting on the source is the cheap guard that actually fails when the
+ * invariant breaks.
+ */
+test("both handleSave and renderPreview route through the shared derivation", () => {
+  const src = readFileSync(
+    join(process.cwd(), "app", "dashboard", "builder", "page.tsx"),
+    "utf8"
+  );
+
+  const usages = src.match(/deriveBuilderProfileFields\s*\(/g) ?? [];
+  expect(
+    usages.length,
+    "expected deriveBuilderProfileFields to be called at BOTH call sites (handleSave and renderPreview)"
+  ).toBeGreaterThanOrEqual(2);
+
+  // The save path must feed the derivation's output into the mutation, not a
+  // separately-computed componentOrder.
+  const saveIdx = src.indexOf("const handleSave");
+  const previewIdx = src.indexOf("const renderPreview");
+  expect(saveIdx, "handleSave not found").toBeGreaterThan(-1);
+  expect(previewIdx, "renderPreview not found").toBeGreaterThan(-1);
+
+  // Each function body (up to the next top-level `const x = ` at the same
+  // indent) must contain a call to the shared derivation.
+  const bodyAfter = (start: number) => src.slice(start, start + 4000);
+  expect(
+    bodyAfter(saveIdx),
+    "handleSave must derive componentOrder/agentInfo via deriveBuilderProfileFields"
+  ).toContain("deriveBuilderProfileFields(");
+  expect(
+    bodyAfter(previewIdx),
+    "renderPreview must derive componentOrder/agentInfo via deriveBuilderProfileFields"
+  ).toContain("deriveBuilderProfileFields(");
 });
 
 test("toggling a block off changes both componentOrder and the filtered agentInfo consistently", () => {
