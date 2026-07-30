@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 import { requireUserMatching } from "./authz";
 import { acceptInvitesForCurrentUser } from "./teams";
@@ -175,5 +175,45 @@ export const getMyCards = query({
             .query("cards")
             .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
             .collect();
+    },
+});
+
+/**
+ * Strips the deprecated `credits` field from user documents.
+ *
+ * `credits` was a token balance for an AI-generation feature that was removed
+ * in 79d6e7c without a data migration, leaving orphan values on live rows.
+ * `convex/schema.ts` currently declares it optional only so schema validation
+ * accepts those rows — once this migration reports `isDone: true`, that field
+ * declaration can be deleted.
+ *
+ * Idempotent and paginated. Call repeatedly, feeding `cursor` back in:
+ *   npx convex run users:internalStripLegacyCredits '{}'
+ *   npx convex run users:internalStripLegacyCredits '{"cursor":"<cursor>"}'
+ */
+export const internalStripLegacyCredits = internalMutation({
+    args: {
+        cursor: v.optional(v.union(v.string(), v.null())),
+        batchSize: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        const numItems = Math.min(Math.max(args.batchSize ?? 200, 1), 500);
+        const page = await ctx.db
+            .query("users")
+            .paginate({ cursor: args.cursor ?? null, numItems });
+
+        let stripped = 0;
+        for (const user of page.page) {
+            if ((user as { credits?: number }).credits === undefined) continue;
+            await ctx.db.patch(user._id, { credits: undefined });
+            stripped++;
+        }
+
+        return {
+            scanned: page.page.length,
+            stripped,
+            isDone: page.isDone,
+            cursor: page.isDone ? null : page.continueCursor,
+        };
     },
 });
