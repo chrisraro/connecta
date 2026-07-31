@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { buildDemoProfile } from "./demoProfile";
@@ -30,8 +31,44 @@ export function HeroProfilePreview() {
     componentOrder: ["Hero", "About", "Services"],
   };
 
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // This mounts the same ProfileRenderer (components/templates/**, owned
+    // elsewhere) a real public profile uses, which correctly renders its
+    // own <h1> and un-labelled icon-only social links for a *real* page.
+    // Embedded here those become a second <h1> and three nameless sub-44px
+    // touch targets on the landing page, even though the whole subtree is
+    // already `inert` + aria-hidden and invisible to assistive tech either
+    // way. Demote/neutralize the raw DOM nodes after mount: <h1> -> <h2>,
+    // and any anchor -> <span> (an inert preview shouldn't expose real
+    // `<a href>` navigation semantics anyway). Pure tag swap, no visual or
+    // behavioral change.
+    const root = previewRef.current;
+    if (!root) return;
+
+    const h1 = root.querySelector("h1");
+    if (h1) {
+      const h2 = document.createElement("h2");
+      while (h1.firstChild) h2.appendChild(h1.firstChild);
+      for (const attr of Array.from(h1.attributes)) h2.setAttribute(attr.name, attr.value);
+      h1.replaceWith(h2);
+    }
+
+    root.querySelectorAll("a[href]").forEach((a) => {
+      const span = document.createElement("span");
+      while (a.firstChild) span.appendChild(a.firstChild);
+      for (const attr of Array.from(a.attributes)) {
+        if (attr.name === "href" || attr.name === "target" || attr.name === "rel") continue;
+        span.setAttribute(attr.name, attr.value);
+      }
+      a.replaceWith(span);
+    });
+  }, []);
+
   return (
     <div
+      ref={previewRef}
       inert={true}
       aria-hidden="true"
       className="relative mx-auto w-full max-w-[320px] select-none"

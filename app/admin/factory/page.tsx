@@ -552,7 +552,7 @@ export default function AdminFactoryPage() {
                                                         <Button 
                                                             variant="ghost" 
                                                             size="icon" 
-                                                            className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-red-500/10"
+                                                            className="h-8 w-8 text-zinc-300 hover:text-red-500 hover:bg-red-500/10"
                                                             onClick={() => handleDeleteSingle(card._id)}
                                                             title="Delete Card"
                                                         >

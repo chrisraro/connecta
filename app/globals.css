@@ -479,9 +479,14 @@
     );
   }
 
-  /* ── Spring micro-animations ────────────────────────────────────────── */
-  .transition-spring {
-    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* ── Snap micro-animations ──────────────────────────────────────────── */
+  /* Was `.transition-spring` with cubic-bezier(0.34, 1.56, 0.64, 1) — the
+     1.56 control point overshoots past 1, i.e. bounce/elastic easing,
+     which is banned (ease out with exponential curves only: quart/quint/
+     expo, no bounce, no elastic). Renamed since "spring" no longer
+     describes it — ease-out-quart settles without any overshoot. */
+  .transition-snap {
+    transition: all 400ms cubic-bezier(0.25, 1, 0.5, 1);
   }
 
   /* ── View Transitions circular wipe theme animation ──────────────────── */

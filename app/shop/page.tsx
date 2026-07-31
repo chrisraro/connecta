@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent } from "@/components/ui/card";
@@ -141,9 +142,11 @@ function ProductImage({ storageId, alt, className }: { storageId: string; alt: s
   }
 
   return (
-    <img
+    <Image
       src={displayUrl}
       alt={alt}
+      fill
+      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
       className={className}
     />
   );
@@ -207,9 +210,10 @@ export default function ShopPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
+            aria-label="Search products"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="h-11 pl-10"
           />
         </div>
 
@@ -229,7 +233,7 @@ export default function ShopPage() {
         {/* Filters (Mobile) */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" className="md:hidden">
+            <Button variant="outline" className="h-11 md:hidden">
               <SlidersHorizontal className="w-4 h-4 mr-2" />
               Filters
             </Button>
@@ -410,12 +414,12 @@ export default function ShopPage() {
                         {/* Badges */}
                         <div className="absolute top-2 left-2 flex flex-col gap-2">
                           {product.compareAtPrice && product.compareAtPrice > product.basePrice && (
-                            <Badge className="bg-red-500 text-white animate-in fade-in slide-in-from-top-2 duration-300">
+                            <Badge className="bg-red-600 text-white animate-in fade-in slide-in-from-top-2 duration-300">
                               Sale
                             </Badge>
                           )}
                           {product.isFeatured && (
-                            <Badge className="bg-amber-500 text-white animate-in fade-in slide-in-from-top-2 duration-300 delay-75">
+                            <Badge className="bg-amber-700 text-white animate-in fade-in slide-in-from-top-2 duration-300 delay-75">
                               Featured
                             </Badge>
                           )}
@@ -462,7 +466,7 @@ export default function ShopPage() {
 
                         {/* Add to Cart Button */}
                         <Button
-                          className={`w-full mt-4 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
+                          className={`w-full h-11 mt-4 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
                             addedToCart === product._id
                               ? "bg-green-500 hover:bg-green-600 text-white"
                               : "bg-primary hover:bg-primary/90 text-primary-foreground"

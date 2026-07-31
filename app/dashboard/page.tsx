@@ -122,11 +122,11 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold tracking-tight">Recent Profiles</h2>
                     {activeProfilesCount > 0 && (
-                        <Link href="/dashboard/profiles">
-                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="sm" className="h-11 text-muted-foreground hover:text-foreground" asChild>
+                            <Link href="/dashboard/profiles">
                                 View All <ChevronRight className="ml-1 w-4 h-4" />
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     )}
                 </div>
 
@@ -167,12 +167,12 @@ export default function DashboardPage() {
                                 </div>
 
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors" asChild title="Preview">
+                                    <Button variant="ghost" size="icon" className="size-11 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" asChild title="Preview">
                                         <Link href={profilePath(profile)} target="_blank" aria-label={`Preview ${profile.name}`}>
                                             <ExternalLink className="w-4 h-4" />
                                         </Link>
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-blue-500/10 hover:text-blue-500 transition-colors" asChild title="Edit">
+                                    <Button variant="ghost" size="icon" className="size-11 rounded-full hover:bg-blue-500/10 hover:text-blue-500 transition-colors" asChild title="Edit">
                                         <Link href={`/dashboard/builder?id=${profile._id}`} aria-label={`Edit ${profile.name}`}>
                                             <Edit2 className="w-4 h-4" />
                                         </Link>
@@ -189,11 +189,11 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold tracking-tight">Recent Leads</h2>
                     {totalLeadsCount > 0 && (
-                        <Link href="/dashboard/leads">
-                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="sm" className="h-11 text-muted-foreground hover:text-foreground" asChild>
+                            <Link href="/dashboard/leads">
                                 View All <ChevronRight className="ml-1 w-4 h-4" />
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     )}
                 </div>
 

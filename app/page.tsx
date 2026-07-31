@@ -34,28 +34,28 @@ export default function LandingPage() {
         >
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-2 text-xl font-bold tracking-tight"
+            className="flex min-h-11 shrink-0 items-center gap-2 text-xl font-bold tracking-tight"
           >
             <HeraldMark className="h-6 w-6 text-primary" />
             <span>{HERALD.name}</span>
           </Link>
 
-          <div className="hidden items-center gap-7 md:flex">
+          <div className="hidden items-center gap-3 md:flex">
             <Link
               href="/shop"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Shop
             </Link>
             <Link
               href="#how-it-works"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               How it works
             </Link>
             <Link
               href="#pricing"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Pricing
             </Link>
@@ -64,12 +64,12 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <SignedIn>
-              <Link href="/dashboard">
-                <Button variant="outline" className="hidden rounded-xl sm:flex">
+              <Button variant="outline" className="hidden h-11 rounded-xl sm:flex" asChild>
+                <Link href="/dashboard">
                   <LayoutDashboard className="mr-2 h-4 w-4" aria-hidden="true" />
                   Dashboard
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </SignedIn>
             <SignedOut>
               <Link href="/auth" className="hidden sm:block">
@@ -321,7 +321,7 @@ export default function LandingPage() {
               <Link href="/shop" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="cta-sheen h-14 w-full rounded-2xl bg-white px-8 text-base font-bold text-black hover:bg-neutral-200 hover:text-black transition-spring hover:scale-105 active:scale-95 sm:w-auto shadow-md"
+                  className="cta-sheen h-14 w-full rounded-2xl bg-white px-8 text-base font-bold text-black hover:bg-neutral-200 hover:text-black transition-snap hover:scale-105 active:scale-95 sm:w-auto shadow-md"
                 >
                   Get your card
                   <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
@@ -332,7 +332,7 @@ export default function LandingPage() {
                   <Button
                     size="lg"
                     variant="ghost"
-                    className="h-14 w-full rounded-2xl border border-white/20 bg-white/5 px-8 text-base font-bold text-white hover:bg-white/10 hover:border-white/40 hover:text-white transition-spring hover:scale-105 active:scale-95 sm:w-auto"
+                    className="h-14 w-full rounded-2xl border border-white/20 bg-white/5 px-8 text-base font-bold text-white hover:bg-white/10 hover:border-white/40 hover:text-white transition-snap hover:scale-105 active:scale-95 sm:w-auto"
                   >
                     Start for free
                   </Button>
@@ -348,7 +348,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
+              <Link href="/" className="flex min-h-11 items-center gap-2 text-lg font-bold tracking-tight">
                 <HeraldMark className="h-5 w-5 text-primary" />
                 <span>{HERALD.name}</span>
               </Link>
@@ -455,7 +455,17 @@ function StepCard({
 }) {
   return (
     <div className="card-glow relative rounded-3xl border border-border bg-card p-7">
-      <span className="text-sm font-black tracking-widest text-muted-foreground/50">
+      {/* Was text-muted-foreground/50. Re-verified via true canvas ground
+          truth on the live rendered element (draw the real card bg, then
+          the real computed text color, on a <canvas>, read back sRGB via
+          getImageData — not hand-parsed computed-style strings): 2.33:1 in
+          this app's default (dark) theme, which is what a fresh,
+          unauthenticated visitor actually gets — a real 4.5:1 failure at
+          this 14px size, not a tooling artifact. "How it works" is a
+          genuinely ordered 3-step sequence so the numbers stay, just at a
+          contrast that actually clears the card (~12.9:1 ground-truth
+          after this change). */}
+      <span className="text-sm font-black tracking-widest text-foreground/70">
         {step}
       </span>
       <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -594,12 +604,12 @@ function FooterCol({
   return (
     <div>
       <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-1 space-y-0.5">
         {links.map((l) => (
           <li key={l.label}>
             <Link
               href={l.href}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-0.5 inline-block"
+              className="inline-flex min-h-11 min-w-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-0.5"
             >
               {l.label}
             </Link>

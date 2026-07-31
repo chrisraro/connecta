@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useCart } from "@/contexts/CartContext";
@@ -31,10 +32,12 @@ function CartItemImage({ storageId, alt }: { storageId: string; alt: string }) {
   }
 
   return (
-    <img
+    <Image
       src={displayUrl}
       alt={alt}
-      className="w-full h-full object-cover"
+      fill
+      sizes="96px"
+      className="object-cover"
     />
   );
 }
@@ -136,7 +139,7 @@ export default function CartPage() {
                 <CardContent className="p-4">
                   <div className="flex gap-4">
                     <Link href={`/shop/product/${product?.slug}`}>
-                      <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="relative w-24 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                         {imageStorageId ? (
                           <CartItemImage
                             storageId={imageStorageId}
@@ -172,7 +175,8 @@ export default function CartPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 touch-manipulation"
+                            aria-label="Decrease quantity"
+                            className="size-11 touch-manipulation"
                             onClick={() => updateQuantity(item.productId, item.variationId, item.quantity - 1)}
                             disabled={item.quantity <= 1}
                           >
@@ -182,7 +186,8 @@ export default function CartPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 touch-manipulation"
+                            aria-label="Increase quantity"
+                            className="size-11 touch-manipulation"
                             onClick={() => updateQuantity(item.productId, item.variationId, item.quantity + 1)}
                           >
                             <Plus className="w-3 h-3" />
@@ -192,7 +197,7 @@ export default function CartPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-destructive hover:text-destructive px-2 py-1 h-auto"
+                          className="text-destructive hover:text-destructive px-2 py-1 h-11"
                           onClick={() => removeItem(item.productId, item.variationId)}
                         >
                           <Trash2 className="w-4 h-4 mr-1" />

@@ -26,7 +26,11 @@ function QuickActionsToggle() {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button size="icon" className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 rounded-2xl shadow-2xl shadow-primary/40 bg-primary text-primary-foreground hover:scale-105 transition-transform md:hidden">
+                <Button
+                    size="icon"
+                    aria-label="Quick actions"
+                    className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 rounded-2xl shadow-[var(--e-overlay)] bg-primary text-primary-foreground hover:scale-105 transition-transform md:hidden"
+                >
                     <Sparkles className="w-7 h-7" />
                 </Button>
             </SheetTrigger>
@@ -130,7 +134,7 @@ function DashboardSidebar({ className }: { className?: string }) {
             </nav>
             <div className="p-6 border-t border-sidebar-border">
                 <div className="flex items-center gap-3 bg-sidebar-accent/50 p-3 rounded-2xl border border-sidebar-border">
-                    <UserButton />
+                    <UserButton appearance={{ elements: { userButtonAvatarBox: "w-11! h-11!", userButtonTrigger: "rounded-full min-w-11! min-h-11! h-11! flex items-center justify-center" } }} />
                     <div className="flex-1 text-xs text-muted-foreground font-medium">
                         Manage Account
                     </div>
@@ -154,7 +158,7 @@ function MobileBottomNav() {
 
     return (
         <div className="mobile-bottom-nav fixed bottom-6 left-4 right-4 z-50 md:hidden">
-            <nav className="bg-background/80 backdrop-blur-2xl border border-border rounded-[2.5rem] p-2 flex items-center justify-between shadow-2xl ring-1 ring-border/50 overflow-hidden">
+            <nav className="bg-background/80 backdrop-blur-2xl border border-border rounded-full p-2 flex items-center justify-between shadow-[var(--e-overlay)] ring-1 ring-border/50 overflow-hidden">
                 {navItems.map((item) => {
                     const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
                     return (
@@ -193,13 +197,20 @@ function MobileHeader() {
         <header className="md:hidden sticky top-0 z-40 w-full px-6 py-4 flex items-center justify-between bg-background/80 backdrop-blur-xl border-b border-border">
             <div className="flex flex-col">
                 <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">2026 Edition</span>
-                <h1 className="text-xl font-black tracking-tight text-foreground">{getPageTitle()}</h1>
+                {/* Not an <h1>: each page under app/dashboard/** already owns the
+                    real page-title heading (e.g. "Welcome back" on /dashboard,
+                    "Team Workspace" on /dashboard/team). This mobile top-bar
+                    label just mirrors that title in the sticky header — a second
+                    literal <h1> always present in the DOM (this bar is only
+                    CSS-hidden above md, not unmounted) duplicated the page's
+                    real h1 and broke "exactly one h1 per page". */}
+                <p className="text-xl font-black tracking-tight text-foreground">{getPageTitle()}</p>
             </div>
             <div className="flex items-center gap-2">
                 <ThemeToggle />
                 <NotificationsPopover />
                 <div className="p-0.5 rounded-full border-2 border-primary/20">
-                    <UserButton />
+                    <UserButton appearance={{ elements: { userButtonAvatarBox: "w-10 h-10", userButtonTrigger: "rounded-full min-w-11 min-h-11 flex items-center justify-center" } }} />
                 </div>
             </div>
         </header>
