@@ -165,7 +165,7 @@ export function EditableList<T extends object>({
             {onAdd && (
                 <div className="space-y-2 pt-2 border-t border-border">
                     {children}
-                    <Button onClick={onAdd} className="w-full">
+                    <Button onClick={onAdd} className="w-full h-11 lg:h-9">
                         <Plus className="w-4 h-4 mr-2" /> {addLabel || `Add ${itemLabel}`}
                     </Button>
                 </div>

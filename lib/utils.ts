@@ -14,6 +14,26 @@ export function resolveImageUrl(path: string | undefined | null) {
   return path;
 }
 
+// Relative luminance (sRGB -> linear), WCAG 2.1
+function relativeLuminance(rgb: { r: number; g: number; b: number }): number {
+  const toLinear = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return (
+    0.2126 * toLinear(rgb.r) +
+    0.7152 * toLinear(rgb.g) +
+    0.0722 * toLinear(rgb.b)
+  );
+}
+
+// WCAG 2.1 contrast ratio between two relative luminances.
+function contrastRatio(l1: number, l2: number): number {
+  const hi = Math.max(l1, l2);
+  const lo = Math.min(l1, l2);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 /**
  * Returns a readable foreground color ("#ffffff" or "#0a0a0a") for text/icons
  * placed on top of an arbitrary background color, based on relative luminance
@@ -22,6 +42,17 @@ export function resolveImageUrl(path: string | undefined | null) {
  *
  * Accepts #rgb / #rrggbb / rgb()/rgba() strings. Falls back to white for
  * unparseable / transparent inputs (preserves prior behavior).
+ *
+ * Picks whichever of `light`/`dark` yields the HIGHER contrast ratio against
+ * the given background, rather than a fixed luminance midpoint. A fixed
+ * midpoint (previously 0.4) is measurably wrong: for a mid-tone accent like
+ * `#c9a227` (background luminance ~0.383, just under the old 0.4 cutoff),
+ * white text was picked and only cleared 2.42:1 against it — nowhere near
+ * WCAG AA's 4.5:1 — while black text on the same background clears 8.66:1.
+ * The true crossover point (where black/white give equal contrast) is
+ * background luminance ~0.179, not 0.4; computing both ratios directly
+ * avoids having to re-derive and hardcode that constant, and stays correct
+ * even when callers pass custom `light`/`dark` overrides.
  */
 export function readableTextColor(
   color: string | undefined | null,
@@ -33,18 +64,15 @@ export function readableTextColor(
   const rgb = parseColorToRgb(color);
   if (!rgb) return light;
 
-  // Relative luminance (sRGB -> linear), WCAG 2.1
-  const toLinear = (c: number) => {
-    const s = c / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  };
-  const L =
-    0.2126 * toLinear(rgb.r) +
-    0.7152 * toLinear(rgb.g) +
-    0.0722 * toLinear(rgb.b);
+  const bgL = relativeLuminance(rgb);
+  const lightRgb = parseColorToRgb(light) ?? { r: 255, g: 255, b: 255 };
+  const darkRgb = parseColorToRgb(dark) ?? { r: 10, g: 10, b: 10 };
 
-  // Threshold ~0.4 biases toward dark text on mid/light backgrounds for legibility.
-  return L > 0.4 ? dark : light;
+  const lightContrast = contrastRatio(relativeLuminance(lightRgb), bgL);
+  const darkContrast = contrastRatio(relativeLuminance(darkRgb), bgL);
+
+  // Ties favor dark text (legibility bias, same as the prior implementation).
+  return darkContrast >= lightContrast ? dark : light;
 }
 
 function parseColorToRgb(

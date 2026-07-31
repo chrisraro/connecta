@@ -26,7 +26,18 @@ import { SaveContactButton } from "./SaveContactButton";
  * times). Composition — not colour — is what makes the three templates
  * distinct now; see components/templates/theme.ts.
  */
-export function ProfileRenderer({ data, templateId }: { data: ProfileData; templateId: string }) {
+export function ProfileRenderer({
+  data,
+  templateId,
+  headingLevel,
+}: {
+  data: ProfileData;
+  templateId: string;
+  /** Forwarded to HeroSection — see its own doc comment. Omit for the real
+   *  public profile page (defaults to "h1"); pass "h2" when this renderer is
+   *  embedded as a preview inside a page that has its own h1. */
+  headingLevel?: "h1" | "h2";
+}) {
   const {
     agent,
     projects,
@@ -63,7 +74,7 @@ export function ProfileRenderer({ data, templateId }: { data: ProfileData; templ
       {
         hasContent: true,
         numbered: false,
-        render: () => <HeroSection agent={agent} theme={theme} resolvedImages={resolvedImages} />,
+        render: () => <HeroSection agent={agent} theme={theme} resolvedImages={resolvedImages} headingLevel={headingLevel} />,
       },
     ],
     About: [

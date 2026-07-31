@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useMutation } from "convex/react";
-import { Loader2, CheckCircle2, Send } from "lucide-react";
+import { Loader2, CheckCircle2, Send, AlertCircle } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,24 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
   const createLead = useMutation(api.leads.createLead);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", message: "" });
+
+  // Multiple profiles/sections can coexist on one page (e.g. this section
+  // also renders inside the dashboard builder's live preview alongside the
+  // rest of the app's own form controls), so ids must be unique per mount —
+  // not hardcoded strings — or `htmlFor`/`id` pairs collide across
+  // instances. Same pattern as EditableList's `useId()` usage.
+  const uid = useId();
+  const nameId = `${uid}-contact-name`;
+  const emailId = `${uid}-contact-email`;
+  const messageId = `${uid}-contact-message`;
+  const errorId = `${uid}-contact-error`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage(null);
     try {
       await createLead({
         ownerId: ownerId as Id<"users">,
@@ -33,7 +46,7 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {
       console.error(error);
-      alert("Failed to send message. Please try again.");
+      setErrorMessage("Failed to send message. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -49,8 +62,9 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Name</label>
+          <label htmlFor={nameId} className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Name</label>
           <Input
+            id={nameId}
             required
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -60,8 +74,9 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
           />
         </div>
         <div>
-          <label className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Email</label>
+          <label htmlFor={emailId} className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Email</label>
           <Input
+            id={emailId}
             required
             type="email"
             value={form.email}
@@ -72,8 +87,9 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
           />
         </div>
         <div>
-          <label className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Message</label>
+          <label htmlFor={messageId} className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Message</label>
           <Textarea
+            id={messageId}
             required
             value={form.message}
             onChange={(e) => setForm({ ...form, message: e.target.value })}
@@ -82,9 +98,20 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
             style={fieldStyle}
           />
         </div>
+        {errorMessage && (
+          <p
+            id={errorId}
+            role="alert"
+            aria-live="assertive"
+            className="flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0" /> {errorMessage}
+          </p>
+        )}
         <Button
           type="submit"
           disabled={isSubmitting || isSuccess}
+          aria-describedby={errorMessage ? errorId : undefined}
           className="w-full h-12 font-medium border-0 rounded-[var(--r-sm)]"
           style={{
             backgroundColor: isSuccess ? "#22c55e" : theme.colors.accent,

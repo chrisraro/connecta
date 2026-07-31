@@ -22,6 +22,17 @@ type Props = {
   agent: ProfileInfo;
   theme: TemplateTheme;
   resolvedImages?: ProfileData["resolvedImages"];
+  /**
+   * The name is the page's primary heading everywhere ProfileRenderer is the
+   * actual page (the public profile at app/p/[id]) — "h1" (the default)
+   * is correct there. The dashboard builder embeds this same renderer as a
+   * *preview* inside a page that already has its own h1 (the builder's page
+   * title), so it passes "h2" to avoid a second, competing h1 (a real,
+   * measured defect: three h1s on one page). Kept as a prop rather than two
+   * copies of every Hero variant so the real public page keeps its correct
+   * heading semantics.
+   */
+  headingLevel?: "h1" | "h2";
 };
 
 /**
@@ -36,15 +47,15 @@ type Props = {
  * - structured-split: a fixed-width photo column beside a text column,
  *   a strict two-cell grid — no image ever floats free of the grid.
  */
-export function HeroSection({ agent, theme, resolvedImages }: Props) {
+export function HeroSection({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
   switch (theme.composition.hero) {
     case "full-bleed-portrait":
-      return <FullBleedPortraitHero agent={agent} theme={theme} resolvedImages={resolvedImages} />;
+      return <FullBleedPortraitHero agent={agent} theme={theme} resolvedImages={resolvedImages} headingLevel={headingLevel} />;
     case "structured-split":
-      return <StructuredSplitHero agent={agent} theme={theme} resolvedImages={resolvedImages} />;
+      return <StructuredSplitHero agent={agent} theme={theme} resolvedImages={resolvedImages} headingLevel={headingLevel} />;
     case "editorial-stack":
     default:
-      return <EditorialStackHero agent={agent} theme={theme} resolvedImages={resolvedImages} />;
+      return <EditorialStackHero agent={agent} theme={theme} resolvedImages={resolvedImages} headingLevel={headingLevel} />;
   }
 }
 
@@ -75,7 +86,8 @@ function SocialLinks({ agent, theme, tone }: { agent: ProfileInfo; theme: Templa
   );
 }
 
-function EditorialStackHero({ agent, theme, resolvedImages }: Props) {
+function EditorialStackHero({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
+  const NameHeading = headingLevel;
   return (
     <section className="pt-12 pb-8" style={{ backgroundColor: theme.colors.background }}>
       <div className={measureClass(theme)}>
@@ -95,12 +107,12 @@ function EditorialStackHero({ agent, theme, resolvedImages }: Props) {
         </div>
 
         <div className="mb-8">
-          <h1
+          <NameHeading
             className="text-4xl font-normal mb-3 leading-tight"
             style={{ fontFamily: `var(${theme.fontVars.display})`, color: theme.colors.ink, letterSpacing: "-0.02em" }}
           >
             {agent.fullName}
-          </h1>
+          </NameHeading>
           <p className="text-sm mb-2" style={{ color: theme.colors.accent, fontWeight: 500 }}>
             {agent.title}
           </p>
@@ -136,7 +148,8 @@ function EditorialStackHero({ agent, theme, resolvedImages }: Props) {
   );
 }
 
-function FullBleedPortraitHero({ agent, theme, resolvedImages }: Props) {
+function FullBleedPortraitHero({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
+  const NameHeading = headingLevel;
   return (
     <section style={{ backgroundColor: theme.colors.background }}>
       <div className="relative w-full aspect-[4/5] md:aspect-[16/9]">
@@ -155,12 +168,12 @@ function FullBleedPortraitHero({ agent, theme, resolvedImages }: Props) {
           style={{ background: `linear-gradient(to top, ${theme.colors.background} 0%, transparent 55%)` }}
         />
         <div className="absolute bottom-0 left-0 right-0 px-6 pb-6 md:px-12">
-          <h1
+          <NameHeading
             className="text-5xl md:text-6xl font-bold leading-none mb-2"
             style={{ fontFamily: `var(${theme.fontVars.display})`, color: theme.colors.ink, letterSpacing: "-0.03em" }}
           >
             {agent.fullName}
-          </h1>
+          </NameHeading>
           <p className="text-base font-semibold" style={{ color: theme.colors.accent }}>{agent.title}</p>
         </div>
       </div>
@@ -195,7 +208,8 @@ function FullBleedPortraitHero({ agent, theme, resolvedImages }: Props) {
   );
 }
 
-function StructuredSplitHero({ agent, theme, resolvedImages }: Props) {
+function StructuredSplitHero({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
+  const NameHeading = headingLevel;
   return (
     <section style={{ backgroundColor: theme.colors.background }}>
       <div className={measureClass(theme)}>
@@ -211,12 +225,12 @@ function StructuredSplitHero({ agent, theme, resolvedImages }: Props) {
               />
             </div>
             <div>
-              <h1
+              <NameHeading
                 className="text-2xl font-bold mb-1"
                 style={{ fontFamily: `var(${theme.fontVars.display})`, color: theme.colors.ink, letterSpacing: "-0.02em" }}
               >
                 {agent.fullName}
-              </h1>
+              </NameHeading>
               <p className="text-xs font-semibold mb-1" style={{ color: theme.colors.accent }}>{agent.title}</p>
               {agent.company && (
                 <p className="text-sm" style={{ color: theme.colors.inkSoft }}>{agent.company}</p>

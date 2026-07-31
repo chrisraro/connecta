@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useId, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -266,6 +266,7 @@ function SortableBlockItem({ block, onToggle }: { block: Block; onToggle: (id: s
             <Switch
                 checked={block.isEnabled}
                 onCheckedChange={() => onToggle(block.id)}
+                aria-label={`${block.isEnabled ? "Hide" : "Show"} ${block.label}`}
                 className="data-[state=checked]:bg-primary"
             />
         </div>
@@ -381,6 +382,11 @@ const TESTIMONIAL_FIELDS: FieldDef<TestimonialItem>[] = [
 function BuilderContent() {
     const router = useRouter();
     const { user } = useUser();
+    // Stable unique id prefix for this mount, so every field's `id`/`htmlFor`
+    // pairing below is guaranteed collision-free (same pattern EditableList
+    // already uses internally). One call is enough — this component renders
+    // once per page, unlike EditableList which is instantiated per list.
+    const uid = useId();
     const searchParams = useSearchParams();
     const editingId = searchParams.get("id") && searchParams.get("id") !== "null" ? searchParams.get("id") : null;
 
@@ -939,7 +945,10 @@ function BuilderContent() {
             }
         };
 
-        return <ProfileRenderer data={data} templateId={selectedTemplate} />;
+        // headingLevel="h2": this preview is embedded inside the builder page,
+        // which already has its own h1 above — see the comment on the header
+        // h2 change and on HeroSection's headingLevel prop.
+        return <ProfileRenderer data={data} templateId={selectedTemplate} headingLevel="h2" />;
     };
 
     return (
@@ -965,6 +974,16 @@ function BuilderContent() {
                     >
                         <ChevronLeft className="w-5 h-5" />
                     </button>
+                    {/* This is the page's one true h1. The dashboard shell
+                        (app/dashboard/layout.tsx) does not reliably provide a
+                        page-level heading — it either renders its own competing
+                        h1 (measured: 3 h1s on this page, sequence 1,1,1,2,2 —
+                        this one, the shell's, and HeroSection's inside the live
+                        preview below) or nothing at all, depending on shell
+                        changes outside this file's control. Owning the page's
+                        h1 here, and keeping the preview's HeroSection demoted
+                        to h2 (see headingLevel prop below), keeps this page
+                        correct — exactly one h1 — independent of the shell. */}
                     <h1 className="font-semibold text-foreground">
                         {editingId ? "Edit Profile" : "Create Profile"}
                     </h1>
@@ -972,7 +991,7 @@ function BuilderContent() {
                         size="sm"
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="h-11 lg:h-8 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
                     </Button>
@@ -1004,7 +1023,7 @@ function BuilderContent() {
                     <div className="flex bg-muted p-1 rounded-xl">
                         <button
                             onClick={() => setPreviewMode("page")}
-                            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                            className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                                 previewMode === "page"
                                     ? "bg-background text-foreground shadow-sm"
                                     : "text-muted-foreground hover:text-foreground"
@@ -1014,7 +1033,7 @@ function BuilderContent() {
                         </button>
                         <button
                             onClick={() => setPreviewMode("card")}
-                            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                            className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                                 previewMode === "card"
                                     ? "bg-background text-foreground shadow-sm"
                                     : "text-muted-foreground hover:text-foreground"
@@ -1081,7 +1100,7 @@ function BuilderContent() {
                             <button
                                 key={type}
                                 onClick={() => handleProfileTypeChange(type)}
-                                className={`py-2.5 px-4 rounded-xl text-sm font-medium capitalize transition-all ${
+                                className={`min-h-11 lg:min-h-0 py-2.5 px-4 rounded-xl text-sm font-medium capitalize transition-all ${
                                     profileType === type
                                         ? "bg-primary text-primary-foreground"
                                         : "bg-card border border-border text-foreground hover:bg-muted"
@@ -1099,7 +1118,7 @@ function BuilderContent() {
                         <Label className="text-sm font-semibold text-foreground">Sections</Label>
                         <button
                             onClick={() => setShowReorderMode(!showReorderMode)}
-                            className="text-sm text-primary flex items-center gap-1"
+                            className="min-h-11 lg:min-h-0 text-sm text-primary flex items-center gap-1"
                         >
                             {showReorderMode ? "Done" : <><ArrowUpDown className="w-3 h-3" /> Reorder</>}
                         </button>
@@ -1141,7 +1160,7 @@ function BuilderContent() {
                                             {block.id !== "Contact" && (
                                                 <button
                                                     onClick={() => setActiveModal(block.id)}
-                                                    className="min-h-11 px-1 text-sm text-primary font-medium"
+                                                    className="min-h-11 min-w-11 flex items-center justify-center px-1 text-sm text-primary font-medium"
                                                 >
                                                     Edit
                                                 </button>
@@ -1162,24 +1181,27 @@ function BuilderContent() {
             >
                 <div className="space-y-4">
                     <div>
-                        <Label className="text-sm">Full Name</Label>
+                        <Label htmlFor={`${uid}-fullName`} className="text-sm">Full Name</Label>
                         <Input
+                            id={`${uid}-fullName`}
                             value={agentInfo.fullName}
                             onChange={(e) => setAgentInfo({ ...agentInfo, fullName: e.target.value })}
                             placeholder="John Doe"
                         />
                     </div>
                     <div>
-                        <Label className="text-sm">Title</Label>
+                        <Label htmlFor={`${uid}-jobTitle`} className="text-sm">Title</Label>
                         <Input
+                            id={`${uid}-jobTitle`}
                             value={agentInfo.title}
                             onChange={(e) => setAgentInfo({ ...agentInfo, title: e.target.value })}
                             placeholder="Software Engineer"
                         />
                     </div>
                     <div>
-                        <Label className="text-sm">Company</Label>
+                        <Label htmlFor={`${uid}-company`} className="text-sm">Company</Label>
                         <Input
+                            id={`${uid}-company`}
                             value={agentInfo.company}
                             onChange={(e) => setAgentInfo({ ...agentInfo, company: e.target.value })}
                             placeholder="Company Name"
@@ -1195,8 +1217,9 @@ function BuilderContent() {
                         />
                     </div>
                     <div>
-                        <Label className="text-sm">Phone</Label>
+                        <Label htmlFor={`${uid}-phone`} className="text-sm">Phone</Label>
                         <Input
+                            id={`${uid}-phone`}
                             value={agentInfo.phone}
                             onChange={(e) => setAgentInfo({ ...agentInfo, phone: e.target.value })}
                             placeholder="+1 234 567 890"
@@ -1206,6 +1229,7 @@ function BuilderContent() {
                             {additionalPhones.map((ph, idx) => (
                                 <div key={`add-phone-${idx}`} className="flex items-center gap-2">
                                     <Input
+                                        aria-label={`Additional phone number ${idx + 1}`}
                                         value={ph}
                                         onChange={(e) => {
                                             const newPhs = [...additionalPhones];
@@ -1234,8 +1258,9 @@ function BuilderContent() {
                         </div>
                     </div>
                     <div>
-                        <Label className="text-sm">Email</Label>
+                        <Label htmlFor={`${uid}-email`} className="text-sm">Email</Label>
                         <Input
+                            id={`${uid}-email`}
                             type="email"
                             value={agentInfo.email}
                             onChange={(e) => setAgentInfo({ ...agentInfo, email: e.target.value })}
@@ -1246,6 +1271,7 @@ function BuilderContent() {
                             {additionalEmails.map((em, idx) => (
                                 <div key={`add-email-${idx}`} className="flex items-center gap-2">
                                     <Input
+                                        aria-label={`Additional email address ${idx + 1}`}
                                         type="email"
                                         value={em}
                                         onChange={(e) => {
@@ -1275,8 +1301,9 @@ function BuilderContent() {
                         </div>
                     </div>
                     <div>
-                        <Label className="text-sm">Website</Label>
+                        <Label htmlFor={`${uid}-website`} className="text-sm">Website</Label>
                         <Input
+                            id={`${uid}-website`}
                             value={agentInfo.website || ""}
                             onChange={(e) => setAgentInfo({ ...agentInfo, website: e.target.value })}
                             placeholder="https://example.com"
@@ -1304,7 +1331,8 @@ function BuilderContent() {
                             <div className="flex gap-2">
                                 <select
                                     id="social-platform"
-                                    className="flex-1 h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                                    aria-label="Social platform"
+                                    className="min-h-11 lg:min-h-0 flex-1 h-10 rounded-lg border border-border bg-background px-3 text-sm"
                                 >
                                     <option value="Instagram">Instagram</option>
                                     <option value="Facebook">Facebook</option>
@@ -1316,12 +1344,14 @@ function BuilderContent() {
                                 </select>
                                 <Input
                                     id="social-url"
+                                    aria-label="Social link URL or username"
                                     placeholder="URL or username"
                                     className="flex-[2]"
                                 />
                                 <Button
                                     size="sm"
                                     aria-label="Add social link"
+                                    className="h-11 lg:h-8"
                                     onClick={() => {
                                         const platform = (document.getElementById('social-platform') as HTMLSelectElement).value;
                                         const url = (document.getElementById('social-url') as HTMLInputElement).value;
@@ -1349,8 +1379,9 @@ function BuilderContent() {
             >
                 <div className="space-y-4">
                     <div>
-                        <Label className="text-sm">About Me</Label>
+                        <Label htmlFor={`${uid}-about`} className="text-sm">About Me</Label>
                         <textarea
+                            id={`${uid}-about`}
                             className="w-full min-h-[150px] mt-1 p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                             placeholder="Tell your story..."
                             value={agentInfo.about || ""}
@@ -1389,6 +1420,7 @@ function BuilderContent() {
                     <div className="flex gap-2">
                         <Input
                             id="new-service"
+                            aria-label="New service"
                             placeholder="Add a service (e.g., Web Design)"
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
@@ -1406,6 +1438,7 @@ function BuilderContent() {
                         />
                         <Button
                             aria-label="Add service"
+                            className="h-11 lg:h-9"
                             onClick={() => {
                                 const input = document.getElementById('new-service') as HTMLInputElement;
                                 if (input.value.trim()) {
@@ -1430,16 +1463,18 @@ function BuilderContent() {
             >
                 <div className="space-y-4">
                     <div>
-                        <Label className="text-sm">Title</Label>
+                        <Label htmlFor={`${uid}-cert-title`} className="text-sm">Title</Label>
                         <Input
+                            id={`${uid}-cert-title`}
                             value={certification.title}
                             onChange={(e) => setCertification({ ...certification, title: e.target.value })}
                             placeholder="e.g., Certified Software Engineer"
                         />
                     </div>
                     <div>
-                        <Label className="text-sm">Description</Label>
+                        <Label htmlFor={`${uid}-cert-desc`} className="text-sm">Description</Label>
                         <textarea
+                            id={`${uid}-cert-desc`}
                             className="w-full min-h-[100px] mt-1 p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                             value={certification.description}
                             onChange={(e) => setCertification({ ...certification, description: e.target.value })}
@@ -1463,9 +1498,9 @@ function BuilderContent() {
                     addLabel="Add Education"
                     emptyHint="No education entries yet."
                 >
-                    <Input placeholder="Degree" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
-                    <Input placeholder="School" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
-                    <Input placeholder="Year" value={newEducation.year} onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })} />
+                    <Input aria-label="Degree" placeholder="Degree" value={newEducation.degree} onChange={(e) => setNewEducation({ ...newEducation, degree: e.target.value })} />
+                    <Input aria-label="School" placeholder="School" value={newEducation.school} onChange={(e) => setNewEducation({ ...newEducation, school: e.target.value })} />
+                    <Input aria-label="Year" placeholder="Year" value={newEducation.year} onChange={(e) => setNewEducation({ ...newEducation, year: e.target.value })} />
                 </EditableList>
             </InspectorPanel>
 
@@ -1490,8 +1525,8 @@ function BuilderContent() {
                     addLabel="Add Category"
                     emptyHint="No tech stack categories yet."
                 >
-                    <Input placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })} />
-                    <Input placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })} />
+                    <Input aria-label="Category" placeholder="Category (e.g., Frontend)" value={newTechStack.category} onChange={(e) => setNewTechStack({ ...newTechStack, category: e.target.value })} />
+                    <Input aria-label="Skills (comma separated)" placeholder="Skills (comma separated)" value={newTechStack.skills} onChange={(e) => setNewTechStack({ ...newTechStack, skills: e.target.value })} />
                 </EditableList>
             </InspectorPanel>
 
@@ -1509,10 +1544,11 @@ function BuilderContent() {
                     addLabel="Add Experience"
                     emptyHint="No experience entries yet."
                 >
-                    <Input placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
-                    <Input placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
-                    <Input placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })} />
+                    <Input aria-label="Job Title" placeholder="Job Title" value={newExperience.title} onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })} />
+                    <Input aria-label="Company" placeholder="Company" value={newExperience.company} onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })} />
+                    <Input aria-label="Period" placeholder="Period (e.g., 2020 - Present)" value={newExperience.period} onChange={(e) => setNewExperience({ ...newExperience, period: e.target.value })} />
                     <textarea
+                        aria-label="Description"
                         className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                         placeholder="Description"
                         value={newExperience.description}
@@ -1537,24 +1573,26 @@ function BuilderContent() {
                     emptyHint="No projects yet."
                 >
                     <Label className="text-xs text-muted-foreground">Add New Project</Label>
-                    <Input placeholder="Project Title" value={newInlineProject.title} onChange={(e) => setNewInlineProject({ ...newInlineProject, title: e.target.value })} />
+                    <Input aria-label="Project Title" placeholder="Project Title" value={newInlineProject.title} onChange={(e) => setNewInlineProject({ ...newInlineProject, title: e.target.value })} />
                     <textarea
+                        aria-label="Short description"
                         className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                         placeholder="Short description"
                         value={newInlineProject.description}
                         onChange={(e) => setNewInlineProject({ ...newInlineProject, description: e.target.value })}
                     />
                     <select
+                        aria-label="Project category"
                         value={newInlineProject.category}
                         onChange={(e) => setNewInlineProject({ ...newInlineProject, category: e.target.value })}
-                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                        className="min-h-11 lg:min-h-0 w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
                     >
                         <option value="">Select Category</option>
                         {Object.entries(PROJECT_CATEGORY_LABELS).map(([key, label]) => (
                             <option key={key} value={key}>{label}</option>
                         ))}
                     </select>
-                    <Input placeholder="External URL (optional)" value={newInlineProject.link} onChange={(e) => setNewInlineProject({ ...newInlineProject, link: e.target.value })} />
+                    <Input aria-label="External URL (optional)" placeholder="External URL (optional)" value={newInlineProject.link} onChange={(e) => setNewInlineProject({ ...newInlineProject, link: e.target.value })} />
                 </EditableList>
             </InspectorPanel>
 
@@ -1574,15 +1612,16 @@ function BuilderContent() {
                     emptyHint="No products yet."
                 >
                     <Label className="text-xs text-muted-foreground">Add New Product / Listing</Label>
-                    <Input placeholder="Product Title" value={newProduct.title} onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })} />
+                    <Input aria-label="Product Title" placeholder="Product Title" value={newProduct.title} onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })} />
                     <textarea
+                        aria-label="Description"
                         className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                         placeholder="Description"
                         value={newProduct.description}
                         onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                     />
-                    <Input type="number" placeholder="Price (optional)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} />
-                    <Input placeholder="Link (optional)" value={newProduct.link} onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })} />
+                    <Input aria-label="Price (optional)" type="number" placeholder="Price (optional)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} />
+                    <Input aria-label="Link (optional)" placeholder="Link (optional)" value={newProduct.link} onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })} />
                 </EditableList>
             </InspectorPanel>
 
@@ -1602,25 +1641,27 @@ function BuilderContent() {
                     emptyHint="No properties yet."
                 >
                     <Label className="text-xs text-muted-foreground">Add New Property</Label>
-                    <Input placeholder="Property Title" value={newPropertyListing.title} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, title: e.target.value })} />
+                    <Input aria-label="Property Title" placeholder="Property Title" value={newPropertyListing.title} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, title: e.target.value })} />
                     <textarea
+                        aria-label="Description (optional)"
                         className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                         placeholder="Description (optional)"
                         value={newPropertyListing.description}
                         onChange={(e) => setNewPropertyListing({ ...newPropertyListing, description: e.target.value })}
                     />
-                    <Input placeholder="Price (e.g., $250,000)" value={newPropertyListing.price} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, price: e.target.value })} />
-                    <Input placeholder="Location" value={newPropertyListing.location} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, location: e.target.value })} />
+                    <Input aria-label="Price" placeholder="Price (e.g., $250,000)" value={newPropertyListing.price} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, price: e.target.value })} />
+                    <Input aria-label="Location" placeholder="Location" value={newPropertyListing.location} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, location: e.target.value })} />
                     <select
+                        aria-label="Property status"
                         value={newPropertyListing.status}
                         onChange={(e) => setNewPropertyListing({ ...newPropertyListing, status: e.target.value })}
-                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
+                        className="min-h-11 lg:min-h-0 w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
                     >
                         <option value="for-sale">For Sale</option>
                         <option value="for-rent">For Rent</option>
                         <option value="sold">Sold</option>
                     </select>
-                    <Input placeholder="Listing URL (optional)" value={newPropertyListing.link} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, link: e.target.value })} />
+                    <Input aria-label="Listing URL (optional)" placeholder="Listing URL (optional)" value={newPropertyListing.link} onChange={(e) => setNewPropertyListing({ ...newPropertyListing, link: e.target.value })} />
                 </EditableList>
             </InspectorPanel>
 
@@ -1639,13 +1680,14 @@ function BuilderContent() {
                     emptyHint="No recommendations yet."
                 >
                     <textarea
+                        aria-label="Quote"
                         className="w-full p-3 rounded-lg border border-border bg-background text-foreground text-sm"
                         placeholder="Quote"
                         value={newTestimonial.quote}
                         onChange={(e) => setNewTestimonial({ ...newTestimonial, quote: e.target.value })}
                     />
-                    <Input placeholder="Author Name" value={newTestimonial.author} onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })} />
-                    <Input placeholder="Role/Title" value={newTestimonial.role} onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })} />
+                    <Input aria-label="Author Name" placeholder="Author Name" value={newTestimonial.author} onChange={(e) => setNewTestimonial({ ...newTestimonial, author: e.target.value })} />
+                    <Input aria-label="Role/Title" placeholder="Role/Title" value={newTestimonial.role} onChange={(e) => setNewTestimonial({ ...newTestimonial, role: e.target.value })} />
                 </EditableList>
             </InspectorPanel>
 
@@ -1671,82 +1713,92 @@ function BuilderContent() {
                     <Label className="text-sm font-semibold text-foreground mb-3 block">Colors</Label>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs text-muted-foreground mb-1.5 block">Primary</label>
+                            <label htmlFor={`${uid}-color-primary-hex`} className="text-xs text-muted-foreground mb-1.5 block">Primary</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
+                                    aria-label="Primary color swatch"
                                     value={customColors.primary}
                                     onChange={(e) => setCustomColors({ ...customColors, primary: e.target.value })}
-                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                    className="size-11 rounded-lg border-0 cursor-pointer"
                                 />
                                 <Input
+                                    id={`${uid}-color-primary-hex`}
                                     value={customColors.primary}
                                     onChange={(e) => setCustomColors({ ...customColors, primary: e.target.value })}
-                                    className="flex-1 text-xs"
+                                    className="flex-1 text-xs h-11 lg:h-9"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="text-xs text-muted-foreground mb-1.5 block">Background</label>
+                            <label htmlFor={`${uid}-color-background-hex`} className="text-xs text-muted-foreground mb-1.5 block">Background</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
+                                    aria-label="Background color swatch"
                                     value={customColors.background}
                                     onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
-                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                    className="size-11 rounded-lg border-0 cursor-pointer"
                                 />
                                 <Input
+                                    id={`${uid}-color-background-hex`}
                                     value={customColors.background}
                                     onChange={(e) => setCustomColors({ ...customColors, background: e.target.value })}
-                                    className="flex-1 text-xs"
+                                    className="flex-1 text-xs h-11 lg:h-9"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="text-xs text-muted-foreground mb-1.5 block">Text / Heading</label>
+                            <label htmlFor={`${uid}-color-text-hex`} className="text-xs text-muted-foreground mb-1.5 block">Text / Heading</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
+                                    aria-label="Text color swatch"
                                     value={customColors.text}
                                     onChange={(e) => setCustomColors({ ...customColors, text: e.target.value })}
-                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                    className="size-11 rounded-lg border-0 cursor-pointer"
                                 />
                                 <Input
+                                    id={`${uid}-color-text-hex`}
                                     value={customColors.text}
                                     onChange={(e) => setCustomColors({ ...customColors, text: e.target.value })}
-                                    className="flex-1 text-xs"
+                                    className="flex-1 text-xs h-11 lg:h-9"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="text-xs text-muted-foreground mb-1.5 block">Secondary</label>
+                            <label htmlFor={`${uid}-color-secondary-hex`} className="text-xs text-muted-foreground mb-1.5 block">Secondary</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
+                                    aria-label="Secondary color swatch"
                                     value={customColors.secondary}
                                     onChange={(e) => setCustomColors({ ...customColors, secondary: e.target.value })}
-                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                    className="size-11 rounded-lg border-0 cursor-pointer"
                                 />
                                 <Input
+                                    id={`${uid}-color-secondary-hex`}
                                     value={customColors.secondary}
                                     onChange={(e) => setCustomColors({ ...customColors, secondary: e.target.value })}
-                                    className="flex-1 text-xs"
+                                    className="flex-1 text-xs h-11 lg:h-9"
                                 />
                             </div>
                         </div>
                         <div className="col-span-2">
-                            <label className="text-xs text-muted-foreground mb-1.5 block">Accent</label>
+                            <label htmlFor={`${uid}-color-accent-hex`} className="text-xs text-muted-foreground mb-1.5 block">Accent</label>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
+                                    aria-label="Accent color swatch"
                                     value={customColors.accent}
                                     onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
-                                    className="w-10 h-10 rounded-lg border-0 cursor-pointer"
+                                    className="size-11 rounded-lg border-0 cursor-pointer"
                                 />
                                 <Input
+                                    id={`${uid}-color-accent-hex`}
                                     value={customColors.accent}
                                     onChange={(e) => setCustomColors({ ...customColors, accent: e.target.value })}
-                                    className="flex-1 text-xs"
+                                    className="flex-1 text-xs h-11 lg:h-9"
                                 />
                             </div>
                         </div>
@@ -1769,7 +1821,7 @@ function BuilderContent() {
                                         type="button"
                                         key={t}
                                         onClick={() => handleCardThemeChange(t)}
-                                        className={`py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
+                                        className={`min-h-11 lg:min-h-0 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
                                             digitalCard.theme === t
                                                 ? "bg-primary text-primary-foreground border-primary"
                                                 : "bg-card border-border text-foreground hover:bg-muted"
@@ -1790,7 +1842,7 @@ function BuilderContent() {
                                         type="button"
                                         key={l}
                                         onClick={() => setDigitalCard({ ...digitalCard, layout: l })}
-                                        className={`py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
+                                        className={`min-h-11 lg:min-h-0 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
                                             digitalCard.layout === l
                                                 ? "bg-primary text-primary-foreground border-primary"
                                                 : "bg-card border-border text-foreground hover:bg-muted"
@@ -1808,6 +1860,7 @@ function BuilderContent() {
                             <Switch
                                 checked={digitalCard.showQrCode}
                                 onCheckedChange={(val) => setDigitalCard({ ...digitalCard, showQrCode: val })}
+                                aria-label="Show QR Code"
                             />
                         </div>
 
@@ -1819,7 +1872,7 @@ function BuilderContent() {
                                     <button
                                         type="button"
                                         onClick={() => setDigitalCard({ ...digitalCard, cardBackgroundType: "solid" })}
-                                        className={`px-3 py-1 rounded-md text-xs font-semibold ${
+                                        className={`min-h-11 lg:min-h-0 px-3 py-1 rounded-md text-xs font-semibold ${
                                             digitalCard.cardBackgroundType === "solid"
                                                 ? "bg-primary text-primary-foreground"
                                                 : "bg-muted text-muted-foreground"
@@ -1830,7 +1883,7 @@ function BuilderContent() {
                                     <button
                                         type="button"
                                         onClick={() => setDigitalCard({ ...digitalCard, cardBackgroundType: "gradient" })}
-                                        className={`px-3 py-1 rounded-md text-xs font-semibold ${
+                                        className={`min-h-11 lg:min-h-0 px-3 py-1 rounded-md text-xs font-semibold ${
                                             digitalCard.cardBackgroundType === "gradient"
                                                 ? "bg-primary text-primary-foreground"
                                                 : "bg-muted text-muted-foreground"
@@ -1843,52 +1896,58 @@ function BuilderContent() {
 
                             {digitalCard.cardBackgroundType === "solid" ? (
                                 <div>
-                                    <label className="text-[10px] text-muted-foreground mb-1 block">Solid Background Color</label>
+                                    <label htmlFor={`${uid}-card-bg-hex`} className="text-[10px] text-muted-foreground mb-1 block">Solid Background Color</label>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="color"
+                                            aria-label="Solid background color swatch"
                                             value={digitalCard.backgroundColor || "#ffffff"}
                                             onChange={(e) => setDigitalCard({ ...digitalCard, backgroundColor: e.target.value })}
-                                            className="w-8 h-8 rounded-lg border-0 cursor-pointer"
+                                            className="size-11 rounded-lg border-0 cursor-pointer"
                                         />
                                         <Input
+                                            id={`${uid}-card-bg-hex`}
                                             value={digitalCard.backgroundColor || ""}
                                             onChange={(e) => setDigitalCard({ ...digitalCard, backgroundColor: e.target.value })}
-                                            className="flex-1 text-xs h-8"
+                                            className="flex-1 text-xs h-11 lg:h-8"
                                         />
                                     </div>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label className="text-[10px] text-muted-foreground mb-1 block">Gradient Start</label>
+                                        <label htmlFor={`${uid}-card-gradient-start-hex`} className="text-[10px] text-muted-foreground mb-1 block">Gradient Start</label>
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="color"
+                                                aria-label="Gradient start color swatch"
                                                 value={digitalCard.cardGradientStart || "#000000"}
                                                 onChange={(e) => setDigitalCard({ ...digitalCard, cardGradientStart: e.target.value })}
-                                                className="w-8 h-8 rounded-lg border-0 cursor-pointer"
+                                                className="size-11 rounded-lg border-0 cursor-pointer"
                                             />
                                             <Input
+                                                id={`${uid}-card-gradient-start-hex`}
                                                 value={digitalCard.cardGradientStart || ""}
                                                 onChange={(e) => setDigitalCard({ ...digitalCard, cardGradientStart: e.target.value })}
-                                                className="flex-1 text-xs h-8"
+                                                className="flex-1 text-xs h-11 lg:h-8"
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="text-[10px] text-muted-foreground mb-1 block">Gradient End</label>
+                                        <label htmlFor={`${uid}-card-gradient-end-hex`} className="text-[10px] text-muted-foreground mb-1 block">Gradient End</label>
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="color"
+                                                aria-label="Gradient end color swatch"
                                                 value={digitalCard.cardGradientEnd || "#000000"}
                                                 onChange={(e) => setDigitalCard({ ...digitalCard, cardGradientEnd: e.target.value })}
-                                                className="w-8 h-8 rounded-lg border-0 cursor-pointer"
+                                                className="size-11 rounded-lg border-0 cursor-pointer"
                                             />
                                             <Input
+                                                id={`${uid}-card-gradient-end-hex`}
                                                 value={digitalCard.cardGradientEnd || ""}
                                                 onChange={(e) => setDigitalCard({ ...digitalCard, cardGradientEnd: e.target.value })}
-                                                className="flex-1 text-xs h-8"
+                                                className="flex-1 text-xs h-11 lg:h-8"
                                             />
                                         </div>
                                     </div>
@@ -1896,18 +1955,20 @@ function BuilderContent() {
                             )}
 
                             <div>
-                                <label className="text-[10px] text-muted-foreground mb-1 block">Text Color</label>
+                                <label htmlFor={`${uid}-card-text-hex`} className="text-[10px] text-muted-foreground mb-1 block">Text Color</label>
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="color"
+                                        aria-label="Text color swatch"
                                         value={digitalCard.textColor || "#000000"}
                                         onChange={(e) => setDigitalCard({ ...digitalCard, textColor: e.target.value })}
-                                        className="w-8 h-8 rounded-lg border-0 cursor-pointer"
+                                        className="size-11 rounded-lg border-0 cursor-pointer"
                                     />
                                     <Input
+                                        id={`${uid}-card-text-hex`}
                                         value={digitalCard.textColor || ""}
                                         onChange={(e) => setDigitalCard({ ...digitalCard, textColor: e.target.value })}
-                                        className="flex-1 text-xs h-8"
+                                        className="flex-1 text-xs h-11 lg:h-8"
                                     />
                                 </div>
                             </div>

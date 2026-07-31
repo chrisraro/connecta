@@ -67,7 +67,7 @@ export function InspectorPanel({ isOpen, onClose, title, children, onSave }: Ins
                 <h2 className="font-semibold text-foreground">{title}</h2>
                 <div className="flex items-center gap-1">
                     {onSave && (
-                        <Button size="sm" onClick={onSave} className="bg-primary text-primary-foreground">
+                        <Button size="sm" onClick={onSave} className="h-11 lg:h-8 bg-primary text-primary-foreground">
                             <Save className="w-4 h-4 mr-2" /> Done
                         </Button>
                     )}
