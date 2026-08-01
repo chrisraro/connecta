@@ -132,8 +132,8 @@ export default function CategoriesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Categories</h1>
-                    <p className="text-zinc-400 mt-1">Manage product categories and hierarchy</p>
+                    <h1 className="text-3xl font-bold text-foreground">Categories</h1>
+                    <p className="text-muted-foreground mt-1">Manage product categories and hierarchy</p>
                 </div>
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
@@ -142,7 +142,7 @@ export default function CategoriesPage() {
                             Add Category
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+                    <DialogContent className="bg-card border-border text-foreground">
                         <DialogHeader>
                             <DialogTitle>{editingId ? "Edit" : "Add"} Category</DialogTitle>
                         </DialogHeader>
@@ -152,7 +152,7 @@ export default function CategoriesPage() {
                                 <Input
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value, slug: generateSlug(e.target.value) })}
-                                    className="bg-zinc-800 border-zinc-700"
+                                    className="bg-muted border-border"
                                     required
                                 />
                             </div>
@@ -161,7 +161,7 @@ export default function CategoriesPage() {
                                 <Input
                                     value={formData.slug}
                                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                                    className="bg-zinc-800 border-zinc-700"
+                                    className="bg-muted border-border"
                                     required
                                 />
                             </div>
@@ -170,7 +170,7 @@ export default function CategoriesPage() {
                                 <Input
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="bg-zinc-800 border-zinc-700"
+                                    className="bg-muted border-border"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -178,7 +178,7 @@ export default function CategoriesPage() {
                                 <select
                                     value={formData.parentId || ""}
                                     onChange={(e) => setFormData({ ...formData, parentId: e.target.value || undefined })}
-                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md"
+                                    className="w-full px-3 py-2 bg-muted border border-border rounded-md"
                                 >
                                     <option value="">None (Top Level)</option>
                                     {categories?.map((cat) => (
@@ -192,7 +192,7 @@ export default function CategoriesPage() {
                                     type="number"
                                     value={formData.sortOrder}
                                     onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) })}
-                                    className="bg-zinc-800 border-zinc-700"
+                                    className="bg-muted border-border"
                                 />
                             </div>
                             <div className="flex items-center space-x-2">
@@ -215,38 +215,38 @@ export default function CategoriesPage() {
                 </Dialog>
             </div>
 
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="bg-card border-border">
                 <CardHeader>
-                    <CardTitle className="text-white">All Categories</CardTitle>
+                    <CardTitle className="text-foreground">All Categories</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
-                            <TableRow className="border-zinc-800">
-                                <TableHead className="text-zinc-400">Name</TableHead>
-                                <TableHead className="text-zinc-400">Slug</TableHead>
-                                <TableHead className="text-zinc-400">Parent</TableHead>
-                                <TableHead className="text-zinc-400">Sort</TableHead>
-                                <TableHead className="text-zinc-400">Status</TableHead>
-                                <TableHead className="text-zinc-400 text-right">Actions</TableHead>
+                            <TableRow className="border-border">
+                                <TableHead className="text-muted-foreground">Name</TableHead>
+                                <TableHead className="text-muted-foreground">Slug</TableHead>
+                                <TableHead className="text-muted-foreground">Parent</TableHead>
+                                <TableHead className="text-muted-foreground">Sort</TableHead>
+                                <TableHead className="text-muted-foreground">Status</TableHead>
+                                <TableHead className="text-muted-foreground text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {categories?.map((category) => {
                                 const parent = categories.find(c => c._id === category.parentId);
                                 return (
-                                    <TableRow key={category._id} className="border-zinc-800">
-                                        <TableCell className="font-medium text-white">
+                                    <TableRow key={category._id} className="border-border">
+                                        <TableCell className="font-medium text-foreground">
                                             <div className="flex items-center gap-2">
-                                                <FolderTree className="w-4 h-4 text-zinc-500" />
+                                                <FolderTree className="w-4 h-4 text-muted-foreground" />
                                                 {category.name}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-zinc-400 font-mono text-sm">{category.slug}</TableCell>
-                                        <TableCell className="text-zinc-400">{parent?.name || "—"}</TableCell>
-                                        <TableCell className="text-zinc-400">{category.sortOrder}</TableCell>
+                                        <TableCell className="text-muted-foreground font-mono text-sm">{category.slug}</TableCell>
+                                        <TableCell className="text-muted-foreground">{parent?.name || "—"}</TableCell>
+                                        <TableCell className="text-muted-foreground">{category.sortOrder}</TableCell>
                                         <TableCell>
-                                            <Badge variant={category.isActive ? "default" : "secondary"} className={category.isActive ? "bg-green-600" : "bg-zinc-600"}>
+                                            <Badge variant={category.isActive ? "default" : "secondary"} className={category.isActive ? "bg-green-600" : "bg-secondary"}>
                                                 {category.isActive ? "Active" : "Inactive"}
                                             </Badge>
                                         </TableCell>
@@ -266,7 +266,7 @@ export default function CategoriesPage() {
                         </TableBody>
                     </Table>
                     {categories?.length === 0 && (
-                        <div className="text-center py-12 text-zinc-500">
+                        <div className="text-center py-12 text-muted-foreground">
                             No categories yet. Create your first category to organize products.
                         </div>
                     )}

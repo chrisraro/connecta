@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, X, Loader2, Info } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
@@ -140,9 +141,23 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
     const triggerUpload = () => inputRef.current?.click();
 
     if (displayUrl) {
+        // Only the Convex-resolved `storageUrl` query result is guaranteed
+        // to be a *.convex.cloud host (the one allow-listed in
+        // next.config.ts's remotePatterns). The local blob: preview shown
+        // mid-upload and any raw http/data URL both skip Next's optimizer
+        // instead of risking a thrown error on an unlisted host — same
+        // pattern as components/templates/ProfileImage.tsx.
+        const isOptimizable = displayUrl === storageUrl;
         return (
             <div className={`relative w-32 h-32 rounded-lg overflow-hidden border border-border group ${className}`}>
-                <img src={displayUrl} alt="Uploaded" className="w-full h-full object-cover" />
+                <Image
+                    src={displayUrl}
+                    alt="Uploaded"
+                    fill
+                    sizes="128px"
+                    className="object-cover"
+                    unoptimized={!isOptimizable}
+                />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Button
                         variant="destructive"

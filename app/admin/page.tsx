@@ -27,8 +27,8 @@ export default function AdminDashboardPage() {
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-                    <p className="text-zinc-400 mt-1">
+                    <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+                    <p className="text-muted-foreground mt-1">
                         Welcome back, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
                     </p>
                 </div>
@@ -39,100 +39,100 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
+                <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Total Users</CardTitle>
-                        <Users className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{stats.totalUsers}</div>
-                        <p className="text-xs text-zinc-500 mt-1">Registered accounts</p>
+                        <p className="text-xs text-muted-foreground mt-1">Registered accounts</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
+                <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Active NFC Cards</CardTitle>
-                        <CreditCard className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Active NFC Cards</CardTitle>
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-emerald-500">{stats.activeCards}</div>
-                        <p className="text-xs text-zinc-500 mt-1">Paired by users</p>
+                        <p className="text-xs text-muted-foreground mt-1">Paired by users</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
+                <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Profiles</CardTitle>
-                        <UserCircle className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Profiles</CardTitle>
+                        <UserCircle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{stats.totalProfiles}</div>
-                        <p className="text-xs text-zinc-500 mt-1">Published portfolios</p>
+                        <p className="text-xs text-muted-foreground mt-1">Published portfolios</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
+                <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Revenue</CardTitle>
-                        <DollarSign className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-emerald-500">{formatPHP(stats.revenue)}</div>
-                        <p className="text-xs text-zinc-500 mt-1">From paid orders</p>
+                        <p className="text-xs text-muted-foreground mt-1">From paid orders</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
+                <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Paid Orders</CardTitle>
-                        <ShoppingBag className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Paid Orders</CardTitle>
+                        <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{stats.paidOrders}</div>
-                        <p className="text-xs text-zinc-500 mt-1">of {stats.totalOrders} total</p>
+                        <p className="text-xs text-muted-foreground mt-1">of {stats.totalOrders} total</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
+                <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Inventory Cards</CardTitle>
-                        <Warehouse className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Inventory Cards</CardTitle>
+                        <Warehouse className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-amber-500">{stats.inventoryCards}</div>
-                        <p className="text-xs text-zinc-500 mt-1">Unassigned blanks</p>
+                        <p className="text-xs text-muted-foreground mt-1">Unassigned blanks</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
+                <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Low Stock</CardTitle>
-                        <AlertTriangle className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock</CardTitle>
+                        <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className={"text-3xl font-bold " + (stats.lowStockCount > 0 ? "text-red-500" : "")}>{stats.lowStockCount}</div>
-                        <p className="text-xs text-zinc-500 mt-1">Products need restock</p>
+                        <p className="text-xs text-muted-foreground mt-1">Products need restock</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-zinc-700 transition-colors">
+                <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">New Leads (7d)</CardTitle>
-                        <Activity className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">New Leads (7d)</CardTitle>
+                        <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{stats.newLeads7d}</div>
-                        <p className="text-xs text-zinc-500 mt-1">of {stats.totalLeads} total</p>
+                        <p className="text-xs text-muted-foreground mt-1">of {stats.totalLeads} total</p>
                     </CardContent>
                 </Card>
             </div>
 
             <div>
-                <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
+                <h2 className="text-xl font-bold text-foreground mb-4">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <Link href="/admin/users">
-                        <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-purple-500/50 transition-all hover:shadow-lg hover:shadow-purple-500/10 cursor-pointer group">
+                        <Card className="bg-card border-border text-foreground hover:border-purple-500/50 transition-all hover:shadow-lg hover:shadow-purple-500/10 cursor-pointer group">
                             <CardHeader>
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
@@ -142,10 +142,10 @@ export default function AdminDashboardPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-zinc-400 mb-4">
+                                <p className="text-sm text-muted-foreground mb-4">
                                     Manage user accounts, roles, and permissions
                                 </p>
-                                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white group-hover:translate-x-1 transition-transform">
+                                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-foreground group-hover:translate-x-1 transition-transform">
                                     View Users
                                     <ArrowRight className="w-4 h-4 ml-2" />
                                 </Button>
@@ -154,7 +154,7 @@ export default function AdminDashboardPage() {
                     </Link>
 
                     <Link href="/admin/factory">
-                        <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer group">
+                        <Card className="bg-card border-border text-foreground hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer group">
                             <CardHeader>
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
@@ -164,10 +164,10 @@ export default function AdminDashboardPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-zinc-400 mb-4">
+                                <p className="text-sm text-muted-foreground mb-4">
                                     Register cards, scan NFC, and manage inventory
                                 </p>
-                                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white group-hover:translate-x-1 transition-transform">
+                                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-foreground group-hover:translate-x-1 transition-transform">
                                     Manage Cards
                                     <ArrowRight className="w-4 h-4 ml-2" />
                                 </Button>
@@ -176,7 +176,7 @@ export default function AdminDashboardPage() {
                     </Link>
 
                     <Link href="/admin/analytics">
-                        <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-green-500/50 transition-all hover:shadow-lg hover:shadow-green-500/10 cursor-pointer group">
+                        <Card className="bg-card border-border text-foreground hover:border-green-500/50 transition-all hover:shadow-lg hover:shadow-green-500/10 cursor-pointer group">
                             <CardHeader>
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
@@ -186,10 +186,10 @@ export default function AdminDashboardPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-zinc-400 mb-4">
+                                <p className="text-sm text-muted-foreground mb-4">
                                     View platform metrics, trends, and insights
                                 </p>
-                                <Button className="w-full bg-green-600 hover:bg-green-700 text-white group-hover:translate-x-1 transition-transform">
+                                <Button className="w-full bg-green-600 hover:bg-green-700 text-foreground group-hover:translate-x-1 transition-transform">
                                     View Analytics
                                     <ArrowRight className="w-4 h-4 ml-2" />
                                 </Button>
@@ -198,7 +198,7 @@ export default function AdminDashboardPage() {
                     </Link>
 
                     <Link href="/admin/audit">
-                        <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10 cursor-pointer group">
+                        <Card className="bg-card border-border text-foreground hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10 cursor-pointer group">
                             <CardHeader>
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
@@ -208,10 +208,10 @@ export default function AdminDashboardPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-zinc-400 mb-4">
+                                <p className="text-sm text-muted-foreground mb-4">
                                     Track all platform actions and security events
                                 </p>
-                                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white group-hover:translate-x-1 transition-transform">
+                                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-foreground group-hover:translate-x-1 transition-transform">
                                     View Logs
                                     <ArrowRight className="w-4 h-4 ml-2" />
                                 </Button>
@@ -220,20 +220,20 @@ export default function AdminDashboardPage() {
                     </Link>
 
                     <Link href="/admin/settings">
-                        <Card className="bg-zinc-900 border-zinc-800 text-white hover:border-gray-500/50 transition-all hover:shadow-lg hover:shadow-gray-500/10 cursor-pointer group">
+                        <Card className="bg-card border-border text-foreground hover:border-border transition-all hover:shadow-lg hover:shadow-gray-500/10 cursor-pointer group">
                             <CardHeader>
                                 <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-10 h-10 bg-gray-500/10 rounded-lg flex items-center justify-center">
-                                        <Settings className="w-5 h-5 text-gray-500" />
+                                    <div className="w-10 h-10 bg-muted-foreground/10 rounded-lg flex items-center justify-center">
+                                        <Settings className="w-5 h-5 text-muted-foreground" />
                                     </div>
                                     <CardTitle className="text-lg">Settings</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-zinc-400 mb-4">
+                                <p className="text-sm text-muted-foreground mb-4">
                                     Configure platform settings and integrations
                                 </p>
-                                <Button className="w-full bg-gray-600 hover:bg-gray-700 text-white group-hover:translate-x-1 transition-transform">
+                                <Button className="w-full bg-secondary hover:bg-secondary/80 text-foreground group-hover:translate-x-1 transition-transform">
                                     Open Settings
                                     <ArrowRight className="w-4 h-4 ml-2" />
                                 </Button>

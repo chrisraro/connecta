@@ -154,8 +154,8 @@ export default function DiscountsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Discount Codes</h1>
-                    <p className="text-zinc-400 mt-1">Create and manage promotional codes</p>
+                    <h1 className="text-3xl font-bold text-foreground">Discount Codes</h1>
+                    <p className="text-muted-foreground mt-1">Create and manage promotional codes</p>
                 </div>
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
@@ -164,7 +164,7 @@ export default function DiscountsPage() {
                             Create Discount
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
+                    <DialogContent className="bg-card border-border text-foreground max-w-2xl">
                         <DialogHeader>
                             <DialogTitle>{editingId ? "Edit" : "Create"} Discount Code</DialogTitle>
                         </DialogHeader>
@@ -175,7 +175,7 @@ export default function DiscountsPage() {
                                     <Input
                                         value={formData.code}
                                         onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                        className="bg-zinc-800 border-zinc-700 uppercase"
+                                        className="bg-muted border-border uppercase"
                                         placeholder="SUMMER2024"
                                         required
                                     />
@@ -186,7 +186,7 @@ export default function DiscountsPage() {
                                         value={formData.type}
                                         onValueChange={(value: "percentage" | "fixed") => setFormData({ ...formData, type: value })}
                                     >
-                                        <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                                        <SelectTrigger className="bg-muted border-border">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -204,7 +204,7 @@ export default function DiscountsPage() {
                                     min="0"
                                     value={formData.value}
                                     onChange={(e) => setFormData({ ...formData, value: parseInt(e.target.value) })}
-                                    className="bg-zinc-800 border-zinc-700"
+                                    className="bg-muted border-border"
                                     required
                                 />
                             </div>
@@ -217,7 +217,7 @@ export default function DiscountsPage() {
                                         min="0"
                                         value={formData.minOrderValue}
                                         onChange={(e) => setFormData({ ...formData, minOrderValue: parseInt(e.target.value) })}
-                                        className="bg-zinc-800 border-zinc-700"
+                                        className="bg-muted border-border"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -227,7 +227,7 @@ export default function DiscountsPage() {
                                         min="0"
                                         value={formData.maxDiscountAmount}
                                         onChange={(e) => setFormData({ ...formData, maxDiscountAmount: parseInt(e.target.value) })}
-                                        className="bg-zinc-800 border-zinc-700"
+                                        className="bg-muted border-border"
                                     />
                                 </div>
                             </div>
@@ -240,7 +240,7 @@ export default function DiscountsPage() {
                                         min="0"
                                         value={formData.usageLimit}
                                         onChange={(e) => setFormData({ ...formData, usageLimit: parseInt(e.target.value) })}
-                                        className="bg-zinc-800 border-zinc-700"
+                                        className="bg-muted border-border"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -249,7 +249,7 @@ export default function DiscountsPage() {
                                         type="date"
                                         value={formData.validUntil ? new Date(formData.validUntil).toISOString().split("T")[0] : ""}
                                         onChange={(e) => setFormData({ ...formData, validUntil: e.target.value ? new Date(e.target.value).getTime() : 0 })}
-                                        className="bg-zinc-800 border-zinc-700"
+                                        className="bg-muted border-border"
                                     />
                                 </div>
                             </div>
@@ -275,29 +275,29 @@ export default function DiscountsPage() {
                 </Dialog>
             </div>
 
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="bg-card border-border">
                 <CardHeader>
-                    <CardTitle className="text-white">All Discount Codes</CardTitle>
+                    <CardTitle className="text-foreground">All Discount Codes</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
-                            <TableRow className="border-zinc-800">
-                                <TableHead className="text-zinc-400">Code</TableHead>
-                                <TableHead className="text-zinc-400">Type</TableHead>
-                                <TableHead className="text-zinc-400">Value</TableHead>
-                                <TableHead className="text-zinc-400">Usage</TableHead>
-                                <TableHead className="text-zinc-400">Valid Until</TableHead>
-                                <TableHead className="text-zinc-400">Status</TableHead>
-                                <TableHead className="text-zinc-400 text-right">Actions</TableHead>
+                            <TableRow className="border-border">
+                                <TableHead className="text-muted-foreground">Code</TableHead>
+                                <TableHead className="text-muted-foreground">Type</TableHead>
+                                <TableHead className="text-muted-foreground">Value</TableHead>
+                                <TableHead className="text-muted-foreground">Usage</TableHead>
+                                <TableHead className="text-muted-foreground">Valid Until</TableHead>
+                                <TableHead className="text-muted-foreground">Status</TableHead>
+                                <TableHead className="text-muted-foreground text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {discounts?.map((discount) => (
-                                <TableRow key={discount._id} className="border-zinc-800">
+                                <TableRow key={discount._id} className="border-border">
                                     <TableCell>
                                         <div className="flex items-center gap-2">
-                                            <code className="bg-zinc-800 px-2 py-1 rounded text-white font-mono">
+                                            <code className="bg-muted px-2 py-1 rounded text-foreground font-mono">
                                                 {discount.code}
                                             </code>
                                             <Button
@@ -308,23 +308,23 @@ export default function DiscountsPage() {
                                                 {copiedCode === discount.code ? (
                                                     <Check className="w-3 h-3 text-green-600" />
                                                 ) : (
-                                                    <Copy className="w-3 h-3 text-zinc-500" />
+                                                    <Copy className="w-3 h-3 text-muted-foreground" />
                                                 )}
                                             </Button>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-zinc-400 capitalize">{discount.type}</TableCell>
-                                    <TableCell className="text-white font-medium">
+                                    <TableCell className="text-muted-foreground capitalize">{discount.type}</TableCell>
+                                    <TableCell className="text-foreground font-medium">
                                         {discount.type === "percentage" ? `${discount.value}%` : formatCurrency(discount.value)}
                                     </TableCell>
-                                    <TableCell className="text-zinc-400">
+                                    <TableCell className="text-muted-foreground">
                                         {discount.usedCount}{discount.usageLimit ? ` / ${discount.usageLimit}` : " / ∞"}
                                     </TableCell>
-                                    <TableCell className="text-zinc-400">
+                                    <TableCell className="text-muted-foreground">
                                         {discount.validUntil ? formatDate(discount.validUntil) : "Never"}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={discount.isActive ? "default" : "secondary"} className={discount.isActive ? "bg-green-600" : "bg-zinc-600"}>
+                                        <Badge variant={discount.isActive ? "default" : "secondary"} className={discount.isActive ? "bg-green-600" : "bg-secondary"}>
                                             {discount.isActive ? "Active" : "Inactive"}
                                         </Badge>
                                     </TableCell>
@@ -343,7 +343,7 @@ export default function DiscountsPage() {
                         </TableBody>
                     </Table>
                     {discounts?.length === 0 && (
-                        <div className="text-center py-12 text-zinc-500">
+                        <div className="text-center py-12 text-muted-foreground">
                             No discount codes yet. Create your first promotional code.
                         </div>
                     )}

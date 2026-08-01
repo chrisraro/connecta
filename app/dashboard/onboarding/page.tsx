@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { ProfileImage } from "@/components/templates/ProfileImage";
 import {
     User, Phone, Globe, Briefcase, Image as ImageIcon,
     ChevronRight, ChevronLeft, CheckCircle2, Sparkles, X,
@@ -285,7 +286,11 @@ function OnboardingContent() {
                             <div className="bg-muted/50 rounded-xl p-4 space-y-3">
                                 {d?.avatarUrl && (
                                     <div className="flex justify-center">
-                                        <img src={d.avatarUrl?.startsWith("http") || d.avatarUrl?.startsWith("data:") ? d.avatarUrl : `https://neat-hedgehog-331.convex.site/api/storage/${d.avatarUrl}`} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
+                                        <ProfileImage
+                                            src={d.avatarUrl}
+                                            alt="avatar"
+                                            className="w-20 h-20 rounded-full overflow-hidden border-2 border-border"
+                                        />
                                     </div>
                                 )}
                                 <div className="text-center space-y-1">

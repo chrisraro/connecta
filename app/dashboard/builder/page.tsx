@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useId, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
@@ -205,7 +206,10 @@ function GalleryUploader({
                 {/* Show local preview for uploading image */}
                 {Object.entries(localPreviews).map(([idx, url]) => (
                     <div key={`preview-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
-                        <img src={url} alt="Uploading..." className="w-full h-full object-cover opacity-60" />
+                        {/* Local blob: object URL, mid-upload — not a
+                            Convex-resolved host, so unoptimized (same
+                            pattern as ProfileImage/ImageUploader). */}
+                        <Image src={url} alt="Uploading..." fill sizes="33vw" className="object-cover opacity-60" unoptimized />
                         <div className="absolute inset-0 flex items-center justify-center">
                             <Loader2 className="w-5 h-5 animate-spin text-primary" />
                         </div>

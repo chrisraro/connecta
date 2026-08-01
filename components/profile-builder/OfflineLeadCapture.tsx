@@ -16,20 +16,33 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
-    DialogTrigger,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 
-export function OfflineLeadCapture() {
+interface OfflineLeadCaptureProps {
+    /** Controlled: dialog visibility now lives with the caller (the single
+     * consolidated FAB in app/dashboard/layout.tsx) instead of a second,
+     * independently-positioned floating trigger that used to collide with
+     * the Quick Actions FAB. This component keeps mounting continuously in
+     * the same place in the tree regardless of who opens it, so the
+     * online/offline listeners and auto-sync effect below keep running
+     * exactly as before. */
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    /** Fires whenever the unsynced-lead count changes, so the caller can
+     * surface it (e.g. a badge dot on the FAB) without duplicating the
+     * localStorage bookkeeping here. */
+    onUnsyncedCountChange?: (count: number) => void;
+}
+
+export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }: OfflineLeadCaptureProps) {
     const { user } = useUser();
     const createLead = useMutation(api.leads.createLead);
     const currentUser = useQuery(api.users.getUser);
-    
-    const [open, setOpen] = useState(false);
+
     const [online, setOnline] = useState(true);
     const [unsyncedCount, setUnsyncedCount] = useState(0);
     const [syncing, setSyncing] = useState(false);
-    
+
     const [name, setName] = useState("");
     const [contact, setContact] = useState("");
     const [message, setMessage] = useState("");
@@ -52,6 +65,10 @@ export function OfflineLeadCapture() {
             window.removeEventListener('offline', handleOffline);
         };
     }, []);
+
+    useEffect(() => {
+        onUnsyncedCountChange?.(unsyncedCount);
+    }, [unsyncedCount, onUnsyncedCountChange]);
 
     // Auto-sync when currentUser loads and we have unsynced leads online
     useEffect(() => {
@@ -90,7 +107,7 @@ export function OfflineLeadCapture() {
                 setName("");
                 setContact("");
                 setMessage("");
-                setOpen(false);
+                onOpenChange(false);
             } else {
                 // Offline: save to localStorage
                 saveOfflineLead({
@@ -100,12 +117,12 @@ export function OfflineLeadCapture() {
                 });
 
                 setUnsyncedCount(getUnsyncedCount());
-                
+
                 // Reset form
                 setName("");
                 setContact("");
                 setMessage("");
-                setOpen(false);
+                onOpenChange(false);
             }
         } catch (error) {
             console.error("Failed to save lead:", error);
@@ -116,7 +133,7 @@ export function OfflineLeadCapture() {
                 message: message || undefined,
             });
             setUnsyncedCount(getUnsyncedCount());
-            setOpen(false);
+            onOpenChange(false);
         } finally {
             setSaving(false);
         }
@@ -142,123 +159,104 @@ export function OfflineLeadCapture() {
     };
 
     return (
-        <>
-            {/* Floating Button */}
-            <div className="fixed bottom-24 right-6 z-50 flex flex-col items-center gap-2">
-                {unsyncedCount > 0 && (
-                    <Badge variant="destructive" className="animate-pulse">
-                        {unsyncedCount} unsynced
-                    </Badge>
-                )}
-                
-                <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger asChild>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        {!online ? (
+                            <>
+                                <WifiOff className="w-5 h-5 text-orange-500" />
+                                Offline Lead Capture
+                            </>
+                        ) : (
+                            <>
+                                <Wifi className="w-5 h-5 text-green-500" />
+                                Capture Lead
+                            </>
+                        )}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {!online
+                            ? "Lead will be saved locally and synced when online."
+                            : "Add a new lead to your CRM."
+                        }
+                    </DialogDescription>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            Name *
+                        </label>
+                        <Input
+                            placeholder="e.g. Maria Santos"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium flex items-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            Contact *
+                        </label>
+                        <Input
+                            placeholder="Phone or Email"
+                            value={contact}
+                            onChange={(e) => setContact(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium flex items-center gap-2">
+                            <MessageSquare className="w-4 h-4" />
+                            Message (Optional)
+                        </label>
+                        <Textarea
+                            placeholder="Notes about this lead..."
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            rows={3}
+                        />
+                    </div>
+
+                    <div className="flex gap-2">
                         <Button
-                            size="lg"
-                            className="rounded-full shadow-2xl h-14 w-14 p-0 bg-primary hover:bg-primary/90"
+                            type="submit"
+                            className="flex-1"
+                            disabled={saving || (online && currentUser === undefined)}
                         >
-                            <User className="w-6 h-6" />
+                            {saving ? "Saving..." : (
+                                currentUser === undefined && online ? "Connecting..." : (
+                                    !online ? (
+                                        <>
+                                            <WifiOff className="w-4 h-4 mr-2" />
+                                            Save Offline
+                                        </>
+                                    ) : (
+                                        "Save Lead"
+                                    )
+                                )
+                            )}
                         </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                                {!online ? (
-                                    <>
-                                        <WifiOff className="w-5 h-5 text-orange-500" />
-                                        Offline Lead Capture
-                                    </>
-                                ) : (
-                                    <>
-                                        <Wifi className="w-5 h-5 text-green-500" />
-                                        Capture Lead
-                                    </>
-                                )}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {!online 
-                                    ? "Lead will be saved locally and synced when online."
-                                    : "Add a new lead to your CRM."
-                                }
-                            </DialogDescription>
-                        </DialogHeader>
 
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium flex items-center gap-2">
-                                    <User className="w-4 h-4" />
-                                    Name *
-                                </label>
-                                <Input
-                                    placeholder="e.g. Maria Santos"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium flex items-center gap-2">
-                                    <Mail className="w-4 h-4" />
-                                    Contact *
-                                </label>
-                                <Input
-                                    placeholder="Phone or Email"
-                                    value={contact}
-                                    onChange={(e) => setContact(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium flex items-center gap-2">
-                                    <MessageSquare className="w-4 h-4" />
-                                    Message (Optional)
-                                </label>
-                                <Textarea
-                                    placeholder="Notes about this lead..."
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                    rows={3}
-                                />
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Button 
-                                    type="submit" 
-                                    className="flex-1" 
-                                    disabled={saving || (online && currentUser === undefined)}
-                                >
-                                    {saving ? "Saving..." : (
-                                        currentUser === undefined && online ? "Connecting..." : (
-                                            !online ? (
-                                                <>
-                                                    <WifiOff className="w-4 h-4 mr-2" />
-                                                    Save Offline
-                                                </>
-                                            ) : (
-                                                "Save Lead"
-                                            )
-                                        )
-                                    )}
-                                </Button>
-                                
-                                {unsyncedCount > 0 && online && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={handleSync}
-                                        disabled={syncing}
-                                    >
-                                        <Upload className="w-4 h-4 mr-2" />
-                                        Sync ({unsyncedCount})
-                                    </Button>
-                                )}
-                            </div>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
-        </>
+                        {unsyncedCount > 0 && online && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleSync}
+                                disabled={syncing}
+                            >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Sync ({unsyncedCount})
+                            </Button>
+                        )}
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

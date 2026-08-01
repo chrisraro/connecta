@@ -41,7 +41,7 @@ export default function AdminAuditPage() {
         if (action.includes("create") || action.includes("grant")) return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
         if (action.includes("delete") || action.includes("revoke") || action.includes("suspend") || action.includes("refund")) return "bg-red-500/10 text-red-500 border-red-500/20";
         if (action.includes("update") || action.includes("reactivate")) return "bg-blue-500/10 text-blue-500 border-blue-500/20";
-        return "bg-zinc-500/10 text-zinc-500 border-zinc-500/20";
+        return "bg-muted text-muted-foreground border-border";
     };
 
     const searchLower = search.trim().toLowerCase();
@@ -85,12 +85,12 @@ export default function AdminAuditPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Audit Logs</h1>
-                    <p className="text-zinc-400 mt-1">Security events and platform activity tracking</p>
+                    <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>
+                    <p className="text-muted-foreground mt-1">Security events and platform activity tracking</p>
                 </div>
                 <Button
                     variant="outline"
-                    className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
+                    className="bg-card border-border text-foreground hover:bg-muted"
                     onClick={exportLogs}
                     disabled={!filtered.length}
                 >
@@ -101,49 +101,49 @@ export default function AdminAuditPage() {
 
             {/* Search */}
             <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                     placeholder="Search action, resource, or actor..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 bg-zinc-900 border-zinc-800"
+                    className="pl-10 bg-card border-border"
                 />
             </div>
 
             {/* Audit Table */}
-            <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <Card className="bg-card border-border text-foreground">
                 <CardHeader>
                     <CardTitle className="text-lg">Recent Activity ({filtered.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mb-4">
-                                <Shield className="w-8 h-8 text-zinc-600" />
+                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                                <Shield className="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h3 className="text-lg font-bold mb-2">No audit entries</h3>
-                            <p className="text-sm text-zinc-400 max-w-md">
+                            <p className="text-sm text-muted-foreground max-w-md">
                                 Admin actions (product, order, discount, card, user, and settings changes) will appear here.
                             </p>
                         </div>
                     ) : (
                         <Table>
                             <TableHeader>
-                                <TableRow className="border-zinc-800 hover:bg-transparent">
-                                    <TableHead className="text-zinc-400">Timestamp</TableHead>
-                                    <TableHead className="text-zinc-400">Actor</TableHead>
-                                    <TableHead className="text-zinc-400">Action</TableHead>
-                                    <TableHead className="text-zinc-400">Resource</TableHead>
-                                    <TableHead className="text-zinc-400">Resource ID</TableHead>
+                                <TableRow className="border-border hover:bg-transparent">
+                                    <TableHead className="text-muted-foreground">Timestamp</TableHead>
+                                    <TableHead className="text-muted-foreground">Actor</TableHead>
+                                    <TableHead className="text-muted-foreground">Action</TableHead>
+                                    <TableHead className="text-muted-foreground">Resource</TableHead>
+                                    <TableHead className="text-muted-foreground">Resource ID</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filtered.map((log) => (
-                                    <TableRow key={log._id} className="border-zinc-800 hover:bg-zinc-800/50">
-                                        <TableCell className="text-xs text-zinc-400 font-mono">
+                                    <TableRow key={log._id} className="border-border hover:bg-muted/50">
+                                        <TableCell className="text-xs text-muted-foreground font-mono">
                                             {formatTimestamp(log.timestamp)}
                                         </TableCell>
-                                        <TableCell className="text-sm text-white">
+                                        <TableCell className="text-sm text-foreground">
                                             {log.actorName || log.actorEmail || "—"}
                                         </TableCell>
                                         <TableCell>
@@ -151,8 +151,8 @@ export default function AdminAuditPage() {
                                                 {log.action}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-sm text-zinc-300">{log.resourceType}</TableCell>
-                                        <TableCell className="text-xs text-zinc-500 font-mono truncate max-w-[160px]">
+                                        <TableCell className="text-sm text-foreground">{log.resourceType}</TableCell>
+                                        <TableCell className="text-xs text-muted-foreground font-mono truncate max-w-[160px]">
                                             {log.resourceId}
                                         </TableCell>
                                     </TableRow>

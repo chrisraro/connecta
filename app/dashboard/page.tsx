@@ -6,10 +6,10 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { ChevronRight, Sparkles, LayoutTemplate, MessageSquare, ExternalLink, Users, Edit2, SmartphoneNfc, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { resolveImageUrl } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { profilePath } from "@/lib/profileUrl";
+import { ProfileImage } from "@/components/templates/ProfileImage";
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -147,11 +147,11 @@ export default function DashboardPage() {
                         {profiles.slice(0, 4).map((profile) => (
                             <div key={profile._id} className="group bg-card border border-border p-4 rounded-3xl hover:border-primary/30 transition-all duration-300 flex items-center gap-4 relative overflow-hidden">
                                 <div className="w-14 h-14 rounded-2xl overflow-hidden border border-border bg-muted shrink-0">
-                                    <img
-                                        src={resolveImageUrl(profile.agentInfo.avatarUrl) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.name}`}
+                                    <ProfileImage
+                                        src={profile.agentInfo.avatarUrl}
                                         alt={`${profile.name} profile avatar`}
-                                        loading="lazy"
-                                        className="w-full h-full object-cover"
+                                        fallbackSeed={profile.name}
+                                        className="w-full h-full"
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">

@@ -3,9 +3,9 @@
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Bell, Zap, LayoutTemplate, ChevronRight, Loader2, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Bell, Zap, LayoutTemplate, ChevronRight, Loader2, Building2, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { HeraldMark } from "@/components/brand/HeraldMark";
@@ -22,57 +22,121 @@ import {
 } from "@/components/ui/sheet";
 import { HERALD } from "@/lib/brand";
 
-function QuickActionsToggle() {
+// Shared between the mobile header and the desktop sidebar footer so the
+// account avatar looks identical in both places (same component in two
+// places looking different is a bug). Both userButtonTrigger and
+// userButtonAvatarBox are pinned to the *same* 44px box — Clerk's default
+// avatar box (40px) is smaller than its own trigger's tap target, which
+// used to leave a visible gap around the photo when a wrapping div added a
+// ring on top of that mismatch. Sizing them equal and putting the ring
+// directly on the avatar box (a box-shadow ring, not a border, so it never
+// eats into the photo's box) makes the ring hug the image edge instead.
+// The `!` importants are required: Clerk's own component styles otherwise
+// win the specificity fight against plain Tailwind utility classes.
+const AVATAR_BUTTON_APPEARANCE = {
+    elements: {
+        userButtonAvatarBox: "w-11! h-11! rounded-full! ring-2! ring-primary/20!",
+        userButtonTrigger: "rounded-full! w-11! h-11! flex items-center justify-center",
+    },
+};
+
+/**
+ * Mobile dashboard used to mount two independent floating action buttons —
+ * this Quick Actions sheet trigger (bottom-28) and OfflineLeadCapture's own
+ * floating "capture a lead" button (bottom-24) — which physically overlapped
+ * by 40px (h-14 buttons 16px apart vertically) and rendered as one malformed
+ * shape. Consolidated to a single FAB: it opens this sheet, and "Capture a
+ * lead" is the first, most prominent item inside it (someone just met a
+ * person and wants to log them — a genuinely primary action). All of
+ * OfflineLeadCapture's offline-queue/online-detection/submit behaviour is
+ * unchanged; only *how it's triggered* moved (see OfflineLeadCapture.tsx).
+ */
+function DashboardFabs() {
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [leadDialogOpen, setLeadDialogOpen] = useState(false);
+    const [unsyncedCount, setUnsyncedCount] = useState(0);
+
     return (
-        <Sheet>
-            <SheetTrigger asChild>
-                <Button
-                    size="icon"
-                    aria-label="Quick actions"
-                    className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 rounded-2xl shadow-[var(--e-overlay)] bg-primary text-primary-foreground hover:scale-105 transition-transform md:hidden"
-                >
-                    <Sparkles className="w-7 h-7" />
-                </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-[2.5rem] border-border bg-card p-0 overflow-hidden pb-10">
-                <SheetHeader className="p-6 border-b border-border">
-                    <SheetTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-primary" />
-                        Quick Actions
-                    </SheetTitle>
-                </SheetHeader>
-                <div className="p-4 grid gap-3">
-                    <QuickActionItem 
-                        href="/dashboard/builder"
-                        icon={LayoutTemplate}
-                        label="Profile Builder"
-                        desc="Create or edit your digital card"
-                        color="bg-blue-500"
-                    />
-                    <QuickActionItem 
-                        href="/dashboard/leads"
-                        icon={MessageSquare}
-                        label="View Leads"
-                        desc="Check recent inquiries"
-                        color="bg-green-500"
-                    />
-                    <QuickActionItem 
-                        href="/dashboard/cards"
-                        icon={SmartphoneNfc}
-                        label="Activate Card"
-                        desc="Sync new physical NFC card"
-                        color="bg-purple-500"
-                    />
-                    <QuickActionItem 
-                        href="/dashboard/billing"
-                        icon={CreditCard}
-                        label="Upgrade Pro"
-                        desc="Unlock unlimited profiles"
-                        color="bg-amber-500"
-                    />
-                </div>
-            </SheetContent>
-        </Sheet>
+        <>
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                <SheetTrigger asChild>
+                    <Button
+                        size="icon"
+                        aria-label="Quick actions"
+                        className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 rounded-2xl shadow-[var(--e-overlay)] bg-primary text-primary-foreground hover:scale-105 transition-transform md:hidden"
+                    >
+                        <Sparkles className="w-7 h-7" />
+                        {unsyncedCount > 0 && (
+                            <span
+                                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center animate-pulse"
+                                aria-hidden="true"
+                            >
+                                {unsyncedCount}
+                            </span>
+                        )}
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="rounded-t-[2.5rem] border-border bg-card p-0 overflow-hidden pb-10">
+                    <SheetHeader className="p-6 border-b border-border">
+                        <SheetTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-primary" />
+                            Quick Actions
+                        </SheetTitle>
+                    </SheetHeader>
+                    <div className="p-4 grid gap-3">
+                        <QuickActionButton
+                            icon={User}
+                            label="Capture a Lead"
+                            desc={unsyncedCount > 0 ? `${unsyncedCount} unsynced — log a new contact` : "Log a new contact you just met"}
+                            color="bg-rose-500"
+                            badge={unsyncedCount > 0 ? unsyncedCount : undefined}
+                            onClick={() => {
+                                setSheetOpen(false);
+                                setLeadDialogOpen(true);
+                            }}
+                        />
+                        <QuickActionItem
+                            href="/dashboard/builder"
+                            icon={LayoutTemplate}
+                            label="Profile Builder"
+                            desc="Create or edit your digital card"
+                            color="bg-blue-500"
+                        />
+                        <QuickActionItem
+                            href="/dashboard/leads"
+                            icon={MessageSquare}
+                            label="View Leads"
+                            desc="Check recent inquiries"
+                            color="bg-green-500"
+                        />
+                        <QuickActionItem
+                            href="/dashboard/cards"
+                            icon={SmartphoneNfc}
+                            label="Activate Card"
+                            desc="Sync new physical NFC card"
+                            color="bg-purple-500"
+                        />
+                        <QuickActionItem
+                            href="/dashboard/billing"
+                            icon={CreditCard}
+                            label="Upgrade Pro"
+                            desc="Unlock unlimited profiles"
+                            color="bg-amber-500"
+                        />
+                    </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* Always mounted (not gated by the sheet's open state) so the
+                offline queue / online-offline listeners keep running exactly
+                as before consolidation. Its own open state is controlled by
+                the Quick Actions item above. */}
+            <OfflineLeadCapture
+                open={leadDialogOpen}
+                onOpenChange={setLeadDialogOpen}
+                onUnsyncedCountChange={setUnsyncedCount}
+            />
+        </>
     );
 }
 
@@ -90,6 +154,29 @@ function QuickActionItem({ href, icon: Icon, label, desc, color }: { href: strin
                 <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
             </div>
         </Link>
+    );
+}
+
+/** Same visual vocabulary as QuickActionItem, but a real <button> (it opens
+ * a dialog in place rather than navigating), so it carries its own accessible
+ * name from its visible label text instead of needing an icon-only aria-label. */
+function QuickActionButton({ icon: Icon, label, desc, color, badge, onClick }: { icon: React.ElementType, label: string, desc: string, color: string, badge?: number, onClick: () => void }) {
+    return (
+        <button type="button" onClick={onClick} className="flex items-center gap-4 p-4 rounded-3xl bg-muted/50 border border-border hover:bg-muted transition-colors group w-full text-left">
+            <div className={`relative w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-white shadow-lg shadow-black/5`}>
+                <Icon className="w-6 h-6" />
+                {badge !== undefined && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                        {badge}
+                    </span>
+                )}
+            </div>
+            <div className="flex-1">
+                <div className="font-bold text-sm tracking-tight">{label}</div>
+                <div className="text-xs text-muted-foreground">{desc}</div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+        </button>
     );
 }
 
@@ -134,7 +221,7 @@ function DashboardSidebar({ className }: { className?: string }) {
             </nav>
             <div className="p-6 border-t border-sidebar-border">
                 <div className="flex items-center gap-3 bg-sidebar-accent/50 p-3 rounded-2xl border border-sidebar-border">
-                    <UserButton appearance={{ elements: { userButtonAvatarBox: "w-11! h-11!", userButtonTrigger: "rounded-full min-w-11! min-h-11! h-11! flex items-center justify-center" } }} />
+                    <UserButton appearance={AVATAR_BUTTON_APPEARANCE} />
                     <div className="flex-1 text-xs text-muted-foreground font-medium">
                         Manage Account
                     </div>
@@ -158,14 +245,23 @@ function MobileBottomNav() {
 
     return (
         <div className="mobile-bottom-nav fixed bottom-6 left-4 right-4 z-50 md:hidden">
-            <nav className="bg-background/80 backdrop-blur-2xl border border-border rounded-full p-2 flex items-center justify-between shadow-[var(--e-overlay)] ring-1 ring-border/50 overflow-hidden">
+            {/* No `overflow-hidden` here: the pill's height used to be
+                derived from whichever item happened to be active (only the
+                active item reserved space for its label via a
+                scale-90/h-0 trick), so any per-item height difference risked
+                the label text getting clipped against the pill's own
+                rounded bounds. Every item now always reserves the same
+                fixed label height (opacity toggles visibility, not layout),
+                so the pill's height is constant and there's nothing left
+                for overflow-hidden to need to clip. */}
+            <nav className="bg-background/80 backdrop-blur-2xl border border-border rounded-full p-2 flex items-center justify-between shadow-[var(--e-overlay)] ring-1 ring-border/50">
                 {navItems.map((item) => {
                     const isActive = pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
                     return (
                         <Link key={item.url} href={item.url} className="relative flex-1 group">
-                            <div className={`flex flex-col items-center justify-center py-2.5 rounded-full transition-all duration-300 ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                            <div className={`flex flex-col items-center justify-center gap-1 py-2.5 rounded-full transition-colors duration-300 ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
                                 <item.icon className={`h-6 w-6 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-105"}`} strokeWidth={isActive ? 2.5 : 2} />
-                                <span className={`text-[10px] font-bold mt-1 tracking-wide transition-all duration-300 ${isActive ? "opacity-100 scale-100" : "opacity-0 scale-90 h-0 overflow-hidden"}`}>
+                                <span className={`text-[10px] leading-none font-bold tracking-wide transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}>
                                     {item.title}
                                 </span>
                                 {isActive && (
@@ -209,9 +305,7 @@ function MobileHeader() {
             <div className="flex items-center gap-2">
                 <ThemeToggle />
                 <NotificationsPopover />
-                <div className="p-0.5 rounded-full border-2 border-primary/20">
-                    <UserButton appearance={{ elements: { userButtonAvatarBox: "w-10 h-10", userButtonTrigger: "rounded-full min-w-11 min-h-11 flex items-center justify-center" } }} />
-                </div>
+                <UserButton appearance={AVATAR_BUTTON_APPEARANCE} />
             </div>
         </header>
     );
@@ -275,7 +369,12 @@ export default function DashboardLayout({
                 column) inert. Removing it is a no-op for scrolling and lets
                 sticky work the way it's supposed to (Task 2 review, Critical
                 #1/#2 + Important #3/#6 — see app/dashboard/builder/page.tsx). */}
-            <main className="flex-1 flex flex-col relative pb-32 md:pb-0">
+            {/* pb-48 (192px) clears the tallest fixed mobile chrome: the FAB's
+                top edge sits at bottom-28 + h-14 = 168px from the viewport
+                bottom, so page content (e.g. the "Recent Profiles" card)
+                needs at least that much bottom padding or it renders
+                underneath the nav/FAB instead of above them. */}
+            <main className="flex-1 flex flex-col relative pb-48 md:pb-0">
                 {/* Mobile Header */}
                 <MobileHeader />
 
@@ -283,11 +382,9 @@ export default function DashboardLayout({
                     {children}
                 </div>
 
-                {/* Mobile Quick Actions FAB */}
-                <QuickActionsToggle />
-
-                {/* Offline Lead Capture Button */}
-                <OfflineLeadCapture />
+                {/* Mobile FABs: single Quick Actions trigger + the (always
+                    mounted) offline lead capture dialog it now opens. */}
+                <DashboardFabs />
             </main>
 
             {/* Mobile Bottom Navigation */}

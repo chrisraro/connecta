@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { formatPHP } from "@/lib/payment";
 import { GUEST_CART_ID_KEY, DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
 
@@ -46,12 +47,21 @@ function CheckoutItemImage({ storageId, alt }: { storageId: string; alt: string 
   }
 
   return (
-    <img
-      src={displayUrl}
-      alt={alt}
-      className="w-full h-full object-cover"
-      onError={() => setError(true)}
-    />
+    <div className="relative w-full h-full">
+      <Image
+        src={displayUrl}
+        alt={alt}
+        fill
+        sizes="48px"
+        className="object-cover"
+        // Only Convex-resolved storage URLs (*.convex.cloud) are
+        // allow-listed in next.config.ts's remotePatterns — a storageId
+        // that was already a full URL (e.g. an external product photo)
+        // skips the optimizer instead of throwing on an unlisted host.
+        unoptimized={Boolean(storageId?.startsWith("http"))}
+        onError={() => setError(true)}
+      />
+    </div>
   );
 }
 
