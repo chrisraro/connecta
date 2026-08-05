@@ -18,7 +18,6 @@ import { PropertyListingsSection } from "./sections/PropertyListingsSection";
 import { TestimonialsSection } from "./sections/TestimonialsSection";
 import { GallerySection } from "./sections/GallerySection";
 import { ContactSection } from "./sections/ContactSection";
-import { SaveContactButton } from "./SaveContactButton";
 
 /**
  * The single entry point that replaced Editorial.tsx / Kinetic.tsx /
@@ -197,7 +196,6 @@ export function ProfileRenderer({
       {resolvedSlots.map(({ id, slotIndex, index }) => (
         <Fragment key={`${id}-${slotIndex}`}>{renderByKey.get(`${id}:${slotIndex}`)?.(index)}</Fragment>
       ))}
-      <SaveContactButton agent={agent} theme={theme} />
     </div>
   );
 }
