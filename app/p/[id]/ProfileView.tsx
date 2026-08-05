@@ -139,19 +139,7 @@ export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string 
                 </div>
             )}
 
-            {/* ─── Floating Mobile / Desktop Digital Card Action ────── */}
-            {profile.digitalCard && (
-                <div className="fixed bottom-6 right-6 z-50">
-                    <Button
-                        onClick={() => setShowCardModal(true)}
-                        size="lg"
-                        className="rounded-full shadow-2xl font-bold gap-2 bg-yellow-500 hover:bg-yellow-600 text-black border-2 border-white/20 backdrop-blur-xl px-5 py-6 animate-bounce hover:animate-none"
-                    >
-                        <QrCode className="w-5 h-5" />
-                        <span className="text-xs">Digital Card</span>
-                    </Button>
-                </div>
-            )}
+
 
             {/* ─── Digital Card Modal ─────────────────────────────── */}
             <DigitalCardModal
