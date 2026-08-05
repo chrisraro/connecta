@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
         );
     }
 
-    const run = async (id: string, fn: () => Promise<any>) => {
+    const run = async (id: string, fn: () => Promise<unknown>) => {
         setBusyId(id);
         try {
             await fn();

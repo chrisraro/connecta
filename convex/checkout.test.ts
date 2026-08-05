@@ -128,7 +128,7 @@ async function seedProductForOrder(t: ReturnType<typeof convexTest>, inventory: 
 
 async function seedPendingOrder(
   t: ReturnType<typeof convexTest>,
-  productId: any,
+  productId: Id<"products">,
   quantity: number,
   orderNumber: string
 ) {

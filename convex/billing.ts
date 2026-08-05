@@ -85,7 +85,7 @@ export function planContext(user: Doc<"users">, now = Date.now()) {
 
 export const getMyPlan = query({
   args: { clerkId: v.optional(v.string()) },
-  handler: async (ctx, args) => {
+  handler: async (ctx, _args) => {
     // Trust ctx.auth; the clerkId arg is only to drive the React subscription.
     const user = await getAuthedUser(ctx);
     if (!user) {

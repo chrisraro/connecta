@@ -82,14 +82,16 @@ export function isOnline(): boolean {
 /**
  * Sync offline leads to Convex
  */
+import { Id } from "@/convex/_generated/dataModel";
+
 export async function syncOfflineLeads(
   createLeadFn: (args: {
-    ownerId: any;
+    ownerId: Id<"users">;
     inquirerName: string;
     inquirerContact: string;
     message?: string;
-  }) => Promise<any>,
-  ownerId: any
+  }) => Promise<unknown>,
+  ownerId: Id<"users">
 ): Promise<{ synced: number; failed: number }> {
   const leads = getOfflineLeads().filter(lead => !lead.synced);
   

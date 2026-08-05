@@ -1,15 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
-import { ProfileData, ProfileType } from "@/types/profile";
-import { Loader2, SearchX } from "lucide-react";
-import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
+import { StorefrontView } from "@/components/templates/StorefrontView";
+import { ProfileData, ProfileType, DigitalCardConfig } from "@/types/profile";
+import { Loader2, SearchX, QrCode, Store, UserCheck } from "lucide-react";
+import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import Link from "next/link";
 import { HeraldMark } from "@/components/brand/HeraldMark";
 import { HERALD } from "@/lib/brand";
+import { Button } from "@/components/ui/button";
 
 /**
  * Client renderer for a public profile, shared by both the `/p/<id>`
@@ -19,6 +22,9 @@ import { HERALD } from "@/lib/brand";
  * up live without a full page reload.
  */
 export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string } | { by: "slug"; slug: string } }) {
+    const [activeTab, setActiveTab] = useState<"portfolio" | "storefront">("portfolio");
+    const [showCardModal, setShowCardModal] = useState(false);
+
     const byId = useQuery(
         api.profiles.getProfile,
         lookup.by === "id" ? { profileId: lookup.profileId as Id<"profiles"> } : "skip"
@@ -71,55 +77,105 @@ export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string 
         projects: [],
         products: profile.products,
         services: profile.services,
-        propertyListings: (profile as any).propertyListings,
-        inlineProjects: (profile as any).inlineProjects,
+        propertyListings: profile.propertyListings,
+        inlineProjects: profile.inlineProjects,
         componentOrder: layoutConfig.componentOrder,
-        resolvedImages: (profile as any).resolvedImages,
+        resolvedImages: profile.resolvedImages,
         theme: {
             primaryColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.primary,
             backgroundColor: layoutConfig.colorPalette.background,
             textColor: layoutConfig.colorPalette.text,
-            secondaryColor: (layoutConfig.colorPalette as any).secondary,
-            accentColor: profile.teamBranding?.accentColor || (layoutConfig.colorPalette as any).accent,
+            secondaryColor: layoutConfig.colorPalette.secondary,
+            accentColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.accent,
         },
-        digitalCard: (profile as any).digitalCard,
+        digitalCard: profile.digitalCard as DigitalCardConfig | undefined,
+        showStorefront: profile.showStorefront,
     };
+
+    const hasCatalogItems = (profile.products && profile.products.length > 0) || (profile.services && profile.services.length > 0);
+    const isStorefrontEnabled = profile.showStorefront !== false && (profile.showStorefront || hasCatalogItems);
 
     return (
         <div
-            className="min-h-screen flex flex-col"
+            className="min-h-screen flex flex-col relative"
             style={{ backgroundColor: layoutConfig.colorPalette.background }}
         >
-            {(profile as any).digitalCard && (
-                <div className="w-full max-w-lg mx-auto px-4 pt-6 flex justify-center">
-                    <DigitalBusinessCard
-                        fullName={agentInfo.fullName}
-                        title={agentInfo.title}
-                        company={agentInfo.company}
-                        phone={agentInfo.phone}
-                        email={agentInfo.email}
-                        additionalPhones={(agentInfo as any).additionalPhones}
-                        additionalEmails={(agentInfo as any).additionalEmails}
-                        services={agentInfo.services}
-                        about={agentInfo.about}
-                        profileId={profileIdForCard}
-                        profileSlug={profile.slug}
-                        config={(profile as any).digitalCard}
-                    />
+            {/* ─── Top Navigation Header (Portfolio vs. Storefront) ─── */}
+            {isStorefrontEnabled && (
+                <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-xl border-b border-border/60 py-2.5 px-4 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 p-1 bg-muted/70 rounded-2xl border border-border/80 mx-auto">
+                        <button
+                            onClick={() => setActiveTab("portfolio")}
+                            className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                                activeTab === "portfolio"
+                                    ? "bg-primary text-primary-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            Portfolio
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("storefront")}
+                            className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                                activeTab === "storefront"
+                                    ? "bg-primary text-primary-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            <Store className="w-3.5 h-3.5" />
+                            Storefront &amp; Services
+                        </button>
+                    </div>
+
+                    <Button
+                        onClick={() => setShowCardModal(true)}
+                        size="sm"
+                        className="hidden sm:flex items-center gap-1.5 text-xs font-bold rounded-xl bg-yellow-500 hover:bg-yellow-600 text-black shadow-md"
+                    >
+                        <QrCode className="w-3.5 h-3.5" />
+                        Digital Card
+                    </Button>
                 </div>
             )}
 
-            <ProfileRenderer data={data} templateId={layoutConfig.themeId} />
-
-            {(profile as { showBranding?: boolean }).showBranding !== false && (
-                <div className="py-6 text-center text-xs mt-auto" style={{ color: layoutConfig.colorPalette.text }}>
-                    <Link
-                        href="/"
-                        className="opacity-50 transition-opacity hover:opacity-90"
-                        target="_blank"
-                        rel="noopener noreferrer"
+            {/* ─── Floating Mobile / Desktop Digital Card Action ────── */}
+            {profile.digitalCard && (
+                <div className="fixed bottom-6 right-6 z-50">
+                    <Button
+                        onClick={() => setShowCardModal(true)}
+                        size="lg"
+                        className="rounded-full shadow-2xl font-bold gap-2 bg-yellow-500 hover:bg-yellow-600 text-black border-2 border-white/20 backdrop-blur-xl px-5 py-6 animate-bounce hover:animate-none"
                     >
-                        Powered by {HERALD.name}
+                        <QrCode className="w-5 h-5" />
+                        <span className="text-xs">Digital Card</span>
+                    </Button>
+                </div>
+            )}
+
+            {/* ─── Digital Card Modal ─────────────────────────────── */}
+            <DigitalCardModal
+                open={showCardModal}
+                onOpenChange={setShowCardModal}
+                agent={agentInfo}
+                profileId={profileIdForCard}
+                profileSlug={profile.slug}
+                digitalCardConfig={profile.digitalCard}
+                isOwner={false}
+            />
+
+            {/* ─── Content Render (Portfolio OR Storefront) ───────── */}
+            {activeTab === "storefront" && isStorefrontEnabled ? (
+                <StorefrontView data={data} />
+            ) : (
+                <ProfileRenderer data={data} templateId={layoutConfig.themeId} />
+            )}
+
+            {profile.showBranding !== false && (
+                <div className="py-6 text-center text-xs mt-auto" style={{ color: layoutConfig.colorPalette.text }}>
+                    <Link href="/" className="inline-flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
+                        <span>Powered by</span>
+                        <span className="font-bold">{HERALD.name}</span>
                     </Link>
                 </div>
             )}

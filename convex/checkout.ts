@@ -4,6 +4,7 @@ import {
   query,
   internalMutation,
   internalQuery,
+  QueryCtx,
 } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
@@ -17,13 +18,13 @@ import { checkRateLimit } from "./rateLimit";
  * server stays the single source of truth. Throws on invalid/expired codes.
  */
 async function resolveDiscount(
-  ctx: { db: any },
+  ctx: QueryCtx,
   code: string,
   subtotal: number
 ): Promise<number> {
   const discount = await ctx.db
     .query("discounts")
-    .withIndex("by_code", (q: any) => q.eq("code", code))
+    .withIndex("by_code", (q) => q.eq("code", code))
     .first();
 
   if (!discount || !discount.isActive) {

@@ -28,10 +28,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { toPng } from "html-to-image";
+import { StorefrontView } from "@/components/templates/StorefrontView";
+import { downloadVCard } from "@/lib/vcard";
 import {
-    Loader2, Save, Plus, Trash2, X, GripVertical, ChevronLeft,
-    Palette, LayoutTemplate, User, Briefcase, GraduationCap, Code, Quote, Image as ImageIcon,
-    Sparkles, ArrowUpDown, ShoppingBag, Building2, FolderOpen
+    Loader2, Plus, Trash2, X, GripVertical, ChevronLeft,
+    User, Briefcase, GraduationCap, Code, Quote, Image as ImageIcon,
+    Sparkles, ArrowUpDown, ShoppingBag, Building2, FolderOpen, Download, Store
 } from "lucide-react";
 
 // Templates
@@ -39,7 +42,7 @@ import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
 import { TEMPLATES, getTemplateMeta } from "@/components/templates/registry";
 import {
     ProfileData, ProfileInfo, ProjectItem,
-    PROJECT_CATEGORY_LABELS, ProfileType, ProductItem, ServiceItem,
+    PROJECT_CATEGORY_LABELS, ProfileType, ProductItem,
     PropertyListingItem, InlineProject, DigitalCardConfig
 } from "@/types/profile";
 import { ImageUploader } from "@/components/ui/image-uploader";
@@ -422,8 +425,36 @@ function BuilderContent() {
     const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
     const [additionalEmails, setAdditionalEmails] = useState<string[]>([]);
     const [digitalCard, setDigitalCard] = useState<DigitalCardConfig>(DEFAULT_DIGITAL_CARD);
-    const [previewMode, setPreviewMode] = useState<"page" | "card">("page");
-    const [projects, setProjects] = useState<ProjectItem[]>([]);
+    const [previewMode, setPreviewMode] = useState<"page" | "card" | "storefront">("page");
+    const [showStorefront, setShowStorefront] = useState<boolean>(true);
+    const [projects] = useState<ProjectItem[]>([]);
+
+    const builderCardRef = useRef<HTMLDivElement>(null);
+    const [isExportingPng, setIsExportingPng] = useState(false);
+
+    const handleExportCardPng = async () => {
+        if (!builderCardRef.current) return;
+        setIsExportingPng(true);
+        try {
+            const cardEl = (builderCardRef.current.querySelector(".select-none") as HTMLElement) || builderCardRef.current;
+            const dataUrl = await toPng(cardEl, {
+                quality: 0.95,
+                pixelRatio: 3,
+                cacheBust: true,
+            });
+
+            const link = document.createElement("a");
+            const safeName = (agentInfo.fullName || "digital_card").replace(/\s+/g, "_").toLowerCase();
+            link.download = `${safeName}_business_card.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (err) {
+            console.error("Failed to export card PNG:", err);
+            alert("Failed to generate image download. Please try again.");
+        } finally {
+            setIsExportingPng(false);
+        }
+    };
 
     // New field states
     const [certification, setCertification] = useState<{ title: string; description: string }>({ title: "", description: "" });
@@ -453,25 +484,25 @@ function BuilderContent() {
 
     const captureSnapshot = useCallback(() => {
         savedSnapshotRef.current = JSON.stringify({
-            agentInfo, additionalPhones, additionalEmails, digitalCard,
+            agentInfo, additionalPhones, additionalEmails, digitalCard, showStorefront,
             blocks, selectedTemplate, customColors, certification, education,
             techStack, experience, testimonials, gallery, products,
             propertyListings, inlineProjects,
         });
-    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, blocks,
+    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, showStorefront, blocks,
         selectedTemplate, customColors, certification, education, techStack,
         experience, testimonials, gallery, products, propertyListings, inlineProjects]);
 
     const isDirty = useCallback(() => {
         if (savedSnapshotRef.current === null) return false;
         const current = JSON.stringify({
-            agentInfo, additionalPhones, additionalEmails, digitalCard,
+            agentInfo, additionalPhones, additionalEmails, digitalCard, showStorefront,
             blocks, selectedTemplate, customColors, certification, education,
             techStack, experience, testimonials, gallery, products,
             propertyListings, inlineProjects,
         });
         return hasUnsavedChanges(savedSnapshotRef.current, current);
-    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, blocks,
+    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, showStorefront, blocks,
         selectedTemplate, customColors, certification, education, techStack,
         experience, testimonials, gallery, products, propertyListings, inlineProjects]);
 
@@ -565,9 +596,10 @@ function BuilderContent() {
                 if (info.experience) setExperience(info.experience.map(e => ({ ...e, description: e.description || "" })));
                 if (info.testimonials) setTestimonials(info.testimonials.map(t => ({ ...t, role: t.role || "" })));
                 if (info.gallery) setGallery(info.gallery);
-                if ((info as any).additionalPhones) setAdditionalPhones((info as any).additionalPhones);
-                if ((info as any).additionalEmails) setAdditionalEmails((info as any).additionalEmails);
-                if ((existingProfile as any).digitalCard) setDigitalCard((existingProfile as any).digitalCard);
+                if (info.additionalPhones) setAdditionalPhones(info.additionalPhones);
+                if (info.additionalEmails) setAdditionalEmails(info.additionalEmails);
+                if (existingProfile.digitalCard) setDigitalCard(existingProfile.digitalCard);
+                if (existingProfile.showStorefront !== undefined) setShowStorefront(existingProfile.showStorefront);
 
                 // Load products
                 if (existingProfile.products) {
@@ -580,13 +612,13 @@ function BuilderContent() {
                 }
 
                 // Load property listings
-                if ((existingProfile as any).propertyListings) {
-                    setPropertyListings((existingProfile as any).propertyListings);
+                if (existingProfile.propertyListings) {
+                    setPropertyListings(existingProfile.propertyListings);
                 }
 
                 // Load inline projects
-                if ((existingProfile as any).inlineProjects) {
-                    setInlineProjects((existingProfile as any).inlineProjects);
+                if (existingProfile.inlineProjects) {
+                    setInlineProjects(existingProfile.inlineProjects);
                 }
 
                 // Load template
@@ -603,8 +635,8 @@ function BuilderContent() {
                         primary: palette.primary,
                         background: palette.background,
                         text: palette.text,
-                        secondary: (palette as any).secondary || palette.primary,
-                        accent: (palette as any).accent || palette.primary,
+                        secondary: palette.secondary || palette.primary,
+                        accent: palette.accent || palette.primary,
                     });
                     const order = existingProfile.layoutConfig.componentOrder || [];
                     setBlocks(prev => {
@@ -641,6 +673,7 @@ function BuilderContent() {
         } catch (err) {
             console.error("Prefill error:", err);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [onboarding, hasPrefilled, user, existingProfile, editingId]);
 
     // The prefill effect above calls captureSnapshot() synchronously right after
@@ -656,17 +689,18 @@ function BuilderContent() {
         if (hasPrefilled) {
             captureSnapshot();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasPrefilled]);
 
     // Update colors when template changes
     useEffect(() => {
         const template = getTemplateMeta(selectedTemplate);
         if (template && !editingId) {
-            setCustomColors(prev => ({
+            setCustomColors({
                 ...template.defaultColors,
                 secondary: template.defaultColors.primary,
                 accent: template.defaultColors.primary,
-            }));
+            });
         }
     }, [selectedTemplate, editingId]);
 
@@ -832,12 +866,13 @@ function BuilderContent() {
                 propertyListings: cleanPropertyListings,
                 inlineProjects: cleanInlineProjects,
                 digitalCard: digitalCard,
+                showStorefront: showStorefront,
             });
             captureSnapshot();
             router.push(profilePath({ _id: profileId, slug }));
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Save error:", error);
-            alert(`Failed to save: ${error.message || "Unknown error"}`);
+            alert(`Failed to save: ${error instanceof Error ? error.message : "Unknown error"}`);
         } finally {
             setIsSaving(false);
         }
@@ -1024,8 +1059,9 @@ function BuilderContent() {
               <div className="lg:sticky lg:top-[4.5rem]">
                 {/* Preview Switcher */}
                 <div className="px-4 pt-4 pb-2 lg:px-0">
-                    <div className="flex bg-muted p-1 rounded-xl">
+                    <div className="flex bg-muted p-1 rounded-xl gap-1">
                         <button
+                            type="button"
                             onClick={() => setPreviewMode("page")}
                             className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                                 previewMode === "page"
@@ -1033,9 +1069,10 @@ function BuilderContent() {
                                     : "text-muted-foreground hover:text-foreground"
                             }`}
                         >
-                            Profile Page Preview
+                            Portfolio
                         </button>
                         <button
+                            type="button"
                             onClick={() => setPreviewMode("card")}
                             className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                                 previewMode === "card"
@@ -1043,7 +1080,18 @@ function BuilderContent() {
                                     : "text-muted-foreground hover:text-foreground"
                             }`}
                         >
-                            Digital Card Preview
+                            Digital Card
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPreviewMode("storefront")}
+                            className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                                previewMode === "storefront"
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            Storefront
                         </button>
                     </div>
                 </div>
@@ -1058,21 +1106,68 @@ function BuilderContent() {
                             className="rounded-[var(--r-lg)] overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]"
                         >
                             {previewMode === "card" ? (
-                                <div className="p-4 flex justify-center bg-neutral-900/5 min-h-[320px] items-center">
-                                    <DigitalBusinessCard
-                                        fullName={agentInfo.fullName}
-                                        title={agentInfo.title}
-                                        company={agentInfo.company}
-                                        phone={agentInfo.phone}
-                                        email={agentInfo.email}
-                                        additionalPhones={additionalPhones}
-                                        additionalEmails={additionalEmails}
-                                        services={agentInfo.services}
-                                        about={agentInfo.about}
-                                        profileId={editingId || undefined}
-                                        profileSlug={existingProfile?.slug}
-                                        config={digitalCard}
-                                        onPositionsChange={(newPos) => setDigitalCard({ ...digitalCard, positions: newPos })}
+                                <div className="p-4 flex flex-col justify-center bg-neutral-900/5 min-h-[360px] items-center space-y-4">
+                                    <div ref={builderCardRef} className="w-full flex justify-center">
+                                        <DigitalBusinessCard
+                                            fullName={agentInfo.fullName}
+                                            title={agentInfo.title}
+                                            company={agentInfo.company}
+                                            phone={agentInfo.phone}
+                                            email={agentInfo.email}
+                                            additionalPhones={additionalPhones}
+                                            additionalEmails={additionalEmails}
+                                            services={agentInfo.services}
+                                            about={agentInfo.about}
+                                            profileId={editingId || undefined}
+                                            profileSlug={existingProfile?.slug}
+                                            config={digitalCard}
+                                            onPositionsChange={(newPos) => setDigitalCard({ ...digitalCard, positions: newPos })}
+                                        />
+                                    </div>
+                                    <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                                        <Button
+                                            type="button"
+                                            onClick={handleExportCardPng}
+                                            disabled={isExportingPng}
+                                            size="sm"
+                                            className="font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+                                        >
+                                            {isExportingPng ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                            {isExportingPng ? "Exporting..." : "Download Card PNG"}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={() => downloadVCard(agentInfo)}
+                                            variant="outline"
+                                            size="sm"
+                                            className="font-semibold gap-1.5 rounded-xl border-border hover:bg-muted"
+                                        >
+                                            Save .vcf
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : previewMode === "storefront" ? (
+                                <div className="min-h-[400px]">
+                                    <StorefrontView
+                                        data={{
+                                            ownerId: user?.id || "",
+                                            name: agentInfo.fullName,
+                                            profileType: profileType,
+                                            agent: { ...agentInfo, services: agentInfo.services },
+                                            properties: [],
+                                            projects: projects,
+                                            products: products,
+                                            services: (agentInfo.services || []).map((s) => ({ title: s, description: "" })),
+                                            propertyListings: propertyListings,
+                                            inlineProjects: inlineProjects,
+                                            theme: {
+                                                primaryColor: customColors.primary,
+                                                backgroundColor: customColors.background,
+                                                textColor: customColors.text,
+                                            },
+                                            digitalCard: digitalCard,
+                                            showStorefront: showStorefront,
+                                        }}
                                     />
                                 </div>
                             ) : (
@@ -1980,6 +2075,26 @@ function BuilderContent() {
                     </div>
                 </div>
                 )}
+
+                {/* Business Storefront & Offered Services Settings */}
+                <div className="px-4 py-4 border-t border-border bg-card/40 rounded-2xl my-4 mx-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <Label className="text-sm font-bold text-foreground flex items-center gap-2">
+                                <Store className="w-4 h-4 text-yellow-500" />
+                                Public Storefront &amp; Offered Services Page
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                                Enable a dedicated business storefront view for visitors to browse products &amp; services.
+                            </p>
+                        </div>
+                        <Switch
+                            checked={showStorefront}
+                            onCheckedChange={setShowStorefront}
+                            aria-label="Enable Public Storefront"
+                        />
+                    </div>
+                </div>
 
               </div>
             </div>

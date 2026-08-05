@@ -42,7 +42,7 @@ export const createProject = mutation({
     },
     handler: async (ctx, args) => {
         const user = await requireUserMatching(ctx, args.clerkId);
-        const { clerkId, ...projectFields } = args;
+        const { clerkId: _clerkId, ...projectFields } = args;
         return ctx.db.insert("projects", {
             ownerId: user._id,
             ...projectFields,

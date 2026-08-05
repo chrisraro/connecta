@@ -7,11 +7,9 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Truck, Shield, Loader2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Id } from "@/convex/_generated/dataModel";
-import { resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { formatPHP } from "@/lib/payment";
 
@@ -69,7 +67,7 @@ export default function ProductPage() {
       <div className="text-center py-16">
         <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
         <p className="text-muted-foreground mb-6">
-          The product you're looking for doesn't exist or has been removed.
+          The product you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <Link href="/shop">
           <Button>Back to Shop</Button>
@@ -297,7 +295,7 @@ export default function ProductPage() {
             </Button>
             
             <p className="text-xs text-muted-foreground text-center">
-              You'll be redirected to checkout after adding to cart
+              You&apos;ll be redirected to checkout after adding to cart
             </p>
 
             <Link href="/shop/cart">

@@ -90,7 +90,7 @@ export const getLeads = query({
         let user;
         try {
             user = await requireUserMatching(ctx, args.clerkId);
-        } catch (error) {
+        } catch (_error) {
             return { leads: [], lockedCount: 0, leadViewCap: null as number | null, canExport: false };
         }
         const { limits } = planContext(user);

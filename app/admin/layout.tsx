@@ -69,7 +69,7 @@ export default function AdminLayout({
 
     // We rely purely on `verifiedAdmin` which waits for DB sync. No more white-screen blocks.
 
-    type NavItem = { href?: string; label: string; icon: any; children?: NavItem[] };
+    type NavItem = { href?: string; label: string; icon: React.ComponentType<{ className?: string }>; children?: NavItem[] };
     
     const navItems: NavItem[] = [
         { href: "/admin", label: "Dashboard", icon: LayoutDashboard },

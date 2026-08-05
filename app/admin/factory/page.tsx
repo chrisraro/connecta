@@ -367,7 +367,7 @@ export default function AdminFactoryPage() {
                             <span className="text-red-500 font-black">1</span>
                         </div>
                         <h4 className="font-bold text-foreground text-sm mb-2">Register Card</h4>
-                        <p className="text-xs text-muted-foreground">Scan or manually register cards. They start as "inventory" status.</p>
+                        <p className="text-xs text-muted-foreground">Scan or manually register cards. They start as &quot;inventory&quot; status.</p>
                     </div>
                     <div className="bg-background/50 rounded-2xl p-4 border border-border">
                         <div className="w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center mb-3">

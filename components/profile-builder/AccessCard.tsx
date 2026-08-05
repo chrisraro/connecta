@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { ProfileInfo } from "@/types/profile";
 import { cn } from "@/lib/utils";
@@ -18,10 +17,8 @@ interface AccessCardProps {
 }
 
 export function AccessCard({ profileId, profileSlug, agent, className }: AccessCardProps) {
-    const [profileUrl, setProfileUrl] = useState("");
-    useEffect(() => {
-        setProfileUrl(buildProfileUrl(window.location.origin, { _id: profileId, slug: profileSlug }));
-    }, [profileId, profileSlug]);
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const profileUrl = buildProfileUrl(origin, { _id: profileId, slug: profileSlug });
 
     return (
         <div className={cn(

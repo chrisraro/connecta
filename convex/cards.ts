@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
-import { Doc, Id } from "./_generated/dataModel";
+import { Doc } from "./_generated/dataModel";
 import { requireUserMatching } from "./authz";
 import { planContext } from "./billing";
 import { checkRateLimit } from "./rateLimit";
@@ -177,3 +177,26 @@ export const claimCardByUuid = mutation({
         return card._id;
     },
 });
+
+export const unclaimCard = mutation({
+    args: {
+        clerkId: v.string(),
+        cardId: v.id("cards"),
+    },
+    handler: async (ctx, args) => {
+        const user = await requireUserMatching(ctx, args.clerkId);
+
+        const card = await ctx.db.get(args.cardId);
+        if (!card) throw new Error("Card not found");
+        if (card.ownerId !== user._id) throw new Error("Unauthorized");
+
+        await ctx.db.patch(args.cardId, {
+            status: "inventory",
+            linkedProfileId: undefined,
+            tapCount: 0,
+        });
+
+        return { success: true };
+    },
+});
+

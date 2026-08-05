@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { Id, Doc } from "@/convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +66,7 @@ export function ProductVariationsManager({
     setOpen(true);
   };
 
-  const openEdit = (v: any) => {
+  const openEdit = (v: Doc<"productVariations">) => {
     setEditingId(v._id);
     setForm({
       name: v.name,

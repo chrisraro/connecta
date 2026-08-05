@@ -9,13 +9,13 @@ export function ThemeToggle() {
     const { theme, setTheme } = useTheme();
 
     const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+        const doc = document as unknown as { startViewTransition?: (cb: () => void | Promise<void>) => { ready: Promise<void> } };
         const isTransitionSupported =
             typeof document !== "undefined" &&
-            // @ts-ignore
-            document.startViewTransition !== undefined &&
+            doc.startViewTransition !== undefined &&
             !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-        if (!isTransitionSupported) {
+        if (!isTransitionSupported || !doc.startViewTransition) {
             setTheme(theme === "dark" ? "light" : "dark");
             return;
         }
@@ -27,8 +27,7 @@ export function ThemeToggle() {
             Math.max(y, window.innerHeight - y)
         );
 
-        // @ts-ignore
-        const transition = document.startViewTransition(async () => {
+        const transition = doc.startViewTransition(async () => {
             setTheme(theme === "dark" ? "light" : "dark");
         });
 

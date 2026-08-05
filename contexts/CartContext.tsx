@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import { Id } from "@/convex/_generated/dataModel";
+import { Id, Doc } from "@/convex/_generated/dataModel";
 import { GUEST_CART_ID_KEY } from "@/lib/storage-keys";
 
 interface CartItem {
@@ -12,8 +12,8 @@ interface CartItem {
   variationId?: Id<"productVariations">;
   quantity: number;
   priceAtAdd: number;
-  product?: any;
-  variation?: any;
+  product?: Doc<"products"> | null;
+  variation?: Doc<"productVariations"> | null;
   lineTotal?: number;
 }
 

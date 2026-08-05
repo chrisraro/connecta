@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, Copy, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Copy, Check } from "lucide-react";
 
 interface ProfileButtonProps {
     icon: React.ElementType;

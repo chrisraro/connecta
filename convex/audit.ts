@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, MutationCtx } from "./_generated/server";
+import { query, MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { requireUserMatching, requireAdmin } from "./authz";
 
@@ -18,7 +18,7 @@ export async function logAudit(
     action: string;
     resourceType: string;
     resourceId: string;
-    changes?: any;
+    changes?: unknown;
     ipAddress?: string;
     userAgent?: string;
   }

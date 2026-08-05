@@ -186,4 +186,5 @@ export interface ProfileData {
         accentColor?: string;
     };
     digitalCard?: DigitalCardConfig;
+    showStorefront?: boolean;
 }

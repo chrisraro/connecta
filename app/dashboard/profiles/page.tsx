@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { resolveImageUrl } from "@/lib/utils";
 import { Id } from "@/convex/_generated/dataModel";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { profilePath } from "@/lib/profileUrl";

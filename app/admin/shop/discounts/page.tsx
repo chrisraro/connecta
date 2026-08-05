@@ -32,8 +32,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Loader2, Percent, Copy, Check } from "lucide-react";
-import { Id } from "@/convex/_generated/dataModel";
+import { Plus, Edit, Trash2, Loader2, Copy, Check } from "lucide-react";
+import { Id, Doc } from "@/convex/_generated/dataModel";
 
 export default function DiscountsPage() {
     const { user } = useUser();
@@ -53,7 +53,7 @@ export default function DiscountsPage() {
         minOrderValue: 0,
         maxDiscountAmount: 0,
         usageLimit: 0,
-        validFrom: Date.now(),
+        validFrom: 0,
         validUntil: 0,
         isActive: true,
     });
@@ -83,7 +83,7 @@ export default function DiscountsPage() {
         }
     };
 
-    const handleEdit = (discount: any) => {
+    const handleEdit = (discount: Doc<"discounts">) => {
         setEditingId(discount._id);
         setFormData({
             code: discount.code,

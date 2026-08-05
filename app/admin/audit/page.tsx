@@ -66,7 +66,7 @@ export default function AdminAuditPage() {
             l.resourceType,
             l.resourceId,
         ]);
-        const escape = (v: any) => {
+        const escape = (v: unknown) => {
             const s = String(v);
             return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
         };

@@ -6,10 +6,8 @@ import { saveOfflineLead, getUnsyncedCount, isOnline, syncOfflineLeads } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import {
     Dialog,
     DialogContent,
@@ -35,7 +33,6 @@ interface OfflineLeadCaptureProps {
 }
 
 export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }: OfflineLeadCaptureProps) {
-    const { user } = useUser();
     const createLead = useMutation(api.leads.createLead);
     const currentUser = useQuery(api.users.getUser);
 

@@ -1,24 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import { ChevronRight, Sparkles, LayoutTemplate, MessageSquare, ExternalLink, Users, Edit2, SmartphoneNfc, ShoppingBag } from "lucide-react";
+import { ChevronRight, Sparkles, MessageSquare, ExternalLink, Users, Edit2, SmartphoneNfc, ShoppingBag, QrCode, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { profilePath } from "@/lib/profileUrl";
 import { ProfileImage } from "@/components/templates/ProfileImage";
+import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 
 export default function DashboardPage() {
     const { user } = useUser();
     const clerkId = user?.id;
 
+    const [showDigitalCardModal, setShowDigitalCardModal] = useState(false);
+    const [selectedModalProfile, setSelectedModalProfile] = useState<NonNullable<typeof profiles>[number] | null>(null);
+
     const onboarding = useQuery(api.users.getOnboardingStatus, clerkId ? { clerkId } : "skip");
     const profiles = useQuery(api.profiles.getMyProfiles, clerkId ? { clerkId } : "skip");
     const leads = useQuery(api.leads.getLeads, clerkId ? { clerkId } : "skip");
     const cards = useQuery(api.users.getMyCards, clerkId ? { clerkId } : "skip");
+
+    const primaryProfile = profiles && profiles.length > 0 ? profiles[0] : null;
+    const activeCardProfile = selectedModalProfile || primaryProfile;
 
     const isOnboardingComplete = onboarding?.completed ?? true;
 
@@ -43,6 +51,63 @@ export default function DashboardPage() {
                     Manage your portfolio, share via NFC &amp; QR, and capture leads.
                 </p>
             </div>
+
+            {/* ─── Digital Business Card Banner ──────────────────────────── */}
+            {primaryProfile && (
+                <div className="rounded-3xl border border-border/80 bg-gradient-to-r from-muted/60 via-card to-background p-5 shadow-lg relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0 text-yellow-500">
+                            <QrCode className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-bold text-base text-foreground">Digital Business Card</h2>
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                                    Instant Web Access
+                                </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Easily present your mobile card, download it as a high-res PNG image, or save contact info (.vcf).
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                        <Button
+                            onClick={() => setShowDigitalCardModal(true)}
+                            className="flex-1 md:flex-initial font-semibold gap-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-xl"
+                        >
+                            <QrCode className="w-4 h-4" />
+                            Show Digital Card
+                        </Button>
+
+                        <Button
+                            onClick={() => setShowDigitalCardModal(true)}
+                            variant="outline"
+                            className="font-medium gap-1.5 rounded-xl border-border hover:bg-muted"
+                        >
+                            <Download className="w-4 h-4" />
+                            Save Image
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Digital Card Modal ────────────────────────────────────── */}
+            {activeCardProfile && (
+                <DigitalCardModal
+                    open={showDigitalCardModal}
+                    onOpenChange={(open) => {
+                        setShowDigitalCardModal(open);
+                        if (!open) setSelectedModalProfile(null);
+                    }}
+                    agent={activeCardProfile.agentInfo}
+                    profileId={activeCardProfile._id}
+                    profileSlug={activeCardProfile.slug}
+                    digitalCardConfig={activeCardProfile.digitalCard}
+                    isOwner={true}
+                />
+            )}
 
             {/* ─── Onboarding Banner ─────────────────────────────────────── */}
             {!isOnboardingComplete && onboarding !== undefined && (
@@ -167,6 +232,18 @@ export default function DashboardPage() {
                                 </div>
 
                                 <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-11 rounded-full hover:bg-yellow-500/10 hover:text-yellow-500 transition-colors"
+                                        onClick={() => {
+                                            setSelectedModalProfile(profile);
+                                            setShowDigitalCardModal(true);
+                                        }}
+                                        title="Show Digital Card"
+                                    >
+                                        <QrCode className="w-4 h-4" />
+                                    </Button>
                                     <Button variant="ghost" size="icon" className="size-11 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" asChild title="Preview">
                                         <Link href={profilePath(profile)} target="_blank" aria-label={`Preview ${profile.name}`}>
                                             <ExternalLink className="w-4 h-4" />

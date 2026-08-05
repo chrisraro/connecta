@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, MutationCtx } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import { requireAdmin } from "./admin";
 import { logAudit } from "./audit";
 
@@ -64,7 +65,7 @@ export const updateCategory = mutation({
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx, args.clerkId);
 
-    const { categoryId, clerkId, ...updates } = args;
+    const { categoryId, clerkId: _clerkId, ...updates } = args;
 
     await ctx.db.patch(categoryId, updates);
 
@@ -137,7 +138,7 @@ export const createProduct = mutation({
     name: v.string(),
     slug: v.string(),
     description: v.optional(v.string()),
-    categoryId: v.id("productCategories"),
+    categoryId: v.optional(v.id("productCategories")),
     basePrice: v.number(),
     compareAtPrice: v.optional(v.number()),
     costPrice: v.optional(v.number()),
@@ -164,7 +165,7 @@ export const createProduct = mutation({
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx, args.clerkId);
 
-    const { clerkId, ...productData } = args;
+    const { clerkId: _clerkId, ...productData } = args;
 
     const productId = await ctx.db.insert("products", productData);
 
@@ -214,7 +215,7 @@ export const updateProduct = mutation({
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx, args.clerkId);
 
-    const { clerkId, productId, ...updates } = args;
+    const { clerkId: _clerkId, productId, ...updates } = args;
 
     await ctx.db.patch(productId, updates);
 
@@ -331,7 +332,7 @@ export const createVariation = mutation({
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx, args.clerkId);
 
-    const { clerkId, ...variationData } = args;
+    const { clerkId: _clerkId, ...variationData } = args;
 
     const variationId = await ctx.db.insert("productVariations", variationData);
 
@@ -364,7 +365,7 @@ export const updateVariation = mutation({
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx, args.clerkId);
 
-    const { clerkId, variationId, ...updates } = args;
+    const { clerkId: _clerkId, variationId, ...updates } = args;
 
     await ctx.db.patch(variationId, updates);
 
@@ -533,8 +534,8 @@ export const updateOrderStatus = mutation({
 
 // Helper: restore inventory for every line item of an order (product + variation).
 async function restoreOrderInventory(
-  ctx: any,
-  order: { items: Array<{ productId: any; variationId?: any; quantity: number }> }
+  ctx: MutationCtx,
+  order: { items: Array<{ productId: Id<"products">; variationId?: Id<"productVariations">; quantity: number }> }
 ): Promise<void> {
   for (const item of order.items) {
     const product = await ctx.db.get(item.productId);
@@ -691,7 +692,7 @@ export const createDiscount = mutation({
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx, args.clerkId);
 
-    const { clerkId, ...discountData } = args;
+    const { clerkId: _clerkId, ...discountData } = args;
 
     const discountId = await ctx.db.insert("discounts", {
       ...discountData,
@@ -729,7 +730,7 @@ export const updateDiscount = mutation({
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx, args.clerkId);
 
-    const { clerkId, discountId, ...updates } = args;
+    const { clerkId: _clerkId, discountId, ...updates } = args;
 
     await ctx.db.patch(discountId, updates);
 

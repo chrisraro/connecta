@@ -30,7 +30,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Loader2, Eye, Package, Truck, CheckCircle, XCircle, RefreshCw, Download, Search, AlertTriangle } from "lucide-react";
-import { Id } from "@/convex/_generated/dataModel";
+import { Id, Doc } from "@/convex/_generated/dataModel";
 import { formatPHP } from "@/lib/payment";
 
 const formatPrice = formatPHP;
@@ -47,7 +47,7 @@ function formatDate(timestamp: number): string {
 
 export default function OrdersPage() {
     const { user } = useUser();
-    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [selectedOrder, setSelectedOrder] = useState<Doc<"orders"> | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [paymentFilter, setPaymentFilter] = useState<string>("all");
     const [search, setSearch] = useState("");
@@ -60,13 +60,14 @@ export default function OrdersPage() {
 
     const handleStatusUpdate = async (orderId: Id<"orders">, newStatus: string) => {
         if (!user?.id) return;
+        const validStatus = newStatus as "pending" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded";
         try {
             await updateOrderStatus({
                 clerkId: user.id,
                 orderId,
-                status: newStatus as any,
+                status: validStatus,
             });
-            setSelectedOrder((prev: any) => prev ? { ...prev, status: newStatus } : prev);
+            setSelectedOrder((prev: Doc<"orders"> | null) => prev ? { ...prev, status: validStatus } : prev);
         } catch (error) {
             console.error("Failed to update order status:", error);
             alert(error instanceof Error ? error.message : "Failed to update status");
@@ -82,7 +83,7 @@ export default function OrdersPage() {
         )) return;
         try {
             await markOrderRefunded({ clerkId: user.id, orderId });
-            setSelectedOrder((prev: any) =>
+            setSelectedOrder((prev: Doc<"orders"> | null) =>
                 prev ? { ...prev, status: "refunded", paymentStatus: "refunded" } : prev
             );
         } catch (error) {
@@ -150,8 +151,8 @@ export default function OrdersPage() {
             o.payrexCheckoutId || "",
             o.paymentIntentId || "",
         ]);
-        const escapeCsv = (val: any) => {
-            const s = String(val);
+        const escapeCsv = (val: unknown) => {
+            const s = String(val ?? "");
             return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
         };
         const csv = [headers, ...rows].map((r) => r.map(escapeCsv).join(",")).join("\n");
@@ -405,7 +406,7 @@ export default function OrdersPage() {
                             <div>
                                 <h3 className="text-lg font-semibold mb-3">Order Items</h3>
                                 <div className="space-y-2">
-                                    {selectedOrder.items.map((item: any, index: number) => (
+                                    {selectedOrder.items.map((item, index: number) => (
                                         <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                                             <div>
                                                 <p className="text-foreground font-medium">{item.productName}</p>
@@ -428,10 +429,10 @@ export default function OrdersPage() {
                                         <span>Subtotal</span>
                                         <span>{formatPrice(selectedOrder.subtotal)}</span>
                                     </div>
-                                    {selectedOrder.discount > 0 && (
+                                    {(selectedOrder.discount ?? 0) > 0 && (
                                         <div className="flex justify-between text-green-400">
                                             <span>Discount{selectedOrder.appliedDiscountCode ? ` (${selectedOrder.appliedDiscountCode})` : ""}</span>
-                                            <span>-{formatPrice(selectedOrder.discount)}</span>
+                                            <span>-{formatPrice(selectedOrder.discount ?? 0)}</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between text-muted-foreground">

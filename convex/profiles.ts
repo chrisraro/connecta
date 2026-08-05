@@ -215,6 +215,7 @@ export const createProfile = mutation({
                 contacts: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
             })),
         })),
+        showStorefront: v.optional(v.boolean()),
         clerkId: v.string(),
         id: v.optional(v.id("profiles")),
     },
@@ -257,6 +258,7 @@ export const createProfile = mutation({
             propertyListings: args.propertyListings,
             inlineProjects: args.inlineProjects,
             digitalCard: args.digitalCard,
+            showStorefront: args.showStorefront,
         };
 
         if (args.id) {

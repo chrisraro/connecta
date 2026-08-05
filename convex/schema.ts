@@ -155,6 +155,7 @@ export default defineSchema({
       image: v.optional(v.string()),
       link: v.optional(v.string()),
     }))),
+    showStorefront: v.optional(v.boolean()),
   }).index("by_owner", ["ownerId"])
     .index("by_slug", ["slug"]),
 

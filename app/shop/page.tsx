@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Search, SlidersHorizontal, ChevronDown, Loader2, Check, X, ShoppingBag } from "lucide-react";
+import { ShoppingCart, Search, Filter, Sparkles, Check, ArrowRight, Package, ShoppingBag, X, Loader2, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
 import { useEffect, useRef } from "react";
@@ -27,13 +27,12 @@ function ToastNotification({
   onDismiss: () => void;
 }) {
   const [progress, setProgress] = useState(100);
-  const startTimeRef = useRef<number>(Date.now());
+  const startTimeRef = useRef<number>(0);
   const animationRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!visible) return;
     
-    setProgress(100);
     startTimeRef.current = Date.now();
     
     const animate = () => {
@@ -179,7 +178,7 @@ export default function ShopPage() {
   const products = useQuery(api.shop.getProducts, {
     categoryId: selectedCategory || undefined,
     search: searchQuery || undefined,
-    sortBy: sortBy as any,
+    sortBy: sortBy as "newest" | "price_asc" | "price_desc" | "popular" | undefined,
     inStockOnly: inStockOnly,
   });
 

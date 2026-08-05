@@ -26,7 +26,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Edit, Trash2, Loader2, FolderTree } from "lucide-react";
-import { Id } from "@/convex/_generated/dataModel";
+import { Id, Doc } from "@/convex/_generated/dataModel";
 
 export default function CategoriesPage() {
     const { user } = useUser();
@@ -66,7 +66,7 @@ export default function CategoriesPage() {
                     description: formData.description,
                     sortOrder: formData.sortOrder,
                     isActive: formData.isActive,
-                    parentId: parentId as any,
+                    parentId: parentId ? (parentId as Id<"productCategories">) : undefined,
                 });
             } else {
                 await createCategory({
@@ -76,7 +76,7 @@ export default function CategoriesPage() {
                     description: formData.description,
                     sortOrder: formData.sortOrder,
                     isActive: formData.isActive,
-                    parentId: parentId as any,
+                    parentId: parentId ? (parentId as Id<"productCategories">) : undefined,
                 });
             }
             resetForm();
@@ -86,7 +86,7 @@ export default function CategoriesPage() {
         }
     };
 
-    const handleEdit = (category: any) => {
+    const handleEdit = (category: Doc<"productCategories">) => {
         setEditingId(category._id);
         setFormData({
             name: category.name,

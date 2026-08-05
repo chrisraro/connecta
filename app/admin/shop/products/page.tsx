@@ -76,8 +76,8 @@ export default function AdminProductsPage() {
   const products = useQuery(api.adminShop.getProducts, {
     clerkId: user?.id || "",
     search: search || undefined,
-    status: statusFilter as any,
-    categoryId: categoryId as any,
+    status: statusFilter as "all" | "published" | "draft" | undefined,
+    categoryId: categoryId as Id<"productCategories"> | undefined,
   });
 
   const categories = useQuery(api.adminShop.getCategories, {

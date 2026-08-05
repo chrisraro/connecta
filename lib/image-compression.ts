@@ -60,10 +60,6 @@ export async function compressImage(
   const img = await loadImage(file);
   let { width, height } = img;
 
-  // Calculate initial dimensions (scale if needed)
-  const originalWidth = width;
-  const originalHeight = height;
-
   if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
     const scale = maxWidthOrHeight / Math.max(width, height);
     width = Math.round(width * scale);

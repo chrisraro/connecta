@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
+import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import {
-    User, Phone, Globe, Briefcase, Image as ImageIcon,
+    User, Phone, Briefcase, Image as ImageIcon,
     ChevronRight, ChevronLeft, CheckCircle2, Sparkles, X,
     Building2, Store, Edit, ArrowRight, Loader2, SmartphoneNfc, AlertCircle
 } from "lucide-react";
@@ -154,14 +155,15 @@ function OnboardingContent() {
                 setClaimedCardId(cardId);
                 setCardClaimed(true);
                 setClaimError(null);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Card claim error:", err);
                 // Don't show error immediately - might be a race condition
                 // Only show error if it's not a "already claimed" scenario
-                if (err.message?.includes("not available")) {
+                const msg = err instanceof Error ? err.message : "";
+                if (msg.includes("not available")) {
                     setClaimError("This card has already been activated.");
                 } else {
-                    setClaimError(err.message || "Failed to claim card");
+                    setClaimError(msg || "Failed to claim card");
                 }
             } finally {
                 setIsClaiming(false);
@@ -240,8 +242,8 @@ function OnboardingContent() {
                 try {
                     await linkProfile({
                         clerkId: clerkUser!.id,
-                        cardId: claimedCardId as any,
-                        profileId: result.profileId as any,
+                        cardId: claimedCardId as Id<"cards">,
+                        profileId: result.profileId as Id<"profiles">,
                     });
                 } catch (linkErr) {
                     console.error("Failed to link card to profile:", linkErr);
