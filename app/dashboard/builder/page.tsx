@@ -987,7 +987,7 @@ function BuilderContent() {
         // headingLevel="h2": this preview is embedded inside the builder page,
         // which already has its own h1 above — see the comment on the header
         // h2 change and on HeroSection's headingLevel prop.
-        return <ProfileRenderer data={data} templateId={selectedTemplate} headingLevel="h2" />;
+        return <ProfileRenderer data={data} templateId={selectedTemplate} headingLevel="h2" showSaveContact={false} />;
     };
 
     return (

@@ -25,6 +25,13 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 export default clerkMiddleware(async (auth, req) => {
     const { pathname } = req.nextUrl;
 
+    const { userId } = await auth();
+
+    // If authenticated user attempts to access auth pages, route straight to /dashboard
+    if (userId && (pathname === '/auth' || pathname === '/sign-in' || pathname === '/sign-up')) {
+        return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+
     // Single URL Experience: Redirect old auth paths to /auth
     if (pathname === '/sign-in' || pathname === '/sign-up') {
         return NextResponse.redirect(new URL('/auth', req.url));

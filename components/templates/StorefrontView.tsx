@@ -1,13 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { ProfileData } from "@/types/profile";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { formatPHP } from "@/lib/payment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
 import {
     Search,
     ShoppingBag,
@@ -19,6 +29,10 @@ import {
     Building2,
     ArrowRight,
     Store,
+    Send,
+    Loader2,
+    CheckCircle2,
+    MessageSquare,
 } from "lucide-react";
 
 interface StorefrontViewProps {
@@ -35,10 +49,18 @@ type CatalogItem = {
 };
 
 export function StorefrontView({ data }: StorefrontViewProps) {
-    const { agent, products = [], services = [] } = data;
+    const { agent, products = [], services = [], ownerId } = data;
+    const createLead = useMutation(api.leads.createLead);
+
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState<"all" | "products" | "services">("all");
     const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
+
+    // Inquiry Lead Form Modal State
+    const [inquiryItem, setInquiryItem] = useState<CatalogItem | null>(null);
+    const [inquiryForm, setInquiryForm] = useState({ name: "", contact: "", message: "" });
+    const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
+    const [inquirySuccess, setInquirySuccess] = useState(false);
 
     // Normalize catalog items
     const productItems: CatalogItem[] = (products || []).map((p) => ({
@@ -50,14 +72,24 @@ export function StorefrontView({ data }: StorefrontViewProps) {
         link: p.link,
     }));
 
-    const serviceItems: CatalogItem[] = (services || []).map((s) => ({
+    // Combine structured services & simple agent.services string tags
+    const structuredServiceItems: CatalogItem[] = (services || []).map((s) => ({
         type: "service",
         title: s.title,
-        description: s.description,
+        description: s.description || `${s.title} solution`,
         price: s.price,
         image: s.image,
     }));
 
+    const agentStringServices: CatalogItem[] = (agent.services || [])
+        .filter((sTag) => !structuredServiceItems.some((s) => s.title.toLowerCase() === sTag.toLowerCase()))
+        .map((sTag) => ({
+            type: "service",
+            title: sTag,
+            description: `${sTag} offered by ${agent.fullName}`,
+        }));
+
+    const serviceItems: CatalogItem[] = [...structuredServiceItems, ...agentStringServices];
     const allCatalogItems = [...productItems, ...serviceItems];
 
     const filteredItems = allCatalogItems.filter((item) => {
@@ -77,11 +109,46 @@ export function StorefrontView({ data }: StorefrontViewProps) {
         return matchesCategory && matchesSearch;
     });
 
+    const openInquiryModal = (item: CatalogItem) => {
+        const defaultMsg = `Hi ${agent.fullName}, I am interested in inquiring about your offering: "${item.title}"${
+            item.price ? ` (${formatPHP(item.price)})` : ""
+        }. Please contact me with availability and details.`;
+
+        setInquiryForm({ name: "", contact: "", message: defaultMsg });
+        setInquirySuccess(false);
+        setInquiryItem(item);
+    };
+
+    const handleSendInquiry = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!inquiryForm.name || !inquiryForm.contact) return;
+
+        setIsSubmittingInquiry(true);
+        try {
+            await createLead({
+                ownerId: ownerId as Id<"users">,
+                inquirerName: inquiryForm.name,
+                inquirerContact: inquiryForm.contact,
+                message: inquiryForm.message,
+            });
+
+            setInquirySuccess(true);
+            setTimeout(() => {
+                setInquirySuccess(false);
+                setInquiryItem(null);
+            }, 3000);
+        } catch (err) {
+            console.error("Failed to submit inquiry lead:", err);
+            alert("Unable to submit inquiry right now. Please try again.");
+        } finally {
+            setIsSubmittingInquiry(false);
+        }
+    };
+
     return (
         <div className="w-full min-h-screen bg-background text-foreground pb-20 selection:bg-yellow-500/30">
             {/* ─── Hero Header & Business Branding ─────────────────────── */}
             <div className="relative border-b border-border bg-card/60 backdrop-blur-xl overflow-hidden">
-                {/* Background ambient light */}
                 <div className="absolute top-[-50%] left-[-20%] w-[140%] h-[200%] bg-gradient-to-br from-yellow-500/10 via-amber-500/5 to-transparent blur-3xl pointer-events-none" />
 
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 relative z-10">
@@ -212,7 +279,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                         </div>
                         <h3 className="text-base font-bold mb-1">No items found</h3>
                         <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                            No matching products or services were found for your current filter. Try adjusting your search query.
+                            No matching products or services were found for your current filter.
                         </p>
                     </div>
                 ) : (
@@ -278,7 +345,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
 
                                     <div className="pt-2 flex items-center justify-between border-t border-border/60">
                                         <span className="text-[11px] font-semibold text-primary flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                            View Details <ArrowRight className="w-3 h-3" />
+                                            View &amp; Inquire <ArrowRight className="w-3 h-3" />
                                         </span>
                                         {item.link && (
                                             <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
@@ -291,11 +358,10 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                 )}
             </div>
 
-            {/* ─── Item Details Drawer / Modal ──────────────────────────── */}
+            {/* ─── Item Details Modal ──────────────────────────────────── */}
             {selectedItem && (
                 <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
                     <DialogContent className="sm:max-w-[520px] p-0 bg-background/95 backdrop-blur-2xl border-border rounded-3xl overflow-hidden shadow-2xl">
-                        {/* Media Header */}
                         <div className="aspect-[16/9] w-full bg-muted relative">
                             {selectedItem.image ? (
                                 <img
@@ -320,7 +386,6 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                             </div>
                         </div>
 
-                        {/* Content */}
                         <div className="p-6 space-y-4">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
@@ -338,38 +403,115 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                             </p>
 
                             {/* Action Buttons */}
-                            <div className="pt-4 flex items-center gap-3 border-t border-border">
-                                {selectedItem.link ? (
+                            <div className="pt-4 flex flex-col sm:flex-row items-center gap-2 border-t border-border">
+                                <Button
+                                    onClick={() => {
+                                        const itemToInquire = selectedItem;
+                                        setSelectedItem(null);
+                                        openInquiryModal(itemToInquire);
+                                    }}
+                                    className="w-full font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+                                >
+                                    <MessageSquare className="w-4 h-4" /> Inquire via Lead Form
+                                </Button>
+
+                                {selectedItem.link && (
                                     <a
                                         href={selectedItem.link.startsWith("http") ? selectedItem.link : `https://${selectedItem.link}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex-1"
+                                        className="w-full sm:w-auto"
                                     >
-                                        <Button className="w-full font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl">
-                                            Order / Access Online <ExternalLink className="w-4 h-4" />
+                                        <Button variant="outline" className="w-full font-semibold gap-1.5 rounded-xl border-border">
+                                            External Link <ExternalLink className="w-3.5 h-3.5" />
                                         </Button>
                                     </a>
-                                ) : agent.email || agent.phone ? (
-                                    <a
-                                        href={`mailto:${agent.email || ""}?subject=${encodeURIComponent(`Inquiry regarding ${selectedItem.title}`)}`}
-                                        className="flex-1"
-                                    >
-                                        <Button className="w-full font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl">
-                                            <Mail className="w-4 h-4" /> Inquire &amp; Order
-                                        </Button>
-                                    </a>
-                                ) : null}
-
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setSelectedItem(null)}
-                                    className="rounded-xl border-border"
-                                >
-                                    Close
-                                </Button>
+                                )}
                             </div>
                         </div>
+                    </DialogContent>
+                </Dialog>
+            )}
+
+            {/* ─── Inquiry Lead Form Modal ─────────────────────────────── */}
+            {inquiryItem && (
+                <Dialog open={!!inquiryItem} onOpenChange={() => setInquiryItem(null)}>
+                    <DialogContent className="sm:max-w-[460px] p-6 bg-background/95 backdrop-blur-2xl border-border rounded-3xl overflow-hidden shadow-2xl">
+                        <DialogHeader>
+                            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                                <Send className="w-4 h-4 text-primary" />
+                                Inquire about {inquiryItem.title}
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-muted-foreground">
+                                Send an instant lead message directly to {agent.fullName}.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {inquirySuccess ? (
+                            <div className="py-8 text-center space-y-3">
+                                <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+                                    <CheckCircle2 className="w-6 h-6" />
+                                </div>
+                                <h3 className="font-bold text-base">Inquiry Sent!</h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Your message has been sent directly to {agent.fullName}. They will review it in their dashboard.
+                                </p>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSendInquiry} className="space-y-4 pt-2">
+                                <div>
+                                    <label className="text-xs font-semibold text-foreground mb-1 block">Your Name</label>
+                                    <Input
+                                        required
+                                        placeholder="e.g. Maria Santos"
+                                        value={inquiryForm.name}
+                                        onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
+                                        className="text-xs rounded-xl"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-semibold text-foreground mb-1 block">Your Email or Mobile Phone</label>
+                                    <Input
+                                        required
+                                        placeholder="e.g. maria@example.com or 09171234567"
+                                        value={inquiryForm.contact}
+                                        onChange={(e) => setInquiryForm({ ...inquiryForm, contact: e.target.value })}
+                                        className="text-xs rounded-xl"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-semibold text-foreground mb-1 block">Message / Inquiry Details</label>
+                                    <Textarea
+                                        required
+                                        rows={3}
+                                        value={inquiryForm.message}
+                                        onChange={(e) => setInquiryForm({ ...inquiryForm, message: e.target.value })}
+                                        className="text-xs rounded-xl resize-none"
+                                    />
+                                </div>
+
+                                <div className="pt-2 flex items-center gap-2">
+                                    <Button
+                                        type="submit"
+                                        disabled={isSubmittingInquiry}
+                                        className="flex-1 font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+                                    >
+                                        {isSubmittingInquiry ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                        {isSubmittingInquiry ? "Sending..." : "Submit Inquiry"}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setInquiryItem(null)}
+                                        className="rounded-xl"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
                     </DialogContent>
                 </Dialog>
             )}

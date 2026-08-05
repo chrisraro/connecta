@@ -18,6 +18,7 @@ import { PropertyListingsSection } from "./sections/PropertyListingsSection";
 import { TestimonialsSection } from "./sections/TestimonialsSection";
 import { GallerySection } from "./sections/GallerySection";
 import { ContactSection } from "./sections/ContactSection";
+import { SaveContactButton } from "./SaveContactButton";
 
 /**
  * The single entry point that replaced Editorial.tsx / Kinetic.tsx /
@@ -29,6 +30,7 @@ export function ProfileRenderer({
   data,
   templateId,
   headingLevel,
+  showSaveContact = true,
 }: {
   data: ProfileData;
   templateId: string;
@@ -36,6 +38,8 @@ export function ProfileRenderer({
    *  public profile page (defaults to "h1"); pass "h2" when this renderer is
    *  embedded as a preview inside a page that has its own h1. */
   headingLevel?: "h1" | "h2";
+  /** Control floating Save Contact vCard button visibility */
+  showSaveContact?: boolean;
 }) {
   const {
     agent,
@@ -196,6 +200,7 @@ export function ProfileRenderer({
       {resolvedSlots.map(({ id, slotIndex, index }) => (
         <Fragment key={`${id}-${slotIndex}`}>{renderByKey.get(`${id}:${slotIndex}`)?.(index)}</Fragment>
       ))}
+      {showSaveContact && <SaveContactButton agent={agent} theme={theme} />}
     </div>
   );
 }
