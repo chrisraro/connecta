@@ -48,16 +48,31 @@ export default clerkMiddleware(async (auth, req) => {
         await auth.protect();
     }
 
-    // Defense-in-depth: /admin/* also requires the "admin" role claim on the
-    // Clerk session (populated via a Clerk session-token JWT template mapping
-    // publicMetadata.role -> sessionClaims.metadata.role). The real
-    // authorization gate remains convex/authz.ts:requireAdmin on every admin
-    // Convex function — this check only stops the admin UI shell itself from
-    // rendering for non-admins (Auth audit #3).
+    // Defense-in-depth for /admin/*: if the Clerk session carries a role claim,
+    // use it to reject non-admins before the shell even renders.
+    //
+    // The claim only exists once Clerk's session token is customised to expose
+    // publicMetadata (Dashboard -> Sessions -> Customize session token, with
+    // {"metadata": "{{user.public_metadata}}"}). That is a manual dashboard
+    // step with no API, and it is easy to miss.
+    //
+    // So this DEGRADES rather than fails closed. Blocking on a missing claim
+    // locked every account out of the admin console — including the real
+    // superadmin — which is a self-inflicted outage, not security. It bought
+    // nothing, because /admin is already gated twice over:
+    //
+    //   1. app/admin/layout.tsx verifies the signed-in user server-side via
+    //      Convex and redirects non-admins to /dashboard.
+    //   2. Every admin Convex function calls authz.ts:requireAdmin, so no
+    //      admin DATA is reachable without a real admin grant regardless of
+    //      what any UI shell renders.
+    //
+    // Present claim -> enforce it. Absent claim -> fall through to those two.
     if (isAdminRoute(req)) {
         const { sessionClaims } = await auth();
         const role = (sessionClaims?.metadata as { role?: string } | undefined)?.role;
-        if (role !== "admin" && role !== "superadmin") {
+        const claimConfigured = role !== undefined && role !== null;
+        if (claimConfigured && role !== "admin" && role !== "superadmin") {
             return NextResponse.redirect(new URL('/dashboard', req.url));
         }
     }
