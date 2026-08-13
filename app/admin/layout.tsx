@@ -2,10 +2,10 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, Users, SmartphoneNfc, LogOut, Menu, BarChart3, FileText, Settings, ShoppingCart, Package, Tags, ShoppingCart as CartIcon, TrendingUp, Percent } from "lucide-react";
+import { ArrowLeft, Loader2, LayoutDashboard, Users, SmartphoneNfc, LogOut, Menu, BarChart3, FileText, Settings, ShoppingCart, Package, Tags, ShoppingCart as CartIcon, TrendingUp, Percent } from "lucide-react";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ export default function AdminLayout({
     const router = useRouter();
     const pathname = usePathname(); // Move hooks BEFORE any conditional returns
     const { user, isLoaded, isSignedIn } = useUser();
+    const { signOut } = useClerk();
     const userRole = useQuery(api.users.getUser); 
     const syncUser = useMutation(api.users.syncUser);
     
@@ -106,10 +107,21 @@ export default function AdminLayout({
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="left" className="bg-background border-border text-foreground w-72 p-0">
-                        <div className="p-6 flex items-center gap-2 font-bold text-xl text-red-600 border-b border-border">
-                            <SigmaTapMark className="h-5 w-5" />
-                            <span>{SIGMATAP.name} Admin</span>
-                        </div>
+                        {/*
+                          Radix requires every DialogContent (which SheetContent
+                          is) to have a DialogTitle, or it logs an accessibility
+                          error and screen-reader users get an unlabelled dialog.
+                          This brand line already WAS the visual title — it was
+                          just a plain <div>, so it never registered as the
+                          accessible name. SheetHeader/SheetTitle were imported
+                          but unused.
+                        */}
+                        <SheetHeader className="p-6 border-b border-border space-y-0">
+                            <SheetTitle className="flex items-center gap-2 font-bold text-xl text-red-600">
+                                <SigmaTapMark className="h-5 w-5" />
+                                <span>{SIGMATAP.name} Admin</span>
+                            </SheetTitle>
+                        </SheetHeader>
                         <nav className="p-4 space-y-2">
                             {navItems.map((item) => {
                                 if ('children' in item) {
@@ -154,10 +166,22 @@ export default function AdminLayout({
                                 );
                             })}
                         </nav>
-                        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
-                            <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-red-500" onClick={() => router.push("/dashboard")}>
-                                <LogOut className="w-4 h-4 mr-2" />
-                                Back to User App
+                        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border space-y-1">
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start min-h-11 text-muted-foreground hover:text-foreground"
+                                onClick={() => router.push("/dashboard")}
+                            >
+                                <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+                                Back to user app
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start min-h-11 text-muted-foreground hover:text-red-500"
+                                onClick={() => signOut({ redirectUrl: "/" })}
+                            >
+                                <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
+                                Sign out
                             </Button>
                         </div>
                     </SheetContent>
@@ -214,10 +238,28 @@ export default function AdminLayout({
                     })}
                 </nav>
 
-                <div className="p-6 border-t border-border">
-                    <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-red-500" onClick={() => router.push("/dashboard")}>
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Back to User App
+                <div className="p-6 border-t border-border space-y-1">
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start min-h-11 text-muted-foreground hover:text-foreground"
+                        onClick={() => router.push("/dashboard")}
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+                        Back to user app
+                    </Button>
+                    {/*
+                      Distinct from "Back to user app": that keeps the session
+                      and just navigates. Signing out is what lets you re-enter
+                      as a different (non-admin) account to check the consumer
+                      dashboard — previously impossible from inside /admin.
+                    */}
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start min-h-11 text-muted-foreground hover:text-red-500"
+                        onClick={() => signOut({ redirectUrl: "/" })}
+                    >
+                        <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
+                        Sign out
                     </Button>
                 </div>
             </aside>
