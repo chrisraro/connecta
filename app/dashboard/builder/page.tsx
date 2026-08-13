@@ -292,7 +292,15 @@ function TemplateSelector({
     return (
         <div className="space-y-3">
             <Label className="text-sm font-semibold text-foreground">Choose Template</Label>
-            <div className="grid grid-cols-3 gap-3">
+            {/* Two columns until `sm:`. Three columns put each card at 72px
+                at 320px (95px at 390px); minus the label's own `p-3` that
+                leaves 48-71px for the name, and "Architectural" needs 76px.
+                The name has no truncation, so it overflowed and the card's
+                `overflow-hidden` cut it to "Architec" at all three phone
+                widths (measured: button scrollWidth 100 vs clientWidth 72).
+                Two columns give 114px at 320px, which fits the longest
+                name; `truncate` keeps a future longer one from clipping. */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {TEMPLATES.map((template) => (
                     <button
                         key={template.id}
@@ -309,7 +317,7 @@ function TemplateSelector({
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                         <div className="absolute bottom-0 left-0 right-0 p-3">
-                            <p className="text-white font-semibold text-sm">{template.name}</p>
+                            <p className="truncate text-white font-semibold text-sm">{template.name}</p>
                             <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{template.description}</p>
                         </div>
                         {selectedTemplate === template.id && (
@@ -1194,7 +1202,14 @@ function BuilderContent() {
                 {/* Profile Type */}
                 <div className="px-4 py-4">
                     <Label className="text-sm font-semibold text-foreground mb-3 block">Profile Type</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                    {/* Same three-column squeeze as the template picker: at
+                        320px each track is 75px, `px-4` claims 32 of it, and
+                        "individual" needs 63.5px of the 43px left — so the
+                        label rendered 20.5px outside its own pill (still
+                        7.1px outside at 360px). Buttons don't clip, so this
+                        read as text sitting on top of the pill's edge rather
+                        than as an overflow. Two tracks give 116px. */}
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {(["individual", "company", "business"] as const).map((type) => (
                             <button
                                 key={type}
@@ -1413,7 +1428,17 @@ function BuilderContent() {
                         <div className="space-y-2 mt-2">
                             {agentInfo.socialLinks?.map((link, idx) => (
                                 <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                                    <span className="text-sm flex-1 text-foreground">{link.platform}: {link.url}</span>
+                                    {/* `flex-1` alone is `min-width: auto`, so
+                                        this span is floored at the min-content
+                                        width of the URL. A handle with no
+                                        break opportunity (no "/" or "-") took
+                                        the row to scrollWidth 441 inside a
+                                        286px modal and pushed the delete
+                                        button 86px past the viewport, with
+                                        nothing to scroll it back. `min-w-0`
+                                        lets the span shrink and `break-all`
+                                        gives the URL somewhere to wrap. */}
+                                    <span className="min-w-0 flex-1 break-all text-sm text-foreground">{link.platform}: {link.url}</span>
                                     <button
                                         aria-label={`Remove ${link.platform} link`}
                                         onClick={() => {

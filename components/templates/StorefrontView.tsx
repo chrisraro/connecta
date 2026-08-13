@@ -226,7 +226,17 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                 {/* Filter Controls Bar */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
                     {/* Category Tabs */}
-                    <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border w-full sm:w-auto">
+                    {/* `flex-1` below carries `min-width: auto`, so each tab
+                        is floored at its own min-content width (measured 87 /
+                        85 / 84px). Their 272px total fits a real 320px phone
+                        (~284px available) but not the builder's 182px preview
+                        frame, where the strip was clipped and the "Services"
+                        tab's right edge landed 21px past the viewport with no
+                        way to reach it. Scrolling the strip — the same
+                        treatment the dashboard filter chips get — keeps the
+                        tabs stretched when they fit and reachable when they
+                        don't, without clipping either way. */}
+                    <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border w-full overflow-x-auto sm:w-auto">
                         <button
                             onClick={() => setActiveCategory("all")}
                             className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-xl transition-all ${
