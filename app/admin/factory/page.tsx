@@ -35,6 +35,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Id } from "@/convex/_generated/dataModel";
+import { HERALD } from "@/lib/brand";
 
 // Define NDEF types since they might not be in the global scope
 interface NDEFReadingEvent extends Event {
@@ -587,7 +588,7 @@ export default function AdminFactoryPage() {
                             className="bg-white p-4 rounded-lg flex flex-col items-center justify-center shadow-2xl"
                             style={{ width: '200px', height: '200px' }}
                         >
-                            <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">Herald</div>
+                            <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">{HERALD.name}</div>
 
                             <QRCodeSVG
                                 value={`${PRODUCTION_DOMAIN}/t/${selectedCard?.uuid || ""}`}

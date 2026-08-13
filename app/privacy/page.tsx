@@ -95,8 +95,8 @@ export default function PrivacyPolicyPage() {
       <Section id="lead-data" heading="Data from people who tap your card">
         <p>
           <strong>
-            This is the most sensitive category of data Herald handles, and it
-            belongs to people who have never signed up for Herald.
+            This is the most sensitive category of data {HERALD.name} handles, and it
+            belongs to people who have never signed up for {HERALD.name}.
           </strong>{" "}
           When someone taps your card or visits your public profile and fills
           out the contact form, we capture their name, contact details, and
@@ -109,13 +109,13 @@ export default function PrivacyPolicyPage() {
           inquirer&apos;s data: you decide to collect it (by publishing a
           contact form), you decide what to do with it (follow up, ignore it,
           delete it), and you are responsible for handling it lawfully.
-          Herald acts as your <strong>personal information processor</strong>:
+          {HERALD.name} acts as your <strong>personal information processor</strong>:
           we store the data on your behalf and give you tools to view and
           manage it, but we do not decide why it is collected or how it is
           used.
         </p>
         <p>
-          If you collect leads through your Herald profile, you are
+          If you collect leads through your {HERALD.name}{" "}profile, you are
           responsible for having a lawful basis to do so (typically the
           inquirer&apos;s consent, implied by them voluntarily submitting the
           form) and for not misusing the data you receive.
@@ -153,7 +153,7 @@ export default function PrivacyPolicyPage() {
 
       <Section id="sub-processors" heading="Who we share it with">
         <p>
-          Herald runs on a small number of named infrastructure providers.
+          {HERALD.name} runs on a small number of named infrastructure providers.
           Each processes personal data only to provide its specific function,
           under its own contract with us:
         </p>
@@ -169,7 +169,7 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>PayRex</strong> (payrexhq.com) — payment processing for
             card purchases and plan subscriptions (GCash, Maya, card, and QR
-            Ph). PayRex, not Herald, handles your card/payment credentials
+            Ph). PayRex, not {HERALD.name}, handles your card/payment credentials
             directly.
           </li>
           <li>
@@ -241,7 +241,7 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             Authentication, session management, and credential storage are
-            handled entirely by Clerk; Herald never sees or stores your
+            handled entirely by Clerk; {HERALD.name} never sees or stores your
             password.
           </li>
         </ul>
@@ -257,7 +257,7 @@ export default function PrivacyPolicyPage() {
 
       <Section id="public-profiles" heading="Public profiles are public">
         <p>
-          A published Herald profile (at a URL like{" "}
+          A published {HERALD.name} profile (at a URL like{" "}
           <code className="rounded-[var(--r-sm)] bg-muted px-1 py-0.5 text-[0.9em]">
             /your-slug
           </code>
@@ -331,7 +331,7 @@ export default function PrivacyPolicyPage() {
 
       <Section id="children" heading="Children's data">
         <p>
-          Herald is intended for business and professional use and is not
+          {HERALD.name} is intended for business and professional use and is not
           directed at children. We do not knowingly collect personal data
           from children under 18. If you believe a child has provided us
           personal data (for example, as an inquirer submitting a lead form),
@@ -343,7 +343,7 @@ export default function PrivacyPolicyPage() {
 
       <Section id="cookies" heading="Cookies">
         <p>
-          Herald does not currently run advertising or analytics cookies, and
+          {HERALD.name} does not currently run advertising or analytics cookies, and
           there is no cookie-consent banner on the site. Clerk, our
           authentication provider, sets cookies that are{" "}
           <strong>strictly necessary</strong> to keep you signed in — these
@@ -359,7 +359,7 @@ export default function PrivacyPolicyPage() {
         <p>
           We may update this policy as the product changes. Material changes
           will update the &quot;Last updated&quot; date at the top of this
-          page. Continued use of Herald after an update constitutes
+          page. Continued use of {HERALD.name} after an update constitutes
           acceptance of the revised policy.
         </p>
       </Section>

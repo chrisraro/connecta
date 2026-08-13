@@ -140,3 +140,56 @@ test("no user-facing source file still says the old brand name", () => {
   }
   expect(offenders, `stale brand in:\n${offenders.join("\n")}`).toEqual([]);
 });
+
+// Guard against reintroducing the bug this branch just fixed: 48 JSX call
+// sites hardcoded the CURRENT brand name ("Herald") as a string literal
+// instead of importing HERALD from this module, which made the first rename
+// (Tapfolio -> Herald) an expensive repo-wide sweep instead of a one-line
+// edit here. This test fails the day someone types a new `>Herald<` or
+// `"...Herald..."` into app/** or components/** instead of `{HERALD.name}`.
+//
+// `\bHerald\b` is deliberately case-sensitive with word boundaries: it does
+// NOT match `HeraldMark` / `buildHerald` (no boundary between "Herald" and
+// the adjoining word character) or `HERALD` / `herald-mark.svg` /
+// `--herald-seal` (wrong case) — those are legitimate, not brand-string
+// leaks, so they need no allowlist entry at all. Only a handful of doc
+// comments that *talk about* the brand name (not render it) remain and are
+// allowlisted by exact line below, same line-scoped mechanism as
+// INFRA_EXCEPTIONS above.
+const CURRENT_BRAND_WORD = /\bHerald\b/;
+
+const NEW_BRAND_STRING_SCAN_DIRS = ["app", "components"];
+
+// Line-scoped exceptions: comment-only mentions of "Herald" that describe
+// the mark/design system rather than render brand copy. Deliberately kept
+// as prose, not migrated to the constant (rule 2 in the migration task).
+const NEW_BRAND_STRING_EXCEPTIONS: Record<string, string[]> = {
+  [join("components", "brand", "HeraldMark.tsx")]: [
+    '* Herald\'s monogram — an "H" whose crossbar is a chevron, the fundamental',
+    '*  visible word "Herald" — it\'s then decorative and hidden from the',
+    '*  accessibility tree so screen readers don\'t announce "Herald" twice. */',
+  ],
+  [join("app", "globals.css")]: [
+    "/* Herald — enforced scales. Exactly three radii, exactly two elevations. */",
+    "/* Herald identity — the seal pressed into wax. Committed color strategy:",
+  ],
+};
+
+test("no new hardcoded occurrence of the current brand name in app/** or components/**", () => {
+  const offenders: string[] = [];
+  for (const dir of NEW_BRAND_STRING_SCAN_DIRS) {
+    const root = join(process.cwd(), dir);
+    for (const file of walk(root)) {
+      if (!/\.(tsx?|css)$/.test(file)) continue;
+      const rel = file.replace(process.cwd(), "").replace(/^[\\/]/, "");
+      const allowedLines = NEW_BRAND_STRING_EXCEPTIONS[rel] ?? [];
+      const content = readFileSync(file, "utf8");
+      const remaining = content
+        .split("\n")
+        .filter((line) => !allowedLines.some((allowed) => line.trim() === allowed))
+        .join("\n");
+      if (CURRENT_BRAND_WORD.test(remaining)) offenders.push(rel);
+    }
+  }
+  expect(offenders, `hardcoded "Herald" outside HERALD constant in:\n${offenders.join("\n")}`).toEqual([]);
+});

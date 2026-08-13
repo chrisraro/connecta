@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, Loader2, UserPlus, Trash2, X, Save, Crown } from "lucide-react";
+import { HERALD } from "@/lib/brand";
 import { useEffect, useState } from "react";
 
 export default function TeamPage() {
@@ -166,7 +167,7 @@ export default function TeamPage() {
                                 </Button>
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                Existing Herald users join instantly. Others join when they sign in
+                                Existing {HERALD.name}{" "}users join instantly. Others join when they sign in
                                 with that email.
                             </p>
                         </div>

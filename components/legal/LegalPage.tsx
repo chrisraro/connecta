@@ -116,7 +116,7 @@ export function DraftNotice() {
           Draft — not legal advice, not yet approved for launch.
         </p>
         <p className="mt-1">
-          This page was generated from an engineering audit of what Herald&apos;s
+          This page was generated from an engineering audit of what {HERALD.name}&apos;s
           codebase actually does. It has not been reviewed by a
           Philippine-qualified lawyer or the company&apos;s Data Protection
           Officer, and must not be treated as a compliant policy until it has

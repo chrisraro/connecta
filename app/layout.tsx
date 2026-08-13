@@ -15,7 +15,7 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${HERALD.domain}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title: "Herald — Your business card, reinvented",
+  title: `${HERALD.name} — Your business card, reinvented`,
   description:
     "Premium NFC digital business cards for modern professionals. Tap to share a stunning profile and capture leads instantly.",
   icons: {
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   // (the /p/[id] and /[slug] profile routes each have their own dynamic
   // opengraph-image.tsx, which Next uses in place of this per-route).
   openGraph: {
-    title: "Herald — Your business card, reinvented",
+    title: `${HERALD.name} — Your business card, reinvented`,
     description:
       "Premium NFC digital business cards for modern professionals. Tap to share a stunning profile and capture leads instantly.",
     images: ["/og-fallback.png"],

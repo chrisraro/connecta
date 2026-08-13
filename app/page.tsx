@@ -421,7 +421,7 @@ function SectionHeading({
 
 function Steps() {
   const steps = [
-    { step: "01", icon: Hand, title: "Tap", desc: "Hold your Herald NFC card to any smartphone — or let them scan your QR code." },
+    { step: "01", icon: Hand, title: "Tap", desc: `Hold your ${HERALD.name} NFC card to any smartphone — or let them scan your QR code.` },
     { step: "02", icon: UserRound, title: "Profile", desc: "Your branded profile opens instantly with your photo, links, and call-to-actions." },
     { step: "03", icon: Inbox, title: "Lead captured", desc: "They save your contact or send a message — and it lands straight in your lead inbox." },
   ];
