@@ -377,11 +377,21 @@ export default function DashboardLayout({
                 bottom, so page content (e.g. the "Recent Profiles" card)
                 needs at least that much bottom padding or it renders
                 underneath the nav/FAB instead of above them. */}
-            <main className="flex-1 flex flex-col relative pb-48 md:pb-0">
+            {/* min-w-0: <main> is a flex item, and flex items default to
+                min-width:auto, which refuses to shrink below their content's
+                intrinsic width. Any page with a horizontally-scrolling strip
+                (the filter chips on /profiles and /leads) therefore pushed
+                <main> to ~436px inside a 320px viewport. The body's
+                overflow-x:hidden then CLIPPED the excess rather than
+                scrolling it, so the right edge of every such page was simply
+                cut off on small phones — with no scrollbar to reveal it.
+                min-w-0 lets <main> match the viewport and hands the
+                horizontal scrolling back to the strip that asked for it. */}
+            <main className="flex-1 min-w-0 flex flex-col relative pb-48 md:pb-0">
                 {/* Mobile Header */}
                 <MobileHeader />
 
-                <div className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
+                <div className="flex-1 min-w-0 p-6 md:p-10 max-w-7xl mx-auto w-full">
                     {children}
                 </div>
 

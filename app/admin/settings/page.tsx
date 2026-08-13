@@ -313,33 +313,33 @@ export default function AdminSettingsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
                             <Label className="text-foreground">New User Registration Alerts</Label>
                             <p className="text-xs text-muted-foreground mt-1">Get notified when new users sign up</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
                             <Label className="text-foreground">NFC Card Activation Alerts</Label>
                             <p className="text-xs text-muted-foreground mt-1">Track card activation events</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
                             <Label className="text-foreground">Lead Generation Notifications</Label>
                             <p className="text-xs text-muted-foreground mt-1">Alert on new lead submissions</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
                             <Label className="text-foreground">Weekly Analytics Report</Label>
                             <p className="text-xs text-muted-foreground mt-1">Receive weekly platform summary</p>
                         </div>
-                        <Switch />
+                        <Switch className="shrink-0" />
                     </div>
                 </CardContent>
             </Card>
@@ -357,26 +357,26 @@ export default function AdminSettingsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
                             <Label className="text-foreground">Two-Factor Authentication (2FA)</Label>
                             <p className="text-xs text-muted-foreground mt-1">Require 2FA for all admin accounts</p>
                         </div>
-                        <Switch />
+                        <Switch className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
                             <Label className="text-foreground">Session Timeout</Label>
                             <p className="text-xs text-muted-foreground mt-1">Auto-logout after inactivity</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
                             <Label className="text-foreground">IP Whitelisting</Label>
                             <p className="text-xs text-muted-foreground mt-1">Restrict admin access to specific IPs</p>
                         </div>
-                        <Switch />
+                        <Switch className="shrink-0" />
                     </div>
                 </CardContent>
             </Card>
@@ -394,7 +394,7 @@ export default function AdminSettingsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3">
                         <Button variant="outline" className="bg-background border-border text-foreground hover:bg-muted" disabled>
                             Export All Users
                         </Button>
@@ -421,30 +421,30 @@ export default function AdminSettingsPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-red-500/5 border border-red-500/20 rounded-lg">
-                        <div>
+                    <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
                             <Label className="text-foreground font-medium">Reset All NFC Cards</Label>
                             <p className="text-xs text-muted-foreground mt-1">Return all cards to inventory status</p>
                         </div>
-                        <Button variant="destructive" disabled>
+                        <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
                             Reset Cards
                         </Button>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-red-500/5 border border-red-500/20 rounded-lg">
-                        <div>
+                    <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
                             <Label className="text-foreground font-medium">Purge All Leads</Label>
                             <p className="text-xs text-muted-foreground mt-1">Delete all lead data permanently</p>
                         </div>
-                        <Button variant="destructive" disabled>
+                        <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
                             Purge Leads
                         </Button>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-red-500/5 border border-red-500/20 rounded-lg">
-                        <div>
+                    <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
                             <Label className="text-foreground font-medium">Delete All User Data</Label>
                             <p className="text-xs text-muted-foreground mt-1">This action cannot be undone</p>
                         </div>
-                        <Button variant="destructive" disabled>
+                        <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
                             Delete Everything
                         </Button>
                     </div>
