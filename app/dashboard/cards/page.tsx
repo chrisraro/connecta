@@ -4,6 +4,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
+import { Id } from "@/convex/_generated/dataModel";
+import { SIGMATAP } from "@/lib/brand";
 import { 
     SmartphoneNfc, 
     QrCode, 
@@ -12,9 +14,7 @@ import {
     CheckCircle2, 
     AlertCircle,
     ExternalLink,
-    Settings2,
-    Trash2,
-    Link
+    Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,6 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -35,7 +34,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CardsPage() {
     const { user, isLoaded } = useUser();
@@ -43,12 +42,31 @@ export default function CardsPage() {
     const myProfiles = useQuery(api.profiles.getMyProfiles, user?.id ? { clerkId: user.id } : "skip");
     const activateCard = useMutation(api.cards.activateCard);
     const linkProfile = useMutation(api.cards.linkProfile);
+    const unclaimCard = useMutation(api.cards.unclaimCard);
 
     const [isActivating, setIsActivating] = useState(false);
     const [activationCode, setActivationCode] = useState("");
     const [activationError, setActivationError] = useState<string | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
     const [showActivationDialog, setShowActivationDialog] = useState(false);
+    const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+
+    const handleUnclaimCard = async (cardId: Id<"cards">) => {
+        if (!user?.id) return;
+        if (!confirm("Are you sure you want to un-pair this NFC card? It will return to inventory status so it can be re-registered.")) return;
+
+        setDeletingCardId(cardId);
+        try {
+            await unclaimCard({
+                clerkId: user.id,
+                cardId,
+            });
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "Failed to unclaim card");
+        } finally {
+            setDeletingCardId(null);
+        }
+    };
 
     const handleActivate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,20 +85,20 @@ export default function CardsPage() {
                 setIsSuccess(false);
                 setShowActivationDialog(false);
             }, 2000);
-        } catch (err: any) {
-            setActivationError(err.message || "Failed to activate card. Please check the code.");
+        } catch (err: unknown) {
+            setActivationError(err instanceof Error ? err.message : "Failed to activate card. Please check the code.");
         } finally {
             setIsActivating(false);
         }
     };
 
-    const handleLinkProfile = async (cardId: any, profileId: string) => {
+    const handleLinkProfile = async (cardId: Id<"cards">, profileId: string) => {
         if (!user?.id) return;
         try {
             await linkProfile({
                 clerkId: user.id,
                 cardId,
-                profileId: profileId === "none" ? undefined : (profileId as any)
+                profileId: profileId === "none" ? undefined : (profileId as Id<"profiles">)
             });
         } catch (err) {
             console.error(err);
@@ -101,7 +119,7 @@ export default function CardsPage() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold">My NFC Cards</h1>
-                    <p className="text-muted-foreground">Manage and link your physical TapFolio cards to your profiles.</p>
+                    <p className="text-muted-foreground">Manage and link your physical {SIGMATAP.name} cards to your profiles.</p>
                 </div>
                 
                 <Dialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
@@ -174,7 +192,7 @@ export default function CardsPage() {
                         </div>
                         <h3 className="text-xl font-bold mb-2">No Active Cards</h3>
                         <p className="text-muted-foreground max-w-xs mb-8 font-medium">
-                            You haven&apos;t activated any physical TapFolio cards yet. Get started by clicking the button above.
+                            You haven&apos;t activated any physical {SIGMATAP.name} cards yet. Get started by clicking the button above.
                         </p>
                         <Button variant="outline" className="rounded-xl px-8 h-12" onClick={() => setShowActivationDialog(true)}>
                             Get Started
@@ -196,7 +214,7 @@ export default function CardsPage() {
                                 </div>
                                 <CardTitle className="flex items-center gap-2">
                                     <SmartphoneNfc className="w-5 h-5 text-primary" />
-                                    TapFolio NFC Card
+                                    {SIGMATAP.name} NFC Card
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6 space-y-4">
@@ -239,8 +257,15 @@ export default function CardsPage() {
                                     <ExternalLink className="w-4 h-4 mr-2" />
                                     Test Link
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive">
-                                    <Trash2 className="w-4 h-4" />
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-10 w-10 text-muted-foreground hover:text-destructive"
+                                    disabled={deletingCardId === card._id}
+                                    onClick={() => handleUnclaimCard(card._id)}
+                                    title="Un-pair / Return to inventory"
+                                >
+                                    {deletingCardId === card._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                 </Button>
                             </CardFooter>
                         </Card>

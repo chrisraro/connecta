@@ -1,23 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import { ChevronRight, Sparkles, LayoutTemplate, MessageSquare, ExternalLink, Users, Edit2, SmartphoneNfc, ShoppingBag } from "lucide-react";
+import { ChevronRight, Sparkles, MessageSquare, ExternalLink, Users, Edit2, SmartphoneNfc, ShoppingBag, QrCode, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { resolveImageUrl } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { profilePath } from "@/lib/profileUrl";
+import { ProfileImage } from "@/components/templates/ProfileImage";
+import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 
 export default function DashboardPage() {
     const { user } = useUser();
     const clerkId = user?.id;
 
+    const [showDigitalCardModal, setShowDigitalCardModal] = useState(false);
+    const [selectedModalProfile, setSelectedModalProfile] = useState<NonNullable<typeof profiles>[number] | null>(null);
+
     const onboarding = useQuery(api.users.getOnboardingStatus, clerkId ? { clerkId } : "skip");
     const profiles = useQuery(api.profiles.getMyProfiles, clerkId ? { clerkId } : "skip");
     const leads = useQuery(api.leads.getLeads, clerkId ? { clerkId } : "skip");
     const cards = useQuery(api.users.getMyCards, clerkId ? { clerkId } : "skip");
+
+    const primaryProfile = profiles && profiles.length > 0 ? profiles[0] : null;
+    const activeCardProfile = selectedModalProfile || primaryProfile;
 
     const isOnboardingComplete = onboarding?.completed ?? true;
 
@@ -42,6 +51,72 @@ export default function DashboardPage() {
                     Manage your portfolio, share via NFC &amp; QR, and capture leads.
                 </p>
             </div>
+
+            {/* ─── Digital Business Card Banner ──────────────────────────── */}
+            {primaryProfile && (
+                <div className="rounded-[var(--r-lg)] border border-border bg-card p-5 shadow-[var(--e-raised)] flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    {/*
+                      `min-w-0` is load-bearing. A flex child defaults to
+                      min-width:auto, so it refuses to shrink below its own
+                      content width — that is what crushed "Digital Business
+                      Card" into three lines on a narrow screen. Paired with
+                      flex-wrap on the title row below, the badge now drops
+                      under the heading instead of competing with it for
+                      horizontal space.
+                    */}
+                    <div className="flex min-w-0 items-start gap-4">
+                        <div className="flex size-12 shrink-0 items-center justify-center rounded-[var(--r-md)] bg-primary/10 text-primary">
+                            <QrCode className="size-6" aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <h2 className="text-base font-bold text-foreground">Digital business card</h2>
+                                <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-500">
+                                    Instant web access
+                                </span>
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Present your card on screen, download it as a high-res PNG, or save the contact as a .vcf.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex w-full shrink-0 items-center gap-2 md:w-auto">
+                        <Button
+                            onClick={() => setShowDigitalCardModal(true)}
+                            className="min-h-11 flex-1 gap-2 rounded-[var(--r-md)] font-semibold md:flex-initial"
+                        >
+                            <QrCode className="size-4" aria-hidden="true" />
+                            Show card
+                        </Button>
+
+                        <Button
+                            onClick={() => setShowDigitalCardModal(true)}
+                            variant="outline"
+                            className="min-h-11 gap-1.5 rounded-[var(--r-md)] font-medium"
+                        >
+                            <Download className="size-4" aria-hidden="true" />
+                            Save image
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Digital Card Modal ────────────────────────────────────── */}
+            {activeCardProfile && (
+                <DigitalCardModal
+                    open={showDigitalCardModal}
+                    onOpenChange={(open) => {
+                        setShowDigitalCardModal(open);
+                        if (!open) setSelectedModalProfile(null);
+                    }}
+                    agent={activeCardProfile.agentInfo}
+                    profileId={activeCardProfile._id}
+                    profileSlug={activeCardProfile.slug}
+                    digitalCardConfig={activeCardProfile.digitalCard}
+                    isOwner={true}
+                />
+            )}
 
             {/* ─── Onboarding Banner ─────────────────────────────────────── */}
             {!isOnboardingComplete && onboarding !== undefined && (
@@ -108,7 +183,7 @@ export default function DashboardPage() {
                 <QuickAction href="/dashboard/cards" icon={SmartphoneNfc} label="Activate a card" />
                 <QuickAction href="/dashboard/builder" icon={Edit2} label="Edit profile" />
                 <QuickAction
-                    href={profiles && profiles.length > 0 ? `/p/${profiles[0]._id}` : "/dashboard/profiles"}
+                    href={profiles && profiles.length > 0 ? profilePath(profiles[0]) : "/dashboard/profiles"}
                     icon={ExternalLink}
                     label="View public profile"
                     external={!!(profiles && profiles.length > 0)}
@@ -121,11 +196,11 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold tracking-tight">Recent Profiles</h2>
                     {activeProfilesCount > 0 && (
-                        <Link href="/dashboard/profiles">
-                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="sm" className="h-11 text-muted-foreground hover:text-foreground" asChild>
+                            <Link href="/dashboard/profiles">
                                 View All <ChevronRight className="ml-1 w-4 h-4" />
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     )}
                 </div>
 
@@ -146,11 +221,11 @@ export default function DashboardPage() {
                         {profiles.slice(0, 4).map((profile) => (
                             <div key={profile._id} className="group bg-card border border-border p-4 rounded-3xl hover:border-primary/30 transition-all duration-300 flex items-center gap-4 relative overflow-hidden">
                                 <div className="w-14 h-14 rounded-2xl overflow-hidden border border-border bg-muted shrink-0">
-                                    <img
-                                        src={resolveImageUrl(profile.agentInfo.avatarUrl) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.name}`}
+                                    <ProfileImage
+                                        src={profile.agentInfo.avatarUrl}
                                         alt={`${profile.name} profile avatar`}
-                                        loading="lazy"
-                                        className="w-full h-full object-cover"
+                                        fallbackSeed={profile.name}
+                                        className="w-full h-full"
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -166,12 +241,24 @@ export default function DashboardPage() {
                                 </div>
 
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors" asChild title="Preview">
-                                        <Link href={`/p/${profile._id}`} target="_blank" aria-label={`Preview ${profile.name}`}>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-11 rounded-full hover:bg-yellow-500/10 hover:text-yellow-500 transition-colors"
+                                        onClick={() => {
+                                            setSelectedModalProfile(profile);
+                                            setShowDigitalCardModal(true);
+                                        }}
+                                        title="Show Digital Card"
+                                    >
+                                        <QrCode className="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="size-11 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" asChild title="Preview">
+                                        <Link href={profilePath(profile)} target="_blank" aria-label={`Preview ${profile.name}`}>
                                             <ExternalLink className="w-4 h-4" />
                                         </Link>
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-blue-500/10 hover:text-blue-500 transition-colors" asChild title="Edit">
+                                    <Button variant="ghost" size="icon" className="size-11 rounded-full hover:bg-blue-500/10 hover:text-blue-500 transition-colors" asChild title="Edit">
                                         <Link href={`/dashboard/builder?id=${profile._id}`} aria-label={`Edit ${profile.name}`}>
                                             <Edit2 className="w-4 h-4" />
                                         </Link>
@@ -188,11 +275,11 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold tracking-tight">Recent Leads</h2>
                     {totalLeadsCount > 0 && (
-                        <Link href="/dashboard/leads">
-                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="sm" className="h-11 text-muted-foreground hover:text-foreground" asChild>
+                            <Link href="/dashboard/leads">
                                 View All <ChevronRight className="ml-1 w-4 h-4" />
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     )}
                 </div>
 
@@ -253,12 +340,24 @@ function QuickAction({ href, icon: Icon, label, external }: { href: string; icon
 
 function StatCard({ label, value, color, icon }: { label: string; value: string; color: string; icon: React.ReactNode }) {
     return (
-        <div className="bg-card border border-border p-6 rounded-[2rem] relative overflow-hidden group hover:border-primary/20 transition-all">
-            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
+        <div className="group relative overflow-hidden rounded-[var(--r-lg)] border border-border bg-card p-5 transition-colors hover:border-primary/20 sm:p-6">
+            <div
+                className="pointer-events-none absolute right-4 top-4 opacity-5 transition-opacity group-hover:opacity-10 sm:right-6 sm:top-6"
+                aria-hidden="true"
+            >
                 {icon}
             </div>
-            <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-2">{label}</h3>
-            <div className={`text-4xl font-black tracking-tighter ${color}`}>{value}</div>
+            {/*
+              `pr-7` reserves the corner the decorative icon occupies. Without
+              it the label runs underneath the watermark on narrow screens —
+              "TOTAL TAPS" collided with its own icon at 320px. Tracking is
+              `wide` rather than `widest` so two-word labels ("Total Leads")
+              still fit on one line in a half-width grid cell.
+            */}
+            <h3 className="mb-2 pr-7 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                {label}
+            </h3>
+            <div className={`text-4xl font-black tracking-tight ${color}`}>{value}</div>
         </div>
     );
 }

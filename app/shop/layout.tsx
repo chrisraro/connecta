@@ -7,6 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SIGMATAP } from "@/lib/brand";
 
 export default function ShopLayout({
   children,
@@ -50,20 +51,20 @@ export default function ShopLayout({
           <div className="flex items-center justify-between h-16">
             {/* Logo & Navigation */}
             <div className="flex items-center gap-6">
-              <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-                TapFolio
+              <Link href="/" className="flex min-h-11 items-center gap-2 font-bold text-xl tracking-tight">
+                {SIGMATAP.name}
               </Link>
 
-              <nav className="hidden md:flex items-center gap-4" aria-label="Shop">
+              <nav className="hidden md:flex items-center gap-1" aria-label="Shop">
                 <Link
                   href="/shop"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Shop
                 </Link>
                 <Link
                   href="/shop"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Categories
                 </Link>
@@ -73,21 +74,21 @@ export default function ShopLayout({
             {/* Account + Cart */}
             <div className="flex items-center gap-1">
               <ThemeToggle />
-              <Link href="/dashboard">
-                <Button variant="ghost" size="icon" aria-label="Your account">
+              <Button variant="ghost" size="icon" className="size-11" aria-label="Your account" asChild>
+                <Link href="/dashboard">
                   <User className="w-5 h-5" aria-hidden="true" />
-                </Button>
-              </Link>
-              <Link href="/shop/cart">
-                <Button variant="ghost" size="icon" className="relative" aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}>
+                </Link>
+              </Button>
+              <Button variant="ghost" size="icon" className="relative size-11" aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`} asChild>
+                <Link href="/shop/cart">
                   <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                   {itemCount > 0 && (
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary text-primary-foreground">
                       {itemCount}
                     </Badge>
                   )}
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -104,7 +105,7 @@ export default function ShopLayout({
                   {index === breadcrumbs.length - 1 ? (
                     <span className="text-foreground font-medium" aria-current="page">{crumb.label}</span>
                   ) : (
-                    <Link href={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
+                    <Link href={crumb.href} className="inline-flex min-h-11 min-w-11 items-center text-muted-foreground hover:text-foreground transition-colors">
                       {crumb.label}
                     </Link>
                   )}
@@ -136,36 +137,36 @@ export default function ShopLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <h3 className="font-bold mb-2">About TapFolio</h3>
+              <h3 className="font-bold mb-2">About {SIGMATAP.name}</h3>
               <p className="text-sm text-muted-foreground">
                 Premium NFC-enabled digital business cards and portfolio solutions.
               </p>
             </div>
             <div>
               <h3 className="font-bold mb-2">Shop</h3>
-              <div className="space-y-1">
-                <Link href="/shop" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <div className="-my-1">
+                <Link href="/shop" className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
                   All Products
                 </Link>
-                <Link href="/shop/cart" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/shop/cart" className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Shopping Cart
                 </Link>
               </div>
             </div>
             <div>
               <h3 className="font-bold mb-2">Support</h3>
-              <div className="space-y-1">
-                <Link href="/" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <div className="-my-1">
+                <Link href="/" className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Contact Us
                 </Link>
-                <Link href="/" className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/" className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Shipping Info
                 </Link>
               </div>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} TapFolio. All rights reserved.
+            &copy; {new Date().getFullYear()} {SIGMATAP.name}. All rights reserved.
           </div>
         </div>
       </footer>

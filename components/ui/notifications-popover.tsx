@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import { Bell, Check, Loader2 } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -27,7 +27,7 @@ export function NotificationsPopover() {
 
     if (notifications === undefined) {
         return (
-            <Button variant="ghost" size="icon" className="relative cursor-wait">
+            <Button variant="ghost" size="icon" aria-label="Notifications" className="relative size-11 cursor-wait">
                 <Bell className="w-5 h-5 text-muted-foreground" />
             </Button>
         );
@@ -54,7 +54,7 @@ export function NotificationsPopover() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"} className="relative size-11">
                     <Bell className="w-5 h-5 text-muted-foreground" />
                     {unreadCount > 0 && (
                         <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full animate-pulse" />

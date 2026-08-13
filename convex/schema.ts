@@ -25,6 +25,18 @@ export default defineSchema({
       services: v.array(v.string()),
       socialLinks: v.optional(v.array(v.object({ platform: v.string(), url: v.string() }))),
     })),
+    /**
+     * DEPRECATED ORPHAN DATA — do not read, do not write.
+     *
+     * `credits: v.number() // Token balance for AI generation` was part of the
+     * original schema and was dropped in 79d6e7c without a data migration, so
+     * live user documents still carry it. Nothing in the codebase references it.
+     * Declared optional purely so schema validation accepts the existing rows.
+     *
+     * To retire it: run `users:internalStripLegacyCredits` until isDone, then
+     * delete this field.
+     */
+    credits: v.optional(v.number()),
   }).index("by_clerkId", ["clerkId"])
     .index("by_teamId", ["teamId"]),
 
@@ -42,6 +54,7 @@ export default defineSchema({
   profiles: defineTable({
     ownerId: v.id("users"),
     name: v.string(),
+    slug: v.optional(v.string()),
     profileType: v.optional(v.union(v.literal("individual"), v.literal("company"), v.literal("business"))),
     agentInfo: v.object({
       fullName: v.string(),
@@ -142,7 +155,9 @@ export default defineSchema({
       image: v.optional(v.string()),
       link: v.optional(v.string()),
     }))),
-  }).index("by_owner", ["ownerId"]),
+    showStorefront: v.optional(v.boolean()),
+  }).index("by_owner", ["ownerId"])
+    .index("by_slug", ["slug"]),
 
   properties: defineTable({
     ownerId: v.id("users"),

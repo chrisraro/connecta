@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
+import { mutation, query, internalMutation, MutationCtx, QueryCtx } from "./_generated/server";
 import { Id, Doc } from "./_generated/dataModel";
 import { isActiveAdmin, requireUserMatching, requireAdmin as requireAdminAuthed } from "./authz";
 import { logAudit } from "./audit";
@@ -445,5 +445,87 @@ export const lowercaseExistingCardUuids = mutation({
       }
     }
     return { success: true, totalCards: cards.length, updated: updatedCount };
+  },
+});
+
+/**
+ * Bootstrap an admin from the CLI:
+ *   npx convex run admin:internalBootstrapAdmin '{"email":"you@example.com"}' --prod
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * setupFirstAdmin cannot bootstrap a fresh deployment. It calls
+ * requireUserMatching, so it needs an authenticated session — but the reason
+ * you are locked out is precisely that you have no admin grant yet. On the
+ * production deployment that is a hard deadlock: the users table starts
+ * empty, syncUser creates you as "agent", and the /admin shell redirects you
+ * to /dashboard before you can reach anything that could promote you.
+ *
+ * internalMutation is the escape hatch: it is NOT part of the public API and
+ * cannot be called from a browser, so it needs no auth check of its own — the
+ * authority is possession of the deployment's admin key, which the Convex CLI
+ * already proves. That is the same trust model as editing the row by hand in
+ * the Convex dashboard, just reproducible and idempotent.
+ *
+ * It writes BOTH admin records on purpose:
+ *   - users.role      — legacy field some UI still reads
+ *   - `admins` row    — the real authority behind authz.ts:requireAdmin
+ * Writing only one is what produced the drift this replaces.
+ *
+ * Requires the account to have signed in at least once, so a users row exists
+ * to promote. Idempotent: re-running reports what already held.
+ */
+export const internalBootstrapAdmin = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const email = args.email.trim().toLowerCase();
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), email))
+      .unique();
+
+    if (!user) {
+      const known = (await ctx.db.query("users").take(25)).map((u) => u.email);
+      throw new Error(
+        `No users row for "${email}". Sign in to the deployed app once so ` +
+          `syncUser creates it, then re-run. Existing accounts: ${
+            known.length ? known.join(", ") : "(none — the table is empty)"
+          }`
+      );
+    }
+
+    const roleChanged = user.role !== "admin";
+    if (roleChanged) await ctx.db.patch(user._id, { role: "admin" });
+
+    const existing = await ctx.db
+      .query("admins")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    let grantId = existing?._id;
+    let grantAction: string;
+    if (!existing) {
+      grantId = await ctx.db.insert("admins", {
+        userId: user._id,
+        role: "superadmin",
+        grantedBy: user._id, // self-granted: this is the bootstrap case
+        grantedAt: Date.now(),
+        reason: "Bootstrapped via internalBootstrapAdmin (CLI)",
+      });
+      grantAction = "created superadmin grant";
+    } else if (existing.revokedAt !== undefined) {
+      await ctx.db.patch(existing._id, { revokedAt: undefined });
+      grantAction = "reinstated previously revoked grant";
+    } else {
+      grantAction = "grant already active";
+    }
+
+    return {
+      email: user.email,
+      userId: user._id,
+      grantId,
+      usersRole: roleChanged ? 'patched "agent" -> "admin"' : 'already "admin"',
+      adminsTable: grantAction,
+    };
   },
 });

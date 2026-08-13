@@ -160,7 +160,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         name: formData.name,
         slug: formData.slug,
         description: formData.description || undefined,
-        categoryId: formData.categoryId as any,
+        categoryId: formData.categoryId ? (formData.categoryId as Id<"productCategories">) : undefined,
         basePrice: Math.round(formData.basePrice * 100),
         compareAtPrice: formData.compareAtPrice > 0 ? Math.round(formData.compareAtPrice * 100) : undefined,
         costPrice: formData.costPrice > 0 ? Math.round(formData.costPrice * 100) : undefined,

@@ -48,3 +48,6 @@ SENTINEL_TEST.txt
 
 # firecrawl scrape cache
 .firecrawl/
+
+# local convex data snapshots (never commit customer data)
+.backups/

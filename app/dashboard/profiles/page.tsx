@@ -27,9 +27,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { resolveImageUrl } from "@/lib/utils";
 import { Id } from "@/convex/_generated/dataModel";
 import { ProfileImage } from "@/components/templates/ProfileImage";
+import { profilePath } from "@/lib/profileUrl";
 
 export default function ProfilesPage() {
     const { user } = useUser();
@@ -189,7 +189,7 @@ export default function ProfilesPage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="flex flex-wrap gap-3 pt-0 pb-6 px-6">
-                                <Link href={`/p/${profile._id}`} target="_blank" className="flex-1 min-w-[100px]">
+                                <Link href={profilePath(profile)} target="_blank" className="flex-1 min-w-[100px]">
                                     <Button variant="outline" className="w-full rounded-2xl border-border hover:bg-muted transition-all h-11">
                                         <ExternalLink className="w-4 h-4 mr-2" />
                                         View
@@ -209,9 +209,10 @@ export default function ProfilesPage() {
                                         </DialogHeader>
                                         
                                         <div className="w-full flex justify-center pt-8 px-4">
-                                            <AccessCard 
-                                                profileId={profile._id} 
-                                                agent={profile.agentInfo} 
+                                            <AccessCard
+                                                profileId={profile._id}
+                                                profileSlug={profile.slug}
+                                                agent={profile.agentInfo}
                                             />
                                         </div>
 

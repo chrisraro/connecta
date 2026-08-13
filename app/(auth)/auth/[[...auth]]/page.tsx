@@ -1,7 +1,9 @@
 import { SignIn, SignUp } from '@clerk/nextjs';
-import { SmartphoneNfc, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, ShieldCheck, Zap, SmartphoneNfc } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { SigmaTapMark } from '@/components/brand/SigmaTapMark';
+import { SIGMATAP } from '@/lib/brand';
 
 export default function AuthPage({
   searchParams,
@@ -11,7 +13,7 @@ export default function AuthPage({
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <div className="min-h-screen flex items-center justify-center bg-background">
           <Loader2 className="w-10 h-10 animate-spin text-yellow-500" />
         </div>
       }
@@ -32,10 +34,10 @@ async function AuthContent({
 
   const isSignIn = mode === 'signin';
 
-  // Build redirect URL - always go to callback first to check admin status
+  // Build redirect URL - always route to callback which redirects to /dashboard (or /admin)
   const redirectUrl = '/auth/callback';
 
-  // Build auth URLs with card_uuid preserved when switching between sign-in/sign-up
+  // Build auth URLs preserving card_uuid when toggling sign-in vs sign-up
   const signUpUrl = cardUuid
     ? `/auth?mode=signup&card_uuid=${encodeURIComponent(cardUuid)}`
     : '/auth?mode=signup';
@@ -45,50 +47,121 @@ async function AuthContent({
     : '/auth?mode=signin';
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-muted/30 px-4 py-8 sm:px-6">
-      <div className="w-full max-w-[420px] flex flex-col items-center">
-        {/* Logo and Header */}
-        <div className="w-full mb-6 sm:mb-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-yellow-500/10 dark:bg-yellow-500/10 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 ring-1 ring-yellow-500/20">
-              <SmartphoneNfc className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-600 dark:text-yellow-500" strokeWidth={1.5} />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-2 tracking-tight">
-              TapFolio
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Digital Business Card • Lead CRM • NFC Hardware
-            </p>
+    <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground relative overflow-hidden px-4 py-12 selection:bg-yellow-500/30">
+      {/* 2026 Trend Ambient Background Glow Gradients */}
+      <div className="absolute top-[-20%] left-[-10%] w-[120%] h-[140%] bg-gradient-to-br from-yellow-500/15 via-amber-500/5 to-transparent blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[90%] bg-gradient-to-tl from-yellow-500/10 via-primary/5 to-transparent blur-[100px] pointer-events-none" />
+
+      <div className="w-full max-w-md relative z-10 flex flex-col items-center">
+        {/* Brand Branding & Header */}
+        <div className="w-full text-center mb-6 space-y-3">
+          <div className="inline-flex items-center justify-center p-3 rounded-3xl bg-primary/10 border border-primary/20 shadow-xl mb-1">
+            <SigmaTapMark className="w-10 h-10 text-primary" />
           </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+            {SIGMATAP.name}
+          </h1>
+          <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto leading-relaxed">
+            Elevate your digital business card, manage leads CRM &amp; share via NFC instantly.
+          </p>
+
+          {cardUuid && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold mt-2">
+              <SmartphoneNfc className="w-3.5 h-3.5" />
+              NFC Hardware Card Linked
+            </div>
+          )}
         </div>
 
-        {/* Auth Form */}
+        {/* Mode Switcher Pills */}
+        <div className="flex bg-muted/80 p-1 rounded-2xl border border-border/80 w-full mb-6 shadow-sm">
+          <Link
+            href={signInUrl}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl text-center transition-all ${
+              isSignIn
+                ? "bg-background text-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Sign In
+          </Link>
+          <Link
+            href={signUpUrl}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl text-center transition-all ${
+              !isSignIn
+                ? "bg-background text-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Create Account
+          </Link>
+        </div>
+
+        {/* Auth Form Box with 2026 Trend Design System Styling */}
         <div className="w-full">
           {isSignIn ? (
             <SignIn
               routing="hash"
               forceRedirectUrl={redirectUrl}
-              afterSignInUrl={redirectUrl}
+              fallbackRedirectUrl="/dashboard"
               signUpUrl={signUpUrl}
+              appearance={{
+                elements: {
+                  card: "bg-card/80 backdrop-blur-2xl border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8",
+                  headerTitle: "text-lg font-bold text-foreground",
+                  headerSubtitle: "text-xs text-muted-foreground",
+                  formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs py-3 transition-all shadow-md hover:shadow-lg",
+                  socialButtonsBlockButton: "border border-border bg-background/90 hover:bg-muted font-semibold text-xs rounded-xl py-2.5 transition-all",
+                  formFieldInput: "bg-background border border-border rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/40",
+                  footerActionLink: "text-primary hover:underline font-semibold text-xs",
+                },
+              }}
             />
           ) : (
             <SignUp
               routing="hash"
               forceRedirectUrl={redirectUrl}
-              afterSignUpUrl={redirectUrl}
+              fallbackRedirectUrl="/dashboard"
               signInUrl={signInUrl}
+              appearance={{
+                elements: {
+                  card: "bg-card/80 backdrop-blur-2xl border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8",
+                  headerTitle: "text-lg font-bold text-foreground",
+                  headerSubtitle: "text-xs text-muted-foreground",
+                  formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs py-3 transition-all shadow-md hover:shadow-lg",
+                  socialButtonsBlockButton: "border border-border bg-background/90 hover:bg-muted font-semibold text-xs rounded-xl py-2.5 transition-all",
+                  formFieldInput: "bg-background border border-border rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/40",
+                  footerActionLink: "text-primary hover:underline font-semibold text-xs",
+                },
+              }}
             />
           )}
+        </div>
+
+        {/* Feature Highlights */}
+        <div className="w-full grid grid-cols-3 gap-2 mt-6 text-center">
+          <div className="p-2.5 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm">
+            <Zap className="w-4 h-4 text-yellow-500 mx-auto mb-1" />
+            <span className="text-[10px] font-bold text-foreground block">Fast Setup</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm">
+            <ShieldCheck className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+            <span className="text-[10px] font-bold text-foreground block">Encrypted</span>
+          </div>
+          <div className="p-2.5 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm">
+            <Sparkles className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+            <span className="text-[10px] font-bold text-foreground block">NFC Powered</span>
+          </div>
         </div>
 
         {/* Exit Link */}
         <div className="w-full mt-6 text-center">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-yellow-600 dark:hover:text-yellow-500 transition-colors py-2"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Exit to Homepage
+            Back to Homepage
           </Link>
         </div>
       </div>

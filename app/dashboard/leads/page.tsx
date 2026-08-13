@@ -104,7 +104,7 @@ export default function LeadsPage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `tapfolio-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `sigmatap-leads-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -208,23 +208,32 @@ export default function LeadsPage() {
                 ) : (
                     filteredLeads.map((lead) => (
                         <div key={lead._id} className="group relative bg-card backdrop-blur-sm border border-border rounded-[2rem] p-5 hover:border-primary/20 transition-all duration-300">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${
+                            {/* The `truncate` on the contact below only works if
+                                every flex ancestor can shrink. Without min-w-0
+                                they each sit at min-width:auto, so a long email
+                                widened the whole card to ~423px inside a 320px
+                                viewport and the overflow was clipped, not
+                                scrolled. shrink-0 keeps the icon and status chip
+                                at their intended size while the text gives way. */}
+                            <div className="flex justify-between items-start gap-3 mb-4">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center border ${
                                         lead.status === "new" ? "bg-primary/10 border-primary/20 text-primary" : "bg-muted border-border text-muted-foreground"
                                     }`}>
                                         <MessageSquare className="w-6 h-6" aria-hidden="true" />
                                     </div>
-                                    <div>
-                                        <h3 className="font-black uppercase tracking-tight text-foreground">{lead.inquirerName}</h3>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                            <span>{new Date(lead.createdAt).toLocaleDateString()}</span>
-                                            <span aria-hidden="true">•</span>
+                                    <div className="min-w-0">
+                                        <h3 className="truncate font-black uppercase tracking-tight text-foreground">{lead.inquirerName}</h3>
+                                        <div className="flex min-w-0 items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                            <span className="shrink-0">{new Date(lead.createdAt).toLocaleDateString()}</span>
+                                            <span aria-hidden="true" className="shrink-0">•</span>
                                             <span className="truncate normal-case tracking-normal">{lead.inquirerContact}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <StatusChip status={lead.status} />
+                                <div className="shrink-0">
+                                    <StatusChip status={lead.status} />
+                                </div>
                             </div>
 
                             <div className="space-y-3 mb-6">

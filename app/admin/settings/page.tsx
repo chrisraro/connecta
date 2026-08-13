@@ -101,11 +101,11 @@ export default function AdminSettingsPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-white">Platform Settings</h1>
-                <p className="text-zinc-400 mt-1">Configure system preferences and integrations</p>
+                <h1 className="text-3xl font-bold text-foreground">Platform Settings</h1>
+                <p className="text-muted-foreground mt-1">Configure system preferences and integrations</p>
             </div>
 
-            <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <Card className="bg-card border-border text-foreground">
                 <CardHeader>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
@@ -113,7 +113,7 @@ export default function AdminSettingsPage() {
                         </div>
                         <div>
                             <CardTitle className="text-lg">Shop Settings</CardTitle>
-                            <CardDescription className="text-zinc-400">
+                            <CardDescription className="text-muted-foreground">
                                 Tax and shipping rates applied at checkout (PHP). Used by the storefront and order totals.
                             </CardDescription>
                         </div>
@@ -138,9 +138,9 @@ export default function AdminSettingsPage() {
                                         onChange={(e) =>
                                             setShopForm({ ...shopForm, taxRatePercent: parseFloat(e.target.value) || 0 })
                                         }
-                                        className="bg-zinc-950 border-zinc-800 text-white"
+                                        className="bg-background border-border text-foreground"
                                     />
-                                    <p className="text-xs text-zinc-500">0 = no tax</p>
+                                    <p className="text-xs text-muted-foreground">0 = no tax</p>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Flat Shipping (₱)</Label>
@@ -152,9 +152,9 @@ export default function AdminSettingsPage() {
                                         onChange={(e) =>
                                             setShopForm({ ...shopForm, shippingFlatRatePesos: parseFloat(e.target.value) || 0 })
                                         }
-                                        className="bg-zinc-950 border-zinc-800 text-white"
+                                        className="bg-background border-border text-foreground"
                                     />
-                                    <p className="text-xs text-zinc-500">Charged below the free-shipping threshold</p>
+                                    <p className="text-xs text-muted-foreground">Charged below the free-shipping threshold</p>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Free Shipping Over (₱)</Label>
@@ -166,14 +166,14 @@ export default function AdminSettingsPage() {
                                         onChange={(e) =>
                                             setShopForm({ ...shopForm, freeShippingThresholdPesos: parseFloat(e.target.value) || 0 })
                                         }
-                                        className="bg-zinc-950 border-zinc-800 text-white"
+                                        className="bg-background border-border text-foreground"
                                     />
-                                    <p className="text-xs text-zinc-500">Orders at/above this ship free</p>
+                                    <p className="text-xs text-muted-foreground">Orders at/above this ship free</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
                                 <Button
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-foreground"
                                     onClick={handleSaveShopSettings}
                                     disabled={shopSaving}
                                 >
@@ -192,7 +192,7 @@ export default function AdminSettingsPage() {
                 </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <Card className="bg-card border-border text-foreground">
                 <CardHeader>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -200,7 +200,7 @@ export default function AdminSettingsPage() {
                         </div>
                         <div>
                             <CardTitle className="text-lg">Plan Pricing</CardTitle>
-                            <CardDescription className="text-zinc-400">
+                            <CardDescription className="text-muted-foreground">
                                 Monthly (30-day) subscription prices in PHP. Used on the billing page and landing pricing.
                             </CardDescription>
                         </div>
@@ -224,7 +224,7 @@ export default function AdminSettingsPage() {
                                         onChange={(e) =>
                                             setPlanForm({ ...planForm, proPesos: parseFloat(e.target.value) || 0 })
                                         }
-                                        className="bg-zinc-950 border-zinc-800 text-white"
+                                        className="bg-background border-border text-foreground"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -237,7 +237,7 @@ export default function AdminSettingsPage() {
                                         onChange={(e) =>
                                             setPlanForm({ ...planForm, businessPesos: parseFloat(e.target.value) || 0 })
                                         }
-                                        className="bg-zinc-950 border-zinc-800 text-white"
+                                        className="bg-background border-border text-foreground"
                                     />
                                 </div>
                             </div>
@@ -262,7 +262,7 @@ export default function AdminSettingsPage() {
                 </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <Card className="bg-card border-border text-foreground">
                 <CardHeader>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
@@ -270,7 +270,7 @@ export default function AdminSettingsPage() {
                         </div>
                         <div>
                             <CardTitle className="text-lg">Email Configuration</CardTitle>
-                            <CardDescription className="text-zinc-400">SMTP settings and notification templates</CardDescription>
+                            <CardDescription className="text-muted-foreground">SMTP settings and notification templates</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
@@ -278,29 +278,29 @@ export default function AdminSettingsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="smtp-host">SMTP Host</Label>
-                            <Input id="smtp-host" placeholder="smtp.gmail.com" className="bg-zinc-950 border-zinc-800 text-white" />
+                            <Input id="smtp-host" placeholder="smtp.gmail.com" className="bg-background border-border text-foreground" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="smtp-port">SMTP Port</Label>
-                            <Input id="smtp-port" placeholder="587" className="bg-zinc-950 border-zinc-800 text-white" />
+                            <Input id="smtp-port" placeholder="587" className="bg-background border-border text-foreground" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="smtp-user">SMTP Username</Label>
-                            <Input id="smtp-user" type="email" placeholder="notifications@tapfolio.com" className="bg-zinc-950 border-zinc-800 text-white" />
+                            <Input id="smtp-user" type="email" placeholder="notifications@yourdomain.com" className="bg-background border-border text-foreground" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="smtp-pass">SMTP Password</Label>
-                            <Input id="smtp-pass" type="password" placeholder="••••••••" className="bg-zinc-950 border-zinc-800 text-white" />
+                            <Input id="smtp-pass" type="password" placeholder="••••••••" className="bg-background border-border text-foreground" />
                         </div>
                     </div>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white" disabled>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-foreground" disabled>
                         <Save className="w-4 h-4 mr-2" />
                         Save Email Settings
                     </Button>
                 </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <Card className="bg-card border-border text-foreground">
                 <CardHeader>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
@@ -308,43 +308,43 @@ export default function AdminSettingsPage() {
                         </div>
                         <div>
                             <CardTitle className="text-lg">Notifications</CardTitle>
-                            <CardDescription className="text-zinc-400">System alerts and user notifications</CardDescription>
+                            <CardDescription className="text-muted-foreground">System alerts and user notifications</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <Label className="text-white">New User Registration Alerts</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Get notified when new users sign up</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                            <Label className="text-foreground">New User Registration Alerts</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Get notified when new users sign up</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <Label className="text-white">NFC Card Activation Alerts</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Track card activation events</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                            <Label className="text-foreground">NFC Card Activation Alerts</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Track card activation events</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <Label className="text-white">Lead Generation Notifications</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Alert on new lead submissions</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                            <Label className="text-foreground">Lead Generation Notifications</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Alert on new lead submissions</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <Label className="text-white">Weekly Analytics Report</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Receive weekly platform summary</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                            <Label className="text-foreground">Weekly Analytics Report</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Receive weekly platform summary</p>
                         </div>
-                        <Switch />
+                        <Switch className="shrink-0" />
                     </div>
                 </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <Card className="bg-card border-border text-foreground">
                 <CardHeader>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
@@ -352,36 +352,36 @@ export default function AdminSettingsPage() {
                         </div>
                         <div>
                             <CardTitle className="text-lg">Security</CardTitle>
-                            <CardDescription className="text-zinc-400">Authentication and access control</CardDescription>
+                            <CardDescription className="text-muted-foreground">Authentication and access control</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <Label className="text-white">Two-Factor Authentication (2FA)</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Require 2FA for all admin accounts</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                            <Label className="text-foreground">Two-Factor Authentication (2FA)</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Require 2FA for all admin accounts</p>
                         </div>
-                        <Switch />
+                        <Switch className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <Label className="text-white">Session Timeout</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Auto-logout after inactivity</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                            <Label className="text-foreground">Session Timeout</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Auto-logout after inactivity</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="shrink-0" />
                     </div>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <Label className="text-white">IP Whitelisting</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Restrict admin access to specific IPs</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                            <Label className="text-foreground">IP Whitelisting</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Restrict admin access to specific IPs</p>
                         </div>
-                        <Switch />
+                        <Switch className="shrink-0" />
                     </div>
                 </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <Card className="bg-card border-border text-foreground">
                 <CardHeader>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
@@ -389,26 +389,26 @@ export default function AdminSettingsPage() {
                         </div>
                         <div>
                             <CardTitle className="text-lg">Data Management</CardTitle>
-                            <CardDescription className="text-zinc-400">Export, backup, and data retention</CardDescription>
+                            <CardDescription className="text-muted-foreground">Export, backup, and data retention</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex gap-3">
-                        <Button variant="outline" className="bg-zinc-950 border-zinc-800 text-white hover:bg-zinc-800" disabled>
+                    <div className="flex flex-wrap gap-3">
+                        <Button variant="outline" className="bg-background border-border text-foreground hover:bg-muted" disabled>
                             Export All Users
                         </Button>
-                        <Button variant="outline" className="bg-zinc-950 border-zinc-800 text-white hover:bg-zinc-800" disabled>
+                        <Button variant="outline" className="bg-background border-border text-foreground hover:bg-muted" disabled>
                             Export All Leads
                         </Button>
-                        <Button variant="outline" className="bg-zinc-950 border-zinc-800 text-white hover:bg-zinc-800" disabled>
+                        <Button variant="outline" className="bg-background border-border text-foreground hover:bg-muted" disabled>
                             Backup Database
                         </Button>
                     </div>
                 </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-red-500/20 text-white">
+            <Card className="bg-card border-red-500/20 text-foreground">
                 <CardHeader>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
@@ -416,35 +416,35 @@ export default function AdminSettingsPage() {
                         </div>
                         <div>
                             <CardTitle className="text-lg text-red-500">Danger Zone</CardTitle>
-                            <CardDescription className="text-zinc-400">Irreversible actions - proceed with caution</CardDescription>
+                            <CardDescription className="text-muted-foreground">Irreversible actions - proceed with caution</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-red-500/5 border border-red-500/20 rounded-lg">
-                        <div>
-                            <Label className="text-white font-medium">Reset All NFC Cards</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Return all cards to inventory status</p>
+                    <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                            <Label className="text-foreground font-medium">Reset All NFC Cards</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Return all cards to inventory status</p>
                         </div>
-                        <Button variant="destructive" disabled>
+                        <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
                             Reset Cards
                         </Button>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-red-500/5 border border-red-500/20 rounded-lg">
-                        <div>
-                            <Label className="text-white font-medium">Purge All Leads</Label>
-                            <p className="text-xs text-zinc-400 mt-1">Delete all lead data permanently</p>
+                    <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                            <Label className="text-foreground font-medium">Purge All Leads</Label>
+                            <p className="text-xs text-muted-foreground mt-1">Delete all lead data permanently</p>
                         </div>
-                        <Button variant="destructive" disabled>
+                        <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
                             Purge Leads
                         </Button>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-red-500/5 border border-red-500/20 rounded-lg">
-                        <div>
-                            <Label className="text-white font-medium">Delete All User Data</Label>
-                            <p className="text-xs text-zinc-400 mt-1">This action cannot be undone</p>
+                    <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                            <Label className="text-foreground font-medium">Delete All User Data</Label>
+                            <p className="text-xs text-muted-foreground mt-1">This action cannot be undone</p>
                         </div>
-                        <Button variant="destructive" disabled>
+                        <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
                             Delete Everything
                         </Button>
                     </div>

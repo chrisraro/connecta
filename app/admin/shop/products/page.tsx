@@ -25,7 +25,7 @@ import {
 import { Plus, Edit, Trash2, Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Id } from "@/convex/_generated/dataModel";
-import { resolveImageUrl } from "@/lib/utils";
+import Image from "next/image";
 
 function formatPrice(priceInCents: number): string {
   const amount = (priceInCents / 100).toFixed(2);
@@ -50,11 +50,20 @@ function ProductImage({ storageId, alt }: { storageId: string; alt: string }) {
   }
 
   return (
-    <img
-      src={displayUrl}
-      alt={alt}
-      className="w-full h-full object-cover"
-    />
+    <div className="relative w-full h-full">
+      <Image
+        src={displayUrl}
+        alt={alt}
+        fill
+        sizes="48px"
+        className="object-cover"
+        // Only Convex-resolved storage URLs (*.convex.cloud) are
+        // allow-listed in next.config.ts's remotePatterns — a storageId
+        // that was already a full URL skips the optimizer instead of
+        // throwing on an unlisted host.
+        unoptimized={Boolean(storageId?.startsWith("http"))}
+      />
+    </div>
   );
 }
 
@@ -67,8 +76,8 @@ export default function AdminProductsPage() {
   const products = useQuery(api.adminShop.getProducts, {
     clerkId: user?.id || "",
     search: search || undefined,
-    status: statusFilter as any,
-    categoryId: categoryId as any,
+    status: statusFilter as "all" | "published" | "draft" | undefined,
+    categoryId: categoryId as Id<"productCategories"> | undefined,
   });
 
   const categories = useQuery(api.adminShop.getCategories, {

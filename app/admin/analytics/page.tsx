@@ -14,7 +14,7 @@ const STATUS_COLORS: Record<string, string> = {
     shipped: "bg-purple-600",
     delivered: "bg-green-600",
     cancelled: "bg-red-600",
-    refunded: "bg-zinc-600",
+    refunded: "bg-secondary",
 };
 
 export default function AdminAnalyticsPage() {
@@ -35,63 +35,63 @@ export default function AdminAnalyticsPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-white">Sales Analytics</h1>
-                <p className="text-zinc-400 mt-1">Revenue, orders, and top products (PHP)</p>
+                <h1 className="text-3xl font-bold text-foreground">Sales Analytics</h1>
+                <p className="text-muted-foreground mt-1">Revenue, orders, and top products (PHP)</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="bg-zinc-900 border-zinc-800 text-white">
+                <Card className="bg-card border-border text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Total Revenue</CardTitle>
-                        <DollarSign className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-emerald-500">{formatPHP(analytics.totalRevenue)}</div>
-                        <p className="text-xs text-zinc-500 mt-1">From paid orders</p>
+                        <p className="text-xs text-muted-foreground mt-1">From paid orders</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white">
+                <Card className="bg-card border-border text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Paid Orders</CardTitle>
-                        <ShoppingBag className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Paid Orders</CardTitle>
+                        <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{analytics.paidOrderCount}</div>
-                        <p className="text-xs text-zinc-500 mt-1">of {analytics.totalOrders} total</p>
+                        <p className="text-xs text-muted-foreground mt-1">of {analytics.totalOrders} total</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white">
+                <Card className="bg-card border-border text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Avg. Order Value</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Order Value</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{formatPHP(analytics.averageOrderValue)}</div>
-                        <p className="text-xs text-zinc-500 mt-1">Per paid order</p>
+                        <p className="text-xs text-muted-foreground mt-1">Per paid order</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white">
+                <Card className="bg-card border-border text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Delivered</CardTitle>
-                        <Package className="h-4 w-4 text-zinc-400" />
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Delivered</CardTitle>
+                        <Package className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-green-500">{analytics.statusCounts.delivered}</div>
-                        <p className="text-xs text-zinc-500 mt-1">Completed orders</p>
+                        <p className="text-xs text-muted-foreground mt-1">Completed orders</p>
                     </CardContent>
                 </Card>
             </div>
 
-            <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <Card className="bg-card border-border text-foreground">
                 <CardHeader>
                     <CardTitle className="text-lg">Revenue (Last 30 Days)</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {analytics.totalRevenue === 0 ? (
-                        <p className="text-sm text-zinc-500 py-8 text-center">
+                        <p className="text-sm text-muted-foreground py-8 text-center">
                             No paid orders yet. Revenue will appear here as orders are paid.
                         </p>
                     ) : (
@@ -109,14 +109,14 @@ export default function AdminAnalyticsPage() {
                                                 className="w-full bg-emerald-600 hover:bg-emerald-500 rounded-t transition-colors"
                                                 style={{ height: Math.max(heightPct, day.revenue > 0 ? 2 : 0) + "%" }}
                                             />
-                                            <div className="pointer-events-none absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 border border-zinc-700 px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <div className="pointer-events-none absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-muted border border-border px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                                 {formatPHP(day.revenue)}
                                             </div>
                                         </div>
                                     );
                                 })}
                             </div>
-                            <div className="flex justify-between mt-2 text-xs text-zinc-500">
+                            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
                                 <span>{analytics.revenueByDay[0]?.label}</span>
                                 <span>{analytics.revenueByDay[Math.floor(analytics.revenueByDay.length / 2)]?.label}</span>
                                 <span>{analytics.revenueByDay[analytics.revenueByDay.length - 1]?.label}</span>
@@ -127,38 +127,38 @@ export default function AdminAnalyticsPage() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-zinc-900 border-zinc-800 text-white">
+                <Card className="bg-card border-border text-foreground">
                     <CardHeader>
                         <CardTitle className="text-lg">Orders by Status</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {Object.entries(analytics.statusCounts).map(([status, count]) => (
                             <div key={status} className="flex items-center justify-between">
-                                <Badge className={STATUS_COLORS[status] || "bg-zinc-600"}>{status}</Badge>
+                                <Badge className={STATUS_COLORS[status] || "bg-secondary"}>{status}</Badge>
                                 <span className="font-semibold">{count}</span>
                             </div>
                         ))}
                     </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800 text-white">
+                <Card className="bg-card border-border text-foreground">
                     <CardHeader>
                         <CardTitle className="text-lg">Top Products (by quantity)</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {analytics.topProducts.length === 0 ? (
-                            <p className="text-sm text-zinc-500 py-6 text-center">No sales yet.</p>
+                            <p className="text-sm text-muted-foreground py-6 text-center">No sales yet.</p>
                         ) : (
                             <div className="space-y-3">
                                 {analytics.topProducts.map((p) => (
                                     <div key={p.productId} className="space-y-1">
                                         <div className="flex items-center justify-between text-sm">
-                                            <span className="text-white truncate pr-2">{p.productName}</span>
-                                            <span className="text-zinc-400 whitespace-nowrap">
+                                            <span className="text-foreground truncate pr-2">{p.productName}</span>
+                                            <span className="text-muted-foreground whitespace-nowrap">
                                                 {p.quantity} sold - {formatPHP(p.revenue)}
                                             </span>
                                         </div>
-                                        <div className="h-2 bg-zinc-800 rounded overflow-hidden">
+                                        <div className="h-2 bg-muted rounded overflow-hidden">
                                             <div
                                                 className="h-full bg-blue-600 rounded"
                                                 style={{ width: (p.quantity / maxTopQty) * 100 + "%" }}

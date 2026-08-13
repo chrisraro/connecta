@@ -35,7 +35,7 @@ async function requireOwnedTeam(
 
 export const getMyTeam = query({
   args: { clerkId: v.optional(v.string()) },
-  handler: async (ctx, args) => {
+  handler: async (ctx, _args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
     const user = await ctx.db
@@ -288,7 +288,7 @@ export async function acceptInvitesForCurrentUser(
  */
 export const getTeamLeads = query({
   args: { clerkId: v.optional(v.string()) },
-  handler: async (ctx, args) => {
+  handler: async (ctx, _args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return [];
     const user = await ctx.db

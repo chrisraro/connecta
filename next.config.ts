@@ -2,6 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Dev-only build indicator defaults to bottom-left, which sits directly on
+  // top of the mobile bottom nav's first tab during local testing at phone
+  // viewport widths — this is what actually produced the "Home label reads
+  // as 'lome'" screenshot (confirmed via DOM measurement that the label
+  // itself renders fully inside the nav pill's bounds; the indicator badge
+  // was drawn over the "H"). Every corner of this app's mobile dashboard
+  // chrome is already spoken for (title top-left, avatar top-right, FAB
+  // bottom-right, nav bottom-left), so there's no free corner to relocate
+  // it to — disabling it is dev-only and has no effect on the production
+  // build users see.
+  devIndicators: false,
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.convex.cloud" },

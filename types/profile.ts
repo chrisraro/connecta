@@ -186,9 +186,5 @@ export interface ProfileData {
         accentColor?: string;
     };
     digitalCard?: DigitalCardConfig;
-}
-
-// Props compliant with all template components
-export interface TemplateProps {
-    data: ProfileData;
+    showStorefront?: boolean;
 }

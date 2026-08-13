@@ -14,13 +14,14 @@ import {
   UserRound,
   Inbox,
   Check,
-  Star,
 } from "lucide-react";
 import Link from "next/link";
+import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Reveal } from "@/components/ui/reveal";
-import { TiltCard } from "@/components/ui/tilt-card";
-import { CountUp } from "@/components/ui/count-up";
+import { SIGMATAP } from "@/lib/brand";
+import { TEMPLATES as TEMPLATE_METAS } from "@/components/templates/registry";
+import { HeroProfilePreview } from "@/components/marketing/HeroProfilePreview";
 
 export default function LandingPage() {
   return (
@@ -33,28 +34,28 @@ export default function LandingPage() {
         >
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-2 text-xl font-bold tracking-tight"
+            className="flex min-h-11 shrink-0 items-center gap-2 text-xl font-bold tracking-tight"
           >
-            <SmartphoneNfc className="text-primary" aria-hidden="true" />
-            <span>TapFolio</span>
+            <SigmaTapMark className="h-6 w-6 text-primary" />
+            <span>{SIGMATAP.name}</span>
           </Link>
 
-          <div className="hidden items-center gap-7 md:flex">
+          <div className="hidden items-center gap-3 md:flex">
             <Link
               href="/shop"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Shop
             </Link>
             <Link
               href="#how-it-works"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               How it works
             </Link>
             <Link
               href="#pricing"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Pricing
             </Link>
@@ -63,12 +64,12 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
             <SignedIn>
-              <Link href="/dashboard">
-                <Button variant="outline" className="hidden rounded-xl sm:flex">
+              <Button variant="outline" className="hidden h-11 rounded-xl sm:flex" asChild>
+                <Link href="/dashboard">
                   <LayoutDashboard className="mr-2 h-4 w-4" aria-hidden="true" />
                   Dashboard
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </SignedIn>
             <SignedOut>
               <Link href="/auth" className="hidden sm:block">
@@ -102,17 +103,20 @@ export default function LandingPage() {
               <SmartphoneNfc className="h-4 w-4" aria-hidden="true" />
               NFC + QR digital business cards
             </span>
-            <h1 className="mt-6 text-4xl font-black leading-[1.1] tracking-tighter sm:text-6xl lg:text-7xl">
+            <h1
+              className="mt-6 text-4xl font-black leading-[1.1] tracking-tighter sm:text-6xl lg:text-7xl"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
               <span className="word-rise inline-block" style={{ animationDelay: "120ms" }}>
-                Your{" "}
-              </span>
+                Your
+              </span>{" "}
               <span className="word-rise inline-block" style={{ animationDelay: "200ms" }}>
-                business{" "}
-              </span>
+                business
+              </span>{" "}
               <span className="word-rise inline-block" style={{ animationDelay: "280ms" }}>
-                card,{" "}
-              </span>
-              <span className="word-rise inline-block text-gradient-brand" style={{ animationDelay: "380ms" }}>
+                card,
+              </span>{" "}
+              <span className="word-rise inline-block" style={{ animationDelay: "380ms" }}>
                 reinvented.
               </span>
             </h1>
@@ -165,9 +169,11 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* NFC Card visual with 3D tilt parallax */}
+          {/* Real product preview: an actual profile template rendered at
+              phone scale, not a placeholder mockup (audit: "you're selling
+              a look; show the look"). */}
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-            <NfcCardVisual />
+            <HeroProfilePreview />
           </div>
         </div>
       </section>
@@ -187,24 +193,6 @@ export default function LandingPage() {
             />
           </Reveal>
           <Steps />
-        </div>
-      </section>
-
-      {/* ─── Stats strip ─────────────────────────────────────────────── */}
-      <section className="border-t border-border px-4 py-14 sm:px-6">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 text-center sm:grid-cols-4">
-          <Reveal delay={0}>
-            <StatItem value={<CountUp to={3} suffix="s" />} label="Avg. tap-to-profile" />
-          </Reveal>
-          <Reveal delay={80}>
-            <StatItem value={<CountUp to={100} suffix="%" />} label="No app for visitors" />
-          </Reveal>
-          <Reveal delay={160}>
-            <StatItem value={<CountUp to={4} />} label="Premium templates" />
-          </Reveal>
-          <Reveal delay={240}>
-            <StatItem value={<CountUp to={0} prefix="₱" />} label="To get started" />
-          </Reveal>
         </div>
       </section>
 
@@ -310,29 +298,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Testimonials ────────────────────────────────────────────── */}
-      <section className="px-4 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-7xl">
-          <Reveal>
-            <SectionHeading
-              eyebrow="Loved by professionals"
-              title="Networking that actually converts"
-            />
-          </Reveal>
-          <div className="mt-14 grid gap-5 md:grid-cols-3">
-            {[
-              { quote: "I stopped carrying paper cards. One tap and the lead is already in my inbox before the conversation ends.", role: "Real estate broker, Manila" },
-              { quote: "My profile looks like a premium brand. Clients take me more seriously the moment they see it.", role: "Brand designer, Cebu" },
-              { quote: "The lead capture form is the killer feature. No more lost contacts after events.", role: "Insurance advisor, Davao" },
-            ].map((t, i) => (
-              <Reveal key={t.role} delay={i * 90}>
-                <TestimonialCard quote={t.quote} role={t.role} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ─── Final CTA ───────────────────────────────────────────────── */}
       <section className="px-4 pb-24 sm:px-6">
         <Reveal>
@@ -345,18 +310,18 @@ export default function LandingPage() {
               aria-hidden="true"
               className="aurora-blob aurora-c absolute left-0 bottom-0 h-56 w-56 bg-primary/20 blur-[80px]"
             />
-            <h2 className="relative z-10 text-3xl font-black tracking-tight sm:text-5xl bg-gradient-to-r from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent">
+            <h2 className="relative z-10 text-3xl font-black tracking-tight text-white sm:text-5xl">
               Ready to make a lasting impression?
             </h2>
             <p className="relative z-10 mx-auto mt-5 max-w-xl text-neutral-400">
-              Get your TapFolio card and turn every introduction into an
+              Get your {SIGMATAP.name} card and turn every introduction into an
               opportunity.
             </p>
             <div className="relative z-10 mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <Link href="/shop" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="cta-sheen h-14 w-full rounded-2xl bg-white px-8 text-base font-bold text-black hover:bg-neutral-200 hover:text-black transition-spring hover:scale-105 active:scale-95 sm:w-auto shadow-md"
+                  className="cta-sheen h-14 w-full rounded-2xl bg-white px-8 text-base font-bold text-black hover:bg-neutral-200 hover:text-black transition-snap hover:scale-105 active:scale-95 sm:w-auto shadow-md"
                 >
                   Get your card
                   <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
@@ -367,7 +332,7 @@ export default function LandingPage() {
                   <Button
                     size="lg"
                     variant="ghost"
-                    className="h-14 w-full rounded-2xl border border-white/20 bg-white/5 px-8 text-base font-bold text-white hover:bg-white/10 hover:border-white/40 hover:text-white transition-spring hover:scale-105 active:scale-95 sm:w-auto"
+                    className="h-14 w-full rounded-2xl border border-white/20 bg-white/5 px-8 text-base font-bold text-white hover:bg-white/10 hover:border-white/40 hover:text-white transition-snap hover:scale-105 active:scale-95 sm:w-auto"
                   >
                     Start for free
                   </Button>
@@ -383,9 +348,9 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
-                <SmartphoneNfc className="text-primary" aria-hidden="true" />
-                <span>TapFolio</span>
+              <Link href="/" className="flex min-h-11 items-center gap-2 text-lg font-bold tracking-tight">
+                <SigmaTapMark className="h-5 w-5 text-primary" />
+                <span>{SIGMATAP.name}</span>
               </Link>
               <p className="mt-3 max-w-xs text-sm text-muted-foreground">
                 Premium NFC digital business cards for modern professionals.
@@ -410,14 +375,14 @@ export default function LandingPage() {
             <FooterCol
               title="Company"
               links={[
-                { label: "Privacy", href: "#" },
-                { label: "Terms", href: "#" },
-                { label: "Support", href: "#" },
+                { label: "Privacy", href: "/privacy" },
+                { label: "Terms", href: "/terms" },
+                { label: "Support", href: `mailto:${SIGMATAP.supportEmail}` },
               ]}
             />
           </div>
           <div className="mt-10 border-t border-border pt-6 text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} TapFolio. All rights reserved.
+            &copy; {new Date().getFullYear()} {SIGMATAP.name}. All rights reserved.
           </div>
         </div>
       </footer>
@@ -426,40 +391,6 @@ export default function LandingPage() {
 }
 
 /* ─── Building blocks ─────────────────────────────────────────────── */
-
-function NfcCardVisual() {
-  return (
-    <div className="relative" aria-hidden="true">
-      {/* Layered soft glow under the card */}
-      <div className="aurora-blob aurora-b absolute inset-0 -z-10 bg-primary/20" />
-      <TiltCard className="relative aspect-[1.586/1] w-full overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-7 shadow-2xl">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/30 blur-3xl" />
-        <div className="flex h-full flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-sm font-semibold tracking-tight text-white">
-              <SmartphoneNfc className="h-5 w-5 text-primary" />
-              TapFolio
-            </span>
-            <div className="flex flex-col gap-1">
-              <span className="h-3 w-3 rounded-full border border-white/40" />
-              <span className="h-3 w-3 rounded-full border border-white/30" />
-            </div>
-          </div>
-          <div>
-            <div className="h-2.5 w-32 rounded-full bg-white/80" />
-            <div className="mt-2 h-2 w-24 rounded-full bg-white/40" />
-            <div className="mt-5 flex items-center gap-2">
-              <span className="rounded-md bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground">
-                TAP TO CONNECT
-              </span>
-              <span className="h-8 w-8 rounded-md border border-white/20 bg-white/10" />
-            </div>
-          </div>
-        </div>
-      </TiltCard>
-    </div>
-  );
-}
 
 function SectionHeading({
   eyebrow,
@@ -475,7 +406,10 @@ function SectionHeading({
       <p className="text-sm font-semibold uppercase tracking-widest text-primary">
         {eyebrow}
       </p>
-      <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+      <h2
+        className="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
+        style={{ fontFamily: "var(--font-display)" }}
+      >
         {title}
       </h2>
       {subtitle && (
@@ -487,7 +421,7 @@ function SectionHeading({
 
 function Steps() {
   const steps = [
-    { step: "01", icon: Hand, title: "Tap", desc: "Hold your TapFolio NFC card to any smartphone — or let them scan your QR code." },
+    { step: "01", icon: Hand, title: "Tap", desc: `Hold your ${SIGMATAP.name} NFC card to any smartphone — or let them scan your QR code.` },
     { step: "02", icon: UserRound, title: "Profile", desc: "Your branded profile opens instantly with your photo, links, and call-to-actions." },
     { step: "03", icon: Inbox, title: "Lead captured", desc: "They save your contact or send a message — and it lands straight in your lead inbox." },
   ];
@@ -521,7 +455,17 @@ function StepCard({
 }) {
   return (
     <div className="card-glow relative rounded-3xl border border-border bg-card p-7">
-      <span className="text-sm font-black tracking-widest text-muted-foreground/50">
+      {/* Was text-muted-foreground/50. Re-verified via true canvas ground
+          truth on the live rendered element (draw the real card bg, then
+          the real computed text color, on a <canvas>, read back sRGB via
+          getImageData — not hand-parsed computed-style strings): 2.33:1 in
+          this app's default (dark) theme, which is what a fresh,
+          unauthenticated visitor actually gets — a real 4.5:1 failure at
+          this 14px size, not a tooling artifact. "How it works" is a
+          genuinely ordered 3-step sequence so the numbers stay, just at a
+          contrast that actually clears the card (~12.9:1 ground-truth
+          after this change). */}
+      <span className="text-sm font-black tracking-widest text-foreground/70">
         {step}
       </span>
       <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -529,25 +473,6 @@ function StepCard({
       </div>
       <h3 className="mt-5 text-xl font-bold tracking-tight">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-    </div>
-  );
-}
-
-function StatItem({
-  value,
-  label,
-}: {
-  value: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <div>
-      <div className="text-3xl font-black tracking-tighter text-foreground sm:text-4xl">
-        {value}
-      </div>
-      <div className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground sm:text-sm">
-        {label}
-      </div>
     </div>
   );
 }
@@ -572,12 +497,15 @@ function FeatureCard({
   );
 }
 
-const TEMPLATES = [
-  { name: "Editorial", tag: "Creatives & consultants", gradient: "linear-gradient(135deg, #fbf9f4 0%, #f5f3ee 50%, #705838 100%)" },
-  { name: "Kinetic", tag: "Tech & startups", gradient: "linear-gradient(135deg, #0e0e0e 0%, #1a1a1a 50%, #ba9eff 100%)" },
-  { name: "Architectural", tag: "Executives & real estate", gradient: "linear-gradient(135deg, #f7f9fb 0%, #f2f4f6 50%, #00193c 100%)" },
-  { name: "Default", tag: "Everyone, anywhere", gradient: "linear-gradient(135deg, #18181b 0%, #27272a 50%, #facc15 100%)" },
-];
+// Derived from TEMPLATE_THEMES/registry.ts — the single source of truth for
+// template names, colors and positioning — instead of a hand-maintained
+// list that drifts (this previously advertised a deleted 4th template in
+// pre-refactor colors; see components/templates/theme.ts for current colors).
+const TEMPLATES = TEMPLATE_METAS.map((t) => ({
+  name: t.name,
+  tag: t.bestFor.slice(0, 2).join(" & "),
+  gradient: t.thumbnail,
+}));
 
 function TemplateMarquee() {
   // Duplicate the list for a seamless -50% loop.
@@ -666,24 +594,6 @@ function PricingCard({
   );
 }
 
-function TestimonialCard({ quote, role }: { quote: string; role: string }) {
-  return (
-    <figure className="card-glow flex h-full flex-col rounded-3xl border border-border bg-card p-7">
-      <div className="flex gap-0.5 text-primary" aria-hidden="true">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star key={i} className="h-4 w-4 fill-current" />
-        ))}
-      </div>
-      <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
-        &ldquo;{quote}&rdquo;
-      </blockquote>
-      <figcaption className="mt-5 text-sm font-medium text-muted-foreground">
-        {role}
-      </figcaption>
-    </figure>
-  );
-}
-
 function FooterCol({
   title,
   links,
@@ -694,12 +604,12 @@ function FooterCol({
   return (
     <div>
       <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-1 space-y-0.5">
         {links.map((l) => (
           <li key={l.label}>
             <Link
               href={l.href}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-0.5 inline-block"
+              className="inline-flex min-h-11 min-w-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground hover:translate-x-0.5"
             >
               {l.label}
             </Link>

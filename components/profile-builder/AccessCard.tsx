@@ -1,23 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { ProfileInfo } from "@/types/profile";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 import { ProfileImage } from "@/components/templates/ProfileImage";
+import { SIGMATAP } from "@/lib/brand";
+import { profileUrl as buildProfileUrl } from "@/lib/profileUrl";
 
 interface AccessCardProps {
     profileId: string;
+    /** Vanity slug, when known — preferred over `profileId` for the QR target. */
+    profileSlug?: string | null;
     agent: ProfileInfo;
     className?: string;
 }
 
-export function AccessCard({ profileId, agent, className }: AccessCardProps) {
-    const [profileUrl, setProfileUrl] = useState("");
-    useEffect(() => {
-        setProfileUrl(`${window.location.origin}/p/${profileId}`);
-    }, [profileId]);
+export function AccessCard({ profileId, profileSlug, agent, className }: AccessCardProps) {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const profileUrl = buildProfileUrl(origin, { _id: profileId, slug: profileSlug });
 
     return (
         <div className={cn(
@@ -86,7 +87,7 @@ export function AccessCard({ profileId, agent, className }: AccessCardProps) {
             
             {/* Bottom Tagline */}
             <div className="mt-6 pt-4 border-t border-white/5 text-[8px] tracking-[0.5em] text-zinc-600 uppercase text-center">
-                Tapfolio Digital Identity
+                {SIGMATAP.name} Digital Identity
             </div>
         </div>
     );

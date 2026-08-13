@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
@@ -16,7 +16,6 @@ import { Loader2 } from "lucide-react";
 export default function PostLoginRedirect() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const [isChecking, setIsChecking] = useState(true);
 
   // Check admin status
   const adminStatus = useQuery(

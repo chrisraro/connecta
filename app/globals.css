@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=News+Cycle:wght@400;700&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -7,9 +6,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'News Gothic', 'News Cycle', 'Franklin Gothic Medium', 'Arial Neue', Arial, sans-serif;
-  --font-mono: var(--font-geist-mono);
-  --font-serif: 'NimbusRomNo9T-Reg', 'Nimbus Roman No9 L', 'Tinos', 'Times New Roman', Times, serif;
+  /* Tailwind v4 resolves the body/serif families from these two vars for the
+     whole app shell (dashboard/shop/admin) — they MUST point at faces that
+     are actually loaded via next/font in lib/fonts.ts, or every one of those
+     surfaces silently renders in the browser's system fallback (this was
+     exactly Task 1's bug class, surviving here in the shell instead of the
+     templates). --font-body/--font-tpl-editorial are set on <html> by
+     `allFontVariables` in app/layout.tsx. */
+  --font-sans: var(--font-body), 'Arial', sans-serif;
+  --font-serif: var(--font-tpl-editorial), 'Times New Roman', Times, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -87,6 +92,24 @@
   --sidebar-accent-foreground: oklch(0.18 0.012 80);
   --sidebar-border: oklch(0.93 0.008 80);
   --sidebar-ring: oklch(0.5 0.02 80);
+
+  /* SigmaTap — enforced scales. Exactly three radii, exactly two elevations. */
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --e-raised: 0 1px 2px rgb(28 22 20 / 0.04), 0 2px 8px rgb(28 22 20 / 0.06);
+  --e-overlay: 0 4px 12px rgb(28 22 20 / 0.08), 0 12px 32px rgb(28 22 20 / 0.12);
+
+  /* SigmaTap identity — the sigma struck into a seal disc. Committed color
+     strategy: one saturated brand color carrying real surface area, warm
+     neutrals tinted toward its own hue rather than toward generic warmth. */
+  --sigmatap-seal: oklch(0.44 0.132 27);
+  --sigmatap-seal-hover: oklch(0.39 0.138 27);
+  --sigmatap-ink: oklch(0.22 0.012 40);
+  --sigmatap-ink-soft: oklch(0.46 0.014 40);
+  --sigmatap-paper: oklch(0.985 0.003 60);
+  --sigmatap-surface: oklch(0.96 0.005 55);
+  --sigmatap-line: oklch(0.90 0.008 50);
 }
 
 .dark {
@@ -136,17 +159,30 @@
 }
 
 @layer base {
+  /* `overflow-x: clip`, not Tailwind's `overflow-x-hidden` (`overflow-x:
+     hidden`). Setting `overflow-x: hidden` on an element while leaving
+     `overflow-y` unset makes the browser silently compute the unset axis
+     as `auto` instead of `visible` (the "mismatched axis" quirk in the CSS
+     Overflow spec) — and any element with a non-`visible` computed
+     overflow on either axis is a scroll container, which becomes the
+     containing block for any `position: sticky` descendant. On `body`
+     specifically that turned it into an inert sticky-blocking scroll
+     container exactly like app/dashboard/layout.tsx's `<main>` used to be
+     (Task 2 review, Critical #1/#2 verification — this was hiding behind
+     that bug and only surfaced in browser testing once `main` was fixed).
+     `clip` is explicitly exempt from that quirk (confirmed empirically:
+     `getComputedStyle` never reports the other axis as `auto`) and, unlike
+     `hidden`, never establishes a scroll container at all — so it blocks
+     horizontal scroll without ever being able to break sticky, on `html`
+     or `body`. */
   html, body {
-    @apply overflow-x-hidden;
+    overflow-x: clip;
   }
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-serif);
   }
 
   /* Consistent, visible keyboard focus ring across the whole app */
@@ -443,9 +479,14 @@
     );
   }
 
-  /* ── Spring micro-animations ────────────────────────────────────────── */
-  .transition-spring {
-    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* ── Snap micro-animations ──────────────────────────────────────────── */
+  /* Was `.transition-spring` with cubic-bezier(0.34, 1.56, 0.64, 1) — the
+     1.56 control point overshoots past 1, i.e. bounce/elastic easing,
+     which is banned (ease out with exponential curves only: quart/quint/
+     expo, no bounce, no elastic). Renamed since "spring" no longer
+     describes it — ease-out-quart settles without any overshoot. */
+  .transition-snap {
+    transition: all 400ms cubic-bezier(0.25, 1, 0.5, 1);
   }
 
   /* ── View Transitions circular wipe theme animation ──────────────────── */

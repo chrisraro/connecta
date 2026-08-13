@@ -4,15 +4,16 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
-import { Id } from "@/convex/_generated/dataModel";
+import { Id, Doc } from "@/convex/_generated/dataModel";
+import { GUEST_CART_ID_KEY } from "@/lib/storage-keys";
 
 interface CartItem {
   productId: Id<"products">;
   variationId?: Id<"productVariations">;
   quantity: number;
   priceAtAdd: number;
-  product?: any;
-  variation?: any;
+  product?: Doc<"products"> | null;
+  variation?: Doc<"productVariations"> | null;
   lineTotal?: number;
 }
 
@@ -33,10 +34,10 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 function getOrCreateGuestId(): string {
   if (typeof window === "undefined") return "";
   
-  let guestId = localStorage.getItem("tapfolio_guest_cart_id");
+  let guestId = localStorage.getItem(GUEST_CART_ID_KEY);
   if (!guestId) {
     guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem("tapfolio_guest_cart_id", guestId);
+    localStorage.setItem(GUEST_CART_ID_KEY, guestId);
   }
   return guestId;
 }

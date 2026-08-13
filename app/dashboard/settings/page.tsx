@@ -1,12 +1,49 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
     const { user } = useUser();
+    const { signOut } = useClerk();
+    const router = useRouter();
+    const deleteAccount = useMutation(api.users.deleteMyAccount);
+
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [confirmText, setConfirmText] = useState("");
+    const [error, setError] = useState<string | null>(null);
+
+    const handleDeleteAccount = async () => {
+        if (confirmText.toLowerCase() !== "delete") return;
+
+        setIsDeleting(true);
+        setError(null);
+        try {
+            await deleteAccount();
+            await signOut();
+            router.push("/");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to delete account");
+            setIsDeleting(false);
+        }
+    };
 
     return (
         <div className="max-w-2xl">
@@ -36,10 +73,76 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="pt-4 border-t border-border">
-                    <h3 className="text-lg font-bold text-destructive mb-4">Danger Zone</h3>
-                    <Button variant="destructive" className="bg-destructive/10 text-destructive hover:bg-destructive/20 border-none">
-                        Delete Account
-                    </Button>
+                    <h3 className="text-lg font-bold text-destructive mb-2">Danger Zone</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Permanently delete your profile, leads, and account data per privacy regulations (RA 10173).
+                    </p>
+
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="destructive" className="bg-destructive/10 text-destructive hover:bg-destructive/20 border-none font-semibold">
+                                Delete Account
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-destructive">
+                                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                                    Delete Account Permanently?
+                                </DialogTitle>
+                                <DialogDescription className="pt-2 text-sm text-muted-foreground space-y-2">
+                                    This action cannot be undone. This will permanently delete:
+                                    <ul className="list-disc list-inside mt-2 text-foreground font-medium space-y-1">
+                                        <li>Your published profiles</li>
+                                        <li>All captured leads</li>
+                                        <li>Notifications and store carts</li>
+                                    </ul>
+                                    <span className="block mt-2 text-xs text-muted-foreground">
+                                        Note: Any paired NFC cards will be unlinked and returned to inventory status.
+                                    </span>
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-3 py-3">
+                                <Label className="text-xs font-semibold">
+                                    Type <span className="font-bold text-destructive">DELETE</span> to confirm:
+                                </Label>
+                                <Input
+                                    value={confirmText}
+                                    onChange={(e) => setConfirmText(e.target.value)}
+                                    placeholder="DELETE"
+                                    className="uppercase font-mono"
+                                />
+                                {error && (
+                                    <p className="text-xs text-destructive">{error}</p>
+                                )}
+                            </div>
+
+                            <DialogFooter>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsDialogOpen(false)}
+                                    disabled={isDeleting}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleDeleteAccount}
+                                    disabled={confirmText.toLowerCase() !== "delete" || isDeleting}
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Deleting...
+                                        </>
+                                    ) : (
+                                        "Permanently Delete"
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
         </div>

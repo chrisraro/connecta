@@ -19,6 +19,7 @@ import {
   PLAN_GRACE_DAYS,
   DEFAULT_PLAN_PRICING,
 } from "./plans";
+import { SIGMATAP } from "../lib/brand";
 
 /**
  * Billing & subscriptions (Phase 4).
@@ -84,7 +85,7 @@ export function planContext(user: Doc<"users">, now = Date.now()) {
 
 export const getMyPlan = query({
   args: { clerkId: v.optional(v.string()) },
-  handler: async (ctx, args) => {
+  handler: async (ctx, _args) => {
     // Trust ctx.auth; the clerkId arg is only to drive the React subscription.
     const user = await getAuthedUser(ctx);
     if (!user) {
@@ -258,7 +259,7 @@ export const createUpgradeCheckout = action({
     for (const method of ["gcash", "maya", "card", "qrph"]) {
       pairs.push(["payment_methods[]", method]);
     }
-    pairs.push(["line_items[][name]", `TapFolio ${planName} — 30 days`]);
+    pairs.push(["line_items[][name]", `${SIGMATAP.name} ${planName} — 30 days`]);
     pairs.push(["line_items[][amount]", String(amount)]);
     pairs.push(["line_items[][quantity]", "1"]);
     pairs.push(["metadata[invoice_id]", invoiceId]);

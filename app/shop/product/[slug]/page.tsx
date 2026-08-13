@@ -2,15 +2,14 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Truck, Shield, Loader2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Id } from "@/convex/_generated/dataModel";
-import { resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { formatPHP } from "@/lib/payment";
 
@@ -34,9 +33,11 @@ function ProductImage({ storageId, alt, className }: { storageId: string; alt: s
   }
 
   return (
-    <img
+    <Image
       src={displayUrl}
       alt={alt}
+      fill
+      sizes="(min-width: 1024px) 50vw, 100vw"
       className={className}
     />
   );
@@ -66,7 +67,7 @@ export default function ProductPage() {
       <div className="text-center py-16">
         <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
         <p className="text-muted-foreground mb-6">
-          The product you're looking for doesn't exist or has been removed.
+          The product you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <Link href="/shop">
           <Button>Back to Shop</Button>
@@ -123,13 +124,15 @@ export default function ProductPage() {
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full transition-colors"
+                      aria-label="Previous image"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 size-11 flex items-center justify-center bg-background/80 hover:bg-background rounded-full transition-colors"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background p-2 rounded-full transition-colors"
+                      aria-label="Next image"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 size-11 flex items-center justify-center bg-background/80 hover:bg-background rounded-full transition-colors"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -150,7 +153,9 @@ export default function ProductPage() {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
+                  aria-label={`View image ${index + 1}`}
+                  aria-current={selectedImage === index}
+                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
                     selectedImage === index
                       ? "border-primary"
                       : "border-transparent hover:border-muted"
@@ -251,6 +256,8 @@ export default function ProductPage() {
               <Button
                 variant="outline"
                 size="icon"
+                aria-label="Decrease quantity"
+                className="size-11"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1}
               >
@@ -260,6 +267,8 @@ export default function ProductPage() {
               <Button
                 variant="outline"
                 size="icon"
+                aria-label="Increase quantity"
+                className="size-11"
                 onClick={() => setQuantity(Math.min(currentInventory, quantity + 1))}
                 disabled={quantity >= currentInventory}
               >
@@ -286,7 +295,7 @@ export default function ProductPage() {
             </Button>
             
             <p className="text-xs text-muted-foreground text-center">
-              You'll be redirected to checkout after adding to cart
+              You&apos;ll be redirected to checkout after adding to cart
             </p>
 
             <Link href="/shop/cart">

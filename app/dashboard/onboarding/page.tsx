@@ -5,15 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
+import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { ProfileImage } from "@/components/templates/ProfileImage";
 import {
-    User, Phone, Globe, Briefcase, Image as ImageIcon,
+    User, Phone, Briefcase, Image as ImageIcon,
     ChevronRight, ChevronLeft, CheckCircle2, Sparkles, X,
     Building2, Store, Edit, ArrowRight, Loader2, SmartphoneNfc, AlertCircle
 } from "lucide-react";
+import { SIGMATAP } from "@/lib/brand";
 
 type ProfileCategory = "individual" | "company" | "business";
 
@@ -54,7 +57,7 @@ const CATEGORY_FIELDS: Record<ProfileCategory, { nameLabel: string; namePlacehol
 };
 
 const STEPS = [
-    { id: "welcome",  title: "Welcome to Tapfolio",    icon: Sparkles },
+    { id: "welcome",  title: `Welcome to ${SIGMATAP.name}`,    icon: Sparkles },
     { id: "type",     title: "Profile Type",            icon: Building2 },
     { id: "identity", title: "Your Identity",           icon: User },
     { id: "contact",  title: "Contact Details",         icon: Phone },
@@ -153,14 +156,15 @@ function OnboardingContent() {
                 setClaimedCardId(cardId);
                 setCardClaimed(true);
                 setClaimError(null);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Card claim error:", err);
                 // Don't show error immediately - might be a race condition
                 // Only show error if it's not a "already claimed" scenario
-                if (err.message?.includes("not available")) {
+                const msg = err instanceof Error ? err.message : "";
+                if (msg.includes("not available")) {
                     setClaimError("This card has already been activated.");
                 } else {
-                    setClaimError(err.message || "Failed to claim card");
+                    setClaimError(msg || "Failed to claim card");
                 }
             } finally {
                 setIsClaiming(false);
@@ -239,8 +243,8 @@ function OnboardingContent() {
                 try {
                     await linkProfile({
                         clerkId: clerkUser!.id,
-                        cardId: claimedCardId as any,
-                        profileId: result.profileId as any,
+                        cardId: claimedCardId as Id<"cards">,
+                        profileId: result.profileId as Id<"profiles">,
                     });
                 } catch (linkErr) {
                     console.error("Failed to link card to profile:", linkErr);
@@ -285,7 +289,11 @@ function OnboardingContent() {
                             <div className="bg-muted/50 rounded-xl p-4 space-y-3">
                                 {d?.avatarUrl && (
                                     <div className="flex justify-center">
-                                        <img src={d.avatarUrl?.startsWith("http") || d.avatarUrl?.startsWith("data:") ? d.avatarUrl : `https://neat-hedgehog-331.convex.site/api/storage/${d.avatarUrl}`} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
+                                        <ProfileImage
+                                            src={d.avatarUrl}
+                                            alt="avatar"
+                                            className="w-20 h-20 rounded-full overflow-hidden border-2 border-border"
+                                        />
                                     </div>
                                 )}
                                 <div className="text-center space-y-1">
@@ -351,7 +359,7 @@ function OnboardingContent() {
                         <div>
                             {cardClaimed ? (
                                 <>
-                                    <p className="text-sm font-semibold text-primary">TapFolio Card Detected!</p>
+                                    <p className="text-sm font-semibold text-primary">{SIGMATAP.name} Card Detected!</p>
                                     <p className="text-xs text-muted-foreground">Your card has been activated and will be linked to your profile.</p>
                                 </>
                             ) : claimError ? (
@@ -362,12 +370,12 @@ function OnboardingContent() {
                             ) : isClaiming ? (
                                 <>
                                     <p className="text-sm font-semibold text-primary">Activating Your Card...</p>
-                                    <p className="text-xs text-muted-foreground">Please wait while we set up your TapFolio card.</p>
+                                    <p className="text-xs text-muted-foreground">Please wait while we set up your {SIGMATAP.name} card.</p>
                                 </>
                             ) : (
                                 <>
                                     <p className="text-sm font-semibold text-primary">Card Detected!</p>
-                                    <p className="text-xs text-muted-foreground">Preparing to activate your TapFolio card...</p>
+                                    <p className="text-xs text-muted-foreground">Preparing to activate your {SIGMATAP.name} card...</p>
                                 </>
                             )}
                         </div>
@@ -405,7 +413,7 @@ function OnboardingContent() {
                         {step === 0 && (
                             <div className="flex-1 flex flex-col justify-center space-y-4">
                                 <p className="text-muted-foreground leading-relaxed">
-                                    Tapfolio turns your professional profile into a shareable digital card — accessible via <strong>NFC tap</strong> or <strong>QR code</strong>.
+                                    {SIGMATAP.name} turns your professional profile into a shareable digital card — accessible via <strong>NFC tap</strong> or <strong>QR code</strong>.
                                 </p>
                                 <div className="grid grid-cols-2 gap-3 mt-4">
                                     {[
@@ -597,7 +605,7 @@ function OnboardingContent() {
                                         </div>
                                         <div className="text-left">
                                             <p className="text-sm font-semibold text-primary">Card Activated!</p>
-                                            <p className="text-xs text-muted-foreground">Your physical TapFolio card is now live and linked to your profile.</p>
+                                            <p className="text-xs text-muted-foreground">Your physical {SIGMATAP.name} card is now live and linked to your profile.</p>
                                         </div>
                                     </div>
                                 )}

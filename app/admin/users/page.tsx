@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
         );
     }
 
-    const run = async (id: string, fn: () => Promise<any>) => {
+    const run = async (id: string, fn: () => Promise<unknown>) => {
         setBusyId(id);
         try {
             await fn();
@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
     return (
         <div>
             <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold text-white">User Management</h1>
+                <h1 className="text-3xl font-bold text-foreground">User Management</h1>
                 {isSuperadmin && (
                     <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 gap-1">
                         <ShieldCheck className="w-3 h-3" /> Superadmin
@@ -89,23 +89,23 @@ export default function AdminUsersPage() {
                 )}
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
                 <Table>
-                    <TableHeader className="bg-zinc-950/50">
-                        <TableRow className="border-zinc-800 hover:bg-transparent">
-                            <TableHead className="text-zinc-400">Account</TableHead>
-                            <TableHead className="text-zinc-400">Role</TableHead>
-                            <TableHead className="text-zinc-400">Plan</TableHead>
-                            <TableHead className="text-zinc-400">Cards</TableHead>
-                            <TableHead className="text-zinc-400">Orders</TableHead>
-                            <TableHead className="text-zinc-400">Status</TableHead>
-                            <TableHead className="text-zinc-400 text-right">Actions</TableHead>
+                    <TableHeader className="bg-background/50">
+                        <TableRow className="border-border hover:bg-transparent">
+                            <TableHead className="text-muted-foreground">Account</TableHead>
+                            <TableHead className="text-muted-foreground">Role</TableHead>
+                            <TableHead className="text-muted-foreground">Plan</TableHead>
+                            <TableHead className="text-muted-foreground">Cards</TableHead>
+                            <TableHead className="text-muted-foreground">Orders</TableHead>
+                            <TableHead className="text-muted-foreground">Status</TableHead>
+                            <TableHead className="text-muted-foreground text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {usersList.length === 0 ? (
-                            <TableRow className="border-zinc-800">
-                                <TableCell colSpan={7} className="h-24 text-center text-zinc-500">
+                            <TableRow className="border-border">
+                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                     No users found.
                                 </TableCell>
                             </TableRow>
@@ -114,11 +114,11 @@ export default function AdminUsersPage() {
                                 const isSelf = u.id === myUserId;
                                 const isSuspended = u.subscriptionStatus === "suspended";
                                 return (
-                                    <TableRow key={u.id} className="border-zinc-800 hover:bg-zinc-800/50 transition-colors">
+                                    <TableRow key={u.id} className="border-border hover:bg-muted/50 transition-colors">
                                         <TableCell>
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-white">{u.name || "Unnamed"}</span>
-                                                <span className="text-xs text-zinc-400">{u.email}</span>
+                                                <span className="font-semibold text-foreground">{u.name || "Unnamed"}</span>
+                                                <span className="text-xs text-muted-foreground">{u.email}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -127,7 +127,7 @@ export default function AdminUsersPage() {
                                                     <ShieldCheck className="w-3 h-3" /> {u.adminRole || "Admin"}
                                                 </Badge>
                                             ) : (
-                                                <Badge variant="outline" className="bg-zinc-800 text-zinc-300 border-zinc-700 gap-1">
+                                                <Badge variant="outline" className="bg-muted text-foreground border-border gap-1">
                                                     <User className="w-3 h-3" /> Agent
                                                 </Badge>
                                             )}
@@ -139,19 +139,19 @@ export default function AdminUsersPage() {
                                                         ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 w-fit capitalize"
                                                         : u.plan === "pro"
                                                         ? "bg-primary/10 text-primary border-primary/20 w-fit capitalize"
-                                                        : "bg-zinc-800 text-zinc-300 border-zinc-700 w-fit capitalize"
+                                                        : "bg-muted text-foreground border-border w-fit capitalize"
                                                 }>
                                                     {u.plan}
                                                 </Badge>
                                                 {u.plan !== "free" && u.planExpiresAt && (
-                                                    <span className="mt-1 text-[10px] text-zinc-500">
+                                                    <span className="mt-1 text-[10px] text-muted-foreground">
                                                         until {new Date(u.planExpiresAt).toLocaleDateString()}
                                                     </span>
                                                 )}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-zinc-300 font-mono">{u.cardCount}</TableCell>
-                                        <TableCell className="text-zinc-300 font-mono">{u.orderCount}</TableCell>
+                                        <TableCell className="text-foreground font-mono">{u.cardCount}</TableCell>
+                                        <TableCell className="text-foreground font-mono">{u.orderCount}</TableCell>
                                         <TableCell>
                                             {isSuspended ? (
                                                 <Badge className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">Suspended</Badge>
@@ -173,9 +173,9 @@ export default function AdminUsersPage() {
                                                             )}
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-white">
+                                                    <DropdownMenuContent align="end" className="bg-card border-border text-foreground">
                                                         <DropdownMenuLabel>Manage</DropdownMenuLabel>
-                                                        <DropdownMenuSeparator className="bg-zinc-800" />
+                                                        <DropdownMenuSeparator className="bg-muted" />
                                                         {u.role === "admin" ? (
                                                             <DropdownMenuItem
                                                                 disabled={isSelf}
@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
                                                                 </DropdownMenuItem>
                                                             </>
                                                         )}
-                                                        <DropdownMenuSeparator className="bg-zinc-800" />
+                                                        <DropdownMenuSeparator className="bg-muted" />
                                                         {isSuspended ? (
                                                             <DropdownMenuItem
                                                                 disabled={isSelf}
@@ -214,7 +214,7 @@ export default function AdminUsersPage() {
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             ) : (
-                                                <span className="text-xs text-zinc-600">—</span>
+                                                <span className="text-xs text-muted-foreground">—</span>
                                             )}
                                         </TableCell>
                                     </TableRow>
@@ -226,7 +226,7 @@ export default function AdminUsersPage() {
             </div>
 
             {!isSuperadmin && (
-                <p className="text-xs text-zinc-500 mt-4">
+                <p className="text-xs text-muted-foreground mt-4">
                     Admin grants, revocations, and user suspension require superadmin access.
                 </p>
             )}

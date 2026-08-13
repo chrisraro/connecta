@@ -12,19 +12,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { formatPHP } from "@/lib/payment";
+import { GUEST_CART_ID_KEY, DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
 
 const formatPrice = formatPHP;
 
 // Mirror of the guest id used by CartContext so guest orders find their cart.
 function getGuestId(): string {
   if (typeof window === "undefined") return "";
-  return localStorage.getItem("tapfolio_guest_cart_id") || "";
+  return localStorage.getItem(GUEST_CART_ID_KEY) || "";
 }
 
 function getDiscountCode(): string {
   if (typeof window === "undefined") return "";
-  return localStorage.getItem("tapfolio_discount_code") || "";
+  return localStorage.getItem(DISCOUNT_CODE_KEY) || "";
 }
 
 function CheckoutItemImage({ storageId, alt }: { storageId: string; alt: string }) {
@@ -45,12 +47,21 @@ function CheckoutItemImage({ storageId, alt }: { storageId: string; alt: string 
   }
 
   return (
-    <img
-      src={displayUrl}
-      alt={alt}
-      className="w-full h-full object-cover"
-      onError={() => setError(true)}
-    />
+    <div className="relative w-full h-full">
+      <Image
+        src={displayUrl}
+        alt={alt}
+        fill
+        sizes="48px"
+        className="object-cover"
+        // Only Convex-resolved storage URLs (*.convex.cloud) are
+        // allow-listed in next.config.ts's remotePatterns — a storageId
+        // that was already a full URL (e.g. an external product photo)
+        // skips the optimizer instead of throwing on an unlisted host.
+        unoptimized={Boolean(storageId?.startsWith("http"))}
+        onError={() => setError(true)}
+      />
+    </div>
   );
 }
 
@@ -138,7 +149,7 @@ export default function CheckoutPage() {
 
       // Discount has been consumed into the order; clear the stored code.
       if (typeof window !== "undefined") {
-        localStorage.removeItem("tapfolio_discount_code");
+        localStorage.removeItem(DISCOUNT_CODE_KEY);
       }
 
       const { url } = await createCheckoutSession({

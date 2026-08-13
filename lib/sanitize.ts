@@ -68,7 +68,7 @@ export function sanitizeURL(input: string): string {
  * Sanitize object with multiple fields
  * Use for: form submissions with multiple fields
  */
-export function sanitizeObject<T extends Record<string, any>>(
+export function sanitizeObject<T extends Record<string, unknown>>(
   obj: T,
   rules: { [K in keyof T]?: 'html' | 'text' | 'url' }
 ): T {
@@ -81,13 +81,13 @@ export function sanitizeObject<T extends Record<string, any>>(
     if (typeof value === 'string') {
       switch (rule) {
         case 'html':
-          sanitized[key] = sanitizeHTML(value) as any;
+          sanitized[key] = sanitizeHTML(value) as T[Extract<keyof T, string>];
           break;
         case 'text':
-          sanitized[key] = sanitizePlainText(value) as any;
+          sanitized[key] = sanitizePlainText(value) as T[Extract<keyof T, string>];
           break;
         case 'url':
-          sanitized[key] = sanitizeURL(value) as any;
+          sanitized[key] = sanitizeURL(value) as T[Extract<keyof T, string>];
           break;
       }
     }
@@ -100,7 +100,7 @@ export function sanitizeObject<T extends Record<string, any>>(
  * Sanitize array of objects
  * Use for: batch operations, multiple leads, etc.
  */
-export function sanitizeArray<T extends Record<string, any>>(
+export function sanitizeArray<T extends Record<string, unknown>>(
   items: T[],
   rules: { [K in keyof T]?: 'html' | 'text' | 'url' }
 ): T[] {

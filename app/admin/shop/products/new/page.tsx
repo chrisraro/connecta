@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -114,7 +115,7 @@ export default function NewProductPage() {
         name: formData.name,
         slug: formData.slug,
         description: formData.description || undefined,
-        categoryId: formData.categoryId as any,
+        categoryId: formData.categoryId ? (formData.categoryId as Id<"productCategories">) : undefined,
         basePrice: Math.round(formData.basePrice * 100), // Convert to cents
         compareAtPrice: formData.compareAtPrice > 0 ? Math.round(formData.compareAtPrice * 100) : undefined,
         costPrice: formData.costPrice > 0 ? Math.round(formData.costPrice * 100) : undefined,

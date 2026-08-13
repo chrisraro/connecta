@@ -9,13 +9,13 @@ export function ThemeToggle() {
     const { theme, setTheme } = useTheme();
 
     const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+        const doc = document as unknown as { startViewTransition?: (cb: () => void | Promise<void>) => { ready: Promise<void> } };
         const isTransitionSupported =
             typeof document !== "undefined" &&
-            // @ts-ignore
-            document.startViewTransition !== undefined &&
+            doc.startViewTransition !== undefined &&
             !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-        if (!isTransitionSupported) {
+        if (!isTransitionSupported || !doc.startViewTransition) {
             setTheme(theme === "dark" ? "light" : "dark");
             return;
         }
@@ -27,8 +27,7 @@ export function ThemeToggle() {
             Math.max(y, window.innerHeight - y)
         );
 
-        // @ts-ignore
-        const transition = document.startViewTransition(async () => {
+        const transition = doc.startViewTransition(async () => {
             setTheme(theme === "dark" ? "light" : "dark");
         });
 
@@ -57,7 +56,7 @@ export function ThemeToggle() {
         <Button
             variant="ghost"
             size="icon"
-            className="rounded-full w-10 h-10 border border-border bg-background/50 backdrop-blur-sm hover:bg-muted transition-spring hover:scale-105 active:scale-95"
+            className="rounded-full w-11 h-11 border border-border bg-background/50 backdrop-blur-sm hover:bg-muted transition-snap hover:scale-105 active:scale-95"
             onClick={handleToggle}
         >
             <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

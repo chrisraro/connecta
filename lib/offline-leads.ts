@@ -1,6 +1,8 @@
 // Offline Lead Capture Utility
 // Stores leads in localStorage when offline, syncs when online
 
+import { OFFLINE_LEADS_KEY } from "./storage-keys";
+
 export interface OfflineLead {
   id: string;
   inquirerName: string;
@@ -9,8 +11,6 @@ export interface OfflineLead {
   timestamp: number;
   synced: boolean;
 }
-
-const OFFLINE_LEADS_KEY = "tapfolio_offline_leads";
 
 /**
  * Save lead to localStorage when offline
@@ -82,14 +82,16 @@ export function isOnline(): boolean {
 /**
  * Sync offline leads to Convex
  */
+import { Id } from "@/convex/_generated/dataModel";
+
 export async function syncOfflineLeads(
   createLeadFn: (args: {
-    ownerId: any;
+    ownerId: Id<"users">;
     inquirerName: string;
     inquirerContact: string;
     message?: string;
-  }) => Promise<any>,
-  ownerId: any
+  }) => Promise<unknown>,
+  ownerId: Id<"users">
 ): Promise<{ synced: number; failed: number }> {
   const leads = getOfflineLeads().filter(lead => !lead.synced);
   

@@ -47,7 +47,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
       "2 basic templates",
       "Up to 100 leads",
       "NFC + QR sharing",
-      "TapFolio branding",
+      "SigmaTap branding",
     ],
   },
   pro: {

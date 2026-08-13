@@ -1,7 +1,116 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { requireUserMatching } from "./authz";
 import { planContext } from "./billing";
+import { slugify, isReservedSlug } from "../lib/slug";
+import { Doc, Id } from "./_generated/dataModel";
+
+/**
+ * The string a profile's vanity slug is derived from.
+ *
+ * Deliberately the PERSON'S NAME, not `profile.name` — the builder sets
+ * `profile.name` to "<fullName>'s Profile", which would yield the clumsy
+ * `/christian-raros-profile` instead of `/christian-raro`. The slug is printed
+ * on and shared alongside a premium card, so it reads as an identity, not a
+ * record label.
+ */
+function slugSourceFor(profile: {
+    name: string;
+    agentInfo?: { fullName?: string };
+}): string {
+    const fullName = profile.agentInfo?.fullName?.trim();
+    return fullName || profile.name;
+}
+
+/** Find a slug for `source` that isn't reserved and isn't already taken. */
+async function assignUniqueSlug(
+    ctx: MutationCtx,
+    source: string,
+    opts?: { excludeProfileId?: Id<"profiles"> }
+): Promise<string> {
+    const base = slugify(source);
+    const candidates = [
+        base,
+        ...Array.from({ length: 12 }, (_, i) =>
+            slugify(source, Math.random().toString(36).slice(2, 5) + i)
+        ),
+    ];
+    for (const candidate of candidates) {
+        if (isReservedSlug(candidate)) continue;
+        const taken = await ctx.db
+            .query("profiles")
+            .withIndex("by_slug", (q) => q.eq("slug", candidate))
+            .first();
+        // A profile never collides with its own current slug.
+        if (!taken || taken._id === opts?.excludeProfileId) return candidate;
+    }
+    // Exhausted: fall back to something guaranteed free.
+    return slugify(source, Date.now().toString(36));
+}
+
+/**
+ * Shared enrichment applied to a raw profile document before it is exposed
+ * to any public reader — by id or by slug. Kept in one place so the two
+ * lookup paths (`getProfile`, `getProfileBySlug`) cannot drift.
+ */
+async function enrichProfile(ctx: QueryCtx, profile: Doc<"profiles">) {
+    // Compute the owner's effective plan server-side and expose ONLY a
+    // cosmetic boolean (showBranding) plus optional team branding — never
+    // leak the owner's plan/expiry internals to the public.
+    const owner = await ctx.db.get(profile.ownerId);
+    let showBranding = true;
+    let teamBranding: {
+        companyName?: string;
+        logoUrl?: string;
+        accentColor?: string;
+    } | null = null;
+
+    if (owner) {
+        const { plan, limits } = planContext(owner);
+        showBranding = limits.showBranding;
+        // Business members inherit shared team branding on their profile.
+        if (plan === "business" && owner.teamId) {
+            const team = await ctx.db.get(owner.teamId);
+            if (team) {
+                teamBranding = {
+                    companyName: team.companyName,
+                    logoUrl: team.logoUrl,
+                    accentColor: team.accentColor,
+                };
+            }
+        }
+    }
+
+    // Batch-resolve every Convex-storage-id image referenced by this
+    // profile in one pass, instead of leaving each <ProfileImage> to fire
+    // its own useQuery round-trip on the client (UI/UX audit P0 — this
+    // was the single biggest contributor to slow first paint on the
+    // public profile page).
+    const candidateIds = [
+        profile.agentInfo.avatarUrl,
+        ...(profile.agentInfo.gallery ?? []),
+    ].filter((id): id is string => {
+        if (!id) return false;
+        return !id.startsWith("http") && !id.startsWith("data:") && !id.startsWith("blob:");
+    });
+    const uniqueIds = Array.from(new Set(candidateIds));
+    const resolvedEntries = await Promise.all(
+        uniqueIds.map(async (id) => {
+            try {
+                const url = await ctx.storage.getUrl(id);
+                return url ? ([id, url] as const) : null;
+            } catch {
+                return null;
+            }
+        })
+    );
+    const resolvedImages: Record<string, string> = {};
+    for (const entry of resolvedEntries) {
+        if (entry) resolvedImages[entry[0]] = entry[1];
+    }
+
+    return { ...profile, showBranding, teamBranding, resolvedImages };
+}
 
 export const createProfile = mutation({
     args: {
@@ -106,6 +215,7 @@ export const createProfile = mutation({
                 contacts: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
             })),
         })),
+        showStorefront: v.optional(v.boolean()),
         clerkId: v.string(),
         id: v.optional(v.id("profiles")),
     },
@@ -148,6 +258,7 @@ export const createProfile = mutation({
             propertyListings: args.propertyListings,
             inlineProjects: args.inlineProjects,
             digitalCard: args.digitalCard,
+            showStorefront: args.showStorefront,
         };
 
         if (args.id) {
@@ -155,12 +266,104 @@ export const createProfile = mutation({
             if (!existing || existing.ownerId !== user._id) {
                 throw new Error("Unauthorized or profile not found");
             }
-            await ctx.db.patch(args.id, profileData);
-            return args.id;
+            // Slug is assigned once and never touched again once it exists —
+            // a published /<slug> URL must never change underneath a card
+            // that's already printed. But a LOT of profiles predate the slug
+            // feature entirely (it only ever assigned one in the INSERT
+            // branch above), so any legacy row still missing one gets it
+            // assigned here, the first time it's touched again.
+            const slug =
+                existing.slug ??
+                (await assignUniqueSlug(ctx, slugSourceFor(args), {
+                    excludeProfileId: args.id,
+                }));
+            await ctx.db.patch(args.id, { ...profileData, slug });
+            return { id: args.id, slug };
         }
 
-        const profileId = await ctx.db.insert("profiles", profileData);
-        return profileId;
+        const slug = await assignUniqueSlug(ctx, slugSourceFor(args));
+        const profileId = await ctx.db.insert("profiles", {
+            ...profileData,
+            slug,
+        });
+        return { id: profileId, slug };
+    },
+});
+
+/**
+ * One-time (idempotent) backfill for profiles created before the slug
+ * feature existed, or otherwise still missing one. Safe to re-run: any
+ * profile that already has a slug is left untouched, so a second run is a
+ * no-op.
+ *
+ * Paginated rather than a single `.collect()`, because this runs once
+ * against a production table of unknown size and an unbounded scan would
+ * blow Convex's per-mutation read limit. Call repeatedly, passing the
+ * returned `cursor` back in, until `isDone` is true:
+ *   npx convex run profiles:internalBackfillSlugs '{}'
+ *   npx convex run profiles:internalBackfillSlugs '{"cursor":"<cursor>"}'
+ */
+export const internalBackfillSlugs = internalMutation({
+    args: {
+        cursor: v.optional(v.union(v.string(), v.null())),
+        batchSize: v.optional(v.number()),
+        /**
+         * Re-derive slugs that ALREADY exist, when the current slug doesn't
+         * match what today's derivation would produce.
+         *
+         * Off by default and must be passed explicitly, because this CHANGES
+         * LIVE URLS — any link already shared by a user breaks. Only safe
+         * before launch. Physical NFC cards are unaffected either way: they
+         * encode /t/<card-uuid>, never the profile slug.
+         */
+        reslugExisting: v.optional(v.boolean()),
+    },
+    handler: async (ctx, args) => {
+        const numItems = Math.min(Math.max(args.batchSize ?? 200, 1), 500);
+        const page = await ctx.db
+            .query("profiles")
+            .paginate({ cursor: args.cursor ?? null, numItems });
+
+        let backfilled = 0;
+        let reslugged = 0;
+        const changes: Array<{ from: string; to: string }> = [];
+
+        for (const profile of page.page) {
+            const source = slugSourceFor(profile);
+
+            if (!profile.slug) {
+                const slug = await assignUniqueSlug(ctx, source, {
+                    excludeProfileId: profile._id,
+                });
+                await ctx.db.patch(profile._id, { slug });
+                backfilled++;
+                continue;
+            }
+
+            if (!args.reslugExisting) continue;
+
+            // Only rewrite when the existing slug isn't already the ideal one
+            // (ignoring any uniqueness suffix this profile legitimately needs).
+            const ideal = slugify(source);
+            if (profile.slug === ideal || profile.slug.startsWith(`${ideal}-`)) continue;
+
+            const slug = await assignUniqueSlug(ctx, source, {
+                excludeProfileId: profile._id,
+            });
+            if (slug === profile.slug) continue;
+            changes.push({ from: profile.slug, to: slug });
+            await ctx.db.patch(profile._id, { slug });
+            reslugged++;
+        }
+
+        return {
+            scanned: page.page.length,
+            backfilled,
+            reslugged,
+            changes,
+            isDone: page.isDone,
+            cursor: page.isDone ? null : page.continueCursor,
+        };
     },
 });
 
@@ -183,63 +386,21 @@ export const getProfile = query({
     handler: async (ctx, args) => {
         const profile = await ctx.db.get(args.profileId);
         if (!profile) return null;
+        return await enrichProfile(ctx, profile);
+    },
+});
 
-        // Compute the owner's effective plan server-side and expose ONLY a
-        // cosmetic boolean (showBranding) plus optional team branding — never
-        // leak the owner's plan/expiry internals to the public.
-        const owner = await ctx.db.get(profile.ownerId);
-        let showBranding = true;
-        let teamBranding: {
-            companyName?: string;
-            logoUrl?: string;
-            accentColor?: string;
-        } | null = null;
-
-        if (owner) {
-            const { plan, limits } = planContext(owner);
-            showBranding = limits.showBranding;
-            // Business members inherit shared team branding on their profile.
-            if (plan === "business" && owner.teamId) {
-                const team = await ctx.db.get(owner.teamId);
-                if (team) {
-                    teamBranding = {
-                        companyName: team.companyName,
-                        logoUrl: team.logoUrl,
-                        accentColor: team.accentColor,
-                    };
-                }
-            }
-        }
-
-        // Batch-resolve every Convex-storage-id image referenced by this
-        // profile in one pass, instead of leaving each <ProfileImage> to fire
-        // its own useQuery round-trip on the client (UI/UX audit P0 — this
-        // was the single biggest contributor to slow first paint on the
-        // public profile page).
-        const candidateIds = [
-            profile.agentInfo.avatarUrl,
-            ...(profile.agentInfo.gallery ?? []),
-        ].filter((id): id is string => {
-            if (!id) return false;
-            return !id.startsWith("http") && !id.startsWith("data:") && !id.startsWith("blob:");
-        });
-        const uniqueIds = Array.from(new Set(candidateIds));
-        const resolvedEntries = await Promise.all(
-            uniqueIds.map(async (id) => {
-                try {
-                    const url = await ctx.storage.getUrl(id);
-                    return url ? ([id, url] as const) : null;
-                } catch {
-                    return null;
-                }
-            })
-        );
-        const resolvedImages: Record<string, string> = {};
-        for (const entry of resolvedEntries) {
-            if (entry) resolvedImages[entry[0]] = entry[1];
-        }
-
-        return { ...profile, showBranding, teamBranding, resolvedImages };
+// Vanity-URL lookup (/<slug>) — resolves through the same enrichment as
+// getProfile so the two public entry points can never drift apart.
+export const getProfileBySlug = query({
+    args: { slug: v.string() },
+    handler: async (ctx, args) => {
+        const profile = await ctx.db
+            .query("profiles")
+            .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+            .first();
+        if (!profile) return null;
+        return await enrichProfile(ctx, profile);
     },
 });
 

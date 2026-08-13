@@ -91,17 +91,17 @@ export default function InventoryPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Inventory</h1>
-                    <p className="text-zinc-400 mt-1">Monitor stock levels and manage restocking</p>
+                    <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
+                    <p className="text-muted-foreground mt-1">Monitor stock levels and manage restocking</p>
                 </div>
-                <Button onClick={exportToCSV} className="bg-zinc-800 hover:bg-zinc-700">
+                <Button onClick={exportToCSV} className="bg-muted hover:bg-accent">
                     <Download className="w-4 h-4 mr-2" />
                     Export CSV
                 </Button>
             </div>
 
             {lowStockProducts && lowStockProducts.length > 0 && (
-                <Alert className="bg-red-900/20 border-red-600 text-white">
+                <Alert className="bg-red-900/20 border-red-600 text-foreground">
                     <AlertTriangle className="h-4 w-4 text-red-600" />
                     <AlertTitle className="text-red-600">Low Stock Alert</AlertTitle>
                     <AlertDescription>
@@ -111,9 +111,9 @@ export default function InventoryPage() {
             )}
 
             {lowStockProducts && lowStockProducts.length > 0 && (
-                <Card className="bg-zinc-900 border-red-600/50">
+                <Card className="bg-card border-red-600/50">
                     <CardHeader>
-                        <CardTitle className="text-white flex items-center gap-2">
+                        <CardTitle className="text-foreground flex items-center gap-2">
                             <AlertTriangle className="w-5 h-5 text-red-600" />
                             Needs Attention
                         </CardTitle>
@@ -121,38 +121,38 @@ export default function InventoryPage() {
                     <CardContent>
                         <Table>
                             <TableHeader>
-                                <TableRow className="border-zinc-800">
-                                    <TableHead className="text-zinc-400">Product</TableHead>
-                                    <TableHead className="text-zinc-400">SKU</TableHead>
-                                    <TableHead className="text-zinc-400">Current Stock</TableHead>
-                                    <TableHead className="text-zinc-400">Threshold</TableHead>
-                                    <TableHead className="text-zinc-400">Restock Qty</TableHead>
-                                    <TableHead className="text-zinc-400 text-right">Action</TableHead>
+                                <TableRow className="border-border">
+                                    <TableHead className="text-muted-foreground">Product</TableHead>
+                                    <TableHead className="text-muted-foreground">SKU</TableHead>
+                                    <TableHead className="text-muted-foreground">Current Stock</TableHead>
+                                    <TableHead className="text-muted-foreground">Threshold</TableHead>
+                                    <TableHead className="text-muted-foreground">Restock Qty</TableHead>
+                                    <TableHead className="text-muted-foreground text-right">Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {lowStockProducts.map((product) => (
-                                    <TableRow key={product._id} className="border-zinc-800">
-                                        <TableCell className="font-medium text-white">
+                                    <TableRow key={product._id} className="border-border">
+                                        <TableCell className="font-medium text-foreground">
                                             <div className="flex items-center gap-2">
-                                                <Package className="w-4 h-4 text-zinc-500" />
+                                                <Package className="w-4 h-4 text-muted-foreground" />
                                                 {product.name}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-zinc-400 font-mono text-sm">{product.sku}</TableCell>
+                                        <TableCell className="text-muted-foreground font-mono text-sm">{product.sku}</TableCell>
                                         <TableCell>
                                             <Badge className="bg-red-600">
                                                 {product.inventory}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-zinc-400">{product.lowStockThreshold}</TableCell>
+                                        <TableCell className="text-muted-foreground">{product.lowStockThreshold}</TableCell>
                                         <TableCell>
                                             <Input
                                                 type="number"
                                                 min="1"
                                                 value={restockMap[product._id] || ""}
                                                 onChange={(e) => setRestockMap({ ...restockMap, [product._id]: parseInt(e.target.value) || 0 })}
-                                                className="w-24 bg-zinc-800 border-zinc-700"
+                                                className="w-24 bg-muted border-border"
                                                 placeholder="Qty"
                                             />
                                         </TableCell>
@@ -175,43 +175,43 @@ export default function InventoryPage() {
                 </Card>
             )}
 
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="bg-card border-border">
                 <CardHeader>
-                    <CardTitle className="text-white">All Products Inventory</CardTitle>
+                    <CardTitle className="text-foreground">All Products Inventory</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
-                            <TableRow className="border-zinc-800">
-                                <TableHead className="text-zinc-400">Product</TableHead>
-                                <TableHead className="text-zinc-400">SKU</TableHead>
-                                <TableHead className="text-zinc-400">Current Stock</TableHead>
-                                <TableHead className="text-zinc-400">Threshold</TableHead>
-                                <TableHead className="text-zinc-400">Status</TableHead>
-                                <TableHead className="text-zinc-400">Tracking</TableHead>
+                            <TableRow className="border-border">
+                                <TableHead className="text-muted-foreground">Product</TableHead>
+                                <TableHead className="text-muted-foreground">SKU</TableHead>
+                                <TableHead className="text-muted-foreground">Current Stock</TableHead>
+                                <TableHead className="text-muted-foreground">Threshold</TableHead>
+                                <TableHead className="text-muted-foreground">Status</TableHead>
+                                <TableHead className="text-muted-foreground">Tracking</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {products?.map((product) => {
                                 const status = getStockStatus(product.inventory, product.lowStockThreshold);
                                 return (
-                                    <TableRow key={product._id} className="border-zinc-800">
-                                        <TableCell className="font-medium text-white">
+                                    <TableRow key={product._id} className="border-border">
+                                        <TableCell className="font-medium text-foreground">
                                             <div className="flex items-center gap-2">
-                                                <Package className="w-4 h-4 text-zinc-500" />
+                                                <Package className="w-4 h-4 text-muted-foreground" />
                                                 {product.name}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-zinc-400 font-mono text-sm">{product.sku}</TableCell>
-                                        <TableCell className="text-white font-medium">{product.inventory}</TableCell>
-                                        <TableCell className="text-zinc-400">{product.lowStockThreshold}</TableCell>
+                                        <TableCell className="text-muted-foreground font-mono text-sm">{product.sku}</TableCell>
+                                        <TableCell className="text-foreground font-medium">{product.inventory}</TableCell>
+                                        <TableCell className="text-muted-foreground">{product.lowStockThreshold}</TableCell>
                                         <TableCell>
                                             <Badge className={status.color}>
                                                 {status.label}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant={product.trackInventory ? "default" : "secondary"} className={product.trackInventory ? "bg-blue-600" : "bg-zinc-600"}>
+                                            <Badge variant={product.trackInventory ? "default" : "secondary"} className={product.trackInventory ? "bg-blue-600" : "bg-secondary"}>
                                                 {product.trackInventory ? "Tracking" : "Not Tracking"}
                                             </Badge>
                                         </TableCell>
@@ -221,7 +221,7 @@ export default function InventoryPage() {
                         </TableBody>
                     </Table>
                     {products?.length === 0 && (
-                        <div className="text-center py-12 text-zinc-500">
+                        <div className="text-center py-12 text-muted-foreground">
                             No products in inventory.
                         </div>
                     )}
