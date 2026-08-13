@@ -291,8 +291,11 @@ function MobileHeader() {
 
     return (
         <header className="md:hidden sticky top-0 z-40 w-full px-6 py-4 flex items-center justify-between bg-background/80 backdrop-blur-xl border-b border-border">
-            <div className="flex flex-col">
-                <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">2026 Edition</span>
+            <div className="flex flex-col justify-center">
+                {/* The "2026 Edition" kicker that used to sit here was removed:
+                    it dated the product in the chrome of every screen, and a
+                    small uppercase wide-tracked label above a heading is the
+                    eyebrow pattern this project's design rules ban outright. */}
                 {/* Not an <h1>: each page under app/dashboard/** already owns the
                     real page-title heading (e.g. "Welcome back" on /dashboard,
                     "Team Workspace" on /dashboard/team). This mobile top-bar

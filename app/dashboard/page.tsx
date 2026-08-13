@@ -54,40 +54,49 @@ export default function DashboardPage() {
 
             {/* ─── Digital Business Card Banner ──────────────────────────── */}
             {primaryProfile && (
-                <div className="rounded-3xl border border-border/80 bg-gradient-to-r from-muted/60 via-card to-background p-5 shadow-lg relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0 text-yellow-500">
-                            <QrCode className="w-6 h-6" />
+                <div className="rounded-[var(--r-lg)] border border-border bg-card p-5 shadow-[var(--e-raised)] flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    {/*
+                      `min-w-0` is load-bearing. A flex child defaults to
+                      min-width:auto, so it refuses to shrink below its own
+                      content width — that is what crushed "Digital Business
+                      Card" into three lines on a narrow screen. Paired with
+                      flex-wrap on the title row below, the badge now drops
+                      under the heading instead of competing with it for
+                      horizontal space.
+                    */}
+                    <div className="flex min-w-0 items-start gap-4">
+                        <div className="flex size-12 shrink-0 items-center justify-center rounded-[var(--r-md)] bg-primary/10 text-primary">
+                            <QrCode className="size-6" aria-hidden="true" />
                         </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="font-bold text-base text-foreground">Digital Business Card</h2>
-                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                                    Instant Web Access
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <h2 className="text-base font-bold text-foreground">Digital business card</h2>
+                                <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-500">
+                                    Instant web access
                                 </span>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                                Easily present your mobile card, download it as a high-res PNG image, or save contact info (.vcf).
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Present your card on screen, download it as a high-res PNG, or save the contact as a .vcf.
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full md:w-auto">
+                    <div className="flex w-full shrink-0 items-center gap-2 md:w-auto">
                         <Button
                             onClick={() => setShowDigitalCardModal(true)}
-                            className="flex-1 md:flex-initial font-semibold gap-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-xl"
+                            className="min-h-11 flex-1 gap-2 rounded-[var(--r-md)] font-semibold md:flex-initial"
                         >
-                            <QrCode className="w-4 h-4" />
-                            Show Digital Card
+                            <QrCode className="size-4" aria-hidden="true" />
+                            Show card
                         </Button>
 
                         <Button
                             onClick={() => setShowDigitalCardModal(true)}
                             variant="outline"
-                            className="font-medium gap-1.5 rounded-xl border-border hover:bg-muted"
+                            className="min-h-11 gap-1.5 rounded-[var(--r-md)] font-medium"
                         >
-                            <Download className="w-4 h-4" />
-                            Save Image
+                            <Download className="size-4" aria-hidden="true" />
+                            Save image
                         </Button>
                     </div>
                 </div>
@@ -331,12 +340,24 @@ function QuickAction({ href, icon: Icon, label, external }: { href: string; icon
 
 function StatCard({ label, value, color, icon }: { label: string; value: string; color: string; icon: React.ReactNode }) {
     return (
-        <div className="bg-card border border-border p-6 rounded-[2rem] relative overflow-hidden group hover:border-primary/20 transition-all">
-            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
+        <div className="group relative overflow-hidden rounded-[var(--r-lg)] border border-border bg-card p-5 transition-colors hover:border-primary/20 sm:p-6">
+            <div
+                className="pointer-events-none absolute right-4 top-4 opacity-5 transition-opacity group-hover:opacity-10 sm:right-6 sm:top-6"
+                aria-hidden="true"
+            >
                 {icon}
             </div>
-            <h3 className="text-muted-foreground text-xs font-bold uppercase tracking-widest mb-2">{label}</h3>
-            <div className={`text-4xl font-black tracking-tighter ${color}`}>{value}</div>
+            {/*
+              `pr-7` reserves the corner the decorative icon occupies. Without
+              it the label runs underneath the watermark on narrow screens —
+              "TOTAL TAPS" collided with its own icon at 320px. Tracking is
+              `wide` rather than `widest` so two-word labels ("Total Leads")
+              still fit on one line in a half-width grid cell.
+            */}
+            <h3 className="mb-2 pr-7 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                {label}
+            </h3>
+            <div className={`text-4xl font-black tracking-tight ${color}`}>{value}</div>
         </div>
     );
 }
