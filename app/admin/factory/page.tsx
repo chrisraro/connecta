@@ -42,19 +42,31 @@ interface NDEFReadingEvent extends Event {
     serialNumber: string;
 }
 
-// NOTE(brand-rename): intentionally NOT renamed across either brand pass
-// (Tapfolio -> Herald -> SigmaTap) — this is the real, live Vercel
-// deployment host that physical NFC tags are written to and that the
-// printed sticker's QR code must resolve to. Changing this string does not
-// move the deployment; it would just point every card at a dead URL — and a
-// brand-name-shaped replacement risks colliding with an unrelated, unowned
-// domain of the same name that is already live elsewhere. Rename only
-// alongside an actual domain/deployment migration. Hoisted to module scope
-// (was previously re-declared as a local inside the NFC write handler, and
-// duplicated as a bare string literal in the print-preview dialog) so every
-// place that needs the production host references the same one value. See
-// lib/brand.test.ts INFRA_EXCEPTIONS, which allowlists exactly this line.
-const PRODUCTION_DOMAIN = "https://tapfolio-beta.vercel.app";
+/**
+ * The host physical NFC tags are encoded with, and that the printed
+ * sticker's QR code resolves to. Both are written onto real merchandise, so
+ * a wrong value here is not a cosmetic bug — it ships dead cards.
+ *
+ * This used to be a hard-coded literal, deliberately frozen through two brand
+ * passes on the reasoning that the deployment had not moved and rewriting it
+ * would point every card at a dead URL. That reasoning silently expired: by
+ * the third rename the host was returning 404 and was no longer even an alias
+ * on the Vercel project, so the "safe" frozen value had itself become the
+ * dead URL it existed to prevent. Every tag written in that window pointed
+ * nowhere, and the guard in lib/brand.test.ts was allowlisting the very line
+ * that carried the rot.
+ *
+ * Deriving it from NEXT_PUBLIC_APP_URL means the encoded host tracks whatever
+ * the deployment actually is, so it cannot drift out of sync with a rename
+ * again. The fallback only covers local/dev builds that have not set the var.
+ *
+ * The retired host has since been re-aliased to the live deployment so cards
+ * written while it was dead resolve again — keep that alias for as long as
+ * any of those cards are in circulation. See docs/rename-runbook.md.
+ */
+const PRODUCTION_DOMAIN = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://sigmatap.vercel.app"
+).replace(/\/+$/, "");
 
 export default function AdminFactoryPage() {
     const { user, isLoaded } = useUser();

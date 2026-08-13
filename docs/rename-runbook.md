@@ -89,9 +89,17 @@ The instance domain `sunny-skunk-50.clerk.accounts.dev` is auto-generated for **
 - Update `convex/auth.config.ts`'s `domain`, the `NEXT_PUBLIC_CLERK_*` / `CLERK_SECRET_KEY` env vars, and the CSP `script-src`/`connect-src`/`frame-src` entries in `next.config.ts` (they currently hardcode `*.clerk.accounts.dev`).
 - Recreate the `convex` JWT template on the new instance (claims `{"aud": "convex"}`), or Convex auth breaks exactly as it did before.
 
-**Still outstanding on the current instance:** the session token needs customizing so the `/admin` role gate works —
-Sessions → Customize session token → `{ "metadata": "{{user.public_metadata}}" }`.
-Until then `/admin` redirects everyone. It fails closed, so this is safe, not urgent.
+**Session token customization is now optional.** This previously read "until then
+`/admin` redirects everyone", which was accurate against the old middleware: it
+compared `sessionClaims.metadata.role` against `"admin"`/`"superadmin"` with no
+guard, and since the claim was never configured the comparison was `undefined`
+for every account — including the superadmin — so the gate redirected everyone
+unconditionally. That is fixed: middleware now only enforces the claim when it
+is actually present (`claimConfigured`), and the `/admin` shell gates on
+`admin.checkAdminStatus`, which reads the `admins` table. Adding
+`{ "metadata": "{{user.public_metadata}}" }` at Sessions → Customize session
+token is still worthwhile — it rejects non-admins at the edge before the shell
+renders — but it is defense-in-depth, not a prerequisite.
 
 ### 4. The local folder name
 
@@ -102,3 +110,62 @@ The working directory is still `…/TapFolio/Tapfolio`. Renaming it is safe — 
 ## Not a rename, but part of the same decision
 
 No domain is registered for this product yet — it currently runs on a `*.vercel.app` deployment. `lib/brand.ts` derives `SIGMATAP.domain` and `SIGMATAP.supportEmail` from `NEXT_PUBLIC_APP_URL` / `SUPPORT_EMAIL` rather than hardcoding a domain, so nothing breaks and no unowned domain is presented as live in customer-facing output (order-confirmation emails, OG image footers) before one is registered. When a real domain (`.ph` or otherwise) is purchased: set `NEXT_PUBLIC_APP_URL` to it, verify it as a Resend sending domain (or transactional email stays in sandbox mode and reaches nobody — see the `TODO(ops)` comment in `convex/email.ts`), and follow the Vercel sequence above before pointing new NFC cards at it.
+
+
+---
+
+## Third rename: Herald → SigmaTap (completed)
+
+Unlike the first two passes, this one moved the actual infrastructure rather
+than only the strings.
+
+| Thing | Before | After |
+|---|---|---|
+| GitHub repo | `chrisraro/herald` | `chrisraro/sigmatap` |
+| Vercel project | `herald` | `sigmatap` |
+| Production URL | `herald-ph.vercel.app` | `sigmatap.vercel.app` |
+| `NEXT_PUBLIC_APP_URL` | `herald-ph.vercel.app` | `sigmatap.vercel.app` (Vercel **and** Convex) |
+
+### Domain aliases — do not remove these
+
+Three hostnames now resolve to the same production deployment:
+
+- `sigmatap.vercel.app` — canonical.
+- `herald-ph.vercel.app` — kept so links shared during the Herald window still work.
+- `tapfolio-beta.vercel.app` — **re-aliased deliberately.** See below.
+
+### The NFC host, and why the "frozen" literal was the bug
+
+`app/admin/factory/page.tsx` hard-coded the host that gets encoded onto
+physical NFC tags and into the printed QR code. It was deliberately excluded
+from both earlier renames, and `lib/brand.test.ts` allowlisted the exact line,
+on the reasoning that the deployment had not moved and rewriting the string
+would point every shipped card at a dead URL.
+
+That reasoning expired without anyone noticing. By this rename the host was
+returning **404** and was not even an alias on the Vercel project — so the
+"safe" frozen value *was* the dead URL it existed to prevent, and every tag
+written in that window pointed nowhere. The guard was faithfully protecting
+the rot.
+
+Two changes:
+
+1. The host is now derived from `NEXT_PUBLIC_APP_URL`, so it tracks the
+   deployment and cannot drift out of sync with a rename again. The factory
+   page needs **no** brand-guard exception any more.
+2. The retired host was re-aliased to the live deployment, so cards written
+   while it was dead now resolve. **Keep that alias for as long as any of
+   those cards are in circulation** — removing it re-breaks physical
+   merchandise that is already in customers' hands.
+
+The lesson worth carrying: an allowlist entry justified by a fact about the
+world ("this host is live") needs re-checking against the world, not just
+inherited. Prefer deriving the value so the question cannot arise.
+
+### Still not renamed
+
+- The local working directory is still `…/TapFolio/Tapfolio` (harmless).
+- `lib/storage-keys.ts` literals remain frozen — that justification is still
+  valid, because those keys exist in real users' browsers and renaming them
+  orphans in-flight carts and unsynced offline leads. Unlike the NFC host,
+  this one does not depend on a fact that can silently expire.
