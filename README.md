@@ -48,7 +48,7 @@ below for which command actually sets each one.
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → API Keys | Sign-in/sign-up | Next.js/Vercel env |
 | `CLERK_SECRET_KEY` | Clerk Dashboard → API Keys | Sign-in/sign-up | Next.js/Vercel env |
-| `NEXT_PUBLIC_APP_URL` | Your app's base URL (`http://localhost:3000` in dev) | Payment redirect/callback URLs, `metadataBase`, `lib/brand.ts`'s domain | Next.js/Vercel env |
+| `NEXT_PUBLIC_APP_URL` | Your app's base URL (`http://localhost:3000` in dev) | Payment redirect/callback URLs, `metadataBase`, `lib/brand.ts`'s domain | **Both**: Next.js/Vercel env **and** `npx convex env set` (`convex/payrex.ts` and `convex/billing.ts` read it directly via `process.env.NEXT_PUBLIC_APP_URL` when building PayRex checkout redirect URLs — it is not implicitly shared from Vercel) |
 | `SUPPORT_EMAIL` | Your real support inbox | Order-confirmation email footer (`convex/email.ts`) — optional, falls back to `support@<NEXT_PUBLIC_APP_URL host>` | **`npx convex env set`** (read inside `convex/email.ts`, not by Next.js) |
 | `NEXT_PUBLIC_CONVEX_URL` | Set automatically by `npx convex dev` | Talking to your Convex deployment | Next.js/Vercel env |
 | `CONVEX_DEPLOYMENT` | Set automatically by `npx convex dev` | Convex CLI/deploy targeting | Next.js/Vercel env |
@@ -101,8 +101,10 @@ Two separate places need env vars — see the table above for which var goes
 where. In short: `RESEND_API_KEY` and the `PAYREX_*` secrets are Convex-runtime
 vars pushed with `npx convex env set ... --prod`; everything else
 (`NEXT_PUBLIC_*`, `CLERK_SECRET_KEY`) is a Next.js/Vercel var configured in
-the Vercel project settings. Putting the Convex ones in Vercel instead is a
-deploy that silently ships with email and checkout both as no-ops.
+the Vercel project settings — **except `NEXT_PUBLIC_APP_URL`, which despite
+its `NEXT_PUBLIC_` prefix must be set in both places** (see the table above).
+Putting the Convex ones in Vercel instead is a deploy that silently ships
+with email and checkout both as no-ops.
 
 1. **Convex**: run `npx convex deploy` to push your schema/functions to a
    production Convex deployment, and note the production `NEXT_PUBLIC_CONVEX_URL`
@@ -112,8 +114,13 @@ deploy that silently ships with email and checkout both as no-ops.
    npx convex env set RESEND_API_KEY <value> --prod
    npx convex env set PAYREX_SECRET_KEY <value> --prod
    npx convex env set PAYREX_WEBHOOK_SECRET <value> --prod
+   npx convex env set NEXT_PUBLIC_APP_URL <value> --prod
    npx convex env set SUPPORT_EMAIL <value> --prod   # optional
    ```
+   `NEXT_PUBLIC_APP_URL` needs to be set **twice** — once here for Convex
+   (checkout redirect URLs) and again in the Vercel project settings (step 5)
+   for Next.js. They are separate runtimes with separate env stores; setting
+   it in only one place leaves the other half of the app pointed at nothing.
    If this deploy is the first one to ship vanity-slug profile URLs, also
    run the one-time (idempotent, safe to re-run) backfill so profiles created
    before the feature existed get a slug. It is paginated — keep calling it,

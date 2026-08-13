@@ -108,7 +108,26 @@ npm install
    ```
 2. Verify that Convex generates client-side files like [`api.d.ts`](convex/_generated/api.d.ts) inside `convex/_generated/`.
 
-### Step 4: Register PayRex Webhooks
+### Step 4: Create the Clerk JWT Template (manual, no API)
+Convex verifies signed-in users by checking a Clerk-issued JWT against
+`convex/auth.config.ts`, which expects `applicationID: "convex"` — i.e. a
+Clerk JWT Template literally named `convex`. **This has to be created by
+hand in the Clerk Dashboard; there is no API or CLI command for it,** and
+skipping it makes every `useQuery`/`useMutation` call that requires auth
+fail silently (Convex treats the user as signed out).
+
+1. In the Clerk Dashboard, go to **JWT Templates** → **New template**.
+2. Choose the built-in **Convex** template (Clerk ships one) — it names the
+   template `convex` and sets the `aud` claim correctly on its own. If you
+   build a template from scratch instead, the template name must be exactly
+   `convex` and its claims must include `{"aud": "convex"}`.
+3. Confirm the `domain` in `convex/auth.config.ts` matches your Clerk
+   instance's Frontend API URL (already set to this project's dev instance,
+   `sunny-skunk-50.clerk.accounts.dev` — only change it if you're pointing at
+   a different Clerk application; see `docs/rename-runbook.md` for the
+   production-instance version of this step).
+
+### Step 5: Register PayRex Webhooks
 Since the PayRex Dashboard does not yet support a user interface for webhook configuration, you must register the webhook endpoint programmatically.
 1. Run a `POST` request to `https://api.payrexhq.com/v1/webhooks` with basic authentication (`username = PAYREX_SECRET_KEY`, `password = empty`):
    ```bash
@@ -121,11 +140,15 @@ Since the PayRex Dashboard does not yet support a user interface for webhook con
    ```
 2. Save the webhook secret key returned in the response payload as `PAYREX_WEBHOOK_SECRET` inside your Convex environment variables dashboard.
 
-### Step 5: Provision First Admin
+### Step 6: Provision First Admin
 1. Create a user account by logging into the frontend (`http://localhost:3000/auth`).
 2. Retrieve your Clerk User ID (starts with `user_...`) from the Clerk Dashboard.
 3. Grant this user the first superadmin role by running:
    ```bash
    npx tsx scripts/setup-first-admin.ts user_YOUR_CLERK_ID
    ```
-4. Access the admin dashboard at `http://localhost:3000/admin/auth`.
+4. Access the admin dashboard at `http://localhost:3000/admin` (there is no
+   separate admin sign-in page — `/admin` is gated by the same `/auth`
+   sign-in used everywhere else, via `middleware.ts` and a role check in
+   `app/admin/layout.tsx`; signing in with a non-admin account redirects to
+   `/dashboard`).
