@@ -16,10 +16,10 @@ import {
   Check,
 } from "lucide-react";
 import Link from "next/link";
-import { HeraldMark } from "@/components/brand/HeraldMark";
+import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Reveal } from "@/components/ui/reveal";
-import { HERALD } from "@/lib/brand";
+import { SIGMATAP } from "@/lib/brand";
 import { TEMPLATES as TEMPLATE_METAS } from "@/components/templates/registry";
 import { HeroProfilePreview } from "@/components/marketing/HeroProfilePreview";
 
@@ -36,8 +36,8 @@ export default function LandingPage() {
             href="/"
             className="flex min-h-11 shrink-0 items-center gap-2 text-xl font-bold tracking-tight"
           >
-            <HeraldMark className="h-6 w-6 text-primary" />
-            <span>{HERALD.name}</span>
+            <SigmaTapMark className="h-6 w-6 text-primary" />
+            <span>{SIGMATAP.name}</span>
           </Link>
 
           <div className="hidden items-center gap-3 md:flex">
@@ -314,7 +314,7 @@ export default function LandingPage() {
               Ready to make a lasting impression?
             </h2>
             <p className="relative z-10 mx-auto mt-5 max-w-xl text-neutral-400">
-              Get your {HERALD.name} card and turn every introduction into an
+              Get your {SIGMATAP.name} card and turn every introduction into an
               opportunity.
             </p>
             <div className="relative z-10 mt-9 flex flex-col justify-center gap-3 sm:flex-row">
@@ -349,8 +349,8 @@ export default function LandingPage() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Link href="/" className="flex min-h-11 items-center gap-2 text-lg font-bold tracking-tight">
-                <HeraldMark className="h-5 w-5 text-primary" />
-                <span>{HERALD.name}</span>
+                <SigmaTapMark className="h-5 w-5 text-primary" />
+                <span>{SIGMATAP.name}</span>
               </Link>
               <p className="mt-3 max-w-xs text-sm text-muted-foreground">
                 Premium NFC digital business cards for modern professionals.
@@ -377,12 +377,12 @@ export default function LandingPage() {
               links={[
                 { label: "Privacy", href: "/privacy" },
                 { label: "Terms", href: "/terms" },
-                { label: "Support", href: `mailto:${HERALD.supportEmail}` },
+                { label: "Support", href: `mailto:${SIGMATAP.supportEmail}` },
               ]}
             />
           </div>
           <div className="mt-10 border-t border-border pt-6 text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} {HERALD.name}. All rights reserved.
+            &copy; {new Date().getFullYear()} {SIGMATAP.name}. All rights reserved.
           </div>
         </div>
       </footer>
@@ -421,7 +421,7 @@ function SectionHeading({
 
 function Steps() {
   const steps = [
-    { step: "01", icon: Hand, title: "Tap", desc: `Hold your ${HERALD.name} NFC card to any smartphone — or let them scan your QR code.` },
+    { step: "01", icon: Hand, title: "Tap", desc: `Hold your ${SIGMATAP.name} NFC card to any smartphone — or let them scan your QR code.` },
     { step: "02", icon: UserRound, title: "Profile", desc: "Your branded profile opens instantly with your photo, links, and call-to-actions." },
     { step: "03", icon: Inbox, title: "Lead captured", desc: "They save your contact or send a message — and it lands straight in your lead inbox." },
   ];

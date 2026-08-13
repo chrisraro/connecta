@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Phone, Mail, Briefcase, Sparkles, GripHorizontal } from "lucide-react";
 import { DigitalCardConfig } from "@/types/profile";
-import { HERALD } from "@/lib/brand";
+import { SIGMATAP } from "@/lib/brand";
 import { profileUrl } from "@/lib/profileUrl";
 
 interface DigitalBusinessCardProps {
@@ -371,7 +371,7 @@ export function DigitalBusinessCard({
                         />
                     </div>
                     <span className="text-[7px] opacity-60 font-semibold tracking-wider uppercase mt-1 text-center shrink-0">
-                        Powered by {HERALD.name}
+                        Powered by {SIGMATAP.name}
                     </span>
 
                     {isEditable && (

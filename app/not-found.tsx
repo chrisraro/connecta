@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Home, ShoppingBag } from "lucide-react";
-import { HeraldMark } from "@/components/brand/HeraldMark";
-import { HERALD } from "@/lib/brand";
+import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { SIGMATAP } from "@/lib/brand";
 
 export default function NotFound() {
   return (
@@ -13,8 +13,8 @@ export default function NotFound() {
       />
 
       <div className="mb-8 flex items-center gap-2 text-lg font-bold tracking-tight">
-        <HeraldMark className="h-5 w-5 text-primary" />
-        <span>{HERALD.name}</span>
+        <SigmaTapMark className="h-5 w-5 text-primary" />
+        <span>{SIGMATAP.name}</span>
       </div>
 
       <p className="text-7xl font-black tracking-tighter sm:text-8xl">404</p>

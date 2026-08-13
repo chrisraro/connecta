@@ -1,6 +1,6 @@
 {
-  "name": "Herald",
-  "short_name": "Herald",
+  "name": "SigmaTap",
+  "short_name": "SigmaTap",
   "description": "Premium NFC digital business cards for modern professionals.",
   "start_url": "/",
   "display": "standalone",

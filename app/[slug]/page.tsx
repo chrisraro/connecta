@@ -4,21 +4,21 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { isReservedSlug } from "@/lib/slug";
 import { ProfileView } from "../p/[id]/ProfileView";
-import { HERALD } from "@/lib/brand";
+import { SIGMATAP } from "@/lib/brand";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
-    if (isReservedSlug(slug)) return { title: HERALD.name };
+    if (isReservedSlug(slug)) return { title: SIGMATAP.name };
 
     const profile = await fetchQuery(api.profiles.getProfileBySlug, { slug }).catch(() => null);
-    if (!profile) return { title: `Profile not found — ${HERALD.name}` };
+    if (!profile) return { title: `Profile not found — ${SIGMATAP.name}` };
 
     const { fullName, title, company, about } = profile.agentInfo;
     const heading = [fullName, title].filter(Boolean).join(" — ");
-    const description = about?.slice(0, 160) || [title, company].filter(Boolean).join(" at ") || `${fullName} on ${HERALD.name}`;
+    const description = about?.slice(0, 160) || [title, company].filter(Boolean).join(" at ") || `${fullName} on ${SIGMATAP.name}`;
 
     return {
-        title: `${heading} | ${HERALD.name}`,
+        title: `${heading} | ${SIGMATAP.name}`,
         description,
         openGraph: { title: heading, description, type: "profile" },
         twitter: { card: "summary_large_image", title: heading, description },

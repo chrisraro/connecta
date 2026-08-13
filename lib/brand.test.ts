@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { contrastRatio, meetsAA, HERALD, buildHerald } from "./brand";
+import { contrastRatio, meetsAA, SIGMATAP, buildSigmaTap } from "./brand";
 
 test("contrastRatio computes the WCAG ratio for black on white", () => {
   expect(contrastRatio("#000000", "#ffffff")).toBeCloseTo(21, 0);
@@ -26,39 +26,41 @@ test("meetsAA is more permissive for large text", () => {
   expect(meetsAA("#8a8178", "#fbf9f4", false)).toBe(false);
 });
 
-test("HERALD brand constant carries the product name", () => {
-  expect(HERALD.name).toBe("Herald");
+test("SIGMATAP brand constant carries the product name", () => {
+  expect(SIGMATAP.name).toBe("SigmaTap");
 });
 
-// The branch ships an unregistered domain (herald.ph) hardcoded into
-// customer-facing output (order-confirmation emails, OG image footer).
-// buildHerald() must let both the domain and the support inbox be
-// overridden via env, with the current literal as fallback only.
-test("buildHerald falls back to herald.ph when NEXT_PUBLIC_APP_URL is unset", () => {
-  expect(buildHerald({}).domain).toBe("herald.ph");
+// No domain is registered yet — the product runs on a *.vercel.app
+// deployment, with a .ph domain planned but not purchased. buildSigmaTap()
+// must let both the domain and the support inbox be overridden via env, with
+// the honestly-inert literal below (an RFC 2606 reserved TLD, guaranteed
+// never to resolve) as fallback only — it must never be a domain-shaped
+// string that could be mistaken for something this project actually owns.
+test("buildSigmaTap falls back to sigmatap.example when NEXT_PUBLIC_APP_URL is unset", () => {
+  expect(buildSigmaTap({}).domain).toBe("sigmatap.example");
 });
 
-test("buildHerald derives the domain from NEXT_PUBLIC_APP_URL when set", () => {
-  expect(buildHerald({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).domain).toBe(
+test("buildSigmaTap derives the domain from NEXT_PUBLIC_APP_URL when set", () => {
+  expect(buildSigmaTap({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).domain).toBe(
     "app.example.com"
   );
 });
 
-test("buildHerald derives the domain from a NEXT_PUBLIC_APP_URL that has no protocol", () => {
-  expect(buildHerald({ NEXT_PUBLIC_APP_URL: "app.example.com/" }).domain).toBe(
+test("buildSigmaTap derives the domain from a NEXT_PUBLIC_APP_URL that has no protocol", () => {
+  expect(buildSigmaTap({ NEXT_PUBLIC_APP_URL: "app.example.com/" }).domain).toBe(
     "app.example.com"
   );
 });
 
-test("buildHerald defaults supportEmail to support@<domain>", () => {
-  expect(buildHerald({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).supportEmail).toBe(
+test("buildSigmaTap defaults supportEmail to support@<domain>", () => {
+  expect(buildSigmaTap({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).supportEmail).toBe(
     "support@app.example.com"
   );
 });
 
-test("buildHerald lets SUPPORT_EMAIL override the support inbox independently of the domain", () => {
+test("buildSigmaTap lets SUPPORT_EMAIL override the support inbox independently of the domain", () => {
   expect(
-    buildHerald({ NEXT_PUBLIC_APP_URL: "https://app.example.com", SUPPORT_EMAIL: "help@realcompany.com" })
+    buildSigmaTap({ NEXT_PUBLIC_APP_URL: "https://app.example.com", SUPPORT_EMAIL: "help@realcompany.com" })
       .supportEmail
   ).toBe("help@realcompany.com");
 });
@@ -86,29 +88,40 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
+// Covers BOTH retired brand names — this product has been renamed twice
+// (Tapfolio -> Herald -> SigmaTap) and neither old name should resurface.
 // Built from fragments so this file does not match its own check.
-const STALE_BRAND = new RegExp(["tap", "folio"].join(""), "i");
+const STALE_BRAND = new RegExp(
+  ["tap", "folio"].join("") + "|" + ["her", "ald"].join(""),
+  "i"
+);
 
-// Justified exceptions: the old name survives here on purpose because it is
-// NOT user-facing brand copy — it is either a real, live infrastructure
-// identifier or a client-storage key whose value must stay byte-identical
-// to keep working. Renaming these would silently break runtime behavior
-// rather than just relabel text.
+// Justified exceptions: the old name survives here on purpose. Two flavors:
+//  1. NOT user-facing brand copy — a real, live infrastructure identifier or
+//     a client-storage key whose value must stay byte-identical to keep
+//     working. Renaming these would silently break runtime behavior rather
+//     than just relabel text.
+//  2. Rename-history documentation — comments that talk *about* a retired
+//     name (e.g. "renamed from Tapfolio") rather than render it as brand
+//     copy. Kept as prose, per this project's convention of updating rename
+//     history to remain accurate rather than deleting it.
 //
 // Line-scoped (exact-string), not whole-file: each entry is the literal text
-// of the ONE line that's allowed to say the old name. Any other line in the
+// of the ONE line that's allowed to say an old name. Any other line in the
 // same file — including a new offender introduced later — still fails the
 // check. (A prior version of this allowlist skipped the entire file, which
 // is how app/admin/factory/page.tsx was able to print an unrelated,
 // unowned domain that nobody caught until a full-branch audit; see the
 // final-review-fixes report.)
 const INFRA_EXCEPTIONS: Record<string, string[]> = {
-  // Real, live Vercel deployment host used to write physical NFC tags and
-  // generate the QR code that ships on real merchandise. The Vercel project
-  // itself has not been renamed (out of scope for this task), so changing
-  // the string would point every card at a dead URL.
   [join("app", "admin", "factory", "page.tsx")]: [
+    // Real, live Vercel deployment host used to write physical NFC tags and
+    // generate the QR code that ships on real merchandise. The Vercel
+    // project itself has not been renamed (out of scope for either rename
+    // pass), so changing the string would point every card at a dead URL.
     'const PRODUCTION_DOMAIN = "https://tapfolio-beta.vercel.app";',
+    // Rename-history comment naming both retired stages.
+    "// (Tapfolio -> Herald -> SigmaTap) — this is the real, live Vercel",
   ],
   // localStorage keys for the guest cart id, an applied discount code, and
   // offline-captured leads. Read back by these exact string values from
@@ -116,15 +129,26 @@ const INFRA_EXCEPTIONS: Record<string, string[]> = {
   // offline-leads.ts (all of which now import the constants from here
   // instead of holding their own literal) — renaming any of them would
   // orphan a value already written to a real user's browser under the old
-  // key before the rename shipped.
+  // key before the first rename shipped.
   [join("lib", "storage-keys.ts")]: [
     'export const GUEST_CART_ID_KEY = "tapfolio_guest_cart_id";',
     'export const DISCOUNT_CODE_KEY = "tapfolio_discount_code";',
     'export const OFFLINE_LEADS_KEY = "tapfolio_offline_leads";',
   ],
+  // Rename-history comment in the brand-constants module itself.
+  [join("lib", "brand.ts")]: [
+    '* captured lead. (Previously "Herald", named for the medieval herald\'s two',
+    '* name collided with a live, unrelated company operating as tapfolio.me.)',
+  ],
+  // Rename-history paragraph in the top-level README.
+  [join("README.md")]: [
+    'Tagline: "Every tap counts." (Previously named "Herald," after the medieval',
+    "herald's duties of announcing a person and designing their coat of arms,",
+    "tapfolio.me.)",
+  ],
 };
 
-test("no user-facing source file still says the old brand name", () => {
+test("no user-facing source file still says either retired brand name", () => {
   const selfPath = join("lib", "brand.test.ts");
   const offenders: string[] = [];
   for (const file of walk(process.cwd())) {
@@ -141,37 +165,44 @@ test("no user-facing source file still says the old brand name", () => {
   expect(offenders, `stale brand in:\n${offenders.join("\n")}`).toEqual([]);
 });
 
-// Guard against reintroducing the bug this branch just fixed: 48 JSX call
-// sites hardcoded the CURRENT brand name ("Herald") as a string literal
+// Guard against reintroducing the bug this project has now hit twice: 48 JSX
+// call sites hardcoded the CURRENT brand name ("Herald") as a string literal
 // instead of importing HERALD from this module, which made the first rename
 // (Tapfolio -> Herald) an expensive repo-wide sweep instead of a one-line
-// edit here. This test fails the day someone types a new `>Herald<` or
-// `"...Herald..."` into app/** or components/** instead of `{HERALD.name}`.
+// edit here. The second rename (Herald -> SigmaTap) stayed cheap because that
+// migration had already happened — this test now protects SigmaTap the same
+// way, and fails the day someone types a new `>SigmaTap<` or
+// `"...SigmaTap..."` into app/** or components/** instead of
+// `{SIGMATAP.name}`.
 //
-// `\bHerald\b` is deliberately case-sensitive with word boundaries: it does
-// NOT match `HeraldMark` / `buildHerald` (no boundary between "Herald" and
-// the adjoining word character) or `HERALD` / `herald-mark.svg` /
-// `--herald-seal` (wrong case) — those are legitimate, not brand-string
-// leaks, so they need no allowlist entry at all. Only a handful of doc
-// comments that *talk about* the brand name (not render it) remain and are
-// allowlisted by exact line below, same line-scoped mechanism as
-// INFRA_EXCEPTIONS above.
-const CURRENT_BRAND_WORD = /\bHerald\b/;
+// `\bSigmaTap\b` is deliberately case-sensitive with word boundaries: it
+// does NOT match `SigmaTapMark` / `buildSigmaTap` (no boundary between
+// "SigmaTap" and the adjoining word character) or `SIGMATAP` /
+// `sigmatap-mark.svg` / `--sigmatap-seal` (wrong case) — those are
+// legitimate, not brand-string leaks, so they need no allowlist entry at
+// all. Only a handful of doc comments that *talk about* the brand name (not
+// render it) remain and are allowlisted by exact line below, same
+// line-scoped mechanism as INFRA_EXCEPTIONS above.
+const CURRENT_BRAND_WORD = /\bSigmaTap\b/;
 
 const NEW_BRAND_STRING_SCAN_DIRS = ["app", "components"];
 
-// Line-scoped exceptions: comment-only mentions of "Herald" that describe
+// Line-scoped exceptions: comment-only mentions of "SigmaTap" that describe
 // the mark/design system rather than render brand copy. Deliberately kept
 // as prose, not migrated to the constant (rule 2 in the migration task).
 const NEW_BRAND_STRING_EXCEPTIONS: Record<string, string[]> = {
-  [join("components", "brand", "HeraldMark.tsx")]: [
-    '* Herald\'s monogram — an "H" whose crossbar is a chevron, the fundamental',
-    '*  visible word "Herald" — it\'s then decorative and hidden from the',
-    '*  accessibility tree so screen readers don\'t announce "Herald" twice. */',
+  [join("components", "brand", "SigmaTapMark.tsx")]: [
+    "* SigmaTap's monogram — a solid Greek sigma. Inlined from the source SVG",
+    '*  visible word "SigmaTap" — it\'s then decorative and hidden from the',
+    '*  accessibility tree so screen readers don\'t announce "SigmaTap" twice. */',
   ],
   [join("app", "globals.css")]: [
-    "/* Herald — enforced scales. Exactly three radii, exactly two elevations. */",
-    "/* Herald identity — the seal pressed into wax. Committed color strategy:",
+    "/* SigmaTap — enforced scales. Exactly three radii, exactly two elevations. */",
+    "/* SigmaTap identity — the sigma struck into a seal disc. Committed color",
+  ],
+  // Rename-history comment naming both retired stages.
+  [join("app", "admin", "factory", "page.tsx")]: [
+    "// (Tapfolio -> Herald -> SigmaTap) — this is the real, live Vercel",
   ],
 };
 
@@ -191,5 +222,5 @@ test("no new hardcoded occurrence of the current brand name in app/** or compone
       if (CURRENT_BRAND_WORD.test(remaining)) offenders.push(rel);
     }
   }
-  expect(offenders, `hardcoded "Herald" outside HERALD constant in:\n${offenders.join("\n")}`).toEqual([]);
+  expect(offenders, `hardcoded "SigmaTap" outside SIGMATAP constant in:\n${offenders.join("\n")}`).toEqual([]);
 });

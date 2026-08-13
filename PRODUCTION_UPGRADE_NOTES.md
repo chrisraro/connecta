@@ -1,4 +1,4 @@
-# Herald — Production Upgrade Notes (June 2026)
+# SigmaTap — Production Upgrade Notes (June 2026)
 
 This document summarizes the full production overhaul completed across four phases, and everything you must do before going live.
 
@@ -34,7 +34,7 @@ version bump
 - Global: focus rings, reduced-motion support, `app/not-found.tsx`, `app/error.tsx`, reusable `Skeleton` + `EmptyState` components. Accessibility pass (labels, aria, contrast).
 
 ### Phase 4 — SaaS layer (B2C + B2B)
-- **Plans**: Free (1 profile, 1 card, 2 templates, 100 visible leads, Herald branding) / **Pro ₱299/mo** (unlimited, all templates, no branding, CSV export) / **Business ₱999/mo** (Pro + 5-seat team workspace, shared branding, team lead pool). Prices admin-editable in Settings.
+- **Plans**: Free (1 profile, 1 card, 2 templates, 100 visible leads, SigmaTap branding) / **Pro ₱299/mo** (unlimited, all templates, no branding, CSV export) / **Business ₱999/mo** (Pro + 5-seat team workspace, shared branding, team lead pool). Prices admin-editable in Settings.
 - **Billing**: prepaid 30-day periods via PayRex checkout; renewal extends from current expiry; 3-day grace, then daily Convex cron auto-downgrades. Billing page with plan grid + invoice history.
 - **Teams (B2B)**: `/dashboard/team` — invite by email (auto-joins existing users on login), seat management, team branding, owner-only aggregated lead pool.
 - All limits enforced **server-side** in Convex; leads are always captured (viewing older ones is what's gated on Free).

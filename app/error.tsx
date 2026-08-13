@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Home, RotateCw } from "lucide-react";
-import { HeraldMark } from "@/components/brand/HeraldMark";
-import { HERALD } from "@/lib/brand";
+import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { SIGMATAP } from "@/lib/brand";
 
 export default function Error({
   error,
@@ -27,8 +27,8 @@ export default function Error({
       />
 
       <div className="mb-8 flex items-center gap-2 text-lg font-bold tracking-tight">
-        <HeraldMark className="h-5 w-5 text-primary" />
-        <span>{HERALD.name}</span>
+        <SigmaTapMark className="h-5 w-5 text-primary" />
+        <span>{SIGMATAP.name}</span>
       </div>
 
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">

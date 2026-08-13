@@ -35,15 +35,16 @@ import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Id } from "@/convex/_generated/dataModel";
-import { HERALD } from "@/lib/brand";
+import { SIGMATAP } from "@/lib/brand";
 
 // Define NDEF types since they might not be in the global scope
 interface NDEFReadingEvent extends Event {
     serialNumber: string;
 }
 
-// NOTE(herald-rebrand): intentionally NOT renamed — this is the real, live
-// Vercel deployment host that physical NFC tags are written to and that the
+// NOTE(brand-rename): intentionally NOT renamed across either brand pass
+// (Tapfolio -> Herald -> SigmaTap) — this is the real, live Vercel
+// deployment host that physical NFC tags are written to and that the
 // printed sticker's QR code must resolve to. Changing this string does not
 // move the deployment; it would just point every card at a dead URL — and a
 // brand-name-shaped replacement risks colliding with an unrelated, unowned
@@ -588,7 +589,7 @@ export default function AdminFactoryPage() {
                             className="bg-white p-4 rounded-lg flex flex-col items-center justify-center shadow-2xl"
                             style={{ width: '200px', height: '200px' }}
                         >
-                            <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">{HERALD.name}</div>
+                            <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">{SIGMATAP.name}</div>
 
                             <QRCodeSVG
                                 value={`${PRODUCTION_DOMAIN}/t/${selectedCard?.uuid || ""}`}

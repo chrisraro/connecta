@@ -2,8 +2,8 @@ import { SignIn, SignUp } from '@clerk/nextjs';
 import { ArrowLeft, Loader2, Sparkles, ShieldCheck, Zap, SmartphoneNfc } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { HeraldMark } from '@/components/brand/HeraldMark';
-import { HERALD } from '@/lib/brand';
+import { SigmaTapMark } from '@/components/brand/SigmaTapMark';
+import { SIGMATAP } from '@/lib/brand';
 
 export default function AuthPage({
   searchParams,
@@ -56,10 +56,10 @@ async function AuthContent({
         {/* Brand Branding & Header */}
         <div className="w-full text-center mb-6 space-y-3">
           <div className="inline-flex items-center justify-center p-3 rounded-3xl bg-primary/10 border border-primary/20 shadow-xl mb-1">
-            <HeraldMark className="w-10 h-10 text-primary" />
+            <SigmaTapMark className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-            {HERALD.name}
+            {SIGMATAP.name}
           </h1>
           <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto leading-relaxed">
             Elevate your digital business card, manage leads CRM &amp; share via NFC instantly.

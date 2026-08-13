@@ -1,12 +1,18 @@
 /**
- * Herald brand constants and contrast utilities.
+ * SigmaTap brand constants and contrast utilities.
  *
- * The name comes from the medieval herald, whose two duties map exactly onto
- * this product: formally announcing a person on arrival, and designing the
- * coat of arms that identified them.
+ * The name pairs the Greek sigma (Σ, "sum of") with the product's core
+ * action, the NFC tap: every tap sums into a shareable profile and a
+ * captured lead. (Previously "Herald", named for the medieval herald's two
+ * duties — announcing a person, designing their coat of arms — before that
+ * name collided with a live, unrelated company operating as tapfolio.me.)
  */
 
-const FALLBACK_DOMAIN = "herald.ph";
+// No domain is owned yet — the product currently runs on a *.vercel.app
+// deployment, with a .ph domain planned but not purchased. This literal is
+// only a last-resort fallback for local/dev environments that never set
+// NEXT_PUBLIC_APP_URL; it must never be treated as a live, reachable host.
+const FALLBACK_DOMAIN = "sigmatap.example";
 
 /** Bare host (no protocol/path) derived from a NEXT_PUBLIC_APP_URL-shaped value. */
 function domainFromAppUrl(raw: string | undefined): string | undefined {
@@ -21,27 +27,28 @@ function domainFromAppUrl(raw: string | undefined): string | undefined {
 }
 
 /**
- * Builds the HERALD brand constant from env, defaulting to the literals
- * below. `herald.ph` may not be a domain this project actually owns yet, so
- * every customer-facing surface that used to hardcode it (order-confirmation
- * emails, the OG image footer) must go through this instead — set
+ * Builds the SIGMATAP brand constant from env, defaulting to the literals
+ * below. This product owns no domain yet — it runs on a `*.vercel.app`
+ * deployment, with a `.ph` domain planned but not purchased — so every
+ * customer-facing surface that needs a host (order-confirmation emails, the
+ * OG image footer) must go through this instead of a hardcoded string: set
  * `NEXT_PUBLIC_APP_URL` (already used for payment redirect URLs) and/or
  * `SUPPORT_EMAIL` to override. Exported as a function (rather than only the
  * computed constant below) so tests can exercise it against arbitrary env
  * without reaching for module-reset tricks.
  */
-export function buildHerald(env: Record<string, string | undefined>) {
+export function buildSigmaTap(env: Record<string, string | undefined>) {
   const domain = domainFromAppUrl(env.NEXT_PUBLIC_APP_URL) || FALLBACK_DOMAIN;
   const supportEmail = env.SUPPORT_EMAIL?.trim() || `support@${domain}`;
   return {
-    name: "Herald",
-    tagline: "Announced properly.",
+    name: "SigmaTap",
+    tagline: "Every tap counts.",
     domain,
     supportEmail,
   };
 }
 
-export const HERALD = buildHerald(typeof process !== "undefined" ? process.env : {});
+export const SIGMATAP = buildSigmaTap(typeof process !== "undefined" ? process.env : {});
 
 export function parseHex(hex: string): { r: number; g: number; b: number } | null {
   let c = hex.trim().toLowerCase().replace(/^#/, "");

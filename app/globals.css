@@ -93,23 +93,23 @@
   --sidebar-border: oklch(0.93 0.008 80);
   --sidebar-ring: oklch(0.5 0.02 80);
 
-  /* Herald — enforced scales. Exactly three radii, exactly two elevations. */
+  /* SigmaTap — enforced scales. Exactly three radii, exactly two elevations. */
   --r-sm: 6px;
   --r-md: 12px;
   --r-lg: 20px;
   --e-raised: 0 1px 2px rgb(28 22 20 / 0.04), 0 2px 8px rgb(28 22 20 / 0.06);
   --e-overlay: 0 4px 12px rgb(28 22 20 / 0.08), 0 12px 32px rgb(28 22 20 / 0.12);
 
-  /* Herald identity — the seal pressed into wax. Committed color strategy:
-     one saturated brand color carrying real surface area, warm neutrals
-     tinted toward its own hue rather than toward generic warmth. */
-  --herald-seal: oklch(0.44 0.132 27);
-  --herald-seal-hover: oklch(0.39 0.138 27);
-  --herald-ink: oklch(0.22 0.012 40);
-  --herald-ink-soft: oklch(0.46 0.014 40);
-  --herald-paper: oklch(0.985 0.003 60);
-  --herald-surface: oklch(0.96 0.005 55);
-  --herald-line: oklch(0.90 0.008 50);
+  /* SigmaTap identity — the sigma struck into a seal disc. Committed color
+     strategy: one saturated brand color carrying real surface area, warm
+     neutrals tinted toward its own hue rather than toward generic warmth. */
+  --sigmatap-seal: oklch(0.44 0.132 27);
+  --sigmatap-seal-hover: oklch(0.39 0.138 27);
+  --sigmatap-ink: oklch(0.22 0.012 40);
+  --sigmatap-ink-soft: oklch(0.46 0.014 40);
+  --sigmatap-paper: oklch(0.985 0.003 60);
+  --sigmatap-surface: oklch(0.96 0.005 55);
+  --sigmatap-line: oklch(0.90 0.008 50);
 }
 
 .dark {

@@ -23,7 +23,7 @@ import path from "node:path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(__dirname, "mockups");
-const BASE_URL = process.env.HERALD_MOCKUP_BASE_URL || "http://localhost:3000";
+const BASE_URL = process.env.SIGMATAP_MOCKUP_BASE_URL || "http://localhost:3000";
 const DEVICE_SCALE_FACTOR = 2;
 
 // The cached Chromium this repo's tooling already uses elsewhere, so this
@@ -90,8 +90,8 @@ function describePng(filePath) {
 // already-loaded client-side Clerk instance to create a session without a
 // password prompt. Never touches a real customer account.
 
-const DEMO_USER_EMAIL = "herald-marketing-demo@herald.ph";
-const DEMO_USER_PASSWORD = "Herald-Marketing-Demo-2026!";
+const DEMO_USER_EMAIL = "sigmatap-marketing-demo@sigmatap.example";
+const DEMO_USER_PASSWORD = "SigmaTap-Marketing-Demo-2026!";
 
 async function clerkApi(secretKey, method, endpoint, body) {
   const res = await fetch(`https://api.clerk.com/v1${endpoint}`, {
@@ -120,7 +120,7 @@ async function getOrCreateDemoUser(secretKey) {
   const created = await clerkApi(secretKey, "POST", "/users", {
     email_address: [DEMO_USER_EMAIL],
     password: DEMO_USER_PASSWORD,
-    first_name: "Herald",
+    first_name: "SigmaTap",
     last_name: "Demo",
   });
   return created.id;

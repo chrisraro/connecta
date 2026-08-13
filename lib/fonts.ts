@@ -7,7 +7,7 @@ import {
   Newsreader,
 } from "next/font/google";
 
-/** Herald's own display face — high-contrast variable serif with real character. */
+/** SigmaTap's own display face — high-contrast variable serif with real character. */
 export const displayFont = Fraunces({
   subsets: ["latin"],
   display: "swap",

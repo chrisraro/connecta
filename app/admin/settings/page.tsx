@@ -286,7 +286,7 @@ export default function AdminSettingsPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="smtp-user">SMTP Username</Label>
-                            <Input id="smtp-user" type="email" placeholder="notifications@herald.ph" className="bg-background border-border text-foreground" />
+                            <Input id="smtp-user" type="email" placeholder="notifications@yourdomain.com" className="bg-background border-border text-foreground" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="smtp-pass">SMTP Password</Label>

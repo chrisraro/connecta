@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Generates Herald's raster brand assets from the source seal SVG
- * (public/brand/herald-icon.svg) using sharp.
+ * Generates SigmaTap's raster brand assets from the source seal SVG
+ * (public/brand/sigmatap-icon.svg) using sharp.
  *
  * Why this exists: the seal SVG is the single source of truth for the mark
- * (see the comments in herald-icon.svg for the design rationale). Every
+ * (see the comments in sigmatap-icon.svg / sigmatap-mark.svg for the design
+ * rationale, including why the mark has no radiating NFC arcs). Every
  * raster derivative — favicon, PWA icons, apple-touch-icon, OG fallback —
  * must be regenerated from it rather than hand-exported, so a future
  * mark tweak only requires editing the SVG and re-running this script.
@@ -19,7 +20,7 @@ import sharp from "sharp";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
-const ICON_SVG_PATH = path.join(root, "public/brand/herald-icon.svg");
+const ICON_SVG_PATH = path.join(root, "public/brand/sigmatap-icon.svg");
 const iconSvg = readFileSync(ICON_SVG_PATH, "utf8");
 
 // The seal SVG's viewBox is 64x64 user units, and sharp/librsvg rasterizes
@@ -29,7 +30,7 @@ const iconSvg = readFileSync(ICON_SVG_PATH, "utf8");
 const SVG_NATIVE_SIZE = 64;
 const BASE_DENSITY = 72;
 
-const SEAL_RED = "#8a2f22"; // matches --herald-seal in app/globals.css
+const SEAL_RED = "#8a2f22"; // matches --sigmatap-seal in app/globals.css
 const PAPER = "#fbfaf7"; // matches the light-theme --background
 const INK = "#030609"; // matches the dark-theme --background (app default theme)
 
@@ -103,7 +104,7 @@ function buildOgSvg() {
         fill="${SEAL_RED}"
         fill-rule="evenodd"
         clip-rule="evenodd"
-        d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM17 16h7v32h-7V16Zm23 0h7v32h-7V16ZM24 32l8-4 8 4v6l-8-4-8 4v-6Z"
+        d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"
       />
     </g>
     <text
@@ -114,14 +115,14 @@ function buildOgSvg() {
       font-weight="700"
       fill="#fbfaf7"
       letter-spacing="-2"
-    >Herald</text>
+    >SigmaTap</text>
     <text
       x="${sealX + sealSize + 60}"
       y="380"
       font-family="Arial, Helvetica, sans-serif"
       font-size="30"
       fill="#9a9490"
-    >Announced properly.</text>
+    >Every tap counts.</text>
   </svg>`;
 }
 

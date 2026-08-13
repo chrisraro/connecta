@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { HeraldMark } from "@/components/brand/HeraldMark";
-import { HERALD } from "@/lib/brand";
+import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { SIGMATAP } from "@/lib/brand";
 
 export default function AdminLayout({
     children,
@@ -96,8 +96,8 @@ export default function AdminLayout({
             {/* Mobile Header */}
             <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-background sticky top-0 z-40">
                 <div className="flex items-center gap-2 font-bold text-lg text-red-600">
-                    <HeraldMark className="h-5 w-5" />
-                    <span>{HERALD.name} Admin</span>
+                    <SigmaTapMark className="h-5 w-5" />
+                    <span>{SIGMATAP.name} Admin</span>
                 </div>
                 <Sheet>
                     <SheetTrigger asChild>
@@ -107,8 +107,8 @@ export default function AdminLayout({
                     </SheetTrigger>
                     <SheetContent side="left" className="bg-background border-border text-foreground w-72 p-0">
                         <div className="p-6 flex items-center gap-2 font-bold text-xl text-red-600 border-b border-border">
-                            <HeraldMark className="h-5 w-5" />
-                            <span>{HERALD.name} Admin</span>
+                            <SigmaTapMark className="h-5 w-5" />
+                            <span>{SIGMATAP.name} Admin</span>
                         </div>
                         <nav className="p-4 space-y-2">
                             {navItems.map((item) => {
@@ -167,8 +167,8 @@ export default function AdminLayout({
             {/* Admin Sidebar (Desktop) */}
             <aside className="w-64 bg-background border-r border-border hidden md:flex flex-col">
                 <div className="p-6 flex items-center gap-2 font-bold text-xl text-red-600">
-                    <HeraldMark className="h-5 w-5" />
-                    <span>{HERALD.name} Admin</span>
+                    <SigmaTapMark className="h-5 w-5" />
+                    <span>{SIGMATAP.name} Admin</span>
                 </div>
 
                 <div className="px-6 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">

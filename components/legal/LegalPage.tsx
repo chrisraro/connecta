@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, TriangleAlert } from "lucide-react";
-import { HeraldMark } from "@/components/brand/HeraldMark";
-import { HERALD } from "@/lib/brand";
+import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { SIGMATAP } from "@/lib/brand";
 
 /**
  * Shared shell for /privacy and /terms.
@@ -35,8 +35,8 @@ export function LegalPage({
             href="/"
             className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
           >
-            <HeraldMark className="h-5 w-5 text-primary" />
-            <span>{HERALD.name}</span>
+            <SigmaTapMark className="h-5 w-5 text-primary" />
+            <span>{SIGMATAP.name}</span>
           </Link>
           <Link
             href="/"
@@ -94,7 +94,7 @@ export function LegalPage({
 
       <footer className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-muted-foreground sm:px-6">
-          &copy; {new Date().getFullYear()} {HERALD.name}. All rights reserved.
+          &copy; {new Date().getFullYear()} {SIGMATAP.name}. All rights reserved.
         </div>
       </footer>
     </div>
@@ -116,7 +116,7 @@ export function DraftNotice() {
           Draft — not legal advice, not yet approved for launch.
         </p>
         <p className="mt-1">
-          This page was generated from an engineering audit of what {HERALD.name}&apos;s
+          This page was generated from an engineering audit of what {SIGMATAP.name}&apos;s
           codebase actually does. It has not been reviewed by a
           Philippine-qualified lawyer or the company&apos;s Data Protection
           Officer, and must not be treated as a compliant policy until it has

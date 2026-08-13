@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HERALD } from "@/lib/brand";
+import { SIGMATAP } from "@/lib/brand";
 import { LegalPage, Section, Callout, Placeholder } from "@/components/legal/LegalPage";
 
 const LAST_UPDATED = "July 31, 2026";
 
 export function generateMetadata(): Metadata {
   return {
-    title: `Terms of Service | ${HERALD.name}`,
-    description: `The terms governing use of ${HERALD.name}'s NFC digital business card service — draft pending legal review.`,
+    title: `Terms of Service | ${SIGMATAP.name}`,
+    description: `The terms governing use of ${SIGMATAP.name}'s NFC digital business card service — draft pending legal review.`,
   };
 }
 
@@ -35,10 +35,10 @@ export default function TermsOfServicePage() {
     <LegalPage title="Terms of Service" lastUpdated={LAST_UPDATED} toc={TOC}>
       <Section id="overview" heading="Overview">
         <p>
-          {`These Terms of Service ("Terms") govern your use of ${HERALD.name} ("we," "us"), a service for creating digital business card profiles, ordering NFC business cards linked to those profiles, and collecting inquiries ("leads") from people who view your profile or tap your card. By creating an account, purchasing a card, or using the service, you agree to these Terms.`}
+          {`These Terms of Service ("Terms") govern your use of ${SIGMATAP.name} ("we," "us"), a service for creating digital business card profiles, ordering NFC business cards linked to those profiles, and collecting inquiries ("leads") from people who view your profile or tap your card. By creating an account, purchasing a card, or using the service, you agree to these Terms.`}
         </p>
         <p>
-          {HERALD.name} is operated by <Placeholder>[COMPANY LEGAL NAME]</Placeholder>,{" "}
+          {SIGMATAP.name} is operated by <Placeholder>[COMPANY LEGAL NAME]</Placeholder>,{" "}
           <Placeholder>[REGISTERED ADDRESS]</Placeholder>. See also our{" "}
           <Link href="/privacy">Privacy Policy</Link>, which describes what
           personal data we collect and how.
@@ -57,14 +57,14 @@ export default function TermsOfServicePage() {
           </li>
           <li>
             You must be legally capable of entering a contract to create an
-            account; {HERALD.name} is not directed at children (see our{" "}
+            account; {SIGMATAP.name} is not directed at children (see our{" "}
             <Link href="/privacy#children">Privacy Policy</Link>).
           </li>
         </ul>
       </Section>
 
       <Section id="acceptable-use" heading="Acceptable use">
-        <p>You agree not to use {HERALD.name} to:</p>
+        <p>You agree not to use {SIGMATAP.name} to:</p>
         <ul className="list-disc space-y-2 pl-5">
           <li>
             Publish content that is unlawful, fraudulent, defamatory, or
@@ -98,7 +98,7 @@ export default function TermsOfServicePage() {
         <p>
           You own the content you upload to your profile (photos, biography,
           testimonials, project descriptions, and similar). By uploading
-          content, you grant {HERALD.name} a worldwide, non-exclusive, royalty-free
+          content, you grant {SIGMATAP.name} a worldwide, non-exclusive, royalty-free
           licence to host, store, reproduce, and publicly display that
           content solely as necessary to operate the service — that is, to
           render your public profile page and its link-preview (OpenGraph)
@@ -116,7 +116,7 @@ export default function TermsOfServicePage() {
 
       <Section id="public-profiles" heading="Public profiles">
         <p>
-          A published {HERALD.name} profile is publicly accessible to anyone with
+          A published {SIGMATAP.name} profile is publicly accessible to anyone with
           its link, and is intentionally rendered with link-preview metadata
           so it displays correctly when shared. Do not put confidential
           information on a public profile.
@@ -124,11 +124,11 @@ export default function TermsOfServicePage() {
       </Section>
 
       <Section id="plans-and-limits" heading="Plans & limits">
-        <p>{HERALD.name} offers three plans, each with enforced limits:</p>
+        <p>{SIGMATAP.name} offers three plans, each with enforced limits:</p>
         <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong>Free</strong> — 1 profile, 1 active NFC card, 2 templates,
-            up to 100 viewable leads, {HERALD.name} branding shown on your profile.
+            up to 100 viewable leads, {SIGMATAP.name} branding shown on your profile.
           </li>
           <li>
             <strong>Pro</strong> — unlimited profiles and cards, all
@@ -172,7 +172,7 @@ export default function TermsOfServicePage() {
         </p>
         <p>
           All prices are in Philippine Pesos (PHP). Payment processing is
-          handled by PayRex; {HERALD.name} does not store your card or e-wallet
+          handled by PayRex; {SIGMATAP.name} does not store your card or e-wallet
           credentials.
         </p>
       </Section>
@@ -196,7 +196,7 @@ export default function TermsOfServicePage() {
             Order status moves through stages (pending, processing, shipped,
             delivered) that you can see in your order history.{" "}
             <Callout>
-              <strong>Honest gap:</strong> {HERALD.name}{" "}does not currently
+              <strong>Honest gap:</strong> {SIGMATAP.name}{" "}does not currently
               integrate with a courier&apos;s tracking system — there is no
               live tracking number or carrier hand-off event. &quot;Shipped&quot;
               reflects a status update made on our side, not a real-time
@@ -206,7 +206,7 @@ export default function TermsOfServicePage() {
           <li>
             <strong>Returns and refunds</strong> are handled manually on a
             case-by-case basis by contacting{" "}
-            <a href={`mailto:${HERALD.supportEmail}`}>{HERALD.supportEmail}</a>{" "}
+            <a href={`mailto:${SIGMATAP.supportEmail}`}>{SIGMATAP.supportEmail}</a>{" "}
             — there is currently no self-service return or refund flow.
             Specific timeframes and conditions for returns/refunds have not
             been formally published yet:{" "}
@@ -229,7 +229,7 @@ export default function TermsOfServicePage() {
 
       <Section id="termination" heading="Termination">
         <p>
-          You may stop using {HERALD.name} at any time. A signed-in user can request
+          You may stop using {SIGMATAP.name} at any time. A signed-in user can request
           deletion of their account and associated personal data (see our{" "}
           <Link href="/privacy#your-rights">Privacy Policy</Link>) — physical
           cards you own are returned to unassigned inventory rather than
@@ -245,7 +245,7 @@ export default function TermsOfServicePage() {
 
       <Section id="disclaimers" heading="Disclaimers">
         <p>
-          {HERALD.name}{" "}is provided &quot;as is&quot; and &quot;as available.&quot;
+          {SIGMATAP.name}{" "}is provided &quot;as is&quot; and &quot;as available.&quot;
           To the fullest extent permitted by law, we disclaim all warranties,
           express or implied, including merchantability, fitness for a
           particular purpose, and non-infringement. We do not guarantee the
@@ -258,13 +258,13 @@ export default function TermsOfServicePage() {
 
       <Section id="liability" heading="Limitation of liability">
         <p>
-          To the fullest extent permitted under Philippine law, {HERALD.name} and
+          To the fullest extent permitted under Philippine law, {SIGMATAP.name} and
           its officers, employees, and affiliates will not be liable for any
           indirect, incidental, special, consequential, or punitive damages,
           or any loss of profits, revenue, data, or goodwill, arising from
           your use of the service. Where liability cannot be excluded, our
           total liability to you for any claim arising from these Terms or
-          the service is limited to the amount you paid to {HERALD.name} in the 12
+          the service is limited to the amount you paid to {SIGMATAP.name} in the 12
           months preceding the claim.
         </p>
         <p>
@@ -290,7 +290,7 @@ export default function TermsOfServicePage() {
         <p>
           We may update these Terms as the product changes. Material changes
           will update the &quot;Last updated&quot; date at the top of this
-          page. Continued use of {HERALD.name} after an update constitutes
+          page. Continued use of {SIGMATAP.name} after an update constitutes
           acceptance of the revised Terms.
         </p>
       </Section>
@@ -298,7 +298,7 @@ export default function TermsOfServicePage() {
       <Section id="contact" heading="Contact">
         <p>
           Questions about these Terms: email{" "}
-          <a href={`mailto:${HERALD.supportEmail}`}>{HERALD.supportEmail}</a>.
+          <a href={`mailto:${SIGMATAP.supportEmail}`}>{SIGMATAP.supportEmail}</a>.
         </p>
       </Section>
     </LegalPage>

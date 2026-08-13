@@ -10,8 +10,8 @@ import { ProfileData, ProfileType, DigitalCardConfig } from "@/types/profile";
 import { Loader2, SearchX, QrCode, Store, UserCheck } from "lucide-react";
 import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import Link from "next/link";
-import { HeraldMark } from "@/components/brand/HeraldMark";
-import { HERALD } from "@/lib/brand";
+import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { SIGMATAP } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -59,8 +59,8 @@ export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string 
                     href="/"
                     className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                    <HeraldMark className="h-4 w-4" />
-                    Go to {HERALD.name}
+                    <SigmaTapMark className="h-4 w-4" />
+                    Go to {SIGMATAP.name}
                 </Link>
             </div>
         );
@@ -163,7 +163,7 @@ export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string 
                 <div className="py-6 text-center text-xs mt-auto" style={{ color: layoutConfig.colorPalette.text }}>
                     <Link href="/" className="inline-flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
                         <span>Powered by</span>
-                        <span className="font-bold">{HERALD.name}</span>
+                        <span className="font-bold">{SIGMATAP.name}</span>
                     </Link>
                 </div>
             )}

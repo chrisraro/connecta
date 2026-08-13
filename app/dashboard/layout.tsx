@@ -8,7 +8,7 @@ import { UserButton } from "@clerk/nextjs";
 import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Zap, LayoutTemplate, ChevronRight, Loader2, Building2, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { HeraldMark } from "@/components/brand/HeraldMark";
+import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
 import { Button } from "@/components/ui/button";
 import { NotificationsPopover } from "@/components/ui/notifications-popover";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -20,7 +20,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import { HERALD } from "@/lib/brand";
+import { SIGMATAP } from "@/lib/brand";
 
 // Shared between the mobile header and the desktop sidebar footer so the
 // account avatar looks identical in both places (same component in two
@@ -200,8 +200,8 @@ function DashboardSidebar({ className }: { className?: string }) {
     return (
         <aside className={`flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground ${className}`}>
             <div className="p-6 flex items-center gap-2 font-bold text-xl">
-                <HeraldMark className="h-6 w-6 text-primary" />
-                <span className="text-foreground font-black tracking-tight">{HERALD.name}</span>
+                <SigmaTapMark className="h-6 w-6 text-primary" />
+                <span className="text-foreground font-black tracking-tight">{SIGMATAP.name}</span>
             </div>
             <nav className="flex-1 px-4 space-y-2 py-4">
                 {menuItems.map((item) => {
@@ -286,7 +286,7 @@ function MobileHeader() {
         if (pathname.startsWith("/dashboard/team")) return "Team";
         if (pathname.startsWith("/dashboard/billing")) return "Billing";
         if (pathname.startsWith("/dashboard/settings")) return "Settings";
-        return HERALD.name;
+        return SIGMATAP.name;
     };
 
     return (

@@ -1,12 +1,12 @@
-# Herald Development Setup & Integration Guide
+# SigmaTap Development Setup & Integration Guide
 
-This document provides a comprehensive guide to understanding the Herald codebase, its backend/frontend architecture, and its integrations with third-party services. Follow these steps to connect and configure the external services required for local development and production.
+This document provides a comprehensive guide to understanding the SigmaTap codebase, its backend/frontend architecture, and its integrations with third-party services. Follow these steps to connect and configure the external services required for local development and production.
 
 ---
 
 ## 1. System Architecture & Tech Stack
 
-Herald is a digital business card and CRM platform designed for modern professionals. It consists of the following components:
+SigmaTap is a digital business card and CRM platform designed for modern professionals. It consists of the following components:
 
 ### Frontend
 - **Framework:** Next.js 16 (App Router, using React 19)

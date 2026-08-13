@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { resolveTheme } from "@/components/templates/theme";
-import { HERALD } from "@/lib/brand";
+import { SIGMATAP } from "@/lib/brand";
 
 /**
  * Shared OG-image renderer for both public profile routes — `/p/<id>` (the
@@ -12,7 +12,7 @@ import { HERALD } from "@/lib/brand";
 
 export const ogImageSize = { width: 1200, height: 630 };
 export const ogImageContentType = "image/png";
-export const ogImageAlt = "Herald profile";
+export const ogImageAlt = "SigmaTap profile";
 
 // next/og's edge runtime can't load the next/font instances used elsewhere
 // in the app (Task 2's per-template fonts) — those are webpack-bundled
@@ -51,7 +51,7 @@ export function renderProfileOgImage(profile: OgProfile) {
       accentColor: palette.accent,
     }
   );
-  const { fullName, title, company } = profile?.agentInfo ?? { fullName: HERALD.name, title: HERALD.tagline, company: "" };
+  const { fullName, title, company } = profile?.agentInfo ?? { fullName: SIGMATAP.name, title: SIGMATAP.tagline, company: "" };
 
   return new ImageResponse(
     (
@@ -85,7 +85,7 @@ export function renderProfileOgImage(profile: OgProfile) {
               marginBottom: "28px",
             }}
           >
-            {HERALD.name}
+            {SIGMATAP.name}
           </div>
           <div
             style={{
@@ -120,10 +120,10 @@ export function renderProfileOgImage(profile: OgProfile) {
           }}
         >
           <div style={{ display: "flex", fontSize: 26, color: theme.colors.inkSoft }}>
-            {HERALD.tagline}
+            {SIGMATAP.tagline}
           </div>
           <div style={{ display: "flex", fontSize: 26, fontWeight: 600, color: theme.colors.accent }}>
-            {HERALD.domain}
+            {SIGMATAP.domain}
           </div>
         </div>
       </div>

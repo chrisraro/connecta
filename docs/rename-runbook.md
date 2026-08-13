@@ -1,6 +1,9 @@
-# Tapfolio → Herald: what's done, and what only you can do
+# Tapfolio → Herald → SigmaTap: what's done, and what only you can do
 
-The product was renamed because **tapfolio.me is a live company** (Indian founders, ~338 indexed pages) already operating under that name, with a pricing model that undercuts the original plan.
+The product has been renamed twice:
+
+1. **Tapfolio → Herald**, because **tapfolio.me is a live company** (Indian founders, ~338 indexed pages) already operating under that name, with a pricing model that undercuts the original plan.
+2. **Herald → SigmaTap**, this rename's own subject. The Herald name and mark are retired; `SigmaTap` (Greek sigma, "sum of" + the NFC tap) is the current brand. `lib/brand.ts` — the single source of truth for the name/tagline/domain — made this second pass cheap: one constant to change, plus a guard test that catches any hardcoded string that bypassed it.
 
 This file records exactly what has been migrated, what is deliberately frozen, and the steps that require a human with dashboard access. Delete it once the remaining steps are done.
 
@@ -10,23 +13,25 @@ This file records exactly what has been migrated, what is deliberately frozen, a
 
 | Surface | State |
 |---|---|
-| All user-facing copy | Herald |
-| `package.json` name | `herald` (build banner reads `herald@0.1.0`) |
-| README | rewritten, accurate, Herald |
-| `DEVELOPMENT_SETUP.md`, `PRODUCT.md`, `PRODUCTION_UPGRADE_NOTES.md` | rebranded + factual corrections |
-| `PROJECT_CONTEXT.md` | **deleted** — described a fictional WooCommerce architecture that never existed |
-| GitHub repo name | `chrisraro/Tapfolio` → **`chrisraro/herald`** |
-| GitHub description | replaced (the old one claimed "Real Estate professionals", "AI-generated portfolios", "Next.js 15", "Google Gemini 3" — none true) |
-| Local git remote | updated to the new URL |
-| Brand mark, favicon, app icons, manifest, OG image | created from scratch — there were none |
+| All user-facing copy | SigmaTap |
+| `lib/brand.ts` | `SIGMATAP` constant (was `HERALD`), `buildSigmaTap()` (was `buildHerald()`) |
+| Tagline | "Every tap counts." (was "Announced properly.", tied to the herald metaphor) |
+| `package.json` name | `sigmatap` (build banner reads `sigmatap@0.1.0`) |
+| README, `DEVELOPMENT_SETUP.md`, `PRODUCT.md`, `PRODUCTION_UPGRADE_NOTES.md` | rebranded |
+| `marketing/README.md`, `marketing/brand/brand-sheet.html`, `marketing/*.mjs` demo scripts | rebranded |
+| Brand mark | `components/brand/SigmaTapMark.tsx` (was `HeraldMark.tsx`) — a solid Greek sigma, deliberately with **no radiating NFC arcs** (see the design-rationale comment in `public/brand/sigmatap-mark.svg` for why that variant was rejected) |
+| Brand SVGs | `public/brand/sigmatap-mark.svg`, `public/brand/sigmatap-icon.svg` (the old `herald-*.svg` files are deleted) |
+| Raster assets | `app/favicon.ico`, `public/icon-192.png`, `public/icon-512.png`, `public/apple-touch-icon.png`, `public/og-fallback.png` — all regenerated from the new seal SVG via `scripts/generate-brand-assets.mjs` |
+| `public/manifest.json`, `app/layout.tsx` metadata | SigmaTap name/icons |
+| CSS identity tokens in `app/globals.css` | `--sigmatap-seal` / `-hover` / `-ink` / `-ink-soft` / `-paper` / `-surface` / `-line` (renamed from `--herald-*`; values unchanged) |
 
-A guard test (`lib/brand.test.ts`) now scans `.ts/.tsx/.css/.md/.json` for the old name and fails the build if it reappears. It previously only scanned `.ts/.tsx/.css`, which is why the first rename pass looked complete while `package.json` and every `.md` still carried the old name.
+A guard test (`lib/brand.test.ts`) scans `.ts/.tsx/.css/.md/.json` for **either** stale brand name (`tapfolio` or `herald`) and fails the build if either reappears outside the documented exceptions. A second test fails the build the day a new hardcoded `SigmaTap` string literal appears in `app/**`/`components/**` instead of going through the `SIGMATAP` constant — the same mechanism that made this rename a one-line edit in `lib/brand.ts` instead of a repo-wide sweep.
 
 ---
 
 ## Deliberately NOT renamed — do not "finish" these
 
-Two references to the old name survive on purpose. Both are load-bearing. `lib/brand.test.ts` allowlists them by exact line.
+Two references to the **original** Tapfolio name survive on purpose. Both are load-bearing. `lib/brand.test.ts` allowlists them by exact line. Neither is affected by the Herald → SigmaTap rename — they were frozen during the first rename and remain frozen now.
 
 ### 1. localStorage keys — `lib/storage-keys.ts`
 
@@ -46,7 +51,7 @@ If you ever genuinely need to migrate them, it's a dual-read migration (read new
 https://tapfolio-beta.vercel.app
 ```
 
-This URL is **physically written onto NFC tags** by the card factory page. Every card already in a customer's wallet points at it. See the Vercel section below — this is the highest-risk item in the whole migration.
+This URL is **physically written onto NFC tags** by the card factory page. Every card already in a customer's wallet points at it. See the Vercel section below — this is the highest-risk item in the whole migration, for both renames.
 
 ---
 
@@ -58,13 +63,13 @@ This URL is **physically written onto NFC tags** by the card factory page. Every
 
 Safe sequence:
 
-1. **Buy and attach a real custom domain first** (e.g. `herald.ph`). Cards should never have pointed at a `.vercel.app` URL — that was the original mistake.
+1. **Buy and attach a real custom domain first** (a `.ph` domain is planned but **not purchased yet** — `lib/brand.ts` does not hardcode one; it derives `SIGMATAP.domain` from `NEXT_PUBLIC_APP_URL`, falling back to the honestly-inert `sigmatap.example` when unset). Cards should never have pointed at a `.vercel.app` URL — that was the original mistake.
 2. Add it as a Vercel domain and make it primary.
 3. **Keep `tapfolio-beta.vercel.app` alive permanently** as a redirect to the new domain. Do not delete it, do not rename the project out from under it, do not let it lapse. It is now legacy infrastructure serving physical hardware.
 4. Only then update `PRODUCTION_DOMAIN` in `app/admin/factory/page.tsx`, so *newly written* cards use the new domain. Old cards keep working via the redirect.
 5. Renaming the Vercel *project label* itself is cosmetic and safe **only after** a custom domain is primary.
 
-Also update on Vercel: `NEXT_PUBLIC_APP_URL` (this drives `metadataBase`, OG image URLs, and `HERALD.supportEmail` — see `lib/brand.ts`).
+Also update on Vercel: `NEXT_PUBLIC_APP_URL` (this drives `metadataBase`, OG image URLs, and `SIGMATAP.supportEmail` — see `lib/brand.ts`).
 
 ### 2. Convex
 
@@ -96,4 +101,4 @@ The working directory is still `…/TapFolio/Tapfolio`. Renaming it is safe — 
 
 ## Not a rename, but part of the same decision
 
-The domain `herald.ph` is referenced as the default in `lib/brand.ts` and appears in customer-facing output (order-confirmation emails, OG image footers). It is env-derived (`NEXT_PUBLIC_APP_URL` / `SUPPORT_EMAIL`) rather than hardcoded, so nothing breaks if it isn't registered yet — but **register it before launch**, and verify it as a Resend sending domain, or transactional email stays in sandbox mode and reaches nobody.
+No domain is registered for this product yet — it currently runs on a `*.vercel.app` deployment. `lib/brand.ts` derives `SIGMATAP.domain` and `SIGMATAP.supportEmail` from `NEXT_PUBLIC_APP_URL` / `SUPPORT_EMAIL` rather than hardcoding a domain, so nothing breaks and no unowned domain is presented as live in customer-facing output (order-confirmation emails, OG image footers) before one is registered. When a real domain (`.ph` or otherwise) is purchased: set `NEXT_PUBLIC_APP_URL` to it, verify it as a Resend sending domain (or transactional email stays in sandbox mode and reaches nobody — see the `TODO(ops)` comment in `convex/email.ts`), and follow the Vercel sequence above before pointing new NFC cards at it.
