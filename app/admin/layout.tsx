@@ -24,12 +24,29 @@ export default function AdminLayout({
     const pathname = usePathname(); // Move hooks BEFORE any conditional returns
     const { user, isLoaded, isSignedIn } = useUser();
     const { signOut } = useClerk();
-    const userRole = useQuery(api.users.getUser); 
     const syncUser = useMutation(api.users.syncUser);
-    
-    // Local override derived strictly from the sync return or fallback to Convex state
-    const [verifiedAdmin, setVerifiedAdmin] = useState<boolean | null>(null);
 
+    /*
+      This shell used to gate on users.role === "admin", which is a DIFFERENT
+      admin system from the one that actually authorises admin data. Every
+      admin Convex function calls authz.ts:requireAdmin, which reads the
+      `admins` table — and nothing in admin.ts ever writes users.role. So the
+      two could drift apart: setupFirstAdmin grants a real `admins` row yet
+      left users.role as "agent", which rendered the console unreachable even
+      for a legitimate superadmin.
+
+      Gating on checkAdminStatus makes the shell agree with the data layer by
+      construction: one source of truth, the `admins` table. It is also
+      auth-checked server-side (it compares ctx.auth identity against the
+      clerkId), so it cannot be spoofed by passing someone else's id.
+    */
+    const adminStatus = useQuery(
+        api.admin.checkAdminStatus,
+        user?.id ? { clerkId: user.id } : "skip"
+    );
+
+    // Ensure a users row exists for this Clerk account. checkAdminStatus
+    // returns isAdmin:false until it does, so this must still run.
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
             router.push("/");
@@ -38,25 +55,17 @@ export default function AdminLayout({
                 clerkId: user.id,
                 email: user.primaryEmailAddress?.emailAddress || "",
                 name: user.fullName || "",
-            }).then((res) => {
-                if (res.role === "admin") {
-                    setVerifiedAdmin(true);
-                } else {
-                    setVerifiedAdmin(false);
-                }
             }).catch(() => {
-                setVerifiedAdmin(false);
+                // Sync failure leaves adminStatus falsy, which redirects below.
             });
         }
     }, [isLoaded, isSignedIn, user, router, syncUser]);
 
-    // Effect to redirect if not admin
+    const verifiedAdmin = adminStatus === undefined ? null : adminStatus.isAdmin;
+
     useEffect(() => {
         if (verifiedAdmin === false) {
-             router.push("/dashboard"); // Kick out non-admins
-        } else if (verifiedAdmin === null && userRole !== undefined && userRole !== null && userRole.role === "agent") {
-             // Fallback to pure Convex
-             // Wait we shouldn't rely on Convex here because of latency, we'll just wait for verifiedAdmin!
+            router.push("/dashboard"); // Kick out non-admins
         }
     }, [verifiedAdmin, router]);
 
