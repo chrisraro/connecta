@@ -284,14 +284,14 @@ test("claimCardByUuid rate-limits repeated claim attempts by the same user", asy
   ).rejects.toThrow(/too many requests/i);
 });
 
-test("getByActivationCode must not exist: it is a brute-force oracle bypassing the activation rate limit", () => {
-  // getByActivationCode was a public, unauthenticated, un-rate-limited query
-  // returning the full card doc for an exact activation-code guess, with zero
-  // callers. It bypassed the rate limiter protecting activateCard against
-  // code-guessing attacks. It must be deleted entirely from the codebase.
-  //
-  // Verify it's not exported by checking the cards module doesn't have it.
-  // TypeScript should fail if this were re-added: the api.cards type
-  // only includes exported public functions.
-  expect(typeof (api.cards as Record<string, boolean | string>).getByActivationCode).not.toBe("function");
+// getByActivationCode was a public, unauthenticated, un-rate-limited query
+// returning the full card doc for an exact code guess — a brute-force oracle
+// that bypassed the activation rate limiter. It must never come back.
+// NOTE: asserting via the generated `api` object is useless here — `api` is
+// convex's anyApi Proxy, which fabricates a reference for ANY property name,
+// so such an assertion passes unconditionally. Assert against the real
+// module's exports instead.
+test("getByActivationCode stays deleted (brute-force oracle)", async () => {
+  const cardsModule = await import("./cards");
+  expect(Object.keys(cardsModule)).not.toContain("getByActivationCode");
 });
