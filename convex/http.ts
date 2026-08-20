@@ -54,6 +54,27 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   return hex;
 }
 
+// How long a webhook timestamp is considered fresh, in either direction
+// (accounts for clock skew as well as delivery delay). PayRex signs each
+// request with the unix-seconds timestamp `t`; without a freshness check a
+// captured request+signature pair (e.g. from a proxy log or MITM) can be
+// replayed against the endpoint indefinitely.
+export const WEBHOOK_TIMESTAMP_WINDOW_MS = 5 * 60 * 1000;
+
+// Pure helper: is signature timestamp `t` (unix seconds, as a decimal
+// string) within `windowMs` of `nowMs`? Exported and kept side-effect-free
+// so the boundary conditions can be tested directly without going through
+// signature verification or HTTP plumbing.
+export function isWebhookTimestampFresh(
+  t: string,
+  nowMs: number,
+  windowMs: number
+): boolean {
+  if (!/^\d+$/.test(t)) return false;
+  const tMs = Number(t) * 1000;
+  return Math.abs(nowMs - tMs) <= windowMs;
+}
+
 // Constant-time string comparison.
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -87,6 +108,13 @@ const payrexWebhook = httpAction(async (ctx, request) => {
   const provided = li && li.length > 0 ? li : te;
   if (!provided || !timingSafeEqual(expected, provided)) {
     return new Response("Invalid signature", { status: 400 });
+  }
+
+  // Reject stale or far-future timestamps even when the signature itself is
+  // valid — otherwise a captured request+signature pair can be replayed
+  // against the endpoint indefinitely.
+  if (!isWebhookTimestampFresh(t, Date.now(), WEBHOOK_TIMESTAMP_WINDOW_MS)) {
+    return new Response("Stale webhook timestamp", { status: 400 });
   }
 
   // Signature valid — parse the event.
@@ -133,32 +161,51 @@ const payrexWebhook = httpAction(async (ctx, request) => {
     const paymentIntentId =
       typeof event.data.id === "string" ? event.data.id : undefined;
 
-    if (invoiceId) {
-      if (isPaid) {
-        await ctx.runMutation(internal.billing.internalActivateInvoice, {
-          invoiceId: invoiceId as Id<"subscriptionInvoices">,
-          paymentIntentId,
-        });
+    // Wrapped so a thrown error from the internal mutation (an unexpected
+    // failure, not a normal business-rule rejection — those already return
+    // a handled `{ success: false, reason }` and leave the order in a
+    // correct terminal state) turns into a 500 instead of silently
+    // acking with 200. A 500 makes PayRex retry the delivery instead of
+    // treating a captured-and-lost payment confirmation as delivered.
+    // The processed-event idempotency guard in internalConfirmOrderPayment
+    // (and the analogous checks in the billing mutations) makes that retry
+    // safe: a retried event that already applied is a no-op.
+    try {
+      if (invoiceId) {
+        if (isPaid) {
+          await ctx.runMutation(internal.billing.internalActivateInvoice, {
+            invoiceId: invoiceId as Id<"subscriptionInvoices">,
+            paymentIntentId,
+          });
+        } else {
+          await ctx.runMutation(internal.billing.internalFailInvoice, {
+            invoiceId: invoiceId as Id<"subscriptionInvoices">,
+          });
+        }
       } else {
-        await ctx.runMutation(internal.billing.internalFailInvoice, {
-          invoiceId: invoiceId as Id<"subscriptionInvoices">,
+        // Existing shop order flow.
+        const orderNumber =
+          (typeof metaA?.order_number === "string"
+            ? (metaA.order_number as string)
+            : undefined) ??
+          (typeof metaB?.order_number === "string"
+            ? (metaB.order_number as string)
+            : undefined);
+
+        await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
+          orderNumber,
+          paymentIntentId,
+          paymentStatus: isPaid ? "paid" : "failed",
         });
       }
-    } else {
-      // Existing shop order flow.
-      const orderNumber =
-        (typeof metaA?.order_number === "string"
-          ? (metaA.order_number as string)
-          : undefined) ??
-        (typeof metaB?.order_number === "string"
-          ? (metaB.order_number as string)
-          : undefined);
-
-      await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
-        orderNumber,
-        paymentIntentId,
-        paymentStatus: isPaid ? "paid" : "failed",
+    } catch {
+      // No payload dump, no PII — only the event id/type identify which
+      // delivery failed so this can be correlated with PayRex's dashboard.
+      console.error("payrex webhook: mutation dispatch failed", {
+        eventId: event.id ?? "unknown",
+        eventType: event.type ?? "unknown",
       });
+      return new Response("Webhook processing failed", { status: 500 });
     }
   }
 
