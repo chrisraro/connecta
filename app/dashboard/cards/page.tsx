@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
@@ -41,10 +41,15 @@ export default function CardsPage() {
     const { user, isLoaded } = useUser();
     const myCards = useQuery(api.users.getMyCards, user?.id ? { clerkId: user.id } : "skip");
     const myProfiles = useQuery(api.profiles.getMyProfiles, user?.id ? { clerkId: user.id } : "skip");
-    const activateCard = useMutation(api.cards.activateCard);
+    // activateCard/claimCardByUuid are Convex actions (not mutations) so
+    // their rate-limit bookkeeping survives a wrong-code/wrong-uuid
+    // rejection instead of being rolled back with it — see convex/cards.ts.
+    // useAction has the same calling convention as useMutation (resolves on
+    // success, rejects on error), so nothing else here changes.
+    const activateCard = useAction(api.cards.activateCard);
     const linkProfile = useMutation(api.cards.linkProfile);
     const unclaimCard = useMutation(api.cards.unclaimCard);
-    const claimCard = useMutation(api.cards.claimCardByUuid);
+    const claimCard = useAction(api.cards.claimCardByUuid);
 
     const [isActivating, setIsActivating] = useState(false);
     const [activationCode, setActivationCode] = useState("");
