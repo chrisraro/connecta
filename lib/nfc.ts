@@ -12,6 +12,8 @@
  * text (and its "null") must never reach the UI.
  */
 
+import { ConvexError } from "convex/values";
+
 export type NfcWriteErrorKind = "tag-lost" | "not-supported" | "permission" | "unknown";
 
 export interface ClassifiedNfcWriteError {
@@ -110,4 +112,24 @@ export async function withRetries<T>(
   // Unreachable: the loop always returns or throws before falling out, but
   // TypeScript can't see that attempts >= 1 makes the final throw exhaustive.
   throw new Error("withRetries: unreachable");
+}
+
+/**
+ * Detects a "card already registered" failure from `admin.registerSingleCard`.
+ *
+ * This MUST key off a structured `ConvexError.data.code`, never off thrown
+ * message text. Plain `Error` messages thrown from a Convex mutation are
+ * redacted client-side to the fixed string "Server Error" on a real
+ * production deployment (unlike `ConvexError.data`, which crosses the
+ * client/server boundary intact) — a regex against `.message` would only
+ * ever fire in dev, where nothing redacts it. If it silently stopped
+ * firing in prod, an admin re-tapping an already-registered card would fall
+ * into the generic write-retry path with the scan session still alive,
+ * looping on the same duplicate tag forever instead of getting the
+ * dedicated "already registered" message and having the scanner stop.
+ */
+export function isDuplicateRegistrationError(err: unknown): boolean {
+  if (!(err instanceof ConvexError)) return false;
+  const data = err.data as { code?: unknown } | undefined;
+  return typeof data === "object" && data !== null && data.code === "DUPLICATE_UUID";
 }

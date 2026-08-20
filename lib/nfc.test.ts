@@ -1,5 +1,6 @@
 import { expect, test, vi } from "vitest";
-import { classifyNfcWriteError, withRetries } from "./nfc";
+import { ConvexError } from "convex/values";
+import { classifyNfcWriteError, withRetries, isDuplicateRegistrationError } from "./nfc";
 
 function domException(name: string, message: string): Error {
   // Real Web NFC failures arrive as DOMException, which duck-types as a
@@ -40,6 +41,18 @@ test("classifies NotAllowedError as permission", () => {
   const result = classifyNfcWriteError(domException("NotAllowedError", "Permission denied."));
   expect(result.kind).toBe("permission");
   expect(result.userMessage.length).toBeGreaterThan(0);
+});
+
+test("classifies NotAllowedError as permission even when its message also contains 'IO error' (name takes precedence over message)", () => {
+  // Precedence lock-in: the "IO error" message match only kicks in for
+  // names classifyNfcWriteError doesn't already recognize. NotAllowedError
+  // is checked first, so a (hypothetical / platform-quirk) NotAllowedError
+  // whose message happens to mention "IO error" must still classify as
+  // permission, not tag-lost.
+  const result = classifyNfcWriteError(
+    domException("NotAllowedError", "Failed to write due to an IO error: null")
+  );
+  expect(result.kind).toBe("permission");
 });
 
 test("classifies NotSupportedError as not-supported and mentions the tag may be write-protected", () => {
@@ -115,4 +128,46 @@ test("withRetries resolves in one attempt when fn succeeds immediately", async (
   expect(result).toBe("ok");
   expect(attempts).toBe(1);
   expect(fn).toHaveBeenCalledTimes(1);
+});
+
+// --- isDuplicateRegistrationError ------------------------------------------
+//
+// Regression coverage for a redaction bug: the admin factory page used to
+// detect a duplicate card registration by regex-matching `/already exists/i`
+// against a thrown Error's `.message`. On a real production Convex
+// deployment, plain Error messages thrown from a mutation are redacted
+// client-side to the fixed string "Server Error" — so that regex could never
+// fire in prod, and an admin re-tapping an already-registered card would
+// fall into the generic-retry path with the scan session left alive,
+// looping forever. convex/admin.ts now throws a ConvexError carrying
+// `{ code: "DUPLICATE_UUID", ... }` in its (unredacted) `.data` for exactly
+// this case; detection must key off that data code, never message text.
+
+test("isDuplicateRegistrationError returns true for a ConvexError with data.code DUPLICATE_UUID", () => {
+  const err = new ConvexError({ code: "DUPLICATE_UUID", uuid: "04:a3:5b:12:6f:80:81" });
+  expect(isDuplicateRegistrationError(err)).toBe(true);
+});
+
+test("isDuplicateRegistrationError returns false for a plain Error carrying the redacted production message shape", () => {
+  // This is the exact string a real production Convex deployment sends to
+  // the client for an uncaught, non-ConvexError throw — the literal text
+  // that broke the old `/already exists/i` regex check.
+  const err = new Error("[CONVEX M(admin:registerSingleCard)] Server Error");
+  expect(isDuplicateRegistrationError(err)).toBe(false);
+});
+
+test("isDuplicateRegistrationError returns false for a ConvexError with an unrelated data code", () => {
+  const err = new ConvexError({ code: "SOME_OTHER_ERROR" });
+  expect(isDuplicateRegistrationError(err)).toBe(false);
+});
+
+test("isDuplicateRegistrationError returns false for a ConvexError whose data isn't an object with a code", () => {
+  const err = new ConvexError("plain string data");
+  expect(isDuplicateRegistrationError(err)).toBe(false);
+});
+
+test("isDuplicateRegistrationError returns false for a non-Error thrown value", () => {
+  expect(isDuplicateRegistrationError("just a string")).toBe(false);
+  expect(isDuplicateRegistrationError(null)).toBe(false);
+  expect(isDuplicateRegistrationError(undefined)).toBe(false);
 });

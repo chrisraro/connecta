@@ -36,7 +36,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import { Id } from "@/convex/_generated/dataModel";
 import { SIGMATAP } from "@/lib/brand";
-import { classifyNfcWriteError, withRetries } from "@/lib/nfc";
+import { classifyNfcWriteError, withRetries, isDuplicateRegistrationError } from "@/lib/nfc";
 
 // Define NDEF types since they might not be in the global scope
 interface NDEFReadingEvent extends Event {
@@ -174,8 +174,7 @@ export default function AdminFactoryPage() {
                             uuid: serialNumber,
                         });
                     } catch (registerErr) {
-                        const message = registerErr instanceof Error ? registerErr.message : String(registerErr);
-                        if (/already exists/i.test(message)) {
+                        if (isDuplicateRegistrationError(registerErr)) {
                             // The write already succeeded and put a valid URL
                             // on this physical tag — it's just a duplicate
                             // registration (most likely this exact card was
