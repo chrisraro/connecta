@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { QrClaimScanner, type QrScanResult } from "@/components/dashboard/QrClaimScanner";
 
 export default function CardsPage() {
     const { user, isLoaded } = useUser();
@@ -43,6 +44,7 @@ export default function CardsPage() {
     const activateCard = useMutation(api.cards.activateCard);
     const linkProfile = useMutation(api.cards.linkProfile);
     const unclaimCard = useMutation(api.cards.unclaimCard);
+    const claimCard = useMutation(api.cards.claimCardByUuid);
 
     const [isActivating, setIsActivating] = useState(false);
     const [activationCode, setActivationCode] = useState("");
@@ -68,6 +70,15 @@ export default function CardsPage() {
         }
     };
 
+    const finishActivation = () => {
+        setIsSuccess(true);
+        setActivationCode("");
+        setTimeout(() => {
+            setIsSuccess(false);
+            setShowActivationDialog(false);
+        }, 2000);
+    };
+
     const handleActivate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user?.id || !activationCode) return;
@@ -79,14 +90,32 @@ export default function CardsPage() {
                 clerkId: user.id,
                 activationCode: activationCode.toUpperCase().trim()
             });
-            setIsSuccess(true);
-            setActivationCode("");
-            setTimeout(() => {
-                setIsSuccess(false);
-                setShowActivationDialog(false);
-            }, 2000);
+            finishActivation();
         } catch (err: unknown) {
             setActivationError(err instanceof Error ? err.message : "Failed to activate card. Please check the code.");
+        } finally {
+            setIsActivating(false);
+        }
+    };
+
+    // Camera path: the QR on the card encodes /t/<uuid>, so a scan claims by
+    // uuid directly — no code transcription, and no round-trip through the
+    // /t/ redirect + auth chain that the printed QR uses for signed-out users.
+    const handleScanResult = async (result: QrScanResult) => {
+        if (!user?.id) return;
+        setIsActivating(true);
+        setActivationError(null);
+        try {
+            if (result.kind === "uuid") {
+                await claimCard({ clerkId: user.id, uuid: result.uuid });
+            } else {
+                await activateCard({ clerkId: user.id, activationCode: result.code });
+            }
+            finishActivation();
+        } catch (err: unknown) {
+            setActivationError(
+                err instanceof Error ? err.message : "Failed to activate the scanned card."
+            );
         } finally {
             setIsActivating(false);
         }
@@ -167,11 +196,14 @@ export default function CardsPage() {
                                         </div>
                                     )}
 
-                                    <div className="p-4 bg-muted/50 rounded-2xl border border-dashed flex flex-col items-center justify-center gap-3 text-center">
-                                        <QrCode className="w-8 h-8 text-muted-foreground" />
-                                        <p className="text-xs text-muted-foreground font-medium">
-                                            Or scan the QR code on your card using your phone camera to activate automatically.
-                                        </p>
+                                    <div className="p-4 bg-muted/50 rounded-2xl border border-dashed space-y-3">
+                                        <div className="flex items-center justify-center gap-2 text-center">
+                                            <QrCode className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                                            <p className="text-xs text-muted-foreground font-medium">
+                                                No code handy? Scan the QR printed on your card instead.
+                                            </p>
+                                        </div>
+                                        <QrClaimScanner onResult={handleScanResult} disabled={isActivating} />
                                     </div>
                                 </div>
                                 <Button type="submit" className="w-full h-12 rounded-xl text-lg font-bold" disabled={isActivating || activationCode.length < 6}>

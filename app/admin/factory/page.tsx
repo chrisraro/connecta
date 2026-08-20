@@ -141,13 +141,15 @@ export default function AdminFactoryPage() {
                         return;
                     }
 
-                    // Generate a unique activation code
-                    const activationCode = `ACT-${serialNumber}-${Date.now()}`;
-
+                    // The activation code is generated server-side: 6 chars
+                    // from an unambiguous uppercase alphabet, unique-checked
+                    // against the cards table. The old client-side
+                    // `ACT-<serial>-<timestamp>` codes were never enterable in
+                    // the user activation form (which promises 6 characters
+                    // and uppercases input before an exact-match lookup).
                     const result = await registerCard({
                         clerkId: user!.id!,
                         uuid: serialNumber,
-                        activationCode: activationCode
                     });
                     
                     // Transform response to match expected state shape
@@ -203,13 +205,11 @@ export default function AdminFactoryPage() {
         }
 
         try {
-            // Generate a unique activation code
-            const activationCode = `ACT-${uuid}-${Date.now()}`;
-
+            // Server generates the 6-char activation code — see the NFC
+            // scan handler above for why the client no longer does.
             const result = await registerCard({
                 clerkId: user!.id!,
                 uuid: uuid,
-                activationCode: activationCode
             });
 
             // Transform response to match expected state shape
@@ -612,6 +612,14 @@ export default function AdminFactoryPage() {
 
                             <div className="mt-2 text-black font-mono text-[9px] text-center px-2 truncate max-w-full">
                                 {PRODUCTION_DOMAIN.replace(/^https?:\/\//, "")}/t/{selectedCard?.uuid?.substring(0, 8)}...
+                            </div>
+
+                            {/* The manual-entry fallback promises "the
+                                6-character code found on your card or its
+                                packaging" — so the code has to actually BE on
+                                the label, not only in the admin table. */}
+                            <div className="mt-1 text-black font-black text-[13px] tracking-[0.25em]">
+                                {selectedCard?.activationCode}
                             </div>
                         </div>
 

@@ -3,7 +3,8 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
-import { useEffect, use, useRef } from "react";
+import { useEffect, use, useRef, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Loader2, Smartphone } from "lucide-react";
 import { profilePath } from "@/lib/profileUrl";
 import Link from "next/link";
@@ -14,6 +15,10 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
     const router = useRouter();
     const card = useQuery(api.cards.getCardByUuid, { uuid });
     const incrementTap = useMutation(api.cards.incrementTapCount);
+    const { isSignedIn, isLoaded: authLoaded, user } = useUser();
+    const claimCard = useMutation(api.cards.claimCardByUuid);
+    const [claimFailed, setClaimFailed] = useState<string | null>(null);
+    const claimingRef = useRef(false);
 
     // Resolve the linked profile so we can redirect to its vanity slug
     // instead of the bare /p/<id> fallback whenever one is set.
@@ -25,7 +30,9 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
     const incrementedRef = useRef(false);
 
     const errorMessage =
-        card === null
+        claimFailed !== null
+            ? claimFailed
+            : card === null
             ? "This card ID was not found in our system."
             : card && card.status !== "inventory" && card.status !== "active"
             ? "This card is not available."
@@ -37,8 +44,37 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
         if (!card) return;
 
         if (card.status === "inventory") {
-            // Unactivated card - redirect to signup with card_uuid for activation flow
-            router.replace(`/auth?mode=signup&card_uuid=${encodeURIComponent(uuid)}`);
+            /*
+              Two paths, split on session state — and the split is
+              load-bearing, not an optimization. A signed-in user routed to
+              the signup page never RUNS a sign-up flow: Clerk sees the
+              active session and bounces straight to fallbackRedirectUrl
+              ("/dashboard"), and forceRedirectUrl — the only place
+              card_uuid survives — fires exclusively on a COMPLETED auth
+              flow. So for signed-in users the auth detour silently dropped
+              the uuid and the card was never claimed. Claim it right here
+              instead; only signed-out visitors take the auth detour.
+            */
+            if (!authLoaded) return;
+            if (isSignedIn && user) {
+                if (claimingRef.current || claimFailed) return;
+                claimingRef.current = true;
+                claimCard({ clerkId: user.id, uuid })
+                    .then(() => {
+                        router.replace("/dashboard/cards?claimed=1");
+                    })
+                    .catch((err: unknown) => {
+                        // Convex wraps thrown errors in transport noise
+                        // ("[CONVEX M(...)] [Request ID: ...] Server Error
+                        // Uncaught Error: <message> at handler (...)").
+                        // Surface only the human sentence.
+                        const raw = err instanceof Error ? err.message : "";
+                        const m = raw.match(/Uncaught Error:\s*(.*?)(?:\s+at\s|$)/);
+                        setClaimFailed(m?.[1]?.trim() || "Could not activate this card.");
+                    });
+            } else {
+                router.replace(`/auth?mode=signup&card_uuid=${encodeURIComponent(uuid)}`);
+            }
         } else if (
             card.status === "active" &&
             card.linkedProfileId &&
@@ -54,7 +90,7 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
                 profilePath(linkedProfile ?? { _id: card.linkedProfileId, slug: undefined })
             );
         }
-    }, [card, linkedProfile, router, incrementTap, uuid]);
+    }, [card, linkedProfile, router, incrementTap, uuid, authLoaded, isSignedIn, user, claimCard, claimFailed]);
 
     if (errorMessage) {
         return (

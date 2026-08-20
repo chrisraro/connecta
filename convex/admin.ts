@@ -361,11 +361,33 @@ export const getCards = query({
   },
 });
 
+/**
+ * Alphabet for user-typed activation codes. Uppercase-only and stripped of
+ * every lookalike pair (0/O, 1/I/L, 5/S, 8/B, 2/Z) because these codes are
+ * transcribed by hand from a printed sticker — often from a phone screen or
+ * small label. 24^6 ≈ 191M combinations; uniqueness is enforced by lookup.
+ */
+const ACTIVATION_ALPHABET = "ACDEFGHJKMNPQRTUVWXY34679";
+
+function randomActivationCode(): string {
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += ACTIVATION_ALPHABET[Math.floor(Math.random() * ACTIVATION_ALPHABET.length)];
+  }
+  return code;
+}
+
 export const registerSingleCard = mutation({
   args: {
     clerkId: v.string(),
     uuid: v.string(),
-    activationCode: v.string(),
+    // Deprecated and ignored: codes are generated server-side now. The old
+    // client generated `ACT-<serial>-<Date.now()>` — 30–55 chars with
+    // lowercase hex — while the user-facing activation form promises a
+    // 6-character code and uppercases input before an exact-match lookup,
+    // so no client-generated code was ever enterable. Kept optional so a
+    // stale deployed client doesn't get an ArgumentValidationError.
+    activationCode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const adminUser = await requireAdmin(ctx, args.clerkId);
@@ -377,17 +399,24 @@ export const registerSingleCard = mutation({
     if (existingCard) {
       throw new Error(`Card with UUID ${uuidNormalized} already exists`);
     }
-    const existingActivation = await ctx.db
-      .query("cards")
-      .withIndex("by_activationCode", (q) => q.eq("activationCode", args.activationCode))
-      .first();
-    if (existingActivation) {
-      throw new Error(`Card with activation code ${args.activationCode} already exists`);
+    let activationCode = randomActivationCode();
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const collision = await ctx.db
+        .query("cards")
+        .withIndex("by_activationCode", (q) => q.eq("activationCode", activationCode))
+        .first();
+      if (!collision) break;
+      if (attempt === 9) throw new Error("Could not generate a unique activation code");
+      activationCode = randomActivationCode();
     }
     const cardId = await ctx.db.insert("cards", {
+      // Custodial: the card sits in the admin's inventory until claimed.
+      // cards.ts:claimCardByUuid treats status "inventory" as claimable
+      // regardless of this field — do not use ownerId as an ownership gate
+      // for unactivated stock.
       ownerId: adminUser._id,
       uuid: uuidNormalized,
-      activationCode: args.activationCode,
+      activationCode,
       status: "inventory",
       linkedProfileId: undefined,
       tapCount: 0,
@@ -399,7 +428,7 @@ export const registerSingleCard = mutation({
       resourceId: cardId,
       changes: { uuid: uuidNormalized },
     });
-    return { success: true, cardId, uuid: uuidNormalized, activationCode: args.activationCode };
+    return { success: true, cardId, uuid: uuidNormalized, activationCode };
   },
 });
 

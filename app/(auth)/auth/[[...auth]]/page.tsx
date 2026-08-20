@@ -34,8 +34,15 @@ async function AuthContent({
 
   const isSignIn = mode === 'signin';
 
-  // Build redirect URL - always route to callback which redirects to /dashboard (or /admin)
-  const redirectUrl = '/auth/callback';
+  // Build redirect URL - always route to callback which redirects to /dashboard (or /admin).
+  // card_uuid MUST ride along: the QR on a physical card lands on
+  // /t/<uuid> -> here, and the only consumer that actually claims the card
+  // (onboarding's claimCardByUuid effect) sits on the far side of Clerk's
+  // redirect. Dropping the param here silently severed the whole QR
+  // activation path — users scanned, signed up, and nothing happened.
+  const redirectUrl = cardUuid
+    ? `/auth/callback?card_uuid=${encodeURIComponent(cardUuid)}`
+    : '/auth/callback';
 
   // Build auth URLs preserving card_uuid when toggling sign-in vs sign-up
   const signUpUrl = cardUuid

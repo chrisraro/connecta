@@ -45,10 +45,22 @@ export const activateCard = mutation({
     handler: async (ctx, args) => {
         const user = await requireUserMatching(ctx, args.clerkId);
 
-        const card = await ctx.db
+        // Codes are stored uppercase (generated from an uppercase alphabet),
+        // and users transcribe them by hand — normalize before the
+        // exact-match index lookup. The raw-input fallback covers legacy
+        // codes from the old client-side generator, which contain lowercase
+        // hex segments and would be destroyed by uppercasing.
+        const normalized = args.activationCode.trim().toUpperCase();
+        let card = await ctx.db
             .query("cards")
-            .withIndex("by_activationCode", (q) => q.eq("activationCode", args.activationCode))
+            .withIndex("by_activationCode", (q) => q.eq("activationCode", normalized))
             .first();
+        if (!card) {
+            card = await ctx.db
+                .query("cards")
+                .withIndex("by_activationCode", (q) => q.eq("activationCode", args.activationCode.trim()))
+                .first();
+        }
 
         if (!card) throw new Error("Invalid activation code");
         if (card.status !== "inventory") throw new Error("Card already activated or reported lost");
@@ -155,12 +167,14 @@ export const claimCardByUuid = mutation({
             return card._id;
         }
 
-        // If card belongs to another user, reject
-        if (card.ownerId && card.ownerId !== user._id) {
-            throw new Error("Card is not available for claiming");
-        }
-
-        // If card is not in inventory status, reject
+        // `status` is the source of truth for claimability, NOT ownerId.
+        // Factory registration stamps ownerId with the registering admin as
+        // a custodian (the schema requires an owner), so an ownerId check
+        // here rejected every card the factory ever produced — the QR
+        // activation path was broken for all real stock. A card that is
+        // still "inventory" is unowned in the product sense, whoever's id
+        // it carries; a card that is NOT inventory belongs to whoever
+        // activated it and must not be re-claimable.
         if (card.status !== "inventory") {
             throw new Error("Card is not available for claiming");
         }

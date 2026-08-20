@@ -121,6 +121,14 @@ const INFRA_EXCEPTIONS: Record<string, string[]> = {
   // instead of holding their own literal) — renaming any of them would
   // orphan a value already written to a real user's browser under the old
   // key before the first rename shipped.
+  // Test fixtures that exercise the QR parser against the literal hosts
+  // printed on already-shipped cards. Two generations of physical stock
+  // carry retired hostnames; the parser must keep accepting them, so the
+  // fixtures must keep naming them.
+  [join("components", "dashboard", "QrClaimScanner.test.ts")]: [
+    '"https://herald-ph.vercel.app",',
+    '"https://tapfolio-beta.vercel.app",',
+  ],
   [join("lib", "storage-keys.ts")]: [
     'export const GUEST_CART_ID_KEY = "tapfolio_guest_cart_id";',
     'export const DISCOUNT_CODE_KEY = "tapfolio_discount_code";',
