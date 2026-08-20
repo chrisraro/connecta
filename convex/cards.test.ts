@@ -95,7 +95,7 @@ test("claimCardByUuid claims a factory-registered inventory card despite admin c
 
   // This is the QR-scan path: the card is in inventory but carries the
   // admin's ownerId from registration. It must still be claimable.
-  const cardId = await asUser.mutation(api.cards.claimCardByUuid, {
+  const cardId = await asUser.action(api.cards.claimCardByUuid, {
     clerkId: "user_clerk",
     uuid: "04:aa:bb:cc",
   });
@@ -121,7 +121,7 @@ test("claimCardByUuid still rejects a card actively owned by someone else", asyn
   );
 
   await expect(
-    asUser.mutation(api.cards.claimCardByUuid, {
+    asUser.action(api.cards.claimCardByUuid, {
       clerkId: "user_clerk",
       uuid: "taken-card",
     })
@@ -139,11 +139,70 @@ test("activateCard normalizes case and whitespace in the entered code", async ()
     uuid: "04:11:22:33",
   });
 
-  const cardId = await asUser.mutation(api.cards.activateCard, {
+  const cardId = await asUser.action(api.cards.activateCard, {
     clerkId: "user_clerk",
     activationCode: `  ${reg.activationCode.toLowerCase()}  `,
   });
   expect(cardId).toBe(reg.cardId);
+});
+
+test("getCardByUuid returns only the public projection, never activationCode or ownerId", async () => {
+  const t = convexTest(schema);
+  const { adminId } = await seedAdminAndUser(t);
+
+  const profileId = await t.run(async (ctx) =>
+    ctx.db.insert("profiles", {
+      ownerId: adminId,
+      name: "Linked Profile",
+      agentInfo: {
+        fullName: "Linked Profile",
+        title: "Agent",
+        company: "Acme",
+        phone: "0917",
+        email: "linked@test.dev",
+        services: [],
+        socialLinks: [],
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#000", background: "#fff", text: "#000" },
+        componentOrder: [],
+        heroStyle: "default",
+      },
+      featuredProperties: [],
+    })
+  );
+  await t.run(async (ctx) =>
+    ctx.db.insert("cards", {
+      ownerId: adminId,
+      uuid: "public-lookup-card",
+      activationCode: "SECRET",
+      status: "active",
+      linkedProfileId: profileId,
+      tapCount: 0,
+    })
+  );
+
+  const card = await t.query(api.cards.getCardByUuid, { uuid: "public-lookup-card" });
+
+  expect(card).not.toBeNull();
+  expect(card).not.toHaveProperty("activationCode");
+  expect(card).not.toHaveProperty("ownerId");
+  const allowedKeys = new Set(["_id", "_creationTime", "uuid", "status", "linkedProfileId"]);
+  for (const key of Object.keys(card ?? {})) {
+    expect(allowedKeys.has(key)).toBe(true);
+  }
+  expect(card?.uuid).toBe("public-lookup-card");
+  expect(card?.status).toBe("active");
+  expect(card?.linkedProfileId).toBe(profileId);
+});
+
+test("getCardByUuid returns null for an unknown uuid", async () => {
+  const t = convexTest(schema);
+
+  const card = await t.query(api.cards.getCardByUuid, { uuid: "does-not-exist" });
+
+  expect(card).toBeNull();
 });
 
 test("activateCard still matches pre-fix legacy codes stored with lowercase segments", async () => {
@@ -163,10 +222,76 @@ test("activateCard still matches pre-fix legacy codes stored with lowercase segm
     })
   );
 
-  const cardId = await asUser.mutation(api.cards.activateCard, {
+  const cardId = await asUser.action(api.cards.activateCard, {
     clerkId: "user_clerk",
     activationCode: legacy,
   });
   const card = await t.run(async (ctx) => ctx.db.get(cardId));
   expect(card?.status).toBe("active");
+});
+
+test("activateCard rate-limits repeated wrong-code attempts by the same user", async () => {
+  const t = convexTest(schema);
+  await seedAdminAndUser(t);
+  const asUser = t.withIdentity({ subject: "user_clerk" });
+
+  // Exhaust the limit with genuine wrong-code attempts (the normal shape of
+  // a code-guessing attack) — each rejects with "Invalid activation code"
+  // until the rate limiter itself kicks in. This is the case that a naive
+  // "checkRateLimit at the top of a throwing mutation" cannot actually
+  // defend against: Convex mutations are atomic, so a rate-limit counter
+  // write made just before a same-call throw (the wrong-code rejection)
+  // would normally be rolled back right along with it, and the counter
+  // would never advance past 1 no matter how many times the attacker
+  // retried. activateCard is an action for exactly this reason — see the
+  // comment on `recordActivationAttempt` in convex/cards.ts.
+  for (let i = 0; i < 5; i++) {
+    await expect(
+      asUser.action(api.cards.activateCard, {
+        clerkId: "user_clerk",
+        activationCode: "WRONG1",
+      })
+    ).rejects.toThrow(/invalid activation code/i);
+  }
+
+  await expect(
+    asUser.action(api.cards.activateCard, {
+      clerkId: "user_clerk",
+      activationCode: "WRONG1",
+    })
+  ).rejects.toThrow(/too many requests/i);
+});
+
+test("claimCardByUuid rate-limits repeated claim attempts by the same user", async () => {
+  const t = convexTest(schema);
+  await seedAdminAndUser(t);
+  const asUser = t.withIdentity({ subject: "user_clerk" });
+
+  for (let i = 0; i < 5; i++) {
+    await expect(
+      asUser.action(api.cards.claimCardByUuid, {
+        clerkId: "user_clerk",
+        uuid: "no-such-card",
+      })
+    ).rejects.toThrow(/card not found/i);
+  }
+
+  await expect(
+    asUser.action(api.cards.claimCardByUuid, {
+      clerkId: "user_clerk",
+      uuid: "no-such-card",
+    })
+  ).rejects.toThrow(/too many requests/i);
+});
+
+// getByActivationCode was a public, unauthenticated, un-rate-limited query
+// returning the full card doc for an exact code guess — a brute-force oracle
+// that bypassed the activation rate limiter. It must never come back.
+// NOTE: asserting via the generated `api` object is useless here — `api` is
+// convex's anyApi Proxy, which fabricates a reference for ANY property name,
+// so such an assertion passes unconditionally. Assert against the real
+// module's exports instead.
+test("getByActivationCode stays deleted (brute-force oracle)", async () => {
+  const cardsModule = await import("./cards");
+  expect(Object.keys(cardsModule)).not.toContain("getByActivationCode");
 });

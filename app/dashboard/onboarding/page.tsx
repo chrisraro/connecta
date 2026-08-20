@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { Id } from "@/convex/_generated/dataModel";
@@ -82,7 +82,9 @@ function OnboardingContent() {
     
     const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
     const updateOnboarding = useMutation(api.users.updateOnboarding);
-    const claimCard = useMutation(api.cards.claimCardByUuid);
+    // claimCardByUuid is a Convex action (not a mutation) — see
+    // convex/cards.ts. useAction keeps the same calling convention.
+    const claimCard = useAction(api.cards.claimCardByUuid);
     const linkProfile = useMutation(api.cards.linkProfile);
     const onboarding = useQuery(api.users.getOnboardingStatus, clerkUser?.id ? { clerkId: clerkUser.id } : "skip");
 

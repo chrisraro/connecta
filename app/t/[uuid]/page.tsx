@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useEffect, use, useRef, useState } from "react";
@@ -16,7 +16,12 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
     const card = useQuery(api.cards.getCardByUuid, { uuid });
     const incrementTap = useMutation(api.cards.incrementTapCount);
     const { isSignedIn, isLoaded: authLoaded, user } = useUser();
-    const claimCard = useMutation(api.cards.claimCardByUuid);
+    // claimCardByUuid is a Convex action (not a mutation) so its rate-limit
+    // bookkeeping survives a "card not found" rejection instead of being
+    // rolled back with it — see convex/cards.ts. useAction keeps the same
+    // calling convention as useMutation, so the .then()/.catch() below is
+    // unchanged.
+    const claimCard = useAction(api.cards.claimCardByUuid);
     const [claimFailed, setClaimFailed] = useState<string | null>(null);
     const claimingRef = useRef(false);
 
@@ -65,7 +70,7 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
                     })
                     .catch((err: unknown) => {
                         // Convex wraps thrown errors in transport noise
-                        // ("[CONVEX M(...)] [Request ID: ...] Server Error
+                        // ("[CONVEX A(...)] [Request ID: ...] Server Error
                         // Uncaught Error: <message> at handler (...)").
                         // Surface only the human sentence.
                         const raw = err instanceof Error ? err.message : "";

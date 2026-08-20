@@ -1,6 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
-import { Doc } from "./_generated/dataModel";
+import { mutation, query, action, internalMutation, QueryCtx, MutationCtx } from "./_generated/server";
+import { Doc, Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import { requireUserMatching } from "./authz";
 import { planContext } from "./billing";
 import { checkRateLimit } from "./rateLimit";
@@ -27,17 +28,32 @@ async function assertCanActivateCard(ctx: MutationCtx, user: Doc<"users">) {
     }
 }
 
-export const getByActivationCode = query({
-    args: { activationCode: v.string() },
+// Internal: check-and-record one activation attempt for the authenticated
+// user, keyed by their trusted Convex user id (not the client-supplied
+// clerkId string, so it can't be bypassed by resubmitting the args).
+//
+// This has to be its own mutation, separate from `performActivateCard`,
+// because Convex mutations are atomic: if `performActivateCard` later
+// throws (wrong code), only ITS OWN writes roll back. This call already
+// committed moments earlier — invoked via `ctx.runMutation` from the
+// `activateCard` action below, which is not itself one atomic transaction —
+// so repeated wrong-code guesses genuinely accumulate toward the limit
+// instead of being silently wiped out by the throw. (A plain mutation that
+// called checkRateLimit and then threw for a bad code would roll its own
+// rate-limit write back along with everything else, so the counter would
+// never advance past 1 no matter how many times an attacker retried.)
+export const recordActivationAttempt = internalMutation({
+    args: { clerkId: v.string() },
     handler: async (ctx, args) => {
-        return await ctx.db
-            .query("cards")
-            .withIndex("by_activationCode", (q) => q.eq("activationCode", args.activationCode))
-            .first();
+        const user = await requireUserMatching(ctx, args.clerkId);
+        await checkRateLimit(ctx, `activate:${user._id}`, { max: 5, windowMs: 60_000 });
     },
 });
 
-export const activateCard = mutation({
+// Internal: the actual activation logic, unchanged from before other than
+// living in its own mutation. Called from the `activateCard` action after
+// the rate-limit gate above passes.
+export const performActivateCard = internalMutation({
     args: {
         clerkId: v.string(),
         activationCode: v.string(),
@@ -76,6 +92,23 @@ export const activateCard = mutation({
     },
 });
 
+// Public entry point. An action rather than a mutation: see
+// `recordActivationAttempt` for why the rate-limit bookkeeping needs to
+// commit in its own transaction before the throw-prone validation step
+// runs. Client callers use `useAction`, not `useMutation` — the calling
+// convention (a function that resolves on success, rejects on error) is
+// otherwise identical.
+export const activateCard = action({
+    args: {
+        clerkId: v.string(),
+        activationCode: v.string(),
+    },
+    handler: async (ctx, args): Promise<Id<"cards">> => {
+        await ctx.runMutation(internal.cards.recordActivationAttempt, { clerkId: args.clerkId });
+        return await ctx.runMutation(internal.cards.performActivateCard, args);
+    },
+});
+
 export const linkProfile = mutation({
     args: {
         clerkId: v.string(),
@@ -95,14 +128,26 @@ export const linkProfile = mutation({
     },
 });
 
+// Public, unauthenticated lookup — anyone who scans a card's QR (or
+// enumerates /t/<uuid>) can call this before signing in. Return only the
+// minimal projection the /t/[uuid] redirect page needs: never
+// `activationCode` (the manual-claim secret) or `ownerId` (custodial admin
+// id from factory registration, nobody's business either).
 export const getCardByUuid = query({
     args: { uuid: v.string() },
     handler: async (ctx, args) => {
         const normalized = decodeURIComponent(args.uuid).trim().toLowerCase();
-        return await ctx.db
+        const card = await ctx.db
             .query("cards")
             .withIndex("by_uuid", (q) => q.eq("uuid", normalized))
             .first();
+        if (!card) return null;
+        return {
+            _id: card._id,
+            uuid: card.uuid,
+            status: card.status,
+            linkedProfileId: card.linkedProfileId,
+        };
     },
 });
 
@@ -119,7 +164,29 @@ export const incrementTapCount = mutation({
     },
 });
 
-export const claimCardByUuid = mutation({
+// Internal: check-and-record one claim attempt for the authenticated
+// identity, keyed the same way `claimCardByUuid` itself validates identity
+// (verified subject, available before any user record exists — claiming can
+// be the very first thing a brand-new signup does). See
+// `recordActivationAttempt` above for why this must be a separate mutation
+// from `performClaimCardByUuid` rather than a checkRateLimit call inlined at
+// the top of one throwing mutation: this call's write commits independently
+// the moment it returns, so it survives a later "card not found" throw in
+// the same client-facing call instead of being rolled back with it.
+export const recordClaimAttempt = internalMutation({
+    args: { clerkId: v.string() },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized: authentication required");
+        if (identity.subject !== args.clerkId) throw new Error("Unauthorized: identity mismatch");
+        await checkRateLimit(ctx, `claim:${identity.subject}`, { max: 5, windowMs: 60_000 });
+    },
+});
+
+// Internal: the actual claim logic, unchanged from before other than living
+// in its own mutation. Called from the `claimCardByUuid` action after the
+// rate-limit gate above passes.
+export const performClaimCardByUuid = internalMutation({
     args: {
         clerkId: v.string(),
         uuid: v.string(),
@@ -189,6 +256,21 @@ export const claimCardByUuid = mutation({
         });
 
         return card._id;
+    },
+});
+
+// Public entry point. An action rather than a mutation — see
+// `recordClaimAttempt` above for why. Client callers use `useAction`, not
+// `useMutation`; the calling convention (resolves on success, rejects on
+// error) is otherwise identical.
+export const claimCardByUuid = action({
+    args: {
+        clerkId: v.string(),
+        uuid: v.string(),
+    },
+    handler: async (ctx, args): Promise<Id<"cards">> => {
+        await ctx.runMutation(internal.cards.recordClaimAttempt, { clerkId: args.clerkId });
+        return await ctx.runMutation(internal.cards.performClaimCardByUuid, args);
     },
 });
 
