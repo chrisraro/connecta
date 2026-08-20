@@ -36,6 +36,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import { Id } from "@/convex/_generated/dataModel";
 import { SIGMATAP } from "@/lib/brand";
+import { classifyNfcWriteError, withRetries } from "@/lib/nfc";
 
 // Define NDEF types since they might not be in the global scope
 interface NDEFReadingEvent extends Event {
@@ -83,6 +84,12 @@ export default function AdminFactoryPage() {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const abortControllerRef = useRef<AbortController | null>(null);
+    // Re-entrancy guard: Chrome re-fires `onreading` on every tag re-couple,
+    // so a wobbling card can spawn concurrent write() calls that race each
+    // other on the serialized NFC stack. While a write+register cycle is in
+    // flight for one reading, every other onreading event (any serial) is
+    // ignored until the cycle finishes.
+    const writingRef = useRef(false);
 
     const stopScanning = () => {
         if (abortControllerRef.current) {
@@ -115,23 +122,36 @@ export default function AdminFactoryPage() {
             };
 
             ndef.onreading = async (event: NDEFReadingEvent) => {
+                // Ignore re-couples of ANY tag while a write+register cycle
+                // is already in flight — see writingRef declaration above.
+                if (writingRef.current) return;
+
                 const serialNumber = event.serialNumber;
                 if (!serialNumber) {
                     setScanError("Tag has no serial number.");
                     return;
                 }
 
+                writingRef.current = true;
+                setScanError(null);
+                setNdefStatus("Writing — hold the card still…");
+
                 try {
-                    setNdefStatus("Writing NDEF URL...");
                     // Write ONLY the URL to the NFC tag
                     // This ensures maximum compatibility across all devices
                     // The vCard download will happen on the profile page when loaded
                     const url = `${PRODUCTION_DOMAIN}/t/${serialNumber}`;
                     console.log("Writing NDEF URL:", url);
-                    
-                    await ndef.write({
-                        records: [{ recordType: "url", data: url }]
-                    });
+
+                    // A wobbling/lifted card loses coupling mid-write, which
+                    // Chromium reports as an IO error (see lib/nfc.ts for
+                    // why). That's transient, so retry a few times before
+                    // giving up — withRetries only retries "tag-lost"
+                    // failures and rethrows everything else immediately.
+                    await withRetries(
+                        () => ndef.write({ records: [{ recordType: "url", data: url }] }),
+                        { attempts: 3, delayMs: 250 }
+                    );
                     setNdefStatus("NDEF Write Success!");
                     console.log("Successfully wrote URL to NFC tag");
 
@@ -141,34 +161,63 @@ export default function AdminFactoryPage() {
                         return;
                     }
 
-                    // The activation code is generated server-side: 6 chars
-                    // from an unambiguous uppercase alphabet, unique-checked
-                    // against the cards table. The old client-side
-                    // `ACT-<serial>-<timestamp>` codes were never enterable in
-                    // the user activation form (which promises 6 characters
-                    // and uppercases input before an exact-match lookup).
-                    const result = await registerCard({
-                        clerkId: user!.id!,
-                        uuid: serialNumber,
-                    });
-                    
+                    let result;
+                    try {
+                        // The activation code is generated server-side: 6 chars
+                        // from an unambiguous uppercase alphabet, unique-checked
+                        // against the cards table. The old client-side
+                        // `ACT-<serial>-<timestamp>` codes were never enterable in
+                        // the user activation form (which promises 6 characters
+                        // and uppercases input before an exact-match lookup).
+                        result = await registerCard({
+                            clerkId: user.id,
+                            uuid: serialNumber,
+                        });
+                    } catch (registerErr) {
+                        const message = registerErr instanceof Error ? registerErr.message : String(registerErr);
+                        if (/already exists/i.test(message)) {
+                            // The write already succeeded and put a valid URL
+                            // on this physical tag — it's just a duplicate
+                            // registration (most likely this exact card was
+                            // scanned before). Retrying would only write the
+                            // same tag again and hit the same duplicate, so
+                            // stop the scanner instead of looping on it.
+                            setNdefStatus(null);
+                            setScanError(
+                                "This card is already registered — its activation code is in the inventory list below."
+                            );
+                            stopScanning();
+                            return;
+                        }
+                        throw registerErr;
+                    }
+
                     // Transform response to match expected state shape
                     const cardData = {
                         id: result.cardId,
                         uuid: result.uuid,
                         activationCode: result.activationCode
                     };
-                    
+
                     setLastRegistered(cardData);
                     setSelectedCard(cardData);
                     setShowPrintDialog(true);
-                    
+
                     // Optional: keep scanning for next card?
                     // For now, stop to show the result
                     stopScanning();
                 } catch (err) {
-                    const error = err as Error;
-                    setScanError(error.message || "Failed to register card.");
+                    // Covers both the NFC write failing after retries and any
+                    // registerCard failure that isn't a duplicate above.
+                    // Never surface the raw DOMException text (it can end in
+                    // the literal word "null" — see lib/nfc.ts) and keep the
+                    // scan session alive so the admin can just re-tap instead
+                    // of restarting the whole scanner.
+                    setNdefStatus(null);
+                    const { userMessage } = classifyNfcWriteError(err);
+                    setScanError(userMessage);
+                } finally {
+                    writingRef.current = false;
                 }
             };
 
