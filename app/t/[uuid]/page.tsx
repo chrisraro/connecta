@@ -70,7 +70,7 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
                     })
                     .catch((err: unknown) => {
                         // Convex wraps thrown errors in transport noise
-                        // ("[CONVEX M(...)] [Request ID: ...] Server Error
+                        // ("[CONVEX A(...)] [Request ID: ...] Server Error
                         // Uncaught Error: <message> at handler (...)").
                         // Surface only the human sentence.
                         const raw = err instanceof Error ? err.message : "";

@@ -28,16 +28,6 @@ async function assertCanActivateCard(ctx: MutationCtx, user: Doc<"users">) {
     }
 }
 
-export const getByActivationCode = query({
-    args: { activationCode: v.string() },
-    handler: async (ctx, args) => {
-        return await ctx.db
-            .query("cards")
-            .withIndex("by_activationCode", (q) => q.eq("activationCode", args.activationCode))
-            .first();
-    },
-});
-
 // Internal: check-and-record one activation attempt for the authenticated
 // user, keyed by their trusted Convex user id (not the client-supplied
 // clerkId string, so it can't be bypassed by resubmitting the args).
