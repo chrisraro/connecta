@@ -19,6 +19,9 @@ const baseAgentInfo: ProfileInfo = {
   socialLinks: [],
   certification: { title: "Certified Thing", description: "..." },
   education: [{ degree: "BFA", school: "State U" }],
+  techStack: [{ category: "Design", skills: ["Figma"] }],
+  experience: [{ title: "Lead Designer", company: "Acme", period: "2020-2024" }],
+  testimonials: [{ quote: "Great work!", author: "A Client" }],
   gallery: ["img1", "img2"],
 };
 
@@ -55,14 +58,44 @@ test("deriveComponentOrder is applicable-and-enabled ids, in block order", () =>
   expect(deriveComponentOrder("individual", blocks)).toEqual(["Hero", "About", "Education", "Contact"]);
 });
 
-test("deriveBuilderProfileFields strips agentInfo fields owned by disabled blocks", () => {
+// Task 13 regression test — this is THE fix. Before it, deriveBuilderProfileFields
+// ran every disabled block's agentInfo field through
+// filterAgentInfoByEnabledBlocks and deleted it from what got saved. That was
+// fine for blocks the user deliberately hid, but this function has no way to
+// tell "user hid it on purpose" apart from "block is off because that's the
+// profile type's default and the user never touched it" — and the latter is
+// exactly what happens to onboarding-collected Services on the "individual"
+// profile type (its default componentOrder omits Services; see
+// convex/users.ts). The very first builder save after onboarding — even one
+// that edits an unrelated field like the phone number — silently and
+// PERMANENTLY destroyed the services the user had just typed in, with no
+// warning, and toggling the block back on could not recover them.
+//
+// The fix: hiding a block must only ever affect what renders, never what's
+// persisted. ProfileRenderer (components/templates/ProfileRenderer.tsx)
+// already gates entirely on componentOrder — a block whose id is absent from
+// componentOrder is never rendered no matter what agentInfo holds — so
+// stripping agentInfo at save time was pure risk with no rendering benefit.
+test("deriveBuilderProfileFields NEVER strips agentInfo data for a disabled block — hiding only affects componentOrder, not what's persisted", () => {
   const { componentOrder, filteredAgentInfo } = deriveBuilderProfileFields("individual", blocks, baseAgentInfo);
+
+  // componentOrder (the thing ProfileRenderer actually reads) still excludes
+  // disabled/inapplicable blocks — hiding still works for RENDERING.
   expect(componentOrder).not.toContain("Certification");
   expect(componentOrder).not.toContain("Services");
-  expect(filteredAgentInfo.certification).toBeUndefined();
-  expect(filteredAgentInfo.services).toBeUndefined();
-  // Education block is enabled, so its data survives.
+
+  // But every field the user entered survives the save untouched, even for
+  // the blocks that are disabled/inapplicable above (Certification, Services,
+  // and — for "individual" — TechStack/Experience aren't even offered as
+  // blocks, yet their data must not be silently discarded either).
+  expect(filteredAgentInfo).toEqual(baseAgentInfo);
+  expect(filteredAgentInfo.certification).toEqual(baseAgentInfo.certification);
+  expect(filteredAgentInfo.services).toEqual(baseAgentInfo.services);
   expect(filteredAgentInfo.education).toEqual(baseAgentInfo.education);
+  expect(filteredAgentInfo.techStack).toEqual(baseAgentInfo.techStack);
+  expect(filteredAgentInfo.experience).toEqual(baseAgentInfo.experience);
+  expect(filteredAgentInfo.testimonials).toEqual(baseAgentInfo.testimonials);
+  expect(filteredAgentInfo.gallery).toEqual(baseAgentInfo.gallery);
   expect(filteredAgentInfo.fullName).toBe("Jane Doe");
 });
 
@@ -119,7 +152,7 @@ test("both handleSave and renderPreview route through the shared derivation", ()
   ).toContain("deriveBuilderProfileFields(");
 });
 
-test("toggling a block off changes both componentOrder and the filtered agentInfo consistently", () => {
+test("toggling a block off changes componentOrder but never the filtered agentInfo (persistence is unaffected by visibility)", () => {
   const withGallery: ProfileInfo = { ...baseAgentInfo, gallery: ["a.jpg"] };
   const galleryOn = [...blocks, { id: "Gallery", isEnabled: true }];
   const galleryOff = [...blocks, { id: "Gallery", isEnabled: false }];
@@ -131,5 +164,7 @@ test("toggling a block off changes both componentOrder and the filtered agentInf
   expect(enabled.filteredAgentInfo.gallery).toEqual(["a.jpg"]);
 
   expect(disabled.componentOrder).not.toContain("Gallery");
-  expect(disabled.filteredAgentInfo.gallery).toBeUndefined();
+  // The data survives even though the block is off — only ProfileRenderer's
+  // componentOrder-driven visibility changes, not what's saved.
+  expect(disabled.filteredAgentInfo.gallery).toEqual(["a.jpg"]);
 });

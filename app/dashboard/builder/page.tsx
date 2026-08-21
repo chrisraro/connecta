@@ -851,11 +851,13 @@ function BuilderContent() {
                 blocks,
                 cleanAgentInfo
             );
-            // filterAgentInfoByEnabledBlocks only ever strips the optional
-            // block-owned fields (certification/education/etc.) — the
-            // required identity fields below are never touched by it, so
-            // re-asserting them here just narrows the return type back from
-            // ProfileInfo's optional `company` etc. to what createProfile expects.
+            // deriveBuilderProfileFields no longer filters agentInfo at all
+            // (Task 13 — hiding a block must only ever change what renders,
+            // never what's saved; see the function's doc comment). This
+            // re-assignment exists purely to narrow ProfileInfo's optional
+            // `company` etc. back to the non-optional strings createProfile
+            // expects — cleanAgentInfo already computed them as definite
+            // strings above.
             const filteredAgentInfo = {
                 ...filteredCleanAgentInfo,
                 fullName: cleanAgentInfo.fullName,
@@ -913,7 +915,13 @@ function BuilderContent() {
                 featuredProperties: [],
                 featuredProjects: [],
                 products: cleanProducts,
-                services: [],
+                // No `services` key here on purpose (Task 13 / audit-dataflow
+                // #1): this used to hardcode the top-level structured
+                // catalog field to an empty array on every single save, even
+                // though no editor anywhere writes a real value to it.
+                // agentInfo.services (the tag list, in filteredAgentInfo
+                // above) is the one authoritative services source — see
+                // lib/serviceCatalog.ts.
                 propertyListings: cleanPropertyListings,
                 inlineProjects: cleanInlineProjects,
                 digitalCard: digitalCard,
@@ -1022,7 +1030,9 @@ function BuilderContent() {
             properties: [],
             projects: projects,
             products: products,
-            services: [],
+            // No `services` here — ProfileRenderer never reads ProfileData.services
+            // (agent.services, inside filteredAgentInfo above, is what
+            // ServicesSection actually renders). See lib/serviceCatalog.ts.
             propertyListings: propertyListings,
             inlineProjects: inlineProjects,
             componentOrder,
@@ -1204,11 +1214,16 @@ function BuilderContent() {
                                             ownerId: user?.id || "",
                                             name: agentInfo.fullName,
                                             profileType: profileType,
-                                            agent: { ...agentInfo, services: agentInfo.services },
+                                            agent: agentInfo,
                                             properties: [],
                                             projects: projects,
                                             products: products,
-                                            services: (agentInfo.services || []).map((s) => ({ title: s, description: "" })),
+                                            // No top-level `services` — StorefrontView derives its
+                                            // service catalog from agent.services directly
+                                            // (lib/serviceCatalog.ts). This used to fake a
+                                            // ServiceItem[] out of the tag list just for preview,
+                                            // which is exactly the two-sources-for-one-concept
+                                            // problem Task 13 removed.
                                             propertyListings: propertyListings,
                                             inlineProjects: inlineProjects,
                                             theme: {
