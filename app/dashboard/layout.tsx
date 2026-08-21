@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/sheet";
 import { SIGMATAP } from "@/lib/brand";
 import { isFullScreenDashboardRoute } from "@/lib/dashboardChrome";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 // Shared between the mobile header and the desktop sidebar footer so the
 // account avatar looks identical in both places (same component in two
@@ -351,6 +353,14 @@ export default function DashboardLayout({
                 clerkId: user.id,
                 email: user.primaryEmailAddress?.emailAddress || "",
                 name: user.fullName || "",
+            }).catch((err) => {
+                // Runs on every dashboard page load — a silent failure here
+                // desyncs Convex's user record from Clerk (stale name/email,
+                // or an admin-status check that can never resolve). No
+                // retry loop; just make the failure visible once so it
+                // doesn't look like the dashboard is simply broken.
+                console.error("Failed to sync user:", err);
+                toast.error(toUserMessage(err));
             });
         }
     }, [isLoaded, user, syncUser]);

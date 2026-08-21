@@ -17,9 +17,21 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Building2, Loader2, UserPlus, Trash2, X, Save, Crown } from "lucide-react";
 import { SIGMATAP } from "@/lib/brand";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 export default function TeamPage() {
     const { user } = useUser();
@@ -33,6 +45,7 @@ export default function TeamPage() {
 
     const [inviteEmail, setInviteEmail] = useState("");
     const [busy, setBusy] = useState(false);
+    const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<Id<"users"> | null>(null);
     const [branding, setBranding] = useState({
         name: "",
         companyName: "",
@@ -86,12 +99,13 @@ export default function TeamPage() {
     const isOwner = data.isOwner;
     const seatPct = seatUsage.total > 0 ? Math.min(100, (seatUsage.used / seatUsage.total) * 100) : 0;
 
-    const run = async (fn: () => Promise<unknown>) => {
+    const run = async (fn: () => Promise<unknown>, successMessage?: string) => {
         setBusy(true);
         try {
             await fn();
+            if (successMessage) toast.success(successMessage);
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Action failed");
+            toast.error(toUserMessage(error));
         } finally {
             setBusy(false);
         }
@@ -103,7 +117,7 @@ export default function TeamPage() {
         await run(async () => {
             await inviteMember({ email });
             setInviteEmail("");
-        });
+        }, "Invite sent");
     };
 
     const handleSaveBranding = () =>
@@ -113,7 +127,8 @@ export default function TeamPage() {
                 companyName: branding.companyName,
                 logoUrl: branding.logoUrl,
                 accentColor: branding.accentColor,
-            })
+            }),
+            "Branding saved"
         );
 
     return (
@@ -207,10 +222,7 @@ export default function TeamPage() {
                                                         variant="ghost"
                                                         size="icon"
                                                         disabled={busy}
-                                                        onClick={() =>
-                                                            confirm("Remove this member from the team?") &&
-                                                            run(() => removeMember({ memberId: m.userId as Id<"users"> }))
-                                                        }
+                                                        onClick={() => setConfirmRemoveMemberId(m.userId as Id<"users">)}
                                                     >
                                                         <Trash2 className="h-4 w-4 text-red-500" />
                                                     </Button>
@@ -241,7 +253,7 @@ export default function TeamPage() {
                                                 size="icon"
                                                 disabled={busy}
                                                 onClick={() =>
-                                                    run(() => revokeInvite({ inviteId: inv._id as Id<"teamInvites"> }))
+                                                    run(() => revokeInvite({ inviteId: inv._id as Id<"teamInvites"> }), "Invite revoked")
                                                 }
                                             >
                                                 <X className="h-4 w-4" />
@@ -365,6 +377,29 @@ export default function TeamPage() {
                     </TabsContent>
                 )}
             </Tabs>
+
+            <AlertDialog open={confirmRemoveMemberId !== null} onOpenChange={(open) => { if (!open) setConfirmRemoveMemberId(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Remove this member?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            They will lose access to this team&apos;s workspace and lead pool immediately.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                const memberId = confirmRemoveMemberId;
+                                setConfirmRemoveMemberId(null);
+                                if (memberId) run(() => removeMember({ memberId }), "Member removed");
+                            }}
+                        >
+                            Remove Member
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

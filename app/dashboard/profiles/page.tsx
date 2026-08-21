@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Plus, ExternalLink, QrCode, Search, Users, Trash2, Edit2, MoreVertical, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 import { AccessCard } from "@/components/profile-builder/AccessCard";
 import {
     Dialog,
@@ -61,9 +63,10 @@ export default function ProfilesPage() {
         try {
             await deleteProfile({ profileId: profileId as Id<"profiles">, clerkId: user.id });
             setIsDeleting(null);
+            toast.success("Profile deleted");
         } catch (error) {
             console.error(error);
-            alert("Failed to delete profile.");
+            toast.error(toUserMessage(error));
         }
     };
 

@@ -4,6 +4,8 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 import { Id } from "@/convex/_generated/dataModel";
 import { SIGMATAP } from "@/lib/brand";
 import { 
@@ -36,6 +38,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { QrClaimScanner, type QrScanResult } from "@/components/dashboard/QrClaimScanner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function CardsPage() {
     const { user, isLoaded } = useUser();
@@ -57,10 +69,10 @@ export default function CardsPage() {
     const [isSuccess, setIsSuccess] = useState(false);
     const [showActivationDialog, setShowActivationDialog] = useState(false);
     const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+    const [confirmUnclaimId, setConfirmUnclaimId] = useState<Id<"cards"> | null>(null);
 
     const handleUnclaimCard = async (cardId: Id<"cards">) => {
         if (!user?.id) return;
-        if (!confirm("Are you sure you want to un-pair this NFC card? It will return to inventory status so it can be re-registered.")) return;
 
         setDeletingCardId(cardId);
         try {
@@ -68,8 +80,9 @@ export default function CardsPage() {
                 clerkId: user.id,
                 cardId,
             });
+            toast.success("Card un-paired and returned to inventory");
         } catch (err: unknown) {
-            alert(err instanceof Error ? err.message : "Failed to unclaim card");
+            toast.error(toUserMessage(err));
         } finally {
             setDeletingCardId(null);
         }
@@ -134,9 +147,10 @@ export default function CardsPage() {
                 cardId,
                 profileId: profileId === "none" ? undefined : (profileId as Id<"profiles">)
             });
+            toast.success(profileId === "none" ? "Card unlinked" : "Card linked to profile");
         } catch (err) {
             console.error(err);
-            alert("Failed to link profile");
+            toast.error(toUserMessage(err));
         }
     };
 
@@ -299,7 +313,7 @@ export default function CardsPage() {
                                     size="icon" 
                                     className="h-10 w-10 text-muted-foreground hover:text-destructive"
                                     disabled={deletingCardId === card._id}
-                                    onClick={() => handleUnclaimCard(card._id)}
+                                    onClick={() => setConfirmUnclaimId(card._id)}
                                     title="Un-pair / Return to inventory"
                                 >
                                     {deletingCardId === card._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -309,6 +323,29 @@ export default function CardsPage() {
                     ))}
                 </div>
             )}
+
+            <AlertDialog open={confirmUnclaimId !== null} onOpenChange={(open) => { if (!open) setConfirmUnclaimId(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Un-pair this NFC card?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            It will return to inventory status so it can be re-registered. This does not affect your profile data.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                const id = confirmUnclaimId;
+                                setConfirmUnclaimId(null);
+                                if (id) handleUnclaimCard(id);
+                            }}
+                        >
+                            Un-pair Card
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
