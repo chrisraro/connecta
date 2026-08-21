@@ -23,7 +23,46 @@
  * behavior while letting an admin use the rest of the consumer product
  * (builder, profiles, cards, the onboarding wizard, settings, ...) exactly
  * like any other user — which is also the only way to dogfood it.
+ *
+ * NOTE: This pure function is used internally by shouldRedirectAdminOnFirstLanding.
+ * Components should use shouldRedirectAdminOnFirstLanding instead, which adds
+ * session-tracking to prevent re-bouncing when an admin explicitly navigates
+ * to /dashboard (e.g., via the "Back to user app" button).
  */
 export function shouldRedirectAdminToConsole(pathname: string | null | undefined): boolean {
     return pathname === "/dashboard";
+}
+
+/**
+ * Decides whether an admin should be redirected to the admin console, but
+ * only on FIRST landing at /dashboard during this session.
+ *
+ * Once an admin has been redirected to /admin during a session, they can
+ * navigate back to /dashboard (e.g., via "Back to user app" button) and stay
+ * there — this allows the consumer app to be dogfooded without bouncing them
+ * in an infinite loop.
+ *
+ * Uses sessionStorage to track "already redirected this session" so the
+ * redirect fires only once per session, not on every visit to /dashboard.
+ *
+ * Must be called from a client component (requires sessionStorage).
+ */
+export function shouldRedirectAdminOnFirstLanding(pathname: string | null | undefined): boolean {
+    // Must check the route first — redirect only from /dashboard root
+    if (!shouldRedirectAdminToConsole(pathname)) {
+        return false;
+    }
+
+    // Only redirect if we haven't already done so in this session
+    // Using sessionStorage so the flag persists across navigations within the same tab
+    const redirectKey = "admin-redirect-done";
+    const hasAlreadyRedirected = sessionStorage.getItem(redirectKey) === "true";
+
+    if (hasAlreadyRedirected) {
+        return false;
+    }
+
+    // Mark that we've redirected so we don't do it again this session
+    sessionStorage.setItem(redirectKey, "true");
+    return true;
 }
