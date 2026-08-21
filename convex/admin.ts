@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { mutation, query, internalMutation, MutationCtx, QueryCtx } from "./_generated/server";
 import { Id, Doc } from "./_generated/dataModel";
 import { isActiveAdmin, requireUserMatching, requireAdmin as requireAdminAuthed } from "./authz";
@@ -397,7 +397,20 @@ export const registerSingleCard = mutation({
       .withIndex("by_uuid", (q) => q.eq("uuid", uuidNormalized))
       .first();
     if (existingCard) {
-      throw new Error(`Card with UUID ${uuidNormalized} already exists`);
+      // A plain `Error` here is the wrong shape for this: on a real
+      // production Convex deployment, Error messages are redacted
+      // client-side to the fixed string "Server Error" (ConvexError.data
+      // is NOT redacted — it crosses the client/server boundary intact).
+      // The admin factory page needs to distinguish "duplicate uuid" from
+      // any other failure, so that has to travel as a structured data code,
+      // not as message text a client can regex-match. `message` is kept in
+      // the data payload purely for dev-console ergonomics (e.g. `npx
+      // convex logs`); callers must key off `.data.code`, never `.message`.
+      throw new ConvexError({
+        code: "DUPLICATE_UUID",
+        uuid: uuidNormalized,
+        message: `Card with UUID ${uuidNormalized} already exists`,
+      });
     }
     let activationCode = randomActivationCode();
     for (let attempt = 0; attempt < 10; attempt++) {

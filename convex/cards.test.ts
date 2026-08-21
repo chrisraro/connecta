@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import { convexTest } from "convex-test";
+import { ConvexError } from "convex/values";
 import schema from "./schema";
 import { api } from "./_generated/api";
 
@@ -64,6 +65,44 @@ test("registerSingleCard generates a 6-char unambiguous uppercase activation cod
 
   // 6 chars from an alphabet excluding lookalikes (0/O, 1/I/L, 5/S, 8/B, 2/Z).
   expect(result.activationCode).toMatch(/^[ACDEFGHJKMNPQRTUVWXY34679]{6}$/);
+});
+
+test("registerSingleCard throws a ConvexError with a DUPLICATE_UUID data code for an already-registered uuid", async () => {
+  // Regression test for a redaction bug: registerSingleCard used to throw a
+  // plain `Error` for the duplicate-uuid case. On a real production Convex
+  // deployment, plain Error messages get redacted client-side to the fixed
+  // string "Server Error" — the admin factory page detected duplicates by
+  // regex-matching the message text, so the branch was silently dead in
+  // prod (it only "worked" in dev/tests where nothing redacts Error
+  // messages). ConvexError's `.data` payload is NOT redacted and survives
+  // the client/server boundary intact, so the duplicate case must be
+  // signaled through `.data.code`, never through message text alone.
+  const t = convexTest(schema);
+  await seedAdminAndUser(t);
+  const asAdmin = t.withIdentity({ subject: "admin_clerk" });
+
+  await asAdmin.mutation(api.admin.registerSingleCard, {
+    clerkId: "admin_clerk",
+    uuid: "04:a3:5b:12:6f:80:81",
+  });
+
+  let caught: unknown;
+  try {
+    // Same physical uuid, re-tapped — normalization lowercases it, so an
+    // input differing only in case must still collide.
+    await asAdmin.mutation(api.admin.registerSingleCard, {
+      clerkId: "admin_clerk",
+      uuid: "04:A3:5B:12:6F:80:81",
+    });
+  } catch (err) {
+    caught = err;
+  }
+
+  expect(caught).toBeInstanceOf(ConvexError);
+  expect((caught as InstanceType<typeof ConvexError>).data).toMatchObject({
+    code: "DUPLICATE_UUID",
+    uuid: "04:a3:5b:12:6f:80:81",
+  });
 });
 
 test("registered codes are unique across registrations", async () => {

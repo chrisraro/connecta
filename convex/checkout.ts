@@ -392,12 +392,23 @@ export const internalConfirmOrderPayment = internalMutation({
       return { success: true, alreadyProcessed: true };
     }
 
-    // A stale/duplicate/out-of-order "failed" webhook must never regress an
-    // order that has already been marked "paid" — inventory/discount/email
-    // side effects already ran and must not be silently undone (Payments #1
-    // follow-up finding from task-2 review).
-    if (order.paymentStatus === "paid" && args.paymentStatus !== "paid") {
-      return { success: true, alreadyProcessed: true, note: "ignored_stale_status_after_paid" };
+    // Once an order has reached a terminal payment state, ANY further
+    // webhook — duplicate, replayed, stale, or out-of-order — must be a
+    // no-op: no status change, no inventory re-decrement, no discount
+    // re-increment, no duplicate confirmation email. "paid" was already
+    // terminal for a trailing "failed" (side effects already ran and must
+    // not be silently undone). "refunded" must be terminal too: a
+    // duplicate/replayed "paid" delivered after an admin has already
+    // processed a refund (which restored inventory) would otherwise
+    // re-decrement inventory, re-increment discount usage, and re-email the
+    // customer for money that was given back.
+    const TERMINAL_PAYMENT_STATUSES = new Set(["paid", "refunded"]);
+    if (TERMINAL_PAYMENT_STATUSES.has(order.paymentStatus)) {
+      return {
+        success: true,
+        alreadyProcessed: true,
+        note: `ignored_stale_status_after_${order.paymentStatus}`,
+      };
     }
 
     const now = Date.now();

@@ -166,6 +166,61 @@ async function seedPendingOrder(
   });
 }
 
+test("internalConfirmOrderPayment is a no-op when a duplicate paid webhook arrives after the order was refunded", async () => {
+  const t = convexTest(schema);
+  const productId = await seedProductForOrder(t, 5);
+  const orderNumber = "TF-2026-REFUNDED";
+  const orderId = await seedPendingOrder(t, productId, 2, orderNumber);
+
+  await t.run(async (ctx) => {
+    await ctx.db.insert("discounts", {
+      code: "REFUNDCODE",
+      type: "fixed",
+      value: 1000,
+      usageLimit: 5,
+      usedCount: 1,
+      validFrom: 0,
+      isActive: true,
+    });
+    // Simulate an admin-issued refund: paymentStatus/status "refunded",
+    // inventory already restored by markOrderRefunded.
+    await ctx.db.patch(orderId, {
+      appliedDiscountCode: "REFUNDCODE",
+      paymentStatus: "refunded",
+      status: "refunded",
+      paidAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+
+  // A duplicate/replayed "paid" webhook for the now-refunded order arrives.
+  const result = await t.mutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber,
+    paymentStatus: "paid",
+  });
+  expect(result.success).toBe(true);
+
+  const order = await t.run(async (ctx) => ctx.db.get(orderId));
+  expect(order?.paymentStatus).toBe("refunded");
+  expect(order?.status).toBe("refunded");
+
+  const product = await t.run(async (ctx) => ctx.db.get(productId));
+  expect(product?.inventory).toBe(5); // not re-decremented
+
+  const discount = await t.run(async (ctx) =>
+    ctx.db
+      .query("discounts")
+      .withIndex("by_code", (q) => q.eq("code", "REFUNDCODE"))
+      .first()
+  );
+  expect(discount?.usedCount).toBe(1); // not re-incremented
+
+  const scheduled = await t.run(async (ctx) =>
+    ctx.db.system.query("_scheduled_functions").collect()
+  );
+  expect(scheduled.length).toBe(0); // no duplicate order-confirmation email scheduled
+});
+
 test("internalConfirmOrderPayment fails the second of two concurrent orders that oversell the last unit", async () => {
   const t = convexTest(schema);
   const productId = await seedProductForOrder(t, 1);
