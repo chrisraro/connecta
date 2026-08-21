@@ -1,17 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { SIGMATAP } from "@/lib/brand";
+import { PaymentPlaceholderDialog } from "@/components/billing/PaymentPlaceholderDialog";
 
 /**
  * The one button every "upgrade"/"renew" action on the billing page goes
@@ -72,34 +64,13 @@ export function PlanUpgradeButton({
         {label}
       </Button>
 
-      <Dialog open={showPlaceholder} onOpenChange={setShowPlaceholder}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Pro upgrades are opening soon</DialogTitle>
-            <DialogDescription>
-              We&apos;re finalizing our payment provider — Pro upgrades are opening
-              soon. Your plan and prices are ready; checkout just isn&apos;t live
-              yet.
-            </DialogDescription>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Want to be notified the moment it opens, or need help sooner? Reach
-            out and we&apos;ll take care of it directly.
-          </p>
-          <DialogFooter>
-            <Button asChild variant="outline">
-              <a
-                href={`mailto:${SIGMATAP.supportEmail}?subject=${encodeURIComponent(
-                  "Pro upgrade"
-                )}`}
-              >
-                <Mail className="mr-2 h-4 w-4" />
-                Email support
-              </a>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PaymentPlaceholderDialog
+        open={showPlaceholder}
+        onOpenChange={setShowPlaceholder}
+        title="Pro upgrades are opening soon"
+        description="We're finalizing our payment provider — Pro upgrades are opening soon. Your plan and prices are ready; checkout just isn't live yet."
+        mailSubject="Pro upgrade"
+      />
     </>
   );
 }

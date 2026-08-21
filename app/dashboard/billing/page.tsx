@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { formatPHP } from "@/lib/payment";
 import { PLAN_LIMITS, type PlanId } from "@/lib/plans";
-import { PAYMENTS_ENABLED } from "@/lib/payments";
+import { PAYMENTS_ENABLED, showPaymentReceivedBanner } from "@/lib/payments";
 import { PlanUpgradeButton } from "@/components/billing/PlanUpgradeButton";
 
 function fmtDate(ts: number | null | undefined): string {
@@ -70,7 +70,7 @@ function BillingContent() {
                 </p>
             </div>
 
-            {paid && (
+            {showPaymentReceivedBanner(paid) && (
                 <div className="flex items-start gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4">
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
                     <div className="text-sm">

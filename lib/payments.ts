@@ -16,3 +16,19 @@
  * from here.
  */
 export const PAYMENTS_ENABLED = false;
+
+/**
+ * Pure decision for /dashboard/billing's "Payment received… confirm with
+ * PayRex" banner (`?paid=1`). That query param is only ever real when a
+ * checkout redirect actually happened — which requires PAYMENTS_ENABLED.
+ * With payments off, an old bookmarked/cached link carrying `?paid=1` must
+ * not resurrect the banner as a confusing stale state; it must render
+ * nothing. Extracted as a pure function (rather than inlined JSX) so the
+ * decision is testable without mounting the page.
+ */
+export function showPaymentReceivedBanner(
+  paid: boolean,
+  paymentsEnabled: boolean = PAYMENTS_ENABLED
+): boolean {
+  return paid && paymentsEnabled;
+}
