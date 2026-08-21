@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { SIGMATAP } from "@/lib/brand";
 import { isFullScreenDashboardRoute } from "@/lib/dashboardChrome";
+import { shouldRedirectAdminOnFirstLanding } from "@/lib/adminRedirect";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 
@@ -365,11 +366,24 @@ export default function DashboardLayout({
         }
     }, [isLoaded, user, syncUser]);
 
-    // Redirect admins to admin dashboard (except onboarding)
+    // Redirect admins to the admin console — but only on FIRST landing at
+    // the dashboard root, not from every consumer sub-route (Task 20, I6).
+    // This used to fire everywhere except /dashboard/onboarding, which meant
+    // an admin who completed onboarding (profile created, publicly live)
+    // could never come back to edit it — every visit to
+    // /dashboard/builder?id=X bounced straight back to /admin, and the
+    // post-claim confirmation hand-off (app/t/[uuid]/page.tsx) broke the
+    // same way. See lib/adminRedirect.ts for the full rationale.
+    //
+    // Further refined to use shouldRedirectAdminOnFirstLanding (approach b):
+    // the redirect now fires only once per session, tracked via sessionStorage.
+    // This allows an admin who has been sent to /admin to navigate back to
+    // /dashboard (e.g., via "Back to user app" button) and stay there,
+    // enabling full consumer app dogfooding without infinite bouncing.
     useEffect(() => {
         if (!isLoaded || !adminStatus || !pathname) return;
-        
-        if (adminStatus.isAdmin && pathname !== "/dashboard/onboarding") {
+
+        if (adminStatus.isAdmin && shouldRedirectAdminOnFirstLanding(pathname)) {
             console.log("Admin detected on user dashboard, redirecting to admin...");
             router.replace("/admin");
         }

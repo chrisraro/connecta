@@ -59,6 +59,19 @@ const CATEGORY_FIELDS: Record<ProfileCategory, { nameLabel: string; namePlacehol
     },
 };
 
+// Task 21 (production audit): this array used to end with a 7th "done"
+// step rendered INSIDE the wizard, reached via the same handleNext/
+// markCompleted:false path as every other "Next" click — so the button
+// labelled "Finish →" never actually finished anything; only the "done"
+// step's own "Go to Profile Builder →" button called the mutation with
+// markCompleted: true. A user who clicked Finish, saw that screen, and
+// closed the tab had no profile. There is no longer a wizard-internal
+// "done" step: "photo" is now the last step, its Finish button IS what
+// completes onboarding (see handleFinish below), and the pre-existing
+// "COMPLETED STATE" screen further down (gated on `onboarding?.completed`,
+// a live Convex query) takes over as the post-completion confirmation the
+// instant that mutation lands — no further click required to persist
+// anything.
 const STEPS = [
     { id: "welcome",  title: `Welcome to ${SIGMATAP.name}`,    icon: Sparkles },
     { id: "type",     title: "Profile Type",            icon: Building2 },
@@ -66,7 +79,6 @@ const STEPS = [
     { id: "contact",  title: "Contact Details",         icon: Phone },
     { id: "work",     title: "Your Work & Services",    icon: Briefcase },
     { id: "photo",    title: "Profile Picture",         icon: ImageIcon },
-    { id: "done",     title: "You're All Set!",         icon: CheckCircle2 },
 ];
 
 const SUGGESTED_SERVICES = [
@@ -103,6 +115,12 @@ function OnboardingContent() {
     const [claimedCardId, setClaimedCardId] = useState<string | null>(null);
     const [claimError, setClaimError] = useState<string | null>(null);
     const [isClaiming, setIsClaiming] = useState(false);
+    // Set by handleFinish the instant onboarding completes, from the
+    // mutation's own return value — not the reactive `profiles` query,
+    // which also updates but there's no reason to wait a second round trip
+    // for an id the mutation already handed back. Feeds the post-completion
+    // confirmation's "Go to Profile Builder" button below.
+    const [completedProfileId, setCompletedProfileId] = useState<string | null>(null);
 
     // Form state
     const [profileCategory, setProfileCategory] = useState<ProfileCategory>("individual");
@@ -271,28 +289,40 @@ function OnboardingContent() {
                 }
             }
 
-            // Task 12 fix: route to the profile we just created (or already
-            // had), so the builder EDITS it instead of entering "Create
-            // Profile" mode with no `?id=`. That create-mode entry used to
-            // be the default post-onboarding path, and it deterministically
-            // failed the free plan's very first Save — the just-created
-            // profile already consumed the plan's maxProfiles: 1, so
-            // createProfile's own count check rejected a second one with
-            // "Upgrade to Pro for unlimited profiles." updateOnboarding
-            // always returns a profileId when markCompleted is true (see
-            // convex/users.ts), so this only omits `?id=` in the impossible
-            // case where that invariant is somehow violated.
             // Task 17 / C3: this same handler runs both for the very first
             // "Finish" (a real create) and for "Edit Profile Setup"
             // (?edit=true, re-running the wizard against an EXISTING
             // profile) — the toast must say which one actually happened,
             // not claim "created" when the mutation just patched.
             toast.success(isEditMode ? "Profile updated!" : "Profile created!");
-            router.push(
-                result.profileId
-                    ? `/dashboard/builder?id=${result.profileId}`
-                    : "/dashboard/builder"
-            );
+
+            if (isEditMode) {
+                // Editing an existing profile's setup answers has nothing to
+                // "confirm" — a live profile already existed before this
+                // click. Task 12 fix: route straight to editing it (not the
+                // bare no-id builder, which the free plan's own profile
+                // count would reject with "Upgrade to Pro for unlimited
+                // profiles."). updateOnboarding always returns a profileId
+                // when markCompleted is true (see convex/users.ts), so this
+                // only omits `?id=` in the impossible case that invariant is
+                // somehow violated.
+                router.push(
+                    result.profileId
+                        ? `/dashboard/builder?id=${result.profileId}`
+                        : "/dashboard/builder"
+                );
+            } else {
+                // Task 21: first-run completion. onboarding is DONE the
+                // instant the mutation above resolves — there is nothing
+                // left to persist, so closing the tab right here is safe.
+                // Don't navigate away immediately; let the "COMPLETED
+                // STATE" screen below (gated on the live `onboarding` query,
+                // which this mutation just flipped to completed) render in
+                // place as the post-completion confirmation. Track the
+                // profile id locally so its "Go to Profile Builder" button
+                // has it without waiting on the separate `profiles` query.
+                setCompletedProfileId(result.profileId ?? null);
+            }
         } catch (err) {
             console.error("Failed to finish onboarding:", err);
             toast.error(toUserMessage(err));
@@ -358,8 +388,34 @@ function OnboardingContent() {
                                 )}
                             </div>
 
+                            {cardClaimed && (
+                                <div className="w-full bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                        <SmartphoneNfc className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-semibold text-primary">Card Activated!</p>
+                                        <p className="text-xs text-muted-foreground">Your physical {SIGMATAP.name} card is now live and linked to your profile.</p>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="space-y-2">
-                                <Button className="w-full" size="lg" onClick={() => router.push(myProfileId ? `/dashboard/builder?id=${myProfileId}` : "/dashboard/builder")}>
+                                {/* completedProfileId: set by handleFinish, from the
+                                    mutation's own return value, the instant THIS
+                                    session's onboarding completed — takes priority
+                                    over myProfileId (derived from the separate,
+                                    independently-reactive `profiles` query) so this
+                                    button never has to wait on a second round trip
+                                    for an id the mutation already handed back. A
+                                    returning visit (this screen rendering on page
+                                    load rather than right after Finish) has no
+                                    completedProfileId, so it falls back to
+                                    myProfileId exactly as before. */}
+                                <Button className="w-full" size="lg" onClick={() => {
+                                    const id = completedProfileId ?? myProfileId;
+                                    router.push(id ? `/dashboard/builder?id=${id}` : "/dashboard/builder");
+                                }}>
                                     <ArrowRight className="w-4 h-4 mr-2" /> Go to Profile Builder
                                 </Button>
                                 <Button variant="outline" className="w-full" onClick={() => {
@@ -627,55 +683,32 @@ function OnboardingContent() {
                                 <p className="text-xs text-muted-foreground">You can skip this — add later in the builder.</p>
                             </div>
                         )}
-
-                        {step === 6 && (
-                            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center pt-4">
-                                <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                                    <CheckCircle2 className="w-10 h-10 text-green-600" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold">Profile Ready!</h2>
-                                    <p className="text-muted-foreground mt-1 text-sm">
-                                        Your profile is set up. Now customize your public page in the Profile Builder.
-                                    </p>
-                                </div>
-                                {cardClaimed && (
-                                    <div className="w-full bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                            <SmartphoneNfc className="w-5 h-5 text-primary" />
-                                        </div>
-                                        <div className="text-left">
-                                            <p className="text-sm font-semibold text-primary">Card Activated!</p>
-                                            <p className="text-xs text-muted-foreground">Your physical {SIGMATAP.name} card is now live and linked to your profile.</p>
-                                        </div>
-                                    </div>
-                                )}
-                                <div className="w-full space-y-2 mt-2">
-                                    <Button className="w-full" size="lg" onClick={handleFinish} disabled={saving}>
-                                        {saving ? "Saving..." : "Go to Profile Builder \u2192"}
-                                    </Button>
-                                    <Button variant="ghost" className="w-full" onClick={() => router.push("/dashboard")}>
-                                        Back to Dashboard
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
-                    {step < STEPS.length - 1 && (
-                        <div className="px-6 md:px-8 pb-6 md:pb-8 flex justify-between items-center border-t border-border/50 pt-4">
-                            <Button
-                                variant="ghost"
-                                onClick={() => setStep(s => Math.max(0, s - 1))}
-                                disabled={step === 0}
-                            >
-                                <ChevronLeft className="w-4 h-4 mr-1" /> Back
-                            </Button>
-                            <Button onClick={handleNext} disabled={saving}>
-                                {saving ? "Saving..." : step === STEPS.length - 2 ? "Finish →" : "Next →"}
-                            </Button>
-                        </div>
-                    )}
+                    {/* Task 21: this row is no longer hidden on the last
+                        step — "photo" IS the last step now, and its button
+                        (labelled "Finish →") is the one real control that
+                        completes onboarding. There is no separate
+                        wizard-internal "done" step to hand off to: once
+                        handleFinish's mutation resolves, the "COMPLETED
+                        STATE" screen above takes over on its own (it's
+                        gated on the live `onboarding` query, which that
+                        mutation just flipped). */}
+                    <div className="px-6 md:px-8 pb-6 md:pb-8 flex justify-between items-center border-t border-border/50 pt-4">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setStep(s => Math.max(0, s - 1))}
+                            disabled={step === 0}
+                        >
+                            <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                        </Button>
+                        <Button
+                            onClick={step === STEPS.length - 1 ? handleFinish : handleNext}
+                            disabled={saving}
+                        >
+                            {saving ? "Saving..." : step === STEPS.length - 1 ? "Finish →" : "Next →"}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

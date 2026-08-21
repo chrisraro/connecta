@@ -32,31 +32,37 @@ import { useState } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { profilePath } from "@/lib/profileUrl";
-import { newestProfileId } from "@/lib/builderEntry";
+import { resolveBuilderEntryRedirect } from "@/lib/builderEntry";
 
 export default function ProfilesPage() {
     const { user } = useUser();
     const profiles = useQuery(api.profiles.getMyProfiles, user?.id ? { clerkId: user.id } : "skip");
+    // Needed for the "Create" CTAs below — see createProfileHref. Also
+    // covers editing (getProfile enforces plan limits server-side; this
+    // just decides where the buttons on THIS page point).
+    const myPlan = useQuery(api.billing.getMyPlan, user?.id ? { clerkId: user.id } : "skip");
     const deleteProfile = useMutation(api.profiles.deleteProfile);
-    
+
     const [activeChip, setActiveChip] = useState("All");
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    if (profiles === undefined) {
+    if (profiles === undefined || myPlan === undefined) {
         return <div className="flex justify-center p-12 text-zinc-500"><Loader2 className="animate-spin" /></div>;
     }
 
     // "Create" affordances that are always visible (unlike the empty-state
     // CTA below, which only renders when profiles.length === 0 and is
     // therefore already safe) must link to editing an existing profile
-    // once one exists, not the bare no-id builder — see Task 12. Picks the
-    // NEWEST profile (matching resolveBuilderEntryRedirect and
-    // app/dashboard/page.tsx's "Edit profile" quick action, both of which
-    // reuse the same `newestProfileId` helper) so a multi-profile account
-    // isn't routed to a different profile depending on which nav link was
-    // clicked — see Task 12 review.
-    const editProfileId = profiles.length > 0 ? newestProfileId(profiles) : null;
-    const createProfileHref = editProfileId ? `/dashboard/builder?id=${editProfileId}` : "/dashboard/builder";
+    // ONLY when creating a new one would be doomed to fail — i.e. the user
+    // is already at their plan's profile limit (Task 12). Routes through
+    // the same plan-aware `resolveBuilderEntryRedirect` the builder page
+    // itself uses (lib/builderEntry.ts), rather than duplicating the "any
+    // existing profile means edit" logic this page used to apply
+    // regardless of plan (Task 20, I5) — that silently turned both "Create
+    // New" buttons into "edit your newest profile" for a PAYING customer
+    // with room for more, on the page literally called "My Profiles".
+    const entryRedirectId = resolveBuilderEntryRedirect(null, profiles, myPlan.limits.maxProfiles);
+    const createProfileHref = entryRedirectId ? `/dashboard/builder?id=${entryRedirectId}` : "/dashboard/builder";
 
     const handleDelete = async (profileId: string) => {
         if (!user?.id) return;
