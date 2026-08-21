@@ -123,8 +123,24 @@ export const updateOnboarding = mutation({
                 .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
                 .collect();
 
+            const profileType = args.profileCategory || "individual";
+            // The wizard-owned subset of agentInfo — every field the
+            // onboarding form (app/dashboard/onboarding/page.tsx) actually
+            // collects. Shared between the create and edit branches below
+            // so they can never diverge on what "the wizard's data" means.
+            const wizardAgentInfo = {
+                fullName: args.fullName,
+                title: args.title,
+                company: args.company || "",
+                phone: args.phone,
+                email: args.email || "",
+                website: args.website,
+                about: args.about,
+                avatarUrl: args.avatarUrl,
+                services: args.services,
+            };
+
             if (existingProfiles.length === 0) {
-                const profileType = args.profileCategory || "individual";
                 const themeColors = profileType === "business"
                     ? { primary: "#00193c", background: "#f7f9fb", text: "#191c1e" }
                     : profileType === "company"
@@ -141,15 +157,7 @@ export const updateOnboarding = mutation({
                     name: `${args.fullName}'s Profile`,
                     profileType,
                     agentInfo: {
-                        fullName: args.fullName,
-                        title: args.title,
-                        company: args.company || "",
-                        phone: args.phone,
-                        email: args.email || "",
-                        website: args.website,
-                        about: args.about,
-                        avatarUrl: args.avatarUrl,
-                        services: args.services,
+                        ...wizardAgentInfo,
                         socialLinks: args.socialLinks || [],
                     },
                     layoutConfig: {
@@ -180,7 +188,36 @@ export const updateOnboarding = mutation({
                 });
                 profileId = created.id;
             } else {
-                profileId = existingProfiles[0]._id;
+                // Task 17 / C3 fix: "Edit Profile Setup"
+                // (app/dashboard/onboarding/page.tsx?edit=true) re-runs this
+                // SAME mutation with markCompleted:true against a profile
+                // that already exists. The old code just re-read
+                // existingProfiles[0]._id here and returned it — never
+                // writing anything — so every field the user just retyped
+                // (job title, phone, ...) was silently discarded while the
+                // client still showed a success toast.
+                //
+                // Patch through the wizard's own data, merged onto the
+                // EXISTING agentInfo (not replaced wholesale): agentInfo
+                // also carries fields the wizard's UI never asks for
+                // (socialLinks, additionalPhones, certification, education,
+                // techStack, experience, testimonials, gallery — all
+                // builder-only inputs). Overwriting the whole object with
+                // only wizard-owned fields would silently wipe those back to
+                // their defaults, trading this data-loss bug for a new one.
+                // layoutConfig/digitalCard are deliberately left untouched
+                // for the same reason — they're the BUILDER's data, not the
+                // wizard's, and re-deriving them here would blow away any
+                // theme/section-order customization made after onboarding.
+                const existing = existingProfiles[0];
+                await ctx.db.patch(existing._id, {
+                    profileType,
+                    agentInfo: {
+                        ...existing.agentInfo,
+                        ...wizardAgentInfo,
+                    },
+                });
+                profileId = existing._id;
             }
         }
 

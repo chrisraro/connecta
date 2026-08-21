@@ -11,6 +11,31 @@ const MAX_CONTACT = 200;
 const MAX_MESSAGE = 2000;
 const MAX_PROPERTY_NAME = 200;
 
+// Task 17 / I2 — the cap was keyed ONLY on the profile owner
+// (`lead:${ownerId}`), so every anonymous visitor to one profile shared a
+// single 5/min bucket: SigmaTap's flagship scenario (NFC taps at a
+// networking event) meant ten different prospects tapping the same card in
+// a minute throttled half of them, none of whom had ever submitted before.
+//
+// Two-tier fix:
+//  - VISITOR_MAX scopes the familiar 5/min cap to `visitorId`, a
+//    client-generated id persisted in localStorage (see
+//    lib/offline-leads.ts's getOrCreateLeadVisitorId) that's unique per
+//    browser, not per owner. Distinct visitors no longer collide.
+//  - visitorId is client-supplied, so a scripted attacker can trivially
+//    rotate it per request — VISITOR_MAX alone is not real abuse
+//    protection. OWNER_AGGREGATE_MAX is the backstop: it still bounds one
+//    owner's total inbox rate even when every call brings a fresh visitor
+//    id. 30/min is sized against the real scenario, not picked arbitrarily:
+//    a legitimate submission requires a visitor to load the public profile
+//    and hand-type name + contact (a few seconds minimum), so even a
+//    red-hot booth with a constant line of people isn't going to sustain
+//    much faster than one genuine submission every ~2 seconds — 30/min
+//    covers that peak with real headroom while still bounding the cost and
+//    spam blast radius of a token-rotating flood.
+const VISITOR_MAX = 5;
+const OWNER_AGGREGATE_MAX = 30;
+
 function capLen(value: string, max: number): string {
     return value.length > max ? value.slice(0, max) : value;
 }
@@ -23,9 +48,21 @@ export const createLead = mutation({
         inquirerName: v.string(),
         inquirerContact: v.string(),
         message: v.optional(v.string()),
+        // Client-generated, localStorage-persisted per-browser id (not
+        // authenticated — the submitter is always anonymous here). Optional
+        // only so an old cached client bundle degrades to the pre-fix
+        // shared-owner-bucket behavior instead of a hard validator error.
+        visitorId: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        await checkRateLimit(ctx, `lead:${args.ownerId}`, { max: 5, windowMs: 60_000 });
+        await checkRateLimit(ctx, `lead:${args.ownerId}:${args.visitorId ?? "anon"}`, {
+            max: VISITOR_MAX,
+            windowMs: 60_000,
+        });
+        await checkRateLimit(ctx, `lead:${args.ownerId}`, {
+            max: OWNER_AGGREGATE_MAX,
+            windowMs: 60_000,
+        });
         const owner = await ctx.db.get(args.ownerId);
         if (!owner) {
             throw new Error("Invalid recipient");

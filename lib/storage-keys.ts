@@ -14,3 +14,8 @@
 export const GUEST_CART_ID_KEY = "tapfolio_guest_cart_id";
 export const DISCOUNT_CODE_KEY = "tapfolio_discount_code";
 export const OFFLINE_LEADS_KEY = "tapfolio_offline_leads";
+// Task 17 / I2: per-browser identity for createLead's visitor-scoped rate
+// limit (convex/leads.ts). New key, added after the rename — deliberately
+// carries no brand prefix, unlike the three above (which keep their
+// pre-rename literal value on purpose; see the file-comment above).
+export const LEAD_VISITOR_ID_KEY = "lead_visitor_id";

@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { Id } from "@/convex/_generated/dataModel";
+import { getOrCreateLeadVisitorId } from "@/lib/offline-leads";
 import { ProfileData } from "@/types/profile";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { formatCatalogPrice } from "@/lib/payment";
@@ -111,6 +112,10 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                 inquirerName: inquiryForm.name,
                 inquirerContact: inquiryForm.contact,
                 message: inquiryForm.message,
+                // Task 17 / I2: scopes createLead's rate limit to this
+                // browser instead of every visitor to this profile sharing
+                // one bucket.
+                visitorId: getOrCreateLeadVisitorId(),
             });
 
             setInquirySuccess(true);

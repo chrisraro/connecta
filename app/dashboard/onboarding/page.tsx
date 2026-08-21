@@ -19,6 +19,7 @@ import {
     Building2, Store, Edit, ArrowRight, Loader2, SmartphoneNfc, AlertCircle
 } from "lucide-react";
 import { SIGMATAP } from "@/lib/brand";
+import { resolveOnboardingPrefill } from "@/lib/onboardingPrefill";
 
 type ProfileCategory = "individual" | "company" | "business";
 
@@ -117,26 +118,32 @@ function OnboardingContent() {
 
     const email = clerkUser?.primaryEmailAddress?.emailAddress ?? "";
 
-    // Prefill from existing onboarding data
+    // Prefill the form. First-run onboarding prefills from
+    // onboarding.data/Clerk as before; "Edit Profile Setup" (?edit=true)
+    // hydrates from the LIVE profile instead — see lib/onboardingPrefill.ts
+    // for why (Task 17 C3 follow-up: onboardingData goes stale the instant
+    // the Profile Builder edits the profile, and prefilling edit mode from
+    // it silently wiped live-only fields on save).
     useEffect(() => {
-        const data = onboarding?.data;
-        if (!hasPrefilled && data) {
-            setProfileCategory(data.profileCategory ?? "individual");
-            setFullName(data.fullName || clerkUser?.fullName || "");
-            setTitle(data.title || "");
-            setCompany(data.company || "");
-            setPhone(data.phone || "");
-            setWebsite(data.website || "");
-            setAbout(data.about || "");
-            setAvatarUrl(data.avatarUrl || clerkUser?.imageUrl || "");
-            setServices(data.services || []);
-            setHasPrefilled(true);
-        } else if (!hasPrefilled && clerkUser && !data) {
-            setFullName(clerkUser.fullName || "");
-            setAvatarUrl(clerkUser.imageUrl || "");
-            setHasPrefilled(true);
-        }
-    }, [onboarding, hasPrefilled, clerkUser]);
+        if (hasPrefilled) return;
+        const prefill = resolveOnboardingPrefill({
+            isEditMode,
+            onboardingData: onboarding?.data,
+            profiles,
+            clerkUser: clerkUser ? { fullName: clerkUser.fullName, imageUrl: clerkUser.imageUrl } : null,
+        });
+        if (!prefill) return; // still loading — don't lock in a blank prefill
+        setProfileCategory(prefill.profileCategory);
+        setFullName(prefill.fullName);
+        setTitle(prefill.title);
+        setCompany(prefill.company);
+        setPhone(prefill.phone);
+        setWebsite(prefill.website);
+        setAbout(prefill.about);
+        setAvatarUrl(prefill.avatarUrl);
+        setServices(prefill.services);
+        setHasPrefilled(true);
+    }, [onboarding, hasPrefilled, clerkUser, isEditMode, profiles]);
 
     // Claim card when user is authenticated and card_uuid is present
     useEffect(() => {
@@ -275,7 +282,12 @@ function OnboardingContent() {
             // always returns a profileId when markCompleted is true (see
             // convex/users.ts), so this only omits `?id=` in the impossible
             // case where that invariant is somehow violated.
-            toast.success("Profile created!");
+            // Task 17 / C3: this same handler runs both for the very first
+            // "Finish" (a real create) and for "Edit Profile Setup"
+            // (?edit=true, re-running the wizard against an EXISTING
+            // profile) — the toast must say which one actually happened,
+            // not claim "created" when the mutation just patched.
+            toast.success(isEditMode ? "Profile updated!" : "Profile created!");
             router.push(
                 result.profileId
                     ? `/dashboard/builder?id=${result.profileId}`
