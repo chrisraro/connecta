@@ -40,6 +40,82 @@ async function seedOrder(t: ReturnType<typeof convexTest>, ownerClerkId: string)
   });
 }
 
+const VALID_SHIPPING_ADDRESS = {
+  fullName: "Guest Buyer",
+  addressLine1: "1 Rizal Ave",
+  city: "Manila",
+  postalCode: "1000",
+  country: "PH",
+  phone: "09171234567",
+};
+
+/**
+ * Task 18 / I3 — the same atomic-rollback bug fixed for convex/cards.ts in
+ * Task 1 (and convex/leads.ts earlier in this task): `createOrder` wrote its
+ * rate-limit counter, then threw ("Cart is empty") a few lines later in the
+ * SAME mutation. Convex mutations are atomic, so that later throw rolled the
+ * counter write back out with it — repeated failing attempts (e.g. probing
+ * with an empty cart, or brute-forcing a discount code through checkout)
+ * never actually accumulated toward the limit. This pins the fix: failing
+ * attempts must still count toward the per-key cap, and the 6th must be
+ * rejected for being rate-limited, not for the empty cart.
+ */
+test("createOrder's rate limit still accumulates across repeated failing attempts (empty cart)", async () => {
+  const t = convexTest(schema);
+  const guestId = "guest_rollback_probe";
+
+  for (let i = 0; i < 5; i++) {
+    await expect(
+      t.action(api.checkout.createOrder, {
+        guestEmail: "probe@test.dev",
+        guestId,
+        shippingAddress: VALID_SHIPPING_ADDRESS,
+        paymentProvider: "payrex",
+      })
+    ).rejects.toThrow(/cart is empty/i);
+  }
+
+  await expect(
+    t.action(api.checkout.createOrder, {
+      guestEmail: "probe@test.dev",
+      guestId,
+      shippingAddress: VALID_SHIPPING_ADDRESS,
+      paymentProvider: "payrex",
+    })
+  ).rejects.toThrow(/too many requests/i);
+});
+
+/**
+ * Task 18 / I3 — `validateDiscount` was a public, unauthenticated Convex
+ * `query`: it confirmed both a code's validity AND its exact value, and
+ * queries cannot write to the database, so there was no way to meter it at
+ * all — a wordlist of guessable promo codes could be hammered against it
+ * with zero rate limiting. Converting it to an action (the only function
+ * kind that can both stay callable pre-auth and record a rate-limit write
+ * via ctx.runMutation) closes that: repeated guesses must eventually be
+ * rejected as rate-limited.
+ */
+test("validateDiscount is rate-limited against repeated code guesses", async () => {
+  const t = convexTest(schema);
+
+  for (let i = 0; i < 10; i++) {
+    const result = await t.action(api.checkout.validateDiscount, {
+      code: `GUESS${i}`,
+      subtotal: 10000,
+      visitorId: "discount_probe",
+    });
+    expect(result.valid).toBe(false);
+  }
+
+  await expect(
+    t.action(api.checkout.validateDiscount, {
+      code: "GUESS_OVER_LIMIT",
+      subtotal: 10000,
+      visitorId: "discount_probe",
+    })
+  ).rejects.toThrow(/too many requests/i);
+});
+
 test("getOrderByNumber rejects a caller who does not own the order", async () => {
   const t = convexTest(schema);
   await seedOrder(t, "owner_clerk_id");

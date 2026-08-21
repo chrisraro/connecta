@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { Loader2, CheckCircle2, Send, AlertCircle } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -14,7 +14,12 @@ import { TemplateTheme } from "../theme";
 import { SectionShell } from "./SectionShell";
 
 export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme; index: number; ownerId: string }) {
-  const createLead = useMutation(api.leads.createLead);
+  // createLead is a Convex action (not a mutation) so its rate-limit
+  // bookkeeping survives an invalid-input rejection instead of being rolled
+  // back with it — see convex/leads.ts. useAction has the same calling
+  // convention as useMutation (resolves on success, rejects on error), so
+  // nothing else here changes.
+  const createLead = useAction(api.leads.createLead);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

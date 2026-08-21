@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
@@ -45,7 +45,9 @@ interface StorefrontViewProps {
 
 export function StorefrontView({ data }: StorefrontViewProps) {
     const { agent, products = [], ownerId } = data;
-    const createLead = useMutation(api.leads.createLead);
+    // createLead is a Convex action (not a mutation) — see convex/leads.ts.
+    // useAction has the same calling convention as useMutation.
+    const createLead = useAction(api.leads.createLead);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState<"all" | "products" | "services">("all");

@@ -1,3 +1,4 @@
+import { ConvexError } from "convex/values";
 import { MutationCtx } from "./_generated/server";
 
 const DEFAULT_WINDOW_MS = 60_000;
@@ -35,7 +36,19 @@ export async function checkRateLimit(
   }
 
   if (existing.count >= opts.max) {
-    throw new Error("Too many requests. Please try again in a moment.");
+    // ConvexError, not a plain Error: a plain Error's message is redacted to
+    // the literal "Server Error" on a real production Convex deployment
+    // (lib/errors.ts#toUserMessage recognizes that shape and falls back to
+    // a generic message), while ConvexError.data crosses the client/server
+    // boundary unmodified. This one function backs the rate limit on
+    // activate, claim, tap, the public lead form, and order placement (see
+    // convex/cards.ts, convex/leads.ts, convex/checkout.ts, convex/images.ts)
+    // — fixing it here fixes "Too many requests" messaging everywhere at once
+    // instead of needing the same fix repeated at every call site.
+    throw new ConvexError({
+      code: "RATE_LIMITED",
+      message: "Too many requests. Please try again in a moment.",
+    });
   }
 
   await ctx.db.patch(existing._id, { count: existing.count + 1 });

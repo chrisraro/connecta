@@ -16,7 +16,7 @@ test("createLead throttles more than 5 leads per owner within a minute", async (
   );
 
   for (let i = 0; i < 5; i++) {
-    await t.mutation(api.leads.createLead, {
+    await t.action(api.leads.createLead, {
       ownerId,
       inquirerName: `Visitor ${i}`,
       inquirerContact: `visitor${i}@test.dev`,
@@ -24,7 +24,7 @@ test("createLead throttles more than 5 leads per owner within a minute", async (
   }
 
   await expect(
-    t.mutation(api.leads.createLead, {
+    t.action(api.leads.createLead, {
       ownerId,
       inquirerName: "Visitor 6",
       inquirerContact: "visitor6@test.dev",
@@ -59,7 +59,7 @@ test("createLead does not throttle distinct visitors sharing one owner — the b
   // before, so none should be throttled.
   for (let i = 0; i < 10; i++) {
     await expect(
-      t.mutation(api.leads.createLead, {
+      t.action(api.leads.createLead, {
         ownerId,
         visitorId: `visitor_${i}`,
         inquirerName: `Prospect ${i}`,
@@ -91,7 +91,7 @@ test("createLead still enforces an aggregate per-owner cap even when every call 
   );
 
   for (let i = 0; i < 30; i++) {
-    await t.mutation(api.leads.createLead, {
+    await t.action(api.leads.createLead, {
       ownerId,
       visitorId: `flood_visitor_${i}`,
       inquirerName: `Flood ${i}`,
@@ -100,11 +100,60 @@ test("createLead still enforces an aggregate per-owner cap even when every call 
   }
 
   await expect(
-    t.mutation(api.leads.createLead, {
+    t.action(api.leads.createLead, {
       ownerId,
       visitorId: "flood_visitor_30",
       inquirerName: "Flood 30",
       inquirerContact: "flood30@test.dev",
+    })
+  ).rejects.toThrow(/too many requests/i);
+});
+
+/**
+ * Task 18 / I3 — the same atomic-rollback bug fixed for convex/cards.ts in
+ * Task 1: `createLead` wrote its rate-limit counters, then threw on invalid
+ * input (empty name/contact) a few lines later in the SAME mutation. Convex
+ * mutations are atomic, so that later throw rolled the counter write back
+ * out right along with it — repeated invalid-input calls never actually
+ * accumulated toward the limit, leaving that path completely unmetered no
+ * matter how many times it was retried. This pins the fix: invalid-input
+ * attempts must still count toward VISITOR_MAX, and the 6th must be
+ * rejected for being rate-limited, not for the input defect.
+ */
+test("createLead's rate limit still accumulates across repeated invalid-input attempts", async () => {
+  const t = convexTest(schema);
+  const ownerId = await t.run(async (ctx) =>
+    ctx.db.insert("users", {
+      email: "invalid-input-owner@test.dev",
+      clerkId: "invalid_input_owner_clerk_id",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
+    })
+  );
+
+  // Exhaust VISITOR_MAX (5) with genuinely invalid input — the input defect
+  // (blank name) is what a naive "checkRateLimit inlined at the top of one
+  // throwing mutation" cannot actually meter, since every one of these
+  // rejects with "Name and contact are required" in the same transaction as
+  // the counter write.
+  for (let i = 0; i < 5; i++) {
+    await expect(
+      t.action(api.leads.createLead, {
+        ownerId,
+        visitorId: "invalid_input_visitor",
+        inquirerName: "",
+        inquirerContact: "",
+      })
+    ).rejects.toThrow(/name and contact are required/i);
+  }
+
+  await expect(
+    t.action(api.leads.createLead, {
+      ownerId,
+      visitorId: "invalid_input_visitor",
+      inquirerName: "",
+      inquirerContact: "",
     })
   ).rejects.toThrow(/too many requests/i);
 });

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useAction } from "convex/react";
 import { useCart } from "@/contexts/CartContext";
-import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +16,7 @@ import { formatPHP } from "@/lib/payment";
 import { GUEST_CART_ID_KEY, DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
 import { PAYMENTS_ENABLED } from "@/lib/payments";
 import { PayrexCheckoutButton } from "@/components/shop/PayrexCheckoutButton";
+import { toUserMessage } from "@/lib/errors";
 
 const formatPrice = formatPHP;
 
@@ -70,7 +70,12 @@ function CheckoutItemImage({ storageId, alt }: { storageId: string; alt: string 
 export default function CheckoutPage() {
   const { user } = useUser();
   const { items, subtotal } = useCart();
-  const createOrder = useMutation(api.checkout.createOrder);
+  // createOrder is a Convex action (not a mutation) so its rate-limit
+  // bookkeeping survives an empty-cart/out-of-stock/bad-discount rejection
+  // instead of being rolled back with it — see convex/checkout.ts. useAction
+  // has the same calling convention as useMutation, so handlePlaceOrder below
+  // is otherwise unchanged.
+  const createOrder = useAction(api.checkout.createOrder);
   const createCheckoutSession = useAction(api.payrex.createCheckoutSession);
 
   const [step, setStep] = useState(1);
@@ -80,11 +85,37 @@ export default function CheckoutPage() {
   // Shop settings drive tax/shipping (single source of truth, matches the cart).
   const settings = useQuery(api.settings.getShopSettings, {});
 
-  // Server-validated discount preview for the order summary.
-  const discountResult = useQuery(
-    api.checkout.validateDiscount,
-    discountCode ? { code: discountCode, subtotal } : "skip"
-  );
+  // validateDiscount is a Convex action (not a query) so it can meter itself
+  // — see convex/checkout.ts and app/shop/cart/page.tsx for the same pattern.
+  // Not reactive like useQuery, so trigger it ourselves and hold the result.
+  const validateDiscountAction = useAction(api.checkout.validateDiscount);
+  const [discountResult, setDiscountResult] = useState<Awaited<
+    ReturnType<typeof validateDiscountAction>
+  > | null>(null);
+
+  useEffect(() => {
+    if (!discountCode) {
+      setDiscountResult(null);
+      return;
+    }
+    let cancelled = false;
+    validateDiscountAction({
+      code: discountCode,
+      subtotal,
+      visitorId: getGuestId(),
+    })
+      .then((result) => {
+        if (!cancelled) setDiscountResult(result);
+      })
+      .catch((err) => {
+        if (!cancelled) setDiscountResult({ valid: false, error: toUserMessage(err) });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discountCode, subtotal]);
+
   const discountAmount =
     discountResult && discountResult.valid ? discountResult.discountAmount : 0;
 
