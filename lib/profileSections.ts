@@ -1,41 +1,5 @@
 import { ProfileInfo, ProfileType } from "@/types/profile";
 
-// Maps a builder block id to the ProfileInfo field(s) it owns. Blocks not
-// listed here (Hero, About, Projects, Products, Properties, Contact) either
-// have no optional agentInfo field of their own or are always required.
-const BLOCK_TO_AGENT_FIELDS: Record<string, (keyof ProfileInfo)[]> = {
-  Certification: ["certification"],
-  Education: ["education"],
-  TechStack: ["techStack"],
-  Services: ["services"],
-  Experience: ["experience"],
-  Testimonials: ["testimonials"],
-  Gallery: ["gallery"],
-};
-
-/**
- * Strips optional ProfileInfo fields whose owning block is disabled, so a
- * block the user toggled off never gets saved (and therefore never
- * rendered) even if its underlying data is still filled in the form
- * (Frontend audit #1 — "hidden" blocks currently still render because their
- * data is saved regardless of isEnabled).
- */
-export function filterAgentInfoByEnabledBlocks(
-  agentInfo: ProfileInfo,
-  enabledBlockIds: string[]
-): ProfileInfo {
-  const enabled = new Set(enabledBlockIds);
-  const result: ProfileInfo = { ...agentInfo };
-  for (const [blockId, fields] of Object.entries(BLOCK_TO_AGENT_FIELDS)) {
-    if (!enabled.has(blockId)) {
-      for (const field of fields) {
-        delete result[field];
-      }
-    }
-  }
-  return result;
-}
-
 export interface BuilderBlock {
   id: string;
   isEnabled: boolean;
@@ -85,22 +49,40 @@ export function deriveComponentOrder(profileType: ProfileType, blocks: BuilderBl
 
 /**
  * One shared derivation for the builder's save path and its live preview:
- * the enabled component order, plus the agentInfo filtered down to match
+ * the enabled component order, plus the agentInfo to render/save alongside
  * it. Before this existed, the preview skipped the filtering step
  * entirely and rendered every section that had data, regardless of the
  * Hidden badge or the drag order — so what a user saw in the builder could
  * silently disagree with what actually got published. Both callers must
  * go through this function so they cannot drift apart again (Task 2
  * review — preview-fidelity product bug).
+ *
+ * `filteredAgentInfo` is returned UNCHANGED from the given `agentInfo` — it
+ * is no longer filtered by which blocks are enabled (Task 13). An earlier
+ * version of this function additionally *deleted* the optional ProfileInfo
+ * fields owned by a disabled block (certification/education/techStack/
+ * services/experience/testimonials/gallery) before every save, on the
+ * theory that a hidden block shouldn't be rendered. That part was already
+ * true for free: `ProfileRenderer` (components/templates/ProfileRenderer.tsx)
+ * walks `componentOrder` and only renders slots whose id is present in it —
+ * a disabled block's data sitting untouched in agentInfo has zero rendering
+ * effect. What the deletion actually did was make persistence follow
+ * whatever the block toggles happen to be THIS save, not what the user
+ * asked to remove — so a save that never touched Services, made while
+ * Services merely happened to be off (e.g. the "individual" profile type's
+ * default componentOrder, which omits Services — see convex/users.ts),
+ * would silently and permanently erase the user's services data, with no
+ * way to undo it by re-enabling the block. Hiding a block must only ever
+ * change what's rendered; only an explicit user edit (clearing the field in
+ * its own editor) should ever change what's saved.
  */
 export function deriveBuilderProfileFields(
   profileType: ProfileType,
   blocks: BuilderBlock[],
   agentInfo: ProfileInfo
 ): { componentOrder: string[]; filteredAgentInfo: ProfileInfo } {
-  const componentOrder = deriveComponentOrder(profileType, blocks);
   return {
-    componentOrder,
-    filteredAgentInfo: filterAgentInfoByEnabledBlocks(agentInfo, componentOrder),
+    componentOrder: deriveComponentOrder(profileType, blocks),
+    filteredAgentInfo: { ...agentInfo },
   };
 }

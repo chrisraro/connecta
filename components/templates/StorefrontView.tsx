@@ -7,6 +7,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { ProfileData } from "@/types/profile";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { formatPHP } from "@/lib/payment";
+import { buildServiceCatalogItems, CatalogItem } from "@/lib/serviceCatalog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,17 +40,8 @@ interface StorefrontViewProps {
     data: ProfileData;
 }
 
-type CatalogItem = {
-    type: "product" | "service";
-    title: string;
-    description: string;
-    price?: number;
-    image?: string;
-    link?: string;
-};
-
 export function StorefrontView({ data }: StorefrontViewProps) {
-    const { agent, products = [], services = [], ownerId } = data;
+    const { agent, products = [], ownerId } = data;
     const createLead = useMutation(api.leads.createLead);
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -72,24 +64,11 @@ export function StorefrontView({ data }: StorefrontViewProps) {
         link: p.link,
     }));
 
-    // Combine structured services & simple agent.services string tags
-    const structuredServiceItems: CatalogItem[] = (services || []).map((s) => ({
-        type: "service",
-        title: s.title,
-        description: s.description || `${s.title} solution`,
-        price: s.price,
-        image: s.image,
-    }));
-
-    const agentStringServices: CatalogItem[] = (agent.services || [])
-        .filter((sTag) => !structuredServiceItems.some((s) => s.title.toLowerCase() === sTag.toLowerCase()))
-        .map((sTag) => ({
-            type: "service",
-            title: sTag,
-            description: `${sTag} offered by ${agent.fullName}`,
-        }));
-
-    const serviceItems: CatalogItem[] = [...structuredServiceItems, ...agentStringServices];
+    // agent.services (simple string tags, edited by the builder's "Services"
+    // panel) is the ONE authoritative services source — see
+    // lib/serviceCatalog.ts's doc comment for why this used to be a merge of
+    // two sources and no longer is.
+    const serviceItems: CatalogItem[] = buildServiceCatalogItems(agent);
     const allCatalogItems = [...productItems, ...serviceItems];
 
     const filteredItems = allCatalogItems.filter((item) => {

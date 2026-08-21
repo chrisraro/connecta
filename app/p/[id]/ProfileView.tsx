@@ -92,7 +92,13 @@ export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string 
         showStorefront: profile.showStorefront,
     };
 
-    const hasCatalogItems = (profile.products && profile.products.length > 0) || (profile.services && profile.services.length > 0);
+    // `profile.services` (the top-level structured catalog) is never
+    // populated by anything in the product — agentInfo.services (the
+    // builder's actual "Services" tag editor) is the authoritative source
+    // (Task 13 / audit-dataflow.md #1). Checking the dead field here meant a
+    // profile with only tag-based services (no products) never auto-showed
+    // its Storefront tab even though StorefrontView renders those tags fine.
+    const hasCatalogItems = (profile.products && profile.products.length > 0) || (agentInfo.services && agentInfo.services.length > 0);
     const isStorefrontEnabled = profile.showStorefront !== false && (profile.showStorefront || hasCatalogItems);
 
     return (

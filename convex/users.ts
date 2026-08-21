@@ -154,11 +154,25 @@ export const updateOnboarding = mutation({
                     layoutConfig: {
                         themeId: profileType === "business" ? "architectural" : profileType === "company" ? "kinetic" : "editorial",
                         colorPalette: themeColors,
+                        // "individual" is the only type whose default layout
+                        // doesn't already include Services — but onboarding's
+                        // service-tag step (app/dashboard/onboarding/page.tsx)
+                        // is offered to every profile type, individual
+                        // included. Omitting the block unconditionally meant
+                        // a fresh individual profile's onboarding-collected
+                        // services were hidden the instant onboarding
+                        // finished, indistinguishable in the builder's
+                        // Sections list from a block the user chose to hide
+                        // (Task 13). Include it whenever there's real data.
                         componentOrder: profileType === "business"
                             ? ["Hero", "About", "Services", "Products", "Properties", "Gallery", "Contact"]
                             : profileType === "company"
                                 ? ["Hero", "About", "Services", "Projects", "Products", "Contact"]
-                                : ["Hero", "About", "Experience", "Education", "Projects", "Contact"],
+                                : [
+                                    "Hero", "About",
+                                    ...(args.services.length > 0 ? ["Services"] : []),
+                                    "Experience", "Education", "Projects", "Contact",
+                                  ],
                         heroStyle: "default",
                     },
                     digitalCard: DEFAULT_DIGITAL_CARD,

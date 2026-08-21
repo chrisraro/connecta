@@ -392,6 +392,73 @@ test("updateOnboarding's first-completion profile gets a seeded digitalCard, mat
   expect(profile?.digitalCard).toEqual(DEFAULT_DIGITAL_CARD);
 });
 
+/**
+ * Task 13 — the "individual" profile type's default componentOrder omitted
+ * "Services" unconditionally, even though onboarding's own service-tag step
+ * (app/dashboard/onboarding/page.tsx) is offered to every profile type and
+ * writes real data into agentInfo.services. Combined with the (now-fixed)
+ * save-time stripping bug in lib/profileSections.ts, this meant a fresh
+ * individual profile's services were invisible from the moment onboarding
+ * finished, and looked (from the Sections list) like a block the user had
+ * chosen to hide — even though they never touched it. The block must be
+ * included in the default layout whenever there's real data behind it, so
+ * the user can actually see and manage what they just typed.
+ */
+test("updateOnboarding's individual-type default componentOrder includes Services when onboarding collected service tags", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "onboard_services_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "onboard_services@test.dev", clerkId: "onboard_services_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const result = await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "onboard_services_user",
+    profileCategory: "individual",
+    email: "onboard_services@test.dev",
+    fullName: "Services Person",
+    title: "Freelancer",
+    phone: "0917",
+    services: ["Logo Design", "Web Design"],
+    markCompleted: true,
+  });
+
+  const profile = await t.run(async (ctx) => ctx.db.get(result.profileId!));
+  expect(profile?.layoutConfig.componentOrder).toContain("Services");
+  // And the data itself is intact, not stripped.
+  expect(profile?.agentInfo.services).toEqual(["Logo Design", "Web Design"]);
+});
+
+test("updateOnboarding's individual-type default componentOrder omits Services when onboarding collected none — unrelated defaults are unaffected", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "onboard_noservices_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "onboard_noservices@test.dev", clerkId: "onboard_noservices_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const result = await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "onboard_noservices_user",
+    profileCategory: "individual",
+    email: "onboard_noservices@test.dev",
+    fullName: "No Services Person",
+    title: "Freelancer",
+    phone: "0917",
+    services: [],
+    markCompleted: true,
+  });
+
+  const profile = await t.run(async (ctx) => ctx.db.get(result.profileId!));
+  expect(profile?.layoutConfig.componentOrder).not.toContain("Services");
+  expect(profile?.layoutConfig.componentOrder).toEqual([
+    "Hero", "About", "Experience", "Education", "Projects", "Contact",
+  ]);
+});
+
 test("updateOnboarding does not consume a second profile slot when the builder later edits the same profile", async () => {
   const t = convexTest(schema);
   const asUser = t.withIdentity({ subject: "chain_user" });
