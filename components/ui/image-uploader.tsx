@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, X, Loader2, Info } from "lucide-react";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { resolveImageUrl } from "@/lib/utils";
 import { compressImage, formatFileSize } from "@/lib/image-compression";
@@ -27,6 +27,15 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
     const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.images.generateUploadUrl);
+    // validateUpload is a Convex action (not a mutation) — it needs
+    // ctx.storage.get() to read the bytes actually sitting in storage,
+    // which only actions can do (see convex/images.ts). This is the
+    // server-side enforcement of ALLOWED_CONTENT_TYPES/MAX_UPLOAD_BYTES —
+    // the client-side check in lib/image-compression.ts is UX only and
+    // trivially bypassable by posting straight to the upload URL, so a
+    // storageId must never be handed to onChange until this confirms it
+    // (Task 19 / I4).
+    const validateUpload = useAction(api.images.validateUpload);
 
     useEffect(() => {
         return () => {
@@ -123,7 +132,15 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
 
             const { storageId } = await result.json();
             console.log("Upload successful, storageId:", storageId);
-            
+
+            // 3. Confirm the upload passes server-side validation before
+            // it's usable anywhere — this deletes the blob and throws if it
+            // doesn't (wrong content type, too large).
+            if (!user?.id) {
+                throw new Error("User not authenticated");
+            }
+            await validateUpload({ storageId, clerkId: user.id });
+
             // Clear local preview and set the storage ID
             setLocalPreviewUrl(null);
             URL.revokeObjectURL(localUrl);

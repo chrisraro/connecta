@@ -13,6 +13,8 @@ import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
 import { useEffect, useRef } from "react";
 import { formatPHP } from "@/lib/payment";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 // Enhanced toast notification component with actions
 function ToastNotification({ 
@@ -188,7 +190,11 @@ export default function ShopPage() {
       setAddedToCart(productId);
       setTimeout(() => setAddedToCart(null), 2000);
     } catch (error) {
+      // Task 19 follow-up (Task 18 review, Medium): this used to only
+      // console.error — a failed add-to-cart surfaced nowhere, so the
+      // customer saw neither the success toast below nor any error.
       console.error("Failed to add to cart:", error);
+      toast.error(toUserMessage(error));
     }
   };
 

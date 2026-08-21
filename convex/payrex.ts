@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 
@@ -31,7 +31,13 @@ function encodeForm(pairs: Array<[string, string]>): string {
 }
 
 export const createCheckoutSession = action({
-  args: { orderNumber: v.string() },
+  args: {
+    orderNumber: v.string(),
+    // Required for guest checkout (see schema.ts#orders.guestOrderToken).
+    // Ignored for a signed-in caller's own order — ownership there is
+    // proven by the auth token instead.
+    guestOrderToken: v.optional(v.string()),
+  },
   handler: async (ctx, args): Promise<{ url: string }> => {
     const secretKey = process.env.PAYREX_SECRET_KEY;
     if (!secretKey) {
@@ -42,15 +48,39 @@ export const createCheckoutSession = action({
       throw new Error("NEXT_PUBLIC_APP_URL is not configured");
     }
 
-    // Load the order via an internal query.
-    const order = await ctx.runQuery(internal.checkout.getOrderForPayment, {
-      orderNumber: args.orderNumber,
-    });
+    // SECURITY (Task 19 / C2): this action used to load ANY order by number
+    // with no ownership check at all — order numbers are predictable
+    // (timestamp + 3-char suffix, see convex/checkout.ts#getOrderByNumber),
+    // and this action returns a live PayRex checkout URL and writes the
+    // payrexCheckoutId/paymentIntentId that convex/http.ts's webhook later
+    // trusts to resolve the order. Anyone who could guess/enumerate an
+    // order number could hijack a stranger's checkout. getOrderForPaymentAuthorized
+    // mirrors getOrderByNumber's isOwner/isAdmin check for signed-in orders
+    // and adds the guest-token check for guest orders (no Convex identity to
+    // check ownership against there).
+    const identity = await ctx.auth.getUserIdentity();
+    const { order, authorized } = await ctx.runQuery(
+      internal.checkout.getOrderForPaymentAuthorized,
+      {
+        orderNumber: args.orderNumber,
+        clerkSubject: identity?.subject,
+        guestOrderToken: args.guestOrderToken,
+      }
+    );
     if (!order) {
-      throw new Error("Order not found");
+      throw new ConvexError({ code: "NOT_FOUND", message: "Order not found" });
+    }
+    if (!authorized) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "You do not have access to this order",
+      });
     }
     if (order.paymentStatus === "paid") {
-      throw new Error("Order is already paid");
+      throw new ConvexError({
+        code: "ALREADY_PAID",
+        message: "Order is already paid",
+      });
     }
 
     // Build line items (amounts already in centavos).

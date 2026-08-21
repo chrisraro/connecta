@@ -70,8 +70,26 @@ async function resolveDiscount(
 // client-generated, localStorage-persisted id, and GLOBAL_MAX is the
 // backstop bounding total validation attempts shop-wide even when every call
 // brings a freshly rotated visitor id.
+//
+// Task 19 follow-up (Task 18 review, Medium): this shop has no ownerId
+// (single-tenant, unlike leads' per-owner bucket), so GLOBAL_MAX is shared by
+// every shopper on the site at once. The original 30/min was sized only
+// against the guessing-attack case and didn't account for the client effect
+// re-firing validateDiscount on every subtotal change (app/shop/cart and
+// app/shop/checkout re-run it whenever cart quantity changes while a code is
+// applied) — a handful of ordinary concurrent shoppers adjusting quantities
+// during a sale could exhaust it and 60s-block EVERY customer, which is worse
+// than the abuse this cap exists to stop. Two changes together fix this:
+// the client effect is now debounced ~600ms (see the cart/checkout pages),
+// which caps a single continuously-fiddling shopper to ~100 calls/min worst
+// case instead of one per keystroke/click; and GLOBAL_MAX is raised 5x to
+// 150/min, generous headroom above one such shopper alone and enough for
+// several genuinely concurrent ones on a sale day, while still bounding a
+// rotating-visitor-id guessing script to a small fraction of what it could
+// reach unbounded. Honestly labelled a guess, same as the I2 visitor tier
+// before it (see Task 17).
 const DISCOUNT_VALIDATE_VISITOR_MAX = 10;
-const DISCOUNT_VALIDATE_GLOBAL_MAX = 30;
+const DISCOUNT_VALIDATE_GLOBAL_MAX = 150;
 
 // Internal: check-and-record one discount-validation attempt. See the
 // comment above `validateDiscount` below for why this had to become an
@@ -225,7 +243,17 @@ const createOrderArgs = {
 };
 
 const ORDER_MAX = 5;
-const ORDER_GLOBAL_MAX = 100;
+// Task 19 follow-up (Task 18 review, Medium): raised alongside
+// DISCOUNT_VALIDATE_GLOBAL_MAX above for the same single-shared-bucket
+// reason (no ownerId on this shop). Unlike discount validation, order
+// creation isn't re-fired by quantity fiddling — it's one call per checkout
+// attempt, further capped per-caller at ORDER_MAX=5/min above — so legitimate
+// concurrent load here is inherently lower. Doubled rather than raised 5x:
+// enough headroom for a genuine flash-sale spike (dozens of concurrent
+// checkouts/min) without diluting the backstop against a rotating-guestId
+// script nearly as much as the discount-validate change does. Honestly
+// labelled a guess, same as DISCOUNT_VALIDATE_GLOBAL_MAX above.
+const ORDER_GLOBAL_MAX = 200;
 
 // Internal: check-and-record one order-creation attempt, keyed by the
 // caller's trusted Convex user id when authenticated, falling back to the
@@ -356,10 +384,18 @@ export const performCreateOrder = internalMutation({
     const orderNumber = generateOrderNumber();
     const now = Date.now();
 
+    // Minted only for guest checkout — see schema.ts#orders.guestOrderToken.
+    // An authenticated order is authorized by userId; a guest order has no
+    // Convex identity to check, so this token is the only thing standing
+    // between "I just created this order" and anyone who can guess the
+    // (predictable) order number.
+    const guestOrderToken = userId ? undefined : crypto.randomUUID();
+
     const orderId = await ctx.db.insert("orders", {
       orderNumber,
       userId,
       guestEmail: userId ? undefined : args.guestEmail,
+      guestOrderToken,
       status: "pending",
       items: orderItems,
       subtotal,
@@ -389,6 +425,7 @@ export const performCreateOrder = internalMutation({
       total,
       currency: "PHP",
       discountCode: args.discountCode,
+      guestOrderToken,
     };
   },
 });
@@ -408,6 +445,11 @@ export const createOrder = action({
     total: number;
     currency: string;
     discountCode: string | undefined;
+    // Present only for guest checkout — the client must hold onto this and
+    // pass it back to payrex.createCheckoutSession (Task 19 / C2). Absent
+    // for signed-in checkout, where ownership is proven by the auth token
+    // instead.
+    guestOrderToken: string | undefined;
   }> => {
     await ctx.runMutation(internal.checkout.recordOrderAttempt, {
       guestId: args.guestId,
@@ -460,13 +502,58 @@ export const getUserOrders = query({
   },
 });
 
-export const getOrderForPayment = internalQuery({
-  args: { orderNumber: v.string() },
+// Loads an order by number AND decides whether the calling identity is
+// entitled to act on it as a payer — used exclusively by
+// convex/payrex.ts#createCheckoutSession (Task 19 / C2). Order numbers are
+// predictable (timestamp + 3-char suffix, see getOrderByNumber above) so the
+// number alone must never be trusted as proof of ownership; this mirrors
+// getOrderByNumber's isOwner/isAdmin check for signed-in orders and adds the
+// guest-token check (schema.ts#orders.guestOrderToken) for guest orders,
+// which have no Convex identity to check ownership against.
+//
+// `clerkSubject` is passed in rather than read via ctx.auth here because the
+// caller (an action) has its own ctx.auth — this stays a plain internalQuery
+// so it's independently testable and reusable, taking the already-verified
+// subject as data instead of re-deriving it.
+export const getOrderForPaymentAuthorized = internalQuery({
+  args: {
+    orderNumber: v.string(),
+    clerkSubject: v.optional(v.string()),
+    guestOrderToken: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const order = await ctx.db
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", args.orderNumber))
       .first();
+    if (!order) {
+      return { order: null, authorized: false };
+    }
+
+    if (order.userId) {
+      // Signed-in order: caller must be authenticated as the owner or an
+      // active admin. A guest-supplied token can never authorize a
+      // signed-in order — there's nothing to compare it against.
+      if (!args.clerkSubject) return { order, authorized: false };
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkSubject!))
+        .unique();
+      if (!user) return { order, authorized: false };
+      const isOwner = order.userId === user._id;
+      const isAdmin = await isActiveAdmin(ctx, user._id);
+      return { order, authorized: isOwner || isAdmin };
+    }
+
+    // Guest order: the only proof of "I created this order" is the token
+    // minted for it at creation (performCreateOrder above). No token stored
+    // on the order (shouldn't happen — every guest order mints one) means
+    // there is nothing safe to compare against, so this fails closed rather
+    // than falling back to some weaker check.
+    if (!order.guestOrderToken || !args.guestOrderToken) {
+      return { order, authorized: false };
+    }
+    return { order, authorized: order.guestOrderToken === args.guestOrderToken };
   },
 });
 

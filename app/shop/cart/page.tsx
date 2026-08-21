@@ -13,8 +13,14 @@ import { useState, useEffect } from "react";
 import { formatPHP } from "@/lib/payment";
 import { DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
 import { toUserMessage } from "@/lib/errors";
+import { toast } from "sonner";
 
 const formatPrice = formatPHP;
+
+// How long to wait after the last subtotal/code change before re-validating
+// the applied discount — see the comment on the effect below (Task 19
+// follow-up, Task 18 review).
+const DISCOUNT_REVALIDATE_DEBOUNCE_MS = 600;
 
 function CartItemImage({ storageId, alt }: { storageId: string; alt: string }) {
   const imageUrl = useQuery(
@@ -48,6 +54,45 @@ export default function CartPage() {
   const [discountCode, setDiscountCode] = useState("");
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
 
+  // Task 19 follow-up (Task 18 review, Medium): addItem/updateQuantity/
+  // removeItem/clearCart in CartContext all re-throw on failure, but every
+  // caller here previously fired-and-forgot them straight from onClick with
+  // no try/catch at all — a rejected mutation (stale stock, network error,
+  // rate limit) surfaced NOWHERE, leaving the customer staring at a button
+  // that silently did nothing. Wrapping each in the established
+  // toUserMessage + sonner toast pattern (see components/ui/image-uploader.tsx)
+  // makes failures visible instead of swallowed.
+  const handleUpdateQuantity = async (
+    productId: Parameters<typeof updateQuantity>[0],
+    variationId: Parameters<typeof updateQuantity>[1],
+    quantity: number
+  ) => {
+    try {
+      await updateQuantity(productId, variationId, quantity);
+    } catch (error) {
+      toast.error(toUserMessage(error));
+    }
+  };
+
+  const handleRemoveItem = async (
+    productId: Parameters<typeof removeItem>[0],
+    variationId: Parameters<typeof removeItem>[1]
+  ) => {
+    try {
+      await removeItem(productId, variationId);
+    } catch (error) {
+      toast.error(toUserMessage(error));
+    }
+  };
+
+  const handleClearCart = async () => {
+    try {
+      await clearCart();
+    } catch (error) {
+      toast.error(toUserMessage(error));
+    }
+  };
+
   // Shop settings are the single source of truth for tax/shipping (no hardcoding).
   const settings = useQuery(api.settings.getShopSettings, {});
 
@@ -61,25 +106,39 @@ export default function CartPage() {
     ReturnType<typeof validateDiscountAction>
   > | null>(null);
 
+  // Debounced (Task 19 follow-up, Task 18 review, Medium): subtotal changes
+  // on every quantity +/- click, and this effect re-runs on every subtotal
+  // change while a code is applied — undebounced, a shopper fiddling with
+  // quantities fires one validateDiscount call per click, and validateDiscount
+  // is metered against a SINGLE SHOP-WIDE bucket (convex/checkout.ts's
+  // discount-validate:global — this shop has no ownerId to scope it further).
+  // A few concurrent shoppers doing that during a sale could exhaust that
+  // bucket and 60s-block every customer. Waiting for quantity changes to
+  // settle before validating fixes the self-inflicted-DoS side of that; see
+  // convex/checkout.ts#DISCOUNT_VALIDATE_GLOBAL_MAX for the other half (the
+  // ceiling itself was also raised).
   useEffect(() => {
     if (!appliedCode) {
       setDiscountResult(null);
       return;
     }
     let cancelled = false;
-    validateDiscountAction({
-      code: appliedCode,
-      subtotal,
-      visitorId: getOrCreateGuestId(),
-    })
-      .then((result) => {
-        if (!cancelled) setDiscountResult(result);
+    const timeoutId = setTimeout(() => {
+      validateDiscountAction({
+        code: appliedCode,
+        subtotal,
+        visitorId: getOrCreateGuestId(),
       })
-      .catch((err) => {
-        if (!cancelled) setDiscountResult({ valid: false, error: toUserMessage(err) });
-      });
+        .then((result) => {
+          if (!cancelled) setDiscountResult(result);
+        })
+        .catch((err) => {
+          if (!cancelled) setDiscountResult({ valid: false, error: toUserMessage(err) });
+        });
+    }, DISCOUNT_REVALIDATE_DEBOUNCE_MS);
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
     // validateDiscountAction's identity is stable across renders (convex/react
     // memoizes action hooks the same way it does mutation hooks); omitting it
@@ -151,7 +210,7 @@ export default function CartPage() {
             {itemCount} item{itemCount !== 1 ? "s" : ""} in your cart
           </p>
         </div>
-        <Button variant="outline" onClick={() => clearCart()} className="w-full sm:w-auto">
+        <Button variant="outline" onClick={() => handleClearCart()} className="w-full sm:w-auto">
           <Trash2 className="w-4 h-4 mr-2" />
           <span className="hidden sm:inline">Clear Cart</span>
           <span className="sm:hidden">Clear</span>
@@ -208,7 +267,7 @@ export default function CartPage() {
                             size="icon"
                             aria-label="Decrease quantity"
                             className="size-11 touch-manipulation"
-                            onClick={() => updateQuantity(item.productId, item.variationId, item.quantity - 1)}
+                            onClick={() => handleUpdateQuantity(item.productId, item.variationId, item.quantity - 1)}
                             disabled={item.quantity <= 1}
                           >
                             <Minus className="w-3 h-3" />
@@ -219,7 +278,7 @@ export default function CartPage() {
                             size="icon"
                             aria-label="Increase quantity"
                             className="size-11 touch-manipulation"
-                            onClick={() => updateQuantity(item.productId, item.variationId, item.quantity + 1)}
+                            onClick={() => handleUpdateQuantity(item.productId, item.variationId, item.quantity + 1)}
                           >
                             <Plus className="w-3 h-3" />
                           </Button>
@@ -229,7 +288,7 @@ export default function CartPage() {
                           variant="ghost"
                           size="sm"
                           className="text-destructive hover:text-destructive px-2 py-1 h-11"
-                          onClick={() => removeItem(item.productId, item.variationId)}
+                          onClick={() => handleRemoveItem(item.productId, item.variationId)}
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           <span className="hidden sm:inline">Remove</span>

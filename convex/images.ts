@@ -1,6 +1,5 @@
 import { v, ConvexError } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
-import { requireAdmin } from "./admin";
+import { mutation, query, internalMutation, action } from "./_generated/server";
 import { requireUserMatching } from "./authz";
 import { checkRateLimit } from "./rateLimit";
 
@@ -94,22 +93,51 @@ function validateMetadata(
 }
 
 // Called by the client immediately after a successful POST to the upload
-// URL, before the storageId is used anywhere else. Deletes the blob and
-// throws if it fails server-side validation — the client-side check in
-// lib/image-compression.ts is UX only and is trivially bypassable by
-// posting directly to the upload URL (Security audit #2).
-export const validateUpload = mutation({
+// URL, before the storageId is used anywhere else (onChange/onAdd in
+// components/ui/image-uploader.tsx and the builder's GalleryUploader). This
+// is what makes ALLOWED_CONTENT_TYPES/MAX_UPLOAD_BYTES actually enforced:
+// generateUploadUrl's URL accepts any bytes the caller POSTs regardless of
+// what the client-side compression step in lib/image-compression.ts claims
+// — that check is UX only and trivially bypassable by posting directly to
+// the upload URL (Security audit #2). Deletes the blob and throws
+// (ConvexError, so the reason survives production's redaction of plain
+// Error messages — see lib/errors.ts#toUserMessage) if it fails server-side
+// validation.
+//
+// This is an ACTION, not a mutation: real server-side validation has to
+// read the bytes actually sitting in storage, not metadata the client could
+// have lied about — that's `ctx.storage.get()`, which returns the stored
+// Blob (its `.type`/`.size` reflect what was really written, unlike a POST's
+// self-reported Content-Type). `.get()` only exists on StorageActionWriter
+// (actions/HTTP actions), not the StorageWriter mutations get — see
+// convex/server's storage.d.ts. Client callers use useAction, not
+// useMutation, but the calling convention is otherwise identical.
+//
+// Auth: an inline identity-subject check, NOT requireAdmin (the same bug
+// Task 5 fixed on generateUploadUrl, this mutation's neighbour above) and
+// not requireUserMatching either — actions don't have ctx.db, so there's no
+// user document to look up here; verifying the caller IS who they claim
+// (identity.subject === args.clerkId) is the whole of what this function
+// needs to authorize deleting/keeping a storage blob.
+export const validateUpload = action({
   args: { storageId: v.id("_storage"), clerkId: v.string() },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx, args.clerkId);
-    const metadata = await ctx.storage.getMetadata(args.storageId);
-    if (!metadata) {
-      throw new Error("Upload not found");
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== args.clerkId) {
+      throw new ConvexError({
+        code: "UNAUTHENTICATED",
+        message: "Sign in required to validate an upload.",
+      });
     }
-    const result = validateMetadata(metadata.contentType ?? "", metadata.size);
+
+    const blob = await ctx.storage.get(args.storageId);
+    if (!blob) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Upload not found" });
+    }
+    const result = validateMetadata(blob.type, blob.size);
     if (!result.valid) {
       await ctx.storage.delete(args.storageId);
-      throw new Error(result.reason);
+      throw new ConvexError({ code: "INVALID_UPLOAD", message: result.reason });
     }
     return { success: true };
   },

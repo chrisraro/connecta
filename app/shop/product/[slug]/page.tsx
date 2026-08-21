@@ -12,6 +12,8 @@ import { useCart } from "@/contexts/CartContext";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 import { formatPHP } from "@/lib/payment";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 const formatPrice = formatPHP;
 
@@ -93,7 +95,12 @@ export default function ProductPage() {
       // Redirect to checkout immediately after adding to cart
       router.push('/shop/checkout');
     } catch (error) {
+      // Task 19 follow-up (Task 18 review, Medium): this used to only
+      // console.error — a failed add-to-cart (stale stock, network error,
+      // rate limit) left the customer clicking "Add to Cart" with nothing
+      // visibly happening and no redirect, and no idea why.
       console.error("Failed to add to cart:", error);
+      toast.error(toUserMessage(error));
     }
   };
 
