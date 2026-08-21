@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
 import { internal, api } from "./_generated/api";
@@ -279,7 +279,7 @@ test("deleteMyAccount erases the caller's own data across every referencing tabl
   const seed = await seedFullAccount(t, "delete_self");
   const asUser = t.withIdentity({ subject: "delete_self" });
 
-  const result = await asUser.mutation(api.users.deleteMyAccount, {});
+  const result = await asUser.action(api.users.deleteMyAccount, {});
   expect(result.success).toBe(true);
 
   await t.run(async (ctx) => {
@@ -305,7 +305,7 @@ test("deleteMyAccount cannot delete another user's account or data", async () =>
   // ever be resolved from their own authenticated identity. Calling it as
   // the attacker must leave the victim completely untouched.
   const asAttacker = t.withIdentity({ subject: "attacker_user" });
-  const result = await asAttacker.mutation(api.users.deleteMyAccount, {});
+  const result = await asAttacker.action(api.users.deleteMyAccount, {});
   expect(result.success).toBe(true);
 
   await t.run(async (ctx) => {
@@ -325,7 +325,7 @@ test("deleteMyAccount cannot delete another user's account or data", async () =>
   // id argument to pass, so the only way to delete the victim is to
   // authenticate as the victim.
   await expect(
-    t.mutation(api.users.deleteMyAccount, {})
+    t.action(api.users.deleteMyAccount, {})
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -515,7 +515,7 @@ test("updateOnboarding does not consume a second profile slot when the builder l
 test("deleteMyAccount rejects an unauthenticated caller", async () => {
   const t = convexTest(schema);
   await expect(
-    t.mutation(api.users.deleteMyAccount, {})
+    t.action(api.users.deleteMyAccount, {})
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -524,7 +524,7 @@ test("deleteMyAccount returns physical cards to inventory instead of deleting th
   const seed = await seedFullAccount(t, "card_owner");
   const asUser = t.withIdentity({ subject: "card_owner" });
 
-  const result = await asUser.mutation(api.users.deleteMyAccount, {});
+  const result = await asUser.action(api.users.deleteMyAccount, {});
   expect(result.cardsReturnedToInventory).toBe(1);
 
   const card = await t.run(async (ctx) => ctx.db.get(seed.cardId));
@@ -542,7 +542,7 @@ test("deleteMyAccount retains auditLogs, including a new entry for the deletion 
   const seed = await seedFullAccount(t, "audited_user");
   const asUser = t.withIdentity({ subject: "audited_user" });
 
-  await asUser.mutation(api.users.deleteMyAccount, {});
+  await asUser.action(api.users.deleteMyAccount, {});
 
   const logs = await t.run(async (ctx) =>
     ctx.db
@@ -560,4 +560,190 @@ test("deleteMyAccount retains auditLogs, including a new entry for the deletion 
   );
   expect(deletionLog).toBeDefined();
   expect(deletionLog?.resourceId).toBe(String(seed.userId));
+});
+
+/**
+ * deleteMyAccount's Clerk identity deletion (Task 4 — the audit's Critical
+ * finding: the Settings page claims permanent deletion "per privacy
+ * regulations (RA 10173)" but never touched the Clerk identity, so signing
+ * back in silently resurrected the "deleted" account via syncUser).
+ *
+ * deleteMyAccount is now an action: it erases Convex data through the same
+ * internalEraseUserByClerkId mutation the webhook uses (atomic, idempotent),
+ * then calls Clerk's Backend API to delete the identity itself. These tests
+ * mock global fetch rather than hitting Clerk for real — there are live
+ * accounts in this deployment and the test suite must never be able to
+ * delete one.
+ */
+test("deleteMyAccount calls Clerk's Backend API DELETE /v1/users/{id} with the secret key when CLERK_SECRET_KEY is configured", async () => {
+  vi.stubEnv("CLERK_SECRET_KEY", "sk_test_abc123");
+  const t = convexTest(schema);
+  await seedFullAccount(t, "clerk_delete_user");
+  const asUser = t.withIdentity({ subject: "clerk_delete_user" });
+
+  const fetchMock = vi.fn(
+    async (_url: string, _init?: RequestInit) =>
+      new Response(null, { status: 200 })
+  );
+  vi.stubGlobal("fetch", fetchMock);
+
+  const result = await asUser.action(api.users.deleteMyAccount, {});
+
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  const [url, init] = fetchMock.mock.calls[0];
+  expect(url).toBe("https://api.clerk.com/v1/users/clerk_delete_user");
+  expect(init?.method).toBe("DELETE");
+  expect((init?.headers as Record<string, string>)?.Authorization).toBe(
+    "Bearer sk_test_abc123"
+  );
+
+  expect(result.success).toBe(true);
+  expect(result.identityDeletion.status).toBe("deleted");
+
+  vi.unstubAllGlobals();
+});
+
+test("deleteMyAccount degrades gracefully instead of reporting plain success when CLERK_SECRET_KEY is unset", async () => {
+  // Empty string is falsy, same as an absent env var — this is the actual
+  // production state today (CLERK_SECRET_KEY is unset in the deployment),
+  // so this is the common path, not an edge case.
+  vi.stubEnv("CLERK_SECRET_KEY", "");
+  const t = convexTest(schema);
+  const seed = await seedFullAccount(t, "no_secret_user");
+  const asUser = t.withIdentity({ subject: "no_secret_user" });
+
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  const result = await asUser.action(api.users.deleteMyAccount, {});
+
+  // Convex data must still be fully erased...
+  expect(result.success).toBe(true);
+  await t.run(async (ctx) => {
+    expect(await ctx.db.get(seed.userId)).toBeNull();
+  });
+
+  // ...but the identity deletion must be surfaced as degraded, not silently
+  // reported as a plain success — the Clerk identity is still live.
+  expect(result.identityDeletion.status).toBe("pending_configuration");
+  expect(result.identityDeletion.message.toLowerCase()).toContain("pending");
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(errorSpy).toHaveBeenCalled();
+
+  errorSpy.mockRestore();
+  vi.unstubAllGlobals();
+});
+
+test("deleteMyAccount reports identity deletion as failed (not silent success) when Clerk's API call errors", async () => {
+  vi.stubEnv("CLERK_SECRET_KEY", "sk_test_abc123");
+  const t = convexTest(schema);
+  const seed = await seedFullAccount(t, "clerk_fail_user");
+  const asUser = t.withIdentity({ subject: "clerk_fail_user" });
+
+  const fetchMock = vi.fn(
+    async () => new Response("server error", { status: 500 })
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  const result = await asUser.action(api.users.deleteMyAccount, {});
+
+  // The Convex erasure already committed (it's a separate, prior mutation
+  // call) — that must not be rolled back just because Clerk's API failed.
+  expect(result.success).toBe(true);
+  await t.run(async (ctx) => {
+    expect(await ctx.db.get(seed.userId)).toBeNull();
+  });
+  expect(result.identityDeletion.status).toBe("failed");
+  expect(errorSpy).toHaveBeenCalled();
+
+  errorSpy.mockRestore();
+  vi.unstubAllGlobals();
+});
+
+test("deleteMyAccount resolves with a failed identityDeletion (not a thrown exception) when the Clerk fetch call itself throws", async () => {
+  // Distinct from the 500-response case above: here `fetch` never returns a
+  // Response at all — it rejects, as it does for DNS failures, TLS errors,
+  // timeouts, or Clerk being unreachable. Convex erasure already committed
+  // in its own prior mutation call, so an uncaught throw here would leave
+  // the action itself rejecting: the UI would show a generic failure and
+  // never sign the user out, even though their data is already gone.
+  vi.stubEnv("CLERK_SECRET_KEY", "sk_test_abc123");
+  const t = convexTest(schema);
+  const seed = await seedFullAccount(t, "clerk_network_error_user");
+  const asUser = t.withIdentity({ subject: "clerk_network_error_user" });
+
+  const fetchMock = vi.fn(async () => {
+    throw new TypeError("fetch failed");
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  const result = await asUser.action(api.users.deleteMyAccount, {});
+
+  // The Convex erasure already committed — must not be treated as reverted
+  // just because the network call afterward blew up.
+  expect(result.success).toBe(true);
+  await t.run(async (ctx) => {
+    expect(await ctx.db.get(seed.userId)).toBeNull();
+  });
+  expect(result.identityDeletion.status).toBe("failed");
+  expect(errorSpy).toHaveBeenCalled();
+
+  errorSpy.mockRestore();
+  vi.unstubAllGlobals();
+});
+
+test("deleteMyAccount treats a 404 from Clerk (identity already gone) as a completed deletion, not a failure", async () => {
+  vi.stubEnv("CLERK_SECRET_KEY", "sk_test_abc123");
+  const t = convexTest(schema);
+  await seedFullAccount(t, "already_gone_user");
+  const asUser = t.withIdentity({ subject: "already_gone_user" });
+
+  const fetchMock = vi.fn(
+    async () => new Response("not found", { status: 404 })
+  );
+  vi.stubGlobal("fetch", fetchMock);
+
+  const result = await asUser.action(api.users.deleteMyAccount, {});
+
+  expect(result.identityDeletion.status).toBe("deleted");
+
+  vi.unstubAllGlobals();
+});
+
+/**
+ * internalEraseUserByClerkId — the shared erasure primitive factored out of
+ * deleteMyAccount so the Clerk webhook (convex/http.ts) can call the exact
+ * same logic for accounts deleted outside the app (Clerk dashboard/API).
+ * Idempotent: a clerkId with no matching Convex row is a no-op, not an
+ * error, so a retried webhook delivery (or a clerkId that was never synced)
+ * can't throw.
+ */
+test("internalEraseUserByClerkId is a no-op (not a throw) when no user row matches the clerkId", async () => {
+  const t = convexTest(schema);
+
+  const result = await t.mutation(internal.users.internalEraseUserByClerkId, {
+    clerkId: "never_synced_user",
+  });
+
+  expect(result.success).toBe(true);
+  expect(result.found).toBe(false);
+  expect(result.cardsReturnedToInventory).toBe(0);
+});
+
+test("internalEraseUserByClerkId erases the matching user's data when called directly (the webhook's call shape)", async () => {
+  const t = convexTest(schema);
+  const seed = await seedFullAccount(t, "webhook_deleted_user");
+
+  const result = await t.mutation(internal.users.internalEraseUserByClerkId, {
+    clerkId: "webhook_deleted_user",
+  });
+
+  expect(result.found).toBe(true);
+  await t.run(async (ctx) => {
+    expect(await ctx.db.get(seed.userId)).toBeNull();
+    expect(await ctx.db.get(seed.profileId)).toBeNull();
+  });
 });

@@ -1,11 +1,12 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, action, internalMutation } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
-import { requireUser, requireUserMatching } from "./authz";
+import { requireUserMatching } from "./authz";
 import { acceptInvitesForCurrentUser } from "./teams";
 import { logAudit } from "./audit";
 import { insertNewProfile } from "./profiles";
 import { DEFAULT_DIGITAL_CARD } from "../lib/digitalCard";
+import { internal } from "./_generated/api";
 
 export const syncUser = mutation({
     args: {
@@ -240,20 +241,36 @@ export const internalStripLegacyCredits = internalMutation({
 });
 
 /**
- * Self-service account deletion (RA 10173 erasure right).
+ * Shared account-erasure primitive (RA 10173 erasure right).
  *
  * The security audit that produced app/privacy and app/terms found there was
- * NO erasure path anywhere in this codebase. This mutation is the backend
- * half of that fix (the settings-page delete button is an explicit
- * follow-up, not in scope here — see the privacy policy's "Honest gap" note
- * under "Your rights under RA 10173").
+ * NO erasure path anywhere in this codebase. This internal mutation is the
+ * data-erasure half of that fix, and — per a later audit finding — the
+ * SINGLE place that erasure logic lives: it is called both by the
+ * self-service `deleteMyAccount` action below (the Settings page's "Delete
+ * Account" button) AND by the Clerk webhook handler in convex/http.ts for
+ * accounts removed any other way (Clerk dashboard, Backend API, a user's own
+ * Clerk-hosted account portal). Before this factor-out, only the app's own
+ * delete button erased Convex data — any other deletion path orphaned the
+ * user's rows forever, an erasure gap approached from the opposite direction
+ * of the same RA-10173 problem.
  *
- * SAFETY MODEL
- * ------------
- *  - The caller can ONLY delete themselves. There is no id argument to spoof;
- *    the target user is always derived from `ctx.auth` via `requireUser`,
- *    the same pattern used everywhere else in this codebase to close the
- *    "clerkId argument is spoofable" hole (see convex/authz.ts).
+ * IDENTITY MODEL
+ * --------------
+ *  - Takes `clerkId` directly rather than deriving it from `ctx.auth`,
+ *    because the webhook caller has no authenticated session for the
+ *    account being deleted — Clerk itself is the trusted source of which
+ *    identity was removed. This is safe because the function is
+ *    `internalMutation`: it is not part of the public API surface, so it can
+ *    only be invoked from other server-side Convex code (the `deleteMyAccount`
+ *    action, which derives `clerkId` from the caller's own verified
+ *    `ctx.auth` identity — never a client-supplied argument — and the
+ *    webhook handler, which only reaches this call after verifying Clerk's
+ *    Svix signature).
+ *  - Idempotent: a `clerkId` with no matching `users` row is a no-op, not an
+ *    error. This matters for the webhook (a retried `user.deleted` delivery,
+ *    or a Clerk user that was never synced into Convex in the first place)
+ *    and for a caller who double-clicks "Delete Account".
  *
  * REFERENCE GRAPH
  * ----------------
@@ -283,10 +300,34 @@ export const internalStripLegacyCredits = internalMutation({
  * that data) than erasing one person's own records, and is out of scope for
  * this pass.
  */
-export const deleteMyAccount = mutation({
-    args: {},
-    handler: async (ctx) => {
-        const user = await requireUser(ctx);
+export const internalEraseUserByClerkId = internalMutation({
+    args: { clerkId: v.string() },
+    handler: async (ctx, args) => {
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+            .unique();
+
+        if (!user) {
+            // Idempotent no-op — see IDENTITY MODEL above.
+            return {
+                success: true as const,
+                found: false as const,
+                deleted: {
+                    profiles: 0,
+                    leads: 0,
+                    notifications: 0,
+                    properties: 0,
+                    projects: 0,
+                    carts: 0,
+                    invoices: 0,
+                    orders: 0,
+                    adminGrants: 0,
+                },
+                cardsReturnedToInventory: 0,
+            };
+        }
+
         const userId = user._id;
 
         const [
@@ -358,7 +399,8 @@ export const deleteMyAccount = mutation({
         await ctx.db.delete(userId);
 
         return {
-            success: true,
+            success: true as const,
+            found: true as const,
             deleted: {
                 profiles: profiles.length,
                 leads: leads.length,
@@ -371,6 +413,150 @@ export const deleteMyAccount = mutation({
                 adminGrants: adminGrants.length,
             },
             cardsReturnedToInventory: cards.length,
+        };
+    },
+});
+
+/**
+ * Self-service account deletion — the Settings page's "Delete Account"
+ * button, and the fix for the audit's Critical finding: the dialog claims
+ * permanent deletion "per privacy regulations (RA 10173)", but the old
+ * implementation only erased Convex data and never touched the Clerk
+ * identity. The user could sign back in immediately and `syncUser` would
+ * silently recreate the "deleted" account.
+ *
+ * This is an `action`, not a `mutation`, because deleting the Clerk identity
+ * requires an outbound `fetch` call (Clerk Backend API), and Convex
+ * mutations cannot make network calls. It orchestrates two steps:
+ *
+ *   1. Erase Convex data via `internalEraseUserByClerkId` — a single atomic
+ *      mutation call, so that half of the operation keeps the all-or-nothing
+ *      guarantee Convex mutations normally provide.
+ *   2. Delete the Clerk identity via `DELETE /v1/users/{id}` using
+ *      `CLERK_SECRET_KEY` from Convex env.
+ *
+ * `CLERK_SECRET_KEY` is UNSET in this deployment today, which makes step 2's
+ * degraded path the common case, not a rare edge case. When it's missing (or
+ * Clerk's API call itself fails), this function still returns
+ * `success: true` for the data erasure — that part genuinely succeeded and
+ * is not rolled back — but reports `identityDeletion.status` as
+ * `"pending_configuration"` or `"failed"` rather than silently claiming a
+ * complete deletion the user was promised. Callers (the Settings page) MUST
+ * branch on `identityDeletion.status`, not just `success`, before telling
+ * the user their account is fully gone.
+ *
+ * SAFETY MODEL: identical to before — the caller can only ever delete
+ * themselves. `clerkId` comes from `ctx.auth.getUserIdentity()`, never from
+ * a client-supplied argument, so there is nothing to spoof.
+ */
+export const deleteMyAccount = action({
+    args: {},
+    handler: async (
+        ctx
+    ): Promise<{
+        success: true;
+        found: boolean;
+        deleted: {
+            profiles: number;
+            leads: number;
+            notifications: number;
+            properties: number;
+            projects: number;
+            carts: number;
+            invoices: number;
+            orders: number;
+            adminGrants: number;
+        };
+        cardsReturnedToInventory: number;
+        identityDeletion: {
+            status: "deleted" | "pending_configuration" | "failed";
+            message: string;
+        };
+    }> => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) {
+            throw new Error("Unauthorized: authentication required");
+        }
+        const clerkId = identity.subject;
+
+        // Step 1: erase Convex data. This commits as its own atomic
+        // transaction — it is not rolled back by anything that happens
+        // afterward, including a failed or unconfigured Clerk API call.
+        const erasure = await ctx.runMutation(
+            internal.users.internalEraseUserByClerkId,
+            { clerkId }
+        );
+
+        // Step 2: delete the Clerk identity.
+        const secretKey = process.env.CLERK_SECRET_KEY;
+        if (!secretKey) {
+            console.error(
+                "deleteMyAccount: CLERK_SECRET_KEY is not configured — Convex data was erased but the Clerk identity was not deleted"
+            );
+            return {
+                ...erasure,
+                identityDeletion: {
+                    status: "pending_configuration",
+                    message:
+                        "Your data was deleted. Identity removal is pending configuration — contact support if this persists.",
+                },
+            };
+        }
+
+        let res: Response;
+        try {
+            res = await fetch(
+                `https://api.clerk.com/v1/users/${encodeURIComponent(clerkId)}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${secretKey}` },
+                }
+            );
+        } catch (err) {
+            // `fetch` itself threw — DNS failure, TLS error, timeout, Clerk
+            // unreachable — rather than returning a non-OK response. The
+            // Convex erasure above already committed in its own transaction,
+            // so this action must NOT rethrow: an uncaught exception here
+            // would surface as a generic "Failed to delete account" while
+            // the user's data is already gone and they were never signed
+            // out. Report it the same way as a non-OK HTTP response instead.
+            console.error(
+                "deleteMyAccount: Clerk identity deletion threw before a response was received",
+                { error: err instanceof Error ? err.message : String(err) }
+            );
+            return {
+                ...erasure,
+                identityDeletion: {
+                    status: "failed",
+                    message:
+                        "Your data was deleted, but identity removal failed. Contact support.",
+                },
+            };
+        }
+
+        // A 404 means the identity is already gone (a prior retry, or the
+        // webhook beat this call to it) — that is a completed deletion, not
+        // a failure.
+        if (!res.ok && res.status !== 404) {
+            console.error("deleteMyAccount: Clerk identity deletion failed", {
+                status: res.status,
+            });
+            return {
+                ...erasure,
+                identityDeletion: {
+                    status: "failed",
+                    message:
+                        "Your data was deleted, but identity removal failed. Contact support.",
+                },
+            };
+        }
+
+        return {
+            ...erasure,
+            identityDeletion: {
+                status: "deleted",
+                message: "Your account and identity were permanently deleted.",
+            },
         };
     },
 });
