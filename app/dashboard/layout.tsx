@@ -21,6 +21,7 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { SIGMATAP } from "@/lib/brand";
+import { isFullScreenDashboardRoute } from "@/lib/dashboardChrome";
 
 // Shared between the mobile header and the desktop sidebar footer so the
 // account avatar looks identical in both places (same component in two
@@ -324,6 +325,20 @@ export default function DashboardLayout({
     const router = useRouter();
     const pathname = usePathname();
 
+    // Task 14 (production audit, Blocker 4): onboarding is a focused,
+    // full-screen task, and its own Back/Next row sits low enough in the
+    // card that the fixed bottom nav + Quick Actions FAB overlapped and
+    // intercepted real taps on it at common phone widths (confirmed live: a
+    // click dispatched at the visible "Next →" button landed on the nav's
+    // "Cards" item and navigated to /dashboard/cards instead). Removing
+    // this chrome outright (rather than the builder route's CSS
+    // `display:none!important` override) means there's no fixed layer left
+    // to fight for taps near the bottom of the viewport at all, regardless
+    // of a given step's content height. The wizard keeps its own "Skip for
+    // now" / "Back to Dashboard" exits, so the user is never trapped without
+    // the nav.
+    const hideMobileChrome = isFullScreenDashboardRoute(pathname);
+
     // Check admin status
     const adminStatus = useQuery(
         api.admin.checkAdminStatus,
@@ -376,7 +391,10 @@ export default function DashboardLayout({
                 top edge sits at bottom-28 + h-14 = 168px from the viewport
                 bottom, so page content (e.g. the "Recent Profiles" card)
                 needs at least that much bottom padding or it renders
-                underneath the nav/FAB instead of above them. */}
+                underneath the nav/FAB instead of above them. Skipped
+                entirely on a hideMobileChrome route — there's no fixed
+                bottom chrome there to clear, and onboarding's own card is
+                already vertically centered. */}
             {/* min-w-0: <main> is a flex item, and flex items default to
                 min-width:auto, which refuses to shrink below their content's
                 intrinsic width. Any page with a horizontally-scrolling strip
@@ -387,7 +405,7 @@ export default function DashboardLayout({
                 cut off on small phones — with no scrollbar to reveal it.
                 min-w-0 lets <main> match the viewport and hands the
                 horizontal scrolling back to the strip that asked for it. */}
-            <main className="flex-1 min-w-0 flex flex-col relative pb-48 md:pb-0">
+            <main className={`flex-1 min-w-0 flex flex-col relative md:pb-0 ${hideMobileChrome ? "" : "pb-48"}`}>
                 {/* Mobile Header */}
                 <MobileHeader />
 
@@ -396,12 +414,17 @@ export default function DashboardLayout({
                 </div>
 
                 {/* Mobile FABs: single Quick Actions trigger + the (always
-                    mounted) offline lead capture dialog it now opens. */}
-                <DashboardFabs />
+                    mounted, elsewhere) offline lead capture dialog it opens.
+                    Not rendered on a hideMobileChrome route — see comment
+                    above. Its offline-lead sync listeners simply pause for
+                    the (short, lead-free) duration of onboarding and resume
+                    on remount elsewhere in the dashboard. */}
+                {!hideMobileChrome && <DashboardFabs />}
             </main>
 
-            {/* Mobile Bottom Navigation */}
-            <MobileBottomNav />
+            {/* Mobile Bottom Navigation — not rendered on a
+                hideMobileChrome route (see comment above). */}
+            {!hideMobileChrome && <MobileBottomNav />}
         </div>
     );
 }
