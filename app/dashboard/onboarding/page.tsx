@@ -6,6 +6,8 @@ import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { Id } from "@/convex/_generated/dataModel";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -213,6 +215,7 @@ function OnboardingContent() {
             });
         } catch (err) {
             console.error("Failed to save onboarding:", err);
+            toast.error(toUserMessage(err));
         } finally {
             setSaving(false);
         }
@@ -255,7 +258,9 @@ function OnboardingContent() {
                     });
                 } catch (linkErr) {
                     console.error("Failed to link card to profile:", linkErr);
-                    // Non-blocking - profile is still created
+                    // Non-blocking - profile is still created, but the user
+                    // needs to know their card didn't attach.
+                    toast.warning("Your profile was created, but the card didn't link to it. Link it from the Cards page.");
                 }
             }
 
@@ -270,6 +275,7 @@ function OnboardingContent() {
             // always returns a profileId when markCompleted is true (see
             // convex/users.ts), so this only omits `?id=` in the impossible
             // case where that invariant is somehow violated.
+            toast.success("Profile created!");
             router.push(
                 result.profileId
                     ? `/dashboard/builder?id=${result.profileId}`
@@ -277,6 +283,7 @@ function OnboardingContent() {
             );
         } catch (err) {
             console.error("Failed to finish onboarding:", err);
+            toast.error(toUserMessage(err));
         } finally {
             setSaving(false);
         }

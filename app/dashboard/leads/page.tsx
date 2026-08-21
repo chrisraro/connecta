@@ -3,6 +3,8 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, CheckCircle2, Mail, Phone, Search, Download, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,12 +60,26 @@ export default function LeadsPage() {
         setFollowUpMsg(`Hi ${lead.inquirerName},\n\nThanks for inquiring ${refText}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,\n[Your Name]`);
     };
 
-    const handleSendAction = () => {
+    // Shared by both markContacted call sites below (the follow-up dialog's
+    // Send action and the list item's quick "mark as contacted" button) so
+    // a rejected write is never left silent — without this a lead could
+    // stay stuck showing "New" in the UI while the backend write actually
+    // failed, with no signal to the user that anything went wrong.
+    const handleMarkContacted = async (leadId: Id<"leads">) => {
+        try {
+            await markContacted({ leadId });
+        } catch (err) {
+            console.error(err);
+            toast.error(toUserMessage(err));
+        }
+    };
+
+    const handleSendAction = async () => {
         if (!selectedLead) return;
         const subject = `Re: Inquiry ${selectedLead.propertyName ? `for ${selectedLead.propertyName}` : ""}`;
         const body = encodeURIComponent(followUpMsg);
         window.open(`mailto:${selectedLead.inquirerContact}?subject=${subject}&body=${body}`);
-        markContacted({ leadId: selectedLead._id });
+        await handleMarkContacted(selectedLead._id);
         setSelectedLead(null);
     };
 
@@ -282,7 +298,7 @@ export default function LeadsPage() {
                                         variant="outline"
                                         size="icon"
                                         className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
-                                        onClick={() => markContacted({ leadId: lead._id })}
+                                        onClick={() => handleMarkContacted(lead._id)}
                                         aria-label="Mark as contacted"
                                     >
                                         <CheckCircle2 className="w-5 h-5 text-emerald-500" aria-hidden="true" />

@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { Doc } from "@/convex/_generated/dataModel";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 export function NotificationsPopover() {
     const { user } = useUser();
@@ -37,7 +39,10 @@ export function NotificationsPopover() {
 
     const handleNotificationClick = (notification: Doc<"notifications">) => {
         if (!notification.read) {
-            markAsRead({ notificationId: notification._id });
+            markAsRead({ notificationId: notification._id }).catch((err) => {
+                console.error("Failed to mark notification as read:", err);
+                toast.error(toUserMessage(err));
+            });
         }
         if (notification.link) {
             router.push(notification.link);
@@ -47,7 +52,10 @@ export function NotificationsPopover() {
     const handleMarkAllRead = (e: React.MouseEvent) => {
         e.stopPropagation();
         if (user?.id) {
-            markAllAsRead({ clerkId: user.id });
+            markAllAsRead({ clerkId: user.id }).catch((err) => {
+                console.error("Failed to mark all notifications as read:", err);
+                toast.error(toUserMessage(err));
+            });
         }
     };
 

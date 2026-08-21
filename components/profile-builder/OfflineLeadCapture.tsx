@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 import {
     Dialog,
     DialogContent,
@@ -78,6 +80,7 @@ export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }
                     console.log(`Auto-synced ${result.synced} offline leads.`);
                 } catch (error) {
                     console.error("Auto-sync failed:", error);
+                    toast.error("Some leads failed to sync. They'll retry the next time you're online.");
                 } finally {
                     setSyncing(false);
                 }
@@ -99,12 +102,13 @@ export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }
                     inquirerContact: contact,
                     message: message || undefined,
                 });
-                
+
                 // Reset form
                 setName("");
                 setContact("");
                 setMessage("");
                 onOpenChange(false);
+                toast.success("Lead saved");
             } else {
                 // Offline: save to localStorage
                 saveOfflineLead({
@@ -120,10 +124,16 @@ export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }
                 setContact("");
                 setMessage("");
                 onOpenChange(false);
+                toast.info("Saved offline — it'll sync automatically once you're back online.");
             }
         } catch (error) {
             console.error("Failed to save lead:", error);
-            // Fallback to offline storage
+            // Fallback to offline storage. This used to close the dialog
+            // silently here too, making an online-save failure look
+            // identical to a successful save — the lead WAS captured
+            // locally, but the user has no way to know it didn't reach the
+            // server, so a distinct warning (not the plain success toast
+            // above) is the whole point of this branch.
             saveOfflineLead({
                 inquirerName: name,
                 inquirerContact: contact,
@@ -131,6 +141,7 @@ export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }
             });
             setUnsyncedCount(getUnsyncedCount());
             onOpenChange(false);
+            toast.warning(`Couldn't reach the server (${toUserMessage(error)}) — saved offline instead. It'll sync automatically.`);
         } finally {
             setSaving(false);
         }
@@ -143,13 +154,13 @@ export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }
         try {
             const result = await syncOfflineLeads(createLead, currentUser._id);
             setUnsyncedCount(getUnsyncedCount());
-            
+
             if (result.synced > 0) {
-                alert(`Successfully synced ${result.synced} lead(s)!`);
+                toast.success(`Synced ${result.synced} lead${result.synced === 1 ? "" : "s"}`);
             }
         } catch (error) {
             console.error("Failed to sync leads:", error);
-            alert("Failed to sync leads. They will be synced automatically when connection is restored.");
+            toast.error("Failed to sync leads. They will be synced automatically when connection is restored.");
         } finally {
             setSyncing(false);
         }

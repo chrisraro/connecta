@@ -8,6 +8,8 @@ import { Check, Loader2, ShieldCheck, AlertTriangle, CheckCircle2 } from "lucide
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 import { formatPHP } from "@/lib/payment";
 import { PLAN_LIMITS, type PlanId } from "@/lib/plans";
 
@@ -50,7 +52,7 @@ function BillingContent() {
             const { url } = await createCheckout({ plan });
             window.location.href = url;
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Could not start checkout");
+            toast.error(toUserMessage(error));
             setBusy(null);
         }
     };

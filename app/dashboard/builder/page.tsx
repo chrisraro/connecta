@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 import {
     DndContext,
     closestCenter,
@@ -28,6 +30,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toPng } from "html-to-image";
 import { StorefrontView } from "@/components/templates/StorefrontView";
 import { downloadVCard } from "@/lib/vcard";
@@ -122,17 +134,17 @@ function GalleryUploader({
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
-            alert("Please upload an image file.");
+            toast.error("Please upload an image file.");
             return;
         }
 
         if (file.size > maxSizeMB * 1024 * 1024) {
-            alert(`Image must be under ${maxSizeMB}MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.`);
+            toast.error(`Image must be under ${maxSizeMB}MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.`);
             return;
         }
 
         if (gallery.length >= maxImages) {
-            alert(`Maximum ${maxImages} gallery images allowed.`);
+            toast.error(`Maximum ${maxImages} gallery images allowed.`);
             return;
         }
 
@@ -160,6 +172,7 @@ function GalleryUploader({
                 return next;
             });
             URL.revokeObjectURL(localUrl);
+            toast.success("Image added to gallery");
         } catch (err) {
             console.error(err);
             setLocalPreviews(prev => {
@@ -168,7 +181,7 @@ function GalleryUploader({
                 return next;
             });
             URL.revokeObjectURL(localUrl);
-            alert("Failed to upload image.");
+            toast.error(toUserMessage(err));
         } finally {
             setIsUploading(false);
             if (inputRef.current) inputRef.current.value = "";
@@ -444,6 +457,7 @@ function BuilderContent() {
     // UI State
     const [activeModal, setActiveModal] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [showReorderMode, setShowReorderMode] = useState(false);
 
     // Template State
@@ -490,7 +504,7 @@ function BuilderContent() {
             link.click();
         } catch (err) {
             console.error("Failed to export card PNG:", err);
-            alert("Failed to generate image download. Please try again.");
+            toast.error("Failed to generate image download. Please try again.");
         } finally {
             setIsExportingPng(false);
         }
@@ -928,10 +942,11 @@ function BuilderContent() {
                 showStorefront: showStorefront,
             });
             captureSnapshot();
+            toast.success("Profile saved");
             router.push(profilePath({ _id: profileId, slug }));
         } catch (error: unknown) {
             console.error("Save error:", error);
-            alert(`Failed to save: ${error instanceof Error ? error.message : "Unknown error"}`);
+            toast.error(toUserMessage(error));
         } finally {
             setIsSaving(false);
         }
@@ -1064,7 +1079,8 @@ function BuilderContent() {
                 <div className="mx-auto flex w-full max-w-lg items-center justify-between lg:max-w-6xl">
                     <button
                         onClick={() => {
-                            if (isDirty() && !window.confirm("You have unsaved changes. Leave without saving?")) {
+                            if (isDirty()) {
+                                setShowLeaveConfirm(true);
                                 return;
                             }
                             router.back();
@@ -1097,6 +1113,28 @@ function BuilderContent() {
                     </Button>
                 </div>
             </header>
+
+            <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Leave without saving?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            You have unsaved changes. If you leave now, they will be lost.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Stay</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                setShowLeaveConfirm(false);
+                                router.back();
+                            }}
+                        >
+                            Leave
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <div className="mx-auto w-full max-w-lg pb-8 lg:max-w-6xl lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-8 lg:items-start">
               {/* Preview column — stays visible & in view while the controls

@@ -5,6 +5,7 @@ import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { SIGMATAP } from "@/lib/brand";
+import { Toaster } from "@/components/ui/toaster";
 
 // Without a metadataBase, every relative OG/Twitter image URL (e.g. the
 // per-profile opengraph-image routes) resolves against Next's localhost
@@ -59,6 +60,7 @@ export default function RootLayout({
           >
             <CartProvider>
               {children}
+              <Toaster />
             </CartProvider>
           </ThemeProvider>
         </ConvexClientProvider>

@@ -9,6 +9,8 @@ import { api } from "@/convex/_generated/api";
 import { resolveImageUrl } from "@/lib/utils";
 import { compressImage, formatFileSize } from "@/lib/image-compression";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 interface ImageUploaderProps {
     value?: string;
@@ -56,7 +58,7 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
         if (!file) return;
 
         if (!file.type.startsWith("image/")) {
-            alert("Please upload an image file.");
+            toast.error("Please upload an image file.");
             return;
         }
 
@@ -126,12 +128,12 @@ export function ImageUploader({ value, onChange, onRemove, className, placeholde
             setLocalPreviewUrl(null);
             URL.revokeObjectURL(localUrl);
             onChange(storageId);
+            toast.success("Image uploaded");
         } catch (err) {
             console.error("Image upload error:", err);
             setLocalPreviewUrl(null);
-            
-            const errorMessage = err instanceof Error ? err.message : "Unknown error";
-            alert(`Failed to upload image: ${errorMessage}`);
+
+            toast.error(toUserMessage(err));
         } finally {
             setIsLoading(false);
             if (inputRef.current) inputRef.current.value = "";

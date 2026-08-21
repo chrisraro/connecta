@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 import { Id } from "@/convex/_generated/dataModel";
 import { ProfileData } from "@/types/profile";
 import { ProfileImage } from "@/components/templates/ProfileImage";
@@ -118,7 +120,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
             }, 3000);
         } catch (err) {
             console.error("Failed to submit inquiry lead:", err);
-            alert("Unable to submit inquiry right now. Please try again.");
+            toast.error(toUserMessage(err));
         } finally {
             setIsSubmittingInquiry(false);
         }

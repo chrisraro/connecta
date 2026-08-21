@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
+import { toast } from "sonner";
 import {
     Dialog,
     DialogContent,
@@ -62,7 +63,7 @@ export function DigitalCardModal({
             link.click();
         } catch (err) {
             console.error("Failed to export card as PNG image:", err);
-            alert("Unable to generate PNG image download. Please try again.");
+            toast.error("Unable to generate PNG image download. Please try again.");
         } finally {
             setIsDownloading(false);
         }
