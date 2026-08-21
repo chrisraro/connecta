@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
 import { api } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 async function seedProduct(t: ReturnType<typeof convexTest>, inventory = 10) {
   return await t.run(async (ctx) => {
@@ -75,12 +76,14 @@ test("getProducts excludes unpublished products (pre-existing by_published index
   expect(result.map((p) => p._id)).toEqual([publishedId]);
 });
 
-test("getProducts caps the published catalog at PUBLISHED_PRODUCTS_CAP", async () => {
+test("getProducts caps the published catalog at PUBLISHED_PRODUCTS_CAP and keeps the newest products", async () => {
   const t = convexTest(schema);
   const CAP = 200;
+  const TOTAL = CAP + 10;
+  const ids: Id<"products">[] = [];
   await t.run(async (ctx) => {
-    for (let i = 0; i < CAP + 10; i++) {
-      await ctx.db.insert("products", {
+    for (let i = 0; i < TOTAL; i++) {
+      const id = await ctx.db.insert("products", {
         name: `Bulk Product ${i}`,
         slug: `bulk-product-${i}`,
         basePrice: 1000,
@@ -95,11 +98,28 @@ test("getProducts caps the published catalog at PUBLISHED_PRODUCTS_CAP", async (
         primaryImageIndex: 0,
         shippingRequired: true,
       });
+      ids.push(id);
     }
   });
 
+  // A length check alone doesn't catch truncation dropping the WRONG end:
+  // without ordering, the same oldest CAP rows would satisfy `length ===
+  // CAP` forever regardless of how many newer products get published past
+  // the cap — this is the "Newest First" storefront default silently never
+  // showing new inventory (production-audit finding). Assert row IDENTITY:
+  // the newest CAP products (the tail of `ids`) must all be present, and
+  // the oldest TOTAL-CAP products (the head of `ids`) must all be excluded.
   const result = await t.query(api.shop.getProducts, {});
   expect(result.length).toBe(CAP);
+  const resultIds = new Set(result.map((p) => p._id));
+  const newest = ids.slice(TOTAL - CAP);
+  const oldest = ids.slice(0, TOTAL - CAP);
+  for (const id of newest) {
+    expect(resultIds.has(id)).toBe(true);
+  }
+  for (const id of oldest) {
+    expect(resultIds.has(id)).toBe(false);
+  }
 }, 20000);
 
 test("addToCart rejects zero or negative quantity", async () => {

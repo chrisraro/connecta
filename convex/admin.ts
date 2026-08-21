@@ -324,7 +324,12 @@ export const getAllUsers = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
-    const users = await ctx.db.query("users").take(ADMIN_USER_LIST_CAP);
+    // .order("desc") is load-bearing: a full-table scan defaults to
+    // ascending insertion order, so an unordered .take(CAP) would return the
+    // SAME oldest CAP rows forever once the table exceeds the cap — newly
+    // created users could never enter the list. Descending order makes the
+    // cap drop the least-useful (oldest) rows instead.
+    const users = await ctx.db.query("users").order("desc").take(ADMIN_USER_LIST_CAP);
 
     // Batch the admin-grant lookup: one collect instead of one indexed
     // `by_user` query per user (was the N+1 half of this function). The
@@ -384,7 +389,9 @@ export const getCards = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
-    const cards = await ctx.db.query("cards").take(ADMIN_CARDS_LIST_CAP);
+    // See the matching comment on getAllUsers above: without .order("desc")
+    // the cap would freeze on the same oldest CAP cards forever.
+    const cards = await ctx.db.query("cards").order("desc").take(ADMIN_CARDS_LIST_CAP);
     return cards;
   },
 });

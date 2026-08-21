@@ -69,7 +69,7 @@ export default function AdminAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{formatPHP(analytics.averageOrderValue)}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Per paid order</p>
+                        <p className="text-xs text-muted-foreground mt-1">Per paid order, last 90 days</p>
                     </CardContent>
                 </Card>
 

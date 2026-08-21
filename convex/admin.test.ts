@@ -337,36 +337,80 @@ test("getAllUsers matches the by_user index's earliest-grant tie-break when a us
   expect(row?.adminRole).toBeNull();
 });
 
-test("getAllUsers caps the returned list at ADMIN_USER_LIST_CAP", async () => {
+test("getAllUsers caps the returned list at ADMIN_USER_LIST_CAP and keeps the newest rows", async () => {
   const t = convexTest(schema);
   const { asAdmin } = await seedAdmin(t, "admin_clerk_id4");
 
   const CAP = 500;
+  const TOTAL = CAP + 10;
+  const ids: Id<"users">[] = [];
   await t.run(async (ctx) => {
-    for (let i = 0; i < CAP + 10; i++) {
-      await ctx.db.insert("users", {
+    for (let i = 0; i < TOTAL; i++) {
+      const id = await ctx.db.insert("users", {
         email: `bulk${i}@test.dev`,
         clerkId: `bulk_clerk_${i}`,
         role: "agent",
         subscriptionStatus: "active",
         plan: "free",
       });
+      ids.push(id);
     }
   });
 
   const result = await asAdmin.query(api.admin.getAllUsers, { clerkId: "admin_clerk_id4" });
-  // Total users in the table = CAP + 10 bulk-seeded + 1 admin from
-  // seedAdmin — well over the cap, so the returned list must be truncated.
+  // Total users in the table = TOTAL bulk-seeded + 1 admin from seedAdmin —
+  // well over the cap, so the returned list must be truncated. A length
+  // check alone isn't enough: without ordering the same oldest N rows would
+  // satisfy it forever, so also assert row IDENTITY — the newest CAP rows
+  // (the tail of `ids`, inserted last) must all be present, and the oldest
+  // TOTAL-CAP rows (the head of `ids`, inserted first — including the admin
+  // row itself) must all be excluded.
   expect(result.length).toBe(CAP);
+  const resultIds = new Set(result.map((u) => u.id));
+  const newest = ids.slice(TOTAL - CAP);
+  const oldest = ids.slice(0, TOTAL - CAP);
+  for (const id of newest) {
+    expect(resultIds.has(id)).toBe(true);
+  }
+  for (const id of oldest) {
+    expect(resultIds.has(id)).toBe(false);
+  }
 }, 20000);
 
-test("getCards returns cards belonging to different owners, capped at ADMIN_CARDS_LIST_CAP", async () => {
+test("getCards caps the returned list at ADMIN_CARDS_LIST_CAP and keeps the newest rows across owners", async () => {
   const t = convexTest(schema);
-  const { userId, asAdmin } = await seedAdmin(t, "admin_clerk_id5");
-  await seedCard(t, userId, "inventory", "cap-test-1");
-  await seedCard(t, userId, "active", "cap-test-2");
+  const { userId: owner1, asAdmin } = await seedAdmin(t, "admin_clerk_id5");
+  const owner2 = await t.run(async (ctx) =>
+    ctx.db.insert("users", {
+      email: "owner2@test.dev",
+      clerkId: "owner2_clerk_id",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
+    })
+  );
+
+  const CAP = 500;
+  const TOTAL = CAP + 10;
+  const ids: Id<"cards">[] = [];
+  for (let i = 0; i < TOTAL; i++) {
+    const owner = i % 2 === 0 ? owner1 : owner2;
+    const id = await seedCard(t, owner, "inventory", `cap-test-${i}`);
+    ids.push(id);
+  }
 
   const result = await asAdmin.query(api.admin.getCards, { clerkId: "admin_clerk_id5" });
-  expect(result.length).toBe(2);
-  expect(result.map((c) => c.uuid).sort()).toEqual(["cap-test-1", "cap-test-2"]);
-});
+  // Same reasoning as the getAllUsers cap test above: assert row IDENTITY,
+  // not just length, so truncation dropping the WRONG end (oldest rows
+  // never rotating out) would be caught.
+  expect(result.length).toBe(CAP);
+  const resultIds = new Set(result.map((c) => c._id));
+  const newest = ids.slice(TOTAL - CAP);
+  const oldest = ids.slice(0, TOTAL - CAP);
+  for (const id of newest) {
+    expect(resultIds.has(id)).toBe(true);
+  }
+  for (const id of oldest) {
+    expect(resultIds.has(id)).toBe(false);
+  }
+}, 20000);

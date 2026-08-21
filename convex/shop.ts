@@ -54,9 +54,18 @@ export const getProducts = query({
     )),
   },
   handler: async (ctx, args) => {
+    // .order("desc") is load-bearing: within the by_published index, rows
+    // are otherwise iterated in ascending _creationTime (insertion) order,
+    // so an unordered .take(CAP) would return the SAME oldest CAP published
+    // products forever once the catalog exceeds the cap — a newly published
+    // product could never enter the result set no matter what `sortBy` the
+    // caller later applies. Descending order makes the cap drop the
+    // oldest/least-useful rows instead; the in-memory sort below (including
+    // the "newest" default) is unaffected since it re-sorts this set.
     let products = await ctx.db
       .query("products")
       .withIndex("by_published", (q) => q.eq("isPublished", true))
+      .order("desc")
       .take(PUBLISHED_PRODUCTS_CAP);
 
     // Filter by category

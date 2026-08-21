@@ -81,7 +81,15 @@ export default function AdminUsersPage() {
     return (
         <div>
             <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold text-foreground">User Management</h1>
+                <div>
+                    <h1 className="text-3xl font-bold text-foreground">User Management</h1>
+                    {/* api.admin.getAllUsers caps at ADMIN_USER_LIST_CAP (500, convex/admin.ts) */}
+                    {usersList.length >= 500 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Showing first {usersList.length} users (list is capped)
+                        </p>
+                    )}
+                </div>
                 {isSuperadmin && (
                     <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 gap-1">
                         <ShieldCheck className="w-3 h-3" /> Superadmin
