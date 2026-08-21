@@ -275,7 +275,12 @@ function OnboardingContent() {
             // always returns a profileId when markCompleted is true (see
             // convex/users.ts), so this only omits `?id=` in the impossible
             // case where that invariant is somehow violated.
-            toast.success("Profile created!");
+            // Task 17 / C3: this same handler runs both for the very first
+            // "Finish" (a real create) and for "Edit Profile Setup"
+            // (?edit=true, re-running the wizard against an EXISTING
+            // profile) — the toast must say which one actually happened,
+            // not claim "created" when the mutation just patched.
+            toast.success(isEditMode ? "Profile updated!" : "Profile created!");
             router.push(
                 result.profileId
                     ? `/dashboard/builder?id=${result.profileId}`

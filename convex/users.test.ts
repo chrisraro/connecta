@@ -512,6 +512,119 @@ test("updateOnboarding does not consume a second profile slot when the builder l
   expect(allProfiles.length).toBe(1);
 });
 
+/**
+ * Task 17 / C3 — "Edit Profile Setup" (app/dashboard/onboarding/page.tsx's
+ * `?edit=true` re-entry into the SAME wizard, after onboarding already
+ * completed once) called `updateOnboarding` with `markCompleted: true` a
+ * second time. The else branch at the old convex/users.ts:182-184 just
+ * re-read `existingProfiles[0]._id` as `profileId` and returned it — never
+ * patching agentInfo/profileType onto the live profile — so every field the
+ * user just retyped (job title, phone, ...) was silently discarded while
+ * the client still showed a success toast. These tests pin the fix: a
+ * second `markCompleted: true` call against an existing profile must patch
+ * that SAME row through the wizard's own data, not leave it untouched.
+ */
+test("updateOnboarding in edit mode patches the existing profile instead of leaving it untouched", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "edit_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "edit@test.dev", clerkId: "edit_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const first = await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "edit_user",
+    profileCategory: "individual",
+    email: "edit@test.dev",
+    fullName: "Edit Person",
+    title: "Junior Designer",
+    phone: "0917000001",
+    services: [],
+    markCompleted: true,
+  });
+  expect(first.profileId).not.toBeNull();
+
+  // Re-enter the wizard via "Edit Profile Setup" and change title + phone —
+  // exactly the brief's reproduction (C3).
+  const second = await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "edit_user",
+    profileCategory: "individual",
+    email: "edit@test.dev",
+    fullName: "Edit Person",
+    title: "Senior Designer",
+    phone: "0917999999",
+    services: [],
+    markCompleted: true,
+  });
+
+  // Same profile, not a second one.
+  expect(second.profileId).toBe(first.profileId);
+  const allProfiles = await t.run(async (ctx) => ctx.db.query("profiles").collect());
+  expect(allProfiles.length).toBe(1);
+
+  const profile = await t.run(async (ctx) => ctx.db.get(second.profileId!));
+  expect(profile?.agentInfo.title).toBe("Senior Designer");
+  expect(profile?.agentInfo.phone).toBe("0917999999");
+});
+
+test("updateOnboarding in edit mode preserves agentInfo fields the wizard never collects (e.g. socialLinks added later in the builder)", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "edit_preserve_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "edit_preserve@test.dev", clerkId: "edit_preserve_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const first = await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "edit_preserve_user",
+    profileCategory: "individual",
+    email: "edit_preserve@test.dev",
+    fullName: "Preserve Person",
+    title: "Designer",
+    phone: "0917000002",
+    services: [],
+    markCompleted: true,
+  });
+
+  // Simulate the builder adding data the onboarding wizard's UI never asks
+  // for (app/dashboard/onboarding/page.tsx has no socialLinks field at all).
+  await t.run(async (ctx) => {
+    const profile = await ctx.db.get(first.profileId!);
+    await ctx.db.patch(first.profileId!, {
+      agentInfo: {
+        ...profile!.agentInfo,
+        socialLinks: [{ platform: "linkedin", url: "https://linkedin.com/in/preserve" }],
+      },
+    });
+  });
+
+  // Re-enter the wizard and change only the title.
+  await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "edit_preserve_user",
+    profileCategory: "individual",
+    email: "edit_preserve@test.dev",
+    fullName: "Preserve Person",
+    title: "Lead Designer",
+    phone: "0917000002",
+    services: [],
+    markCompleted: true,
+  });
+
+  const profile = await t.run(async (ctx) => ctx.db.get(first.profileId!));
+  expect(profile?.agentInfo.title).toBe("Lead Designer");
+  // The wholesale-replace bug this test guards against: patching agentInfo
+  // as a brand-new object (instead of merging onto the existing one) would
+  // silently wipe socialLinks back to [] even though the wizard never
+  // touched it.
+  expect(profile?.agentInfo.socialLinks).toEqual([
+    { platform: "linkedin", url: "https://linkedin.com/in/preserve" },
+  ]);
+});
+
 test("deleteMyAccount rejects an unauthenticated caller", async () => {
   const t = convexTest(schema);
   await expect(

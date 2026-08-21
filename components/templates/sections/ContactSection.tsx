@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import { Loader2, CheckCircle2, Send, AlertCircle } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { getOrCreateLeadVisitorId } from "@/lib/offline-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,9 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
         inquirerName: form.name,
         inquirerContact: form.email,
         message: form.message,
+        // Task 17 / I2: scopes createLead's rate limit to this browser
+        // instead of every visitor to this profile sharing one bucket.
+        visitorId: getOrCreateLeadVisitorId(),
       });
       setIsSuccess(true);
       setForm({ name: "", email: "", message: "" });

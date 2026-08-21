@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User, Mail, MessageSquare, Wifi, WifiOff, Upload } from "lucide-react";
-import { saveOfflineLead, getUnsyncedCount, isOnline, syncOfflineLeads } from "@/lib/offline-leads";
+import { saveOfflineLead, getUnsyncedCount, isOnline, syncOfflineLeads, getOrCreateLeadVisitorId } from "@/lib/offline-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,6 +78,15 @@ export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }
                     const result = await syncOfflineLeads(createLead, currentUser._id);
                     setUnsyncedCount(getUnsyncedCount());
                     console.log(`Auto-synced ${result.synced} offline leads.`);
+                    // Task 17 / I2: syncOfflineLeads never throws — it
+                    // catches per-lead so one bad lead doesn't stop the rest
+                    // of the batch — so a partial failure must be surfaced
+                    // here, not assumed to show up in the catch block below.
+                    if (result.failed > 0) {
+                        toast.warning(
+                            `${result.failed} offline lead${result.failed === 1 ? "" : "s"} failed to sync and will retry automatically.`
+                        );
+                    }
                 } catch (error) {
                     console.error("Auto-sync failed:", error);
                     toast.error("Some leads failed to sync. They'll retry the next time you're online.");
@@ -101,6 +110,7 @@ export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }
                     inquirerName: name,
                     inquirerContact: contact,
                     message: message || undefined,
+                    visitorId: getOrCreateLeadVisitorId(),
                 });
 
                 // Reset form
@@ -155,8 +165,22 @@ export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }
             const result = await syncOfflineLeads(createLead, currentUser._id);
             setUnsyncedCount(getUnsyncedCount());
 
-            if (result.synced > 0) {
+            // Task 17 / I2 fix: this used to report ONLY result.synced —
+            // "Synced 5 leads" while an equal number silently failed and
+            // stayed queued, because syncOfflineLeads catches per-lead and
+            // never throws (so the catch block below could never fire for a
+            // partial failure). Report both halves honestly; failed leads
+            // remain queued and are retried on the next sync.
+            if (result.synced > 0 && result.failed === 0) {
                 toast.success(`Synced ${result.synced} lead${result.synced === 1 ? "" : "s"}`);
+            } else if (result.synced > 0 && result.failed > 0) {
+                toast.warning(
+                    `Synced ${result.synced} lead${result.synced === 1 ? "" : "s"}, but ${result.failed} failed and will retry automatically.`
+                );
+            } else if (result.failed > 0) {
+                toast.error(
+                    `Failed to sync ${result.failed} lead${result.failed === 1 ? "" : "s"}. They're still saved locally and will retry automatically.`
+                );
             }
         } catch (error) {
             console.error("Failed to sync leads:", error);
