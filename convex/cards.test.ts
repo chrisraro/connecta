@@ -269,6 +269,59 @@ test("activateCard still matches pre-fix legacy codes stored with lowercase segm
   expect(card?.status).toBe("active");
 });
 
+test("activateCard rejects a free-plan user's second card with a ConvexError carrying a PLAN_LIMIT data code", async () => {
+  // Regression guard for the same redaction hazard covered by the
+  // DUPLICATE_UUID test above: a plain `Error` here would get redacted to
+  // "Server Error" on a real production deployment, and the billing UI's
+  // "Get Pro" CTA (which keys off `ConvexError.data.code`, see
+  // lib/plans.ts#isPlanLimitError) would never render for this rejection.
+  const t = convexTest(schema);
+  const { adminId } = await seedAdminAndUser(t);
+  const asUser = t.withIdentity({ subject: "user_clerk" });
+
+  const first = await t.run(async (ctx) =>
+    ctx.db.insert("cards", {
+      ownerId: adminId,
+      uuid: "limit-card-one",
+      activationCode: "FIRST1",
+      status: "inventory",
+      tapCount: 0,
+    })
+  );
+  await t.run(async (ctx) =>
+    ctx.db.insert("cards", {
+      ownerId: adminId,
+      uuid: "limit-card-two",
+      activationCode: "SECND2",
+      status: "inventory",
+      tapCount: 0,
+    })
+  );
+
+  await asUser.action(api.cards.activateCard, {
+    clerkId: "user_clerk",
+    activationCode: "FIRST1",
+  });
+  const firstCard = await t.run(async (ctx) => ctx.db.get(first));
+  expect(firstCard?.status).toBe("active");
+
+  let caught: unknown;
+  try {
+    await asUser.action(api.cards.activateCard, {
+      clerkId: "user_clerk",
+      activationCode: "SECND2",
+    });
+  } catch (err) {
+    caught = err;
+  }
+
+  expect(caught).toBeInstanceOf(ConvexError);
+  expect((caught as InstanceType<typeof ConvexError>).data).toMatchObject({
+    code: "PLAN_LIMIT",
+    message: "Upgrade to Pro to activate more than one card.",
+  });
+});
+
 test("activateCard rate-limits repeated wrong-code attempts by the same user", async () => {
   const t = convexTest(schema);
   await seedAdminAndUser(t);

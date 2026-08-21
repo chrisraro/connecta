@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Id } from "@/convex/_generated/dataModel";
+import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import Link from "next/link";
 
 interface Lead {
@@ -161,16 +162,26 @@ export default function LeadsPage() {
                             className="pl-10 bg-muted/50 border-border rounded-2xl h-12 md:h-10 focus-visible:ring-primary"
                         />
                     </div>
-                    {leads.length > 0 && canExport && (
-                        <Button
-                            variant="outline"
-                            onClick={handleExportCsv}
-                            className="h-12 shrink-0 rounded-2xl md:h-10"
-                            aria-label="Export leads as CSV"
+                    {leads.length > 0 && (
+                        // CSV export used to just vanish for free users
+                        // (canExport === false) with no explanation — now it
+                        // stays visible as a locked CTA via the shared
+                        // gating component instead of disappearing.
+                        <UpgradeGate
+                            locked={!canExport}
+                            reason="CSV export is a Pro feature."
+                            variant="inline"
                         >
-                            <Download className="h-4 w-4 md:mr-2" aria-hidden="true" />
-                            <span className="hidden md:inline">Export CSV</span>
-                        </Button>
+                            <Button
+                                variant="outline"
+                                onClick={handleExportCsv}
+                                className="h-12 shrink-0 rounded-2xl md:h-10"
+                                aria-label="Export leads as CSV"
+                            >
+                                <Download className="h-4 w-4 md:mr-2" aria-hidden="true" />
+                                <span className="hidden md:inline">Export CSV</span>
+                            </Button>
+                        </UpgradeGate>
                     )}
                 </div>
             </div>

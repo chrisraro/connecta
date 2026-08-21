@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import { convexTest } from "convex-test";
+import { ConvexError } from "convex/values";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 
@@ -485,9 +486,15 @@ test("createProfile REJECTS creating a second profile for a free-plan user alrea
   });
 
   // No `id` supplied -> createProfile treats this as a request to create a
-  // NEW (second) profile -> must be rejected.
-  await expect(
-    asUser.mutation(api.profiles.createProfile, {
+  // NEW (second) profile -> must be rejected. Asserted as a ConvexError
+  // (not a message regex) for the same reason cards.test.ts's
+  // DUPLICATE_UUID test does: a plain `Error` here would be redacted to
+  // "Server Error" on a real production deployment, and the billing UI's
+  // "Get Pro" CTA (lib/plans.ts#isPlanLimitError) keys off
+  // `ConvexError.data.code`, never message text.
+  let caught: unknown;
+  try {
+    await asUser.mutation(api.profiles.createProfile, {
       clerkId: "limit_user_reject",
       name: "Second Profile",
       agentInfo: {
@@ -500,8 +507,53 @@ test("createProfile REJECTS creating a second profile for a free-plan user alrea
         componentOrder: ["Hero"], heroStyle: "default",
       },
       featuredProperties: [],
-    })
-  ).rejects.toThrow(/Upgrade to Pro for unlimited profiles/);
+    });
+  } catch (err) {
+    caught = err;
+  }
+  expect(caught).toBeInstanceOf(ConvexError);
+  expect((caught as InstanceType<typeof ConvexError>).data).toMatchObject({
+    code: "PLAN_LIMIT",
+    message: "Upgrade to Pro for unlimited profiles.",
+  });
+});
+
+test("createProfile REJECTS a free-plan user selecting a Pro-only template, with a ConvexError PLAN_LIMIT data code", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "template_lock_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "template_lock@test.dev", clerkId: "template_lock_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  let caught: unknown;
+  try {
+    await asUser.mutation(api.profiles.createProfile, {
+      clerkId: "template_lock_user",
+      name: "Kinetic Profile",
+      agentInfo: {
+        fullName: "Kinetic Person", title: "Agent", company: "Co",
+        phone: "0917", email: "kinetic@test.dev", services: [], socialLinks: [],
+      },
+      layoutConfig: {
+        // "kinetic" is Pro/Business-only — free's allowedTemplateIds is
+        // ["editorial", "architectural"] (convex/plans.ts).
+        themeId: "kinetic",
+        colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+        componentOrder: ["Hero"], heroStyle: "default",
+      },
+      featuredProperties: [],
+    });
+  } catch (err) {
+    caught = err;
+  }
+  expect(caught).toBeInstanceOf(ConvexError);
+  expect((caught as InstanceType<typeof ConvexError>).data).toMatchObject({
+    code: "PLAN_LIMIT",
+    message: "This template is available on Pro & Business. Upgrade to unlock all templates.",
+  });
 });
 
 test("createProfile does NOT reject the SAME at-limit free-plan user patching their existing profile (WITH id)", async () => {

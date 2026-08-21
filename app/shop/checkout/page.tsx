@@ -15,6 +15,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatPHP } from "@/lib/payment";
 import { GUEST_CART_ID_KEY, DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
+import { PAYMENTS_ENABLED } from "@/lib/payments";
+import { PayrexCheckoutButton } from "@/components/shop/PayrexCheckoutButton";
 
 const formatPrice = formatPHP;
 
@@ -384,9 +386,9 @@ export default function CheckoutPage() {
                   <div>
                     <div className="font-semibold">Pay securely with PayRex</div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      You&apos;ll be redirected to PayRex&apos;s secure checkout
-                      to complete your payment. Your order is created first, then
-                      confirmed automatically once payment succeeds.
+                      {PAYMENTS_ENABLED
+                        ? "You'll be redirected to PayRex's secure checkout to complete your payment. Your order is created first, then confirmed automatically once payment succeeds."
+                        : "We're finalizing our payment provider — online checkout is opening soon. Your cart is saved, so nothing is lost in the meantime."}
                     </p>
                   </div>
                 </div>
@@ -416,21 +418,14 @@ export default function CheckoutPage() {
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
-                  <Button
-                    size="lg"
-                    className="flex-1"
-                    onClick={handlePlaceOrder}
+                  <PayrexCheckoutButton
+                    paymentsEnabled={PAYMENTS_ENABLED}
+                    onCheckout={handlePlaceOrder}
+                    totalLabel={`Pay ${formatPrice(total)} with PayRex`}
+                    busy={isProcessing}
                     disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Redirecting to PayRex...
-                      </>
-                    ) : (
-                      `Pay ${formatPrice(total)} with PayRex`
-                    )}
-                  </Button>
+                    className="flex-1"
+                  />
                 </div>
               </CardContent>
             </Card>

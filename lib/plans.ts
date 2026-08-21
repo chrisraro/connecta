@@ -7,6 +7,8 @@
  * anything here is for cosmetic UI gating only.
  */
 
+import { ConvexError } from "convex/values";
+
 export type PlanId = "free" | "pro" | "business";
 
 export interface PlanLimits {
@@ -91,3 +93,33 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     ],
   },
 };
+
+/**
+ * Cosmetic UI gate for the builder's template picker: true when `templateId`
+ * is NOT in the plan's `allowedTemplateIds` (`null` means "no restriction" —
+ * every plan without a template allowlist, i.e. pro/business). This is
+ * UI-only; convex/profiles.ts's `createProfile` is the actual source of
+ * truth and re-enforces the same rule server-side on save.
+ */
+export function isTemplateLocked(
+  templateId: string,
+  allowedTemplateIds: string[] | null
+): boolean {
+  return allowedTemplateIds !== null && !allowedTemplateIds.includes(templateId);
+}
+
+/**
+ * Detects a plan-limit rejection (profile count, active-card count, locked
+ * template) from convex/cards.ts / convex/profiles.ts. Those throw
+ * `ConvexError({ code: "PLAN_LIMIT", message })` specifically so the signal
+ * survives production's redaction of plain Error messages — see
+ * lib/errors.ts#toUserMessage and lib/nfc.ts#isDuplicateRegistrationError,
+ * which establish the same "check ConvexError.data.code, never the message
+ * text" pattern for the same reason. A regex against `.message` would only
+ * ever fire in dev, where nothing redacts it.
+ */
+export function isPlanLimitError(err: unknown): boolean {
+  if (!(err instanceof ConvexError)) return false;
+  const data = err.data as { code?: unknown } | undefined;
+  return typeof data === "object" && data !== null && data.code === "PLAN_LIMIT";
+}

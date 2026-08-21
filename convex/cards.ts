@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { mutation, query, action, internalMutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
@@ -24,7 +24,14 @@ async function assertCanActivateCard(ctx: MutationCtx, user: Doc<"users">) {
         .collect();
     const activeCount = owned.filter((c) => c.status === "active").length;
     if (activeCount >= limits.maxActiveCards) {
-        throw new Error("Upgrade to Pro to activate more than one card.");
+        // ConvexError so the message survives production's redaction of
+        // plain Error text (see lib/errors.ts#toUserMessage) and the
+        // billing UI's "Get Pro" CTA can key off data.code === "PLAN_LIMIT"
+        // (see lib/plans.ts#isPlanLimitError) instead of message-sniffing.
+        throw new ConvexError({
+            code: "PLAN_LIMIT",
+            message: "Upgrade to Pro to activate more than one card.",
+        });
     }
 }
 
