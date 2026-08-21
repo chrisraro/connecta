@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { formatPHP } from "@/lib/payment";
 import { PLAN_LIMITS, type PlanId } from "@/lib/plans";
+import { PAYMENTS_ENABLED } from "@/lib/payments";
+import { PlanUpgradeButton } from "@/components/billing/PlanUpgradeButton";
 
 function fmtDate(ts: number | null | undefined): string {
     if (!ts) return "—";
@@ -110,16 +112,14 @@ function BillingContent() {
                         )}
                     </div>
                     {currentPlan !== "free" && (
-                        <Button
-                            onClick={() => handleUpgrade(currentPlan as "pro" | "business")}
+                        <PlanUpgradeButton
+                            label={`Renew ${PLAN_LIMITS[currentPlan].name}`}
+                            paymentsEnabled={PAYMENTS_ENABLED}
+                            busy={busy === currentPlan}
                             disabled={busy !== null}
+                            onUpgrade={() => handleUpgrade(currentPlan as "pro" | "business")}
                             className="rounded-2xl"
-                        >
-                            {busy === currentPlan ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : null}
-                            Renew {PLAN_LIMITS[currentPlan].name}
-                        </Button>
+                        />
                     )}
                 </div>
 
@@ -177,19 +177,19 @@ function BillingContent() {
                                         {isCurrent ? "Your plan" : "Free forever"}
                                     </Button>
                                 ) : (
-                                    <Button
-                                        onClick={() => handleUpgrade(p as "pro" | "business")}
+                                    <PlanUpgradeButton
+                                        label={
+                                            isCurrent
+                                                ? `Renew ${limits.name}`
+                                                : `Upgrade to ${limits.name}`
+                                        }
+                                        paymentsEnabled={PAYMENTS_ENABLED}
+                                        busy={busy === p}
                                         disabled={busy !== null}
+                                        onUpgrade={() => handleUpgrade(p as "pro" | "business")}
                                         variant={highlight ? "default" : "outline"}
                                         className="h-11 w-full rounded-2xl font-semibold"
-                                    >
-                                        {busy === p ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        ) : null}
-                                        {isCurrent
-                                            ? `Renew ${limits.name}`
-                                            : `Upgrade to ${limits.name}`}
-                                    </Button>
+                                    />
                                 )}
                             </div>
                         </div>
@@ -248,7 +248,9 @@ function BillingContent() {
 
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="h-4 w-4 shrink-0" />
-                Payments processed securely by PayRex (GCash, Maya, Card, QR Ph).
+                {PAYMENTS_ENABLED
+                    ? "Payments processed securely by PayRex (GCash, Maya, Card, QR Ph)."
+                    : "We're finalizing our payment provider — plan prices above are final, checkout is opening soon."}
             </p>
         </div>
     );

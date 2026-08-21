@@ -7,6 +7,9 @@ import { useEffect, use, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Loader2, Smartphone } from "lucide-react";
 import { profilePath } from "@/lib/profileUrl";
+import { toUserMessage } from "@/lib/errors";
+import { isPlanLimitError } from "@/lib/plans";
+import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import Link from "next/link";
 
 export default function TapRedirectPage({ params }: { params: Promise<{ uuid: string }> }) {
@@ -23,6 +26,10 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
     // unchanged.
     const claimCard = useAction(api.cards.claimCardByUuid);
     const [claimFailed, setClaimFailed] = useState<string | null>(null);
+    // True when claimFailed is a plan-limit rejection (e.g. the free plan's
+    // 1-active-card cap) — renders the same "Get Pro" CTA as every other
+    // gated surface instead of a dead-end error page.
+    const [claimFailedLocked, setClaimFailedLocked] = useState(false);
     const claimingRef = useRef(false);
 
     // Resolve the linked profile so we can redirect to its vanity slug
@@ -69,13 +76,13 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
                         router.replace("/dashboard/cards?claimed=1");
                     })
                     .catch((err: unknown) => {
-                        // Convex wraps thrown errors in transport noise
-                        // ("[CONVEX A(...)] [Request ID: ...] Server Error
-                        // Uncaught Error: <message> at handler (...)").
-                        // Surface only the human sentence.
-                        const raw = err instanceof Error ? err.message : "";
-                        const m = raw.match(/Uncaught Error:\s*(.*?)(?:\s+at\s|$)/);
-                        setClaimFailed(m?.[1]?.trim() || "Could not activate this card.");
+                        // toUserMessage handles the Convex transport-noise
+                        // unwrapping (and, on a real production deployment,
+                        // the further redaction of plain Error text down to
+                        // a bare "Server Error") — see lib/errors.ts. The
+                        // old inline regex here only ever worked in dev.
+                        setClaimFailed(toUserMessage(err));
+                        setClaimFailedLocked(isPlanLimitError(err));
                     });
             } else {
                 router.replace(`/auth?mode=signup&card_uuid=${encodeURIComponent(uuid)}`);
@@ -104,15 +111,25 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
                     <Smartphone className="w-10 h-10 text-destructive" />
                 </div>
                 <h1 className="text-2xl font-bold mb-2">Card Not Ready</h1>
-                <p className="text-muted-foreground max-w-xs mb-8">{errorMessage}</p>
-                <div className="flex flex-col gap-3 w-full max-w-xs">
-                    <Link
-                        href="/"
-                        className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors text-center"
-                    >
-                        Learn More
-                    </Link>
-                </div>
+                {claimFailed && claimFailedLocked ? (
+                    // The upgrade CTA already carries the message — skip
+                    // the plain paragraph so it isn't shown twice.
+                    <div className="w-full max-w-xs mb-8">
+                        <UpgradeGate locked reason={claimFailed} variant="banner" />
+                    </div>
+                ) : (
+                    <>
+                        <p className="text-muted-foreground max-w-xs mb-8">{errorMessage}</p>
+                        <div className="flex flex-col gap-3 w-full max-w-xs">
+                            <Link
+                                href="/"
+                                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors text-center"
+                            >
+                                Learn More
+                            </Link>
+                        </div>
+                    </>
+                )}
             </div>
         );
     }

@@ -6,6 +6,8 @@ import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
+import { isPlanLimitError } from "@/lib/plans";
+import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import { Id } from "@/convex/_generated/dataModel";
 import { SIGMATAP } from "@/lib/brand";
 import { 
@@ -66,6 +68,12 @@ export default function CardsPage() {
     const [isActivating, setIsActivating] = useState(false);
     const [activationCode, setActivationCode] = useState("");
     const [activationError, setActivationError] = useState<string | null>(null);
+    // Set alongside activationError whenever the rejection is a plan limit
+    // (e.g. "Upgrade to Pro to activate more than one card") — the free-plan
+    // 1-active-card cap is the single most common wall a free user hits
+    // here, so it gets the same "Get Pro" CTA as every other gated surface
+    // instead of a dead end.
+    const [activationLocked, setActivationLocked] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [showActivationDialog, setShowActivationDialog] = useState(false);
     const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
@@ -103,6 +111,7 @@ export default function CardsPage() {
 
         setIsActivating(true);
         setActivationError(null);
+        setActivationLocked(false);
         try {
             await activateCard({
                 clerkId: user.id,
@@ -110,7 +119,11 @@ export default function CardsPage() {
             });
             finishActivation();
         } catch (err: unknown) {
-            setActivationError(err instanceof Error ? err.message : "Failed to activate card. Please check the code.");
+            // toUserMessage (not raw err.message) so this survives
+            // production's redaction of plain Error text instead of ever
+            // showing "[CONVEX ...] Server Error" verbatim.
+            setActivationError(toUserMessage(err));
+            setActivationLocked(isPlanLimitError(err));
         } finally {
             setIsActivating(false);
         }
@@ -123,6 +136,7 @@ export default function CardsPage() {
         if (!user?.id) return;
         setIsActivating(true);
         setActivationError(null);
+        setActivationLocked(false);
         try {
             if (result.kind === "uuid") {
                 await claimCard({ clerkId: user.id, uuid: result.uuid });
@@ -131,9 +145,8 @@ export default function CardsPage() {
             }
             finishActivation();
         } catch (err: unknown) {
-            setActivationError(
-                err instanceof Error ? err.message : "Failed to activate the scanned card."
-            );
+            setActivationError(toUserMessage(err));
+            setActivationLocked(isPlanLimitError(err));
         } finally {
             setIsActivating(false);
         }
@@ -208,7 +221,10 @@ export default function CardsPage() {
                                         />
                                     </div>
                                     
-                                    {activationError && (
+                                    {activationError && activationLocked && (
+                                        <UpgradeGate locked reason={activationError} variant="banner" />
+                                    )}
+                                    {activationError && !activationLocked && (
                                         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 text-sm">
                                             <AlertCircle className="w-4 h-4 shrink-0" />
                                             {activationError}

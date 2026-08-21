@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { mutation, query, internalMutation, QueryCtx, MutationCtx } from "./_generated/server";
 import { requireUserMatching } from "./authz";
 import { planContext } from "./billing";
@@ -292,13 +292,20 @@ export const createProfile = mutation({
         const { limits } = planContext(user);
 
         // Template gating: free plan may only select the basic templates.
+        // ConvexError (not a plain Error) so the message survives
+        // production's redaction of plain Error text (see
+        // lib/errors.ts#toUserMessage) and the "Get Pro" CTA can key off
+        // data.code === "PLAN_LIMIT" (lib/plans.ts#isPlanLimitError)
+        // instead of message-sniffing.
         if (
             limits.allowedTemplateIds !== null &&
             !limits.allowedTemplateIds.includes(args.layoutConfig.themeId)
         ) {
-            throw new Error(
-                "This template is available on Pro & Business. Upgrade to unlock all templates."
-            );
+            throw new ConvexError({
+                code: "PLAN_LIMIT",
+                message:
+                    "This template is available on Pro & Business. Upgrade to unlock all templates.",
+            });
         }
 
         // Profile-count gating: enforce only when creating a NEW profile.
@@ -308,7 +315,10 @@ export const createProfile = mutation({
                 .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
                 .collect();
             if (existing.length >= limits.maxProfiles) {
-                throw new Error("Upgrade to Pro for unlimited profiles.");
+                throw new ConvexError({
+                    code: "PLAN_LIMIT",
+                    message: "Upgrade to Pro for unlimited profiles.",
+                });
             }
         }
 

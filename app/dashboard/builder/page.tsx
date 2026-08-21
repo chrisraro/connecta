@@ -8,6 +8,8 @@ import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
+import { isPlanLimitError, isTemplateLocked } from "@/lib/plans";
+import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import {
     DndContext,
     closestCenter,
@@ -288,10 +290,14 @@ function SortableBlockItem({ block, onToggle }: { block: Block; onToggle: (id: s
 
 function TemplateSelector({
     selectedTemplate,
-    onSelect
+    onSelect,
+    allowedTemplateIds,
 }: {
     selectedTemplate: string;
     onSelect: (id: string) => void;
+    // null = no restriction (pro/business, or plan not loaded yet — never
+    // flash a locked state before we actually know the user is on free).
+    allowedTemplateIds: string[] | null;
 }) {
     return (
         <div className="space-y-3">
@@ -305,32 +311,54 @@ function TemplateSelector({
                 Two columns give 114px at 320px, which fits the longest
                 name; `truncate` keeps a future longer one from clipping. */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {TEMPLATES.map((template) => (
-                    <button
-                        key={template.id}
-                        onClick={() => onSelect(template.id)}
-                        className={`relative rounded-xl overflow-hidden aspect-[3/4] transition-all ${
-                            selectedTemplate === template.id
-                                ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                : "hover:scale-[1.02]"
-                        }`}
-                    >
-                        <div
-                            className="absolute inset-0"
-                            style={{ background: template.thumbnail }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute bottom-0 left-0 right-0 p-3">
-                            <p className="truncate text-white font-semibold text-sm">{template.name}</p>
-                            <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{template.description}</p>
-                        </div>
-                        {selectedTemplate === template.id && (
-                            <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                                <Sparkles className="w-3 h-3 text-primary-foreground" />
+                {TEMPLATES.map((template) => {
+                    const locked = isTemplateLocked(template.id, allowedTemplateIds);
+                    const tile = (
+                        <button
+                            onClick={() => !locked && onSelect(template.id)}
+                            disabled={locked}
+                            aria-disabled={locked}
+                            className={`relative w-full rounded-xl overflow-hidden aspect-[3/4] transition-all ${
+                                selectedTemplate === template.id
+                                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                    : locked
+                                    ? "cursor-default"
+                                    : "hover:scale-[1.02]"
+                            }`}
+                        >
+                            <div
+                                className="absolute inset-0"
+                                style={{ background: template.thumbnail }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                                <p className="truncate text-white font-semibold text-sm">{template.name}</p>
+                                <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{template.description}</p>
                             </div>
-                        )}
-                    </button>
-                ))}
+                            {selectedTemplate === template.id && (
+                                <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                                    <Sparkles className="w-3 h-3 text-primary-foreground" />
+                                </div>
+                            )}
+                        </button>
+                    );
+                    // Every free user still SEES every template (nothing
+                    // vanishes) — Pro-only ones render dimmed under a lock
+                    // badge + "Get Pro" CTA via the one shared gating
+                    // component, instead of clicking through to a raw
+                    // "Upgrade to Pro" error at save time.
+                    return (
+                        <UpgradeGate
+                            key={template.id}
+                            locked={locked}
+                            reason="This template is available on Pro & Business."
+                            variant="overlay"
+                            className="aspect-[3/4]"
+                        >
+                            {tile}
+                        </UpgradeGate>
+                    );
+                })}
             </div>
         </div>
     );
@@ -416,7 +444,11 @@ function BuilderContent() {
     // save Task 12 found: a user already at their plan's profile limit
     // landing on this blank form anyway. See lib/builderEntry.ts.
     const myProfiles = useQuery(api.profiles.getMyProfiles, !editingId && user?.id ? { clerkId: user.id } : "skip");
-    const myPlan = useQuery(api.billing.getMyPlan, !editingId && user?.id ? { clerkId: user.id } : "skip");
+    // Needed in BOTH create and edit mode — not just the entry-redirect
+    // check below — so the template picker can show its locked state (see
+    // TemplateSelector's `allowedTemplateIds` prop) while editing an
+    // existing profile too, not only when starting a new one.
+    const myPlan = useQuery(api.billing.getMyPlan, user?.id ? { clerkId: user.id } : "skip");
 
     // Tri-state: `undefined` while the two queries above are still loading
     // (verdict not known yet), `null` once loaded with no redirect needed,
@@ -946,7 +978,18 @@ function BuilderContent() {
             router.push(profilePath({ _id: profileId, slug }));
         } catch (error: unknown) {
             console.error("Save error:", error);
-            toast.error(toUserMessage(error));
+            // The template picker already blocks selecting a Pro-only
+            // template, and the entry-redirect above blocks a doomed
+            // "create" doomed by the profile-count limit — but a plan can
+            // still change out from under an open tab (e.g. a downgrade,
+            // or a profile that already had a since-restricted template),
+            // so this can still fire. Give the toast the same "Get Pro" CTA
+            // as every other gated surface instead of just plain text.
+            toast.error(toUserMessage(error),
+                isPlanLimitError(error)
+                    ? { action: { label: "Get Pro", onClick: () => router.push("/dashboard/billing") } }
+                    : undefined
+            );
         } finally {
             setIsSaving(false);
         }
@@ -1292,6 +1335,7 @@ function BuilderContent() {
                     <TemplateSelector
                         selectedTemplate={selectedTemplate}
                         onSelect={setSelectedTemplate}
+                        allowedTemplateIds={myPlan?.limits.allowedTemplateIds ?? null}
                     />
                 </div>
 
