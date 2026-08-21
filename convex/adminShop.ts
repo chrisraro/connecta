@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, MutationCtx } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 import { requireAdmin } from "./admin";
 import { logAudit } from "./audit";
 
@@ -434,7 +434,44 @@ export const getOrders = query({
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
 
-    let orders = await ctx.db.query("orders").collect();
+    // Pick the most selective existing index for whichever filter the
+    // caller actually supplied, then apply any remaining filters in JS on
+    // that (much smaller) result set — instead of collecting every order
+    // ever placed on every admin visit regardless of the requested filter.
+    // `status`/`paymentStatus` args are loosely-typed strings (not the
+    // literal union), same as the pre-conversion JS filter — an unknown
+    // value simply matches nothing via the index, exactly as `.filter()`
+    // would have found nothing. With no filter at all, a full listing is
+    // genuinely what's being asked for (the orders admin page currently
+    // fetches unfiltered and filters client-side), so that case still
+    // collects the whole table.
+    let orders: Doc<"orders">[];
+    if (args.status) {
+      orders = await ctx.db
+        .query("orders")
+        .withIndex("by_status", (q) => q.eq("status", args.status as Doc<"orders">["status"]))
+        .collect();
+    } else if (args.paymentStatus) {
+      orders = await ctx.db
+        .query("orders")
+        .withIndex("by_paymentStatus", (q) => q.eq("paymentStatus", args.paymentStatus as Doc<"orders">["paymentStatus"]))
+        .collect();
+    } else if (args.dateFrom !== undefined || args.dateTo !== undefined) {
+      orders = await ctx.db
+        .query("orders")
+        .withIndex("by_createdAt", (q) => {
+          if (args.dateFrom !== undefined && args.dateTo !== undefined) {
+            return q.gte("createdAt", args.dateFrom).lte("createdAt", args.dateTo);
+          }
+          if (args.dateFrom !== undefined) {
+            return q.gte("createdAt", args.dateFrom);
+          }
+          return q.lte("createdAt", args.dateTo!);
+        })
+        .collect();
+    } else {
+      orders = await ctx.db.query("orders").collect();
+    }
 
     if (args.status) {
       orders = orders.filter(o => o.status === args.status);
@@ -627,9 +664,13 @@ export const getSalesStats = query({
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
 
-    let orders = await ctx.db.query("orders").collect();
-
-    orders = orders.filter(o => o.paymentStatus === "paid");
+    // paymentStatus === "paid" is unconditional here, so go straight through
+    // the by_paymentStatus index instead of collecting every order (paid or
+    // not) and filtering in JS.
+    let orders = await ctx.db
+      .query("orders")
+      .withIndex("by_paymentStatus", (q) => q.eq("paymentStatus", "paid"))
+      .collect();
 
     if (args.dateFrom) {
       orders = orders.filter(o => o.createdAt >= args.dateFrom!);
@@ -781,12 +822,27 @@ export const getDiscounts = query({
 // RICH ANALYTICS
 // ==========================================
 
+// getShopAnalytics's totals (revenue, order counts, status breakdown) are a
+// genuine full-table aggregate — there's no status/paymentStatus filter to
+// narrow by, every order in the window counts. Rather than collect() the
+// entire orders table on every admin analytics page view (unbounded, grows
+// forever), the aggregate is windowed to the trailing N days via the
+// existing by_createdAt index. The dashboard's own daily chart only ever
+// shows the last 30 days anyway, so 90 days of headroom for the summary
+// cards is a real cap, not a functional change for any order placed
+// recently. UI cards on app/admin/analytics/page.tsx are labeled to match.
+const SHOP_ANALYTICS_WINDOW_DAYS = 90;
+
 export const getShopAnalytics = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
 
-    const orders = await ctx.db.query("orders").collect();
+    const windowStart = Date.now() - SHOP_ANALYTICS_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_createdAt", (q) => q.gte("createdAt", windowStart))
+      .collect();
     const paidOrders = orders.filter((o) => o.paymentStatus === "paid");
 
     const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);

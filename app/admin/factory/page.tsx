@@ -553,7 +553,12 @@ export default function AdminFactoryPage() {
                         <div className="p-6 border-b border-border flex justify-between items-center bg-background/30">
                             <div>
                                 <h2 className="font-bold text-foreground text-lg">Inventory Database</h2>
-                                <p className="text-xs text-muted-foreground">{cardsList.length} total cards registered</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {/* api.admin.getCards caps at ADMIN_CARDS_LIST_CAP (500, convex/admin.ts) */}
+                                    {cardsList.length >= 500
+                                        ? `Showing first ${cardsList.length} cards (list is capped)`
+                                        : `${cardsList.length} total cards registered`}
+                                </p>
                             </div>
                         </div>
                         

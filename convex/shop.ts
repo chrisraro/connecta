@@ -30,6 +30,13 @@ export const getCategories = query({
 // PRODUCT QUERIES
 // ==========================================
 
+// getProducts is the public storefront listing: no admin cap constant is
+// visible to it, and there's no pagination UI on the storefront today. Cap
+// the published catalog fetched per request instead of collecting every
+// published product ever created; in-memory search/sort/filter below still
+// runs over this capped set (unchanged from before).
+const PUBLISHED_PRODUCTS_CAP = 200;
+
 // Get published products with optional filters
 export const getProducts = query({
   args: {
@@ -50,7 +57,7 @@ export const getProducts = query({
     let products = await ctx.db
       .query("products")
       .withIndex("by_published", (q) => q.eq("isPublished", true))
-      .collect();
+      .take(PUBLISHED_PRODUCTS_CAP);
 
     // Filter by category
     if (args.categoryId) {

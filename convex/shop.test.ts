@@ -23,6 +23,85 @@ async function seedProduct(t: ReturnType<typeof convexTest>, inventory = 10) {
   });
 }
 
+/**
+ * Behavior-preservation tests for the public storefront's getProducts.
+ *
+ * getProducts already used the by_published index for its base query
+ * (schema.ts's audit finding #8 flagged the missing pagination, not a
+ * missing index) — the fix here is adding a `.take(N)` cap in place of an
+ * unbounded `.collect()`. This test seeds more published products than the
+ * cap to prove the cap engages, and confirms unpublished products still
+ * never appear (pre-existing by_published filtering, unchanged).
+ */
+test("getProducts excludes unpublished products (pre-existing by_published index behavior)", async () => {
+  const t = convexTest(schema);
+  const publishedId = await t.run(async (ctx) =>
+    ctx.db.insert("products", {
+      name: "Published Card",
+      slug: "published-card",
+      basePrice: 1000,
+      sku: "PUB-1",
+      inventory: 5,
+      lowStockThreshold: 1,
+      trackInventory: true,
+      isPublished: true,
+      isFeatured: false,
+      tags: [],
+      images: [],
+      primaryImageIndex: 0,
+      shippingRequired: true,
+    })
+  );
+  // Boundary: unpublished — must be excluded.
+  await t.run(async (ctx) =>
+    ctx.db.insert("products", {
+      name: "Draft Card",
+      slug: "draft-card",
+      basePrice: 1000,
+      sku: "DRAFT-1",
+      inventory: 5,
+      lowStockThreshold: 1,
+      trackInventory: true,
+      isPublished: false,
+      isFeatured: false,
+      tags: [],
+      images: [],
+      primaryImageIndex: 0,
+      shippingRequired: true,
+    })
+  );
+
+  const result = await t.query(api.shop.getProducts, {});
+  expect(result.map((p) => p._id)).toEqual([publishedId]);
+});
+
+test("getProducts caps the published catalog at PUBLISHED_PRODUCTS_CAP", async () => {
+  const t = convexTest(schema);
+  const CAP = 200;
+  await t.run(async (ctx) => {
+    for (let i = 0; i < CAP + 10; i++) {
+      await ctx.db.insert("products", {
+        name: `Bulk Product ${i}`,
+        slug: `bulk-product-${i}`,
+        basePrice: 1000,
+        sku: `BULK-${i}`,
+        inventory: 5,
+        lowStockThreshold: 1,
+        trackInventory: true,
+        isPublished: true,
+        isFeatured: false,
+        tags: [],
+        images: [],
+        primaryImageIndex: 0,
+        shippingRequired: true,
+      });
+    }
+  });
+
+  const result = await t.query(api.shop.getProducts, {});
+  expect(result.length).toBe(CAP);
+}, 20000);
+
 test("addToCart rejects zero or negative quantity", async () => {
   const t = convexTest(schema);
   const productId = await seedProduct(t);
