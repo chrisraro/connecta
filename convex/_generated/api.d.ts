@@ -17,6 +17,7 @@ import type * as cards from "../cards.js";
 import type * as checkout from "../checkout.js";
 import type * as crons from "../crons.js";
 import type * as email from "../email.js";
+import type * as health from "../health.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as leads from "../leads.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   checkout: typeof checkout;
   crons: typeof crons;
   email: typeof email;
+  health: typeof health;
   http: typeof http;
   images: typeof images;
   leads: typeof leads;

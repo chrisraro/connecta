@@ -13,12 +13,14 @@ const isProtectedRoute = createRouteMatcher([
     '/admin(.*)',     // Admin console (role-gated further below)
 ]);
 
-// All /api routes require auth EXCEPT payment webhooks, which Stripe/PayPal
-// call without a Clerk session and verify via their own signature checks.
-// Matched with a plain startsWith check (rather than a negative-lookahead
-// route-matcher pattern) so behavior doesn't depend on whether the
-// underlying path-to-regexp version supports that regex construct.
-const isPublicApiRoute = createRouteMatcher(['/api/webhooks(.*)']);
+// All /api routes require auth EXCEPT payment webhooks (Stripe/PayPal call
+// without a Clerk session and verify via their own signature checks) and
+// the health check (must be reachable by uptime monitoring with no
+// credentials — that's the entire point of a health endpoint). Matched with
+// a plain startsWith check (rather than a negative-lookahead route-matcher
+// pattern) so behavior doesn't depend on whether the underlying
+// path-to-regexp version supports that regex construct.
+const isPublicApiRoute = createRouteMatcher(['/api/webhooks(.*)', '/api/health']);
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 
