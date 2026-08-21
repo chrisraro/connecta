@@ -6,7 +6,7 @@ import { saveOfflineLead, getUnsyncedCount, isOnline, syncOfflineLeads, getOrCre
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
@@ -35,7 +35,10 @@ interface OfflineLeadCaptureProps {
 }
 
 export function OfflineLeadCapture({ open, onOpenChange, onUnsyncedCountChange }: OfflineLeadCaptureProps) {
-    const createLead = useMutation(api.leads.createLead);
+    // createLead is a Convex action (not a mutation) — see convex/leads.ts.
+    // useAction has the same calling convention as useMutation, so
+    // syncOfflineLeads's usage below is unaffected.
+    const createLead = useAction(api.leads.createLead);
     const currentUser = useQuery(api.users.getUser);
 
     const [online, setOnline] = useState(true);

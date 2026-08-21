@@ -85,8 +85,22 @@ export const performActivateCard = internalMutation({
                 .first();
         }
 
-        if (!card) throw new Error("Invalid activation code");
-        if (card.status !== "inventory") throw new Error("Card already activated or reported lost");
+        // ConvexError, not plain Error, for the same reason as
+        // `assertCanActivateCard` three lines below (and rateLimit.ts): a
+        // plain Error's message is redacted to the literal "Server Error" on
+        // a real production Convex deployment, silently losing this specific
+        // message right when a customer needs it (lib/errors.ts#toUserMessage,
+        // called from app/dashboard/cards/page.tsx's handleActivate/
+        // handleScanResult).
+        if (!card) {
+            throw new ConvexError({ code: "INVALID_CODE", message: "Invalid activation code" });
+        }
+        if (card.status !== "inventory") {
+            throw new ConvexError({
+                code: "ALREADY_ACTIVATED",
+                message: "Card already activated or reported lost",
+            });
+        }
 
         await assertCanActivateCard(ctx, user);
 
@@ -126,8 +140,14 @@ export const linkProfile = mutation({
         const user = await requireUserMatching(ctx, args.clerkId);
 
         const card = await ctx.db.get(args.cardId);
-        if (!card) throw new Error("Card not found");
-        if (card.ownerId !== user._id) throw new Error("Unauthorized");
+        // ConvexError here too — see the comment on performActivateCard's
+        // throws above; this rejection surfaces through the same
+        // toUserMessage-consuming handleLinkProfile in
+        // app/dashboard/cards/page.tsx.
+        if (!card) throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
+        if (card.ownerId !== user._id) {
+            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized" });
+        }
 
         await ctx.db.patch(args.cardId, {
             linkedProfileId: args.profileId,
@@ -184,8 +204,15 @@ export const recordClaimAttempt = internalMutation({
     args: { clerkId: v.string() },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Unauthorized: authentication required");
-        if (identity.subject !== args.clerkId) throw new Error("Unauthorized: identity mismatch");
+        // ConvexError, not plain Error — see the comment on performActivateCard's
+        // throws above; reachable via the same claimCardByUuid action that
+        // handleScanResult/onboarding surface through toUserMessage.
+        if (!identity) {
+            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: authentication required" });
+        }
+        if (identity.subject !== args.clerkId) {
+            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: identity mismatch" });
+        }
         await checkRateLimit(ctx, `claim:${identity.subject}`, { max: 5, windowMs: 60_000 });
     },
 });
@@ -202,8 +229,14 @@ export const performClaimCardByUuid = internalMutation({
         // SECURITY: enforce that the claimed clerkId belongs to the authenticated
         // caller before creating/claiming anything in their name.
         const identity = await ctx.auth.getUserIdentity();
-        if (!identity) throw new Error("Unauthorized: authentication required");
-        if (identity.subject !== args.clerkId) throw new Error("Unauthorized: identity mismatch");
+        // ConvexError, not plain Error — same reasoning as recordClaimAttempt
+        // above and performActivateCard's throws further up this file.
+        if (!identity) {
+            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: authentication required" });
+        }
+        if (identity.subject !== args.clerkId) {
+            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: identity mismatch" });
+        }
 
         // Get or create user
         let user = await getUser(ctx, args.clerkId);
@@ -222,7 +255,7 @@ export const performClaimCardByUuid = internalMutation({
 
             user = await ctx.db.get(newUserId);
             if (!user) {
-                throw new Error("Failed to create user");
+                throw new ConvexError({ code: "USER_CREATE_FAILED", message: "Failed to create user" });
             }
         }
 
@@ -233,7 +266,7 @@ export const performClaimCardByUuid = internalMutation({
             .first();
 
         if (!card) {
-            throw new Error("Card not found");
+            throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
         }
 
         // If card already belongs to this user and is active, return it (idempotent)
@@ -250,7 +283,10 @@ export const performClaimCardByUuid = internalMutation({
         // it carries; a card that is NOT inventory belongs to whoever
         // activated it and must not be re-claimable.
         if (card.status !== "inventory") {
-            throw new Error("Card is not available for claiming");
+            throw new ConvexError({
+                code: "NOT_AVAILABLE",
+                message: "Card is not available for claiming",
+            });
         }
 
         // Plan gating: free plan may only have one active card.
@@ -290,8 +326,12 @@ export const unclaimCard = mutation({
         const user = await requireUserMatching(ctx, args.clerkId);
 
         const card = await ctx.db.get(args.cardId);
-        if (!card) throw new Error("Card not found");
-        if (card.ownerId !== user._id) throw new Error("Unauthorized");
+        // ConvexError here too — reachable through handleUnclaimCard in
+        // app/dashboard/cards/page.tsx, which already reads via toUserMessage.
+        if (!card) throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
+        if (card.ownerId !== user._id) {
+            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized" });
+        }
 
         await ctx.db.patch(args.cardId, {
             status: "inventory",

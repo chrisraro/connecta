@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useQuery } from "convex/react";
+import { useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, getOrCreateGuestId } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from "lucide-r
 import { useState, useEffect } from "react";
 import { formatPHP } from "@/lib/payment";
 import { DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
+import { toUserMessage } from "@/lib/errors";
 
 const formatPrice = formatPHP;
 
@@ -50,11 +51,41 @@ export default function CartPage() {
   // Shop settings are the single source of truth for tax/shipping (no hardcoding).
   const settings = useQuery(api.settings.getShopSettings, {});
 
-  // Server-validated discount. We query lazily once the user clicks "Apply".
-  const discountResult = useQuery(
-    api.checkout.validateDiscount,
-    appliedCode ? { code: appliedCode, subtotal } : "skip"
-  );
+  // validateDiscount is a Convex action (not a query) so it can meter itself
+  // via ctx.runMutation before revealing a code's validity/value — see
+  // convex/checkout.ts. Unlike useQuery this isn't reactive, so we trigger it
+  // ourselves whenever the applied code or subtotal changes and hold the
+  // result in local state.
+  const validateDiscountAction = useAction(api.checkout.validateDiscount);
+  const [discountResult, setDiscountResult] = useState<Awaited<
+    ReturnType<typeof validateDiscountAction>
+  > | null>(null);
+
+  useEffect(() => {
+    if (!appliedCode) {
+      setDiscountResult(null);
+      return;
+    }
+    let cancelled = false;
+    validateDiscountAction({
+      code: appliedCode,
+      subtotal,
+      visitorId: getOrCreateGuestId(),
+    })
+      .then((result) => {
+        if (!cancelled) setDiscountResult(result);
+      })
+      .catch((err) => {
+        if (!cancelled) setDiscountResult({ valid: false, error: toUserMessage(err) });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // validateDiscountAction's identity is stable across renders (convex/react
+    // memoizes action hooks the same way it does mutation hooks); omitting it
+    // avoids re-running this effect on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedCode, subtotal]);
 
   const discountAmount =
     discountResult && discountResult.valid ? discountResult.discountAmount : 0;

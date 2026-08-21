@@ -1,12 +1,12 @@
 import { v } from "convex/values";
 import {
-  mutation,
   query,
+  action,
   internalMutation,
   internalQuery,
   QueryCtx,
 } from "./_generated/server";
-import { Doc } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { getAuthedUser, isActiveAdmin } from "./authz";
 import { readShopSettings, computeTotals } from "./settings";
@@ -60,12 +60,41 @@ async function resolveDiscount(
   return Math.min(discountAmount, subtotal);
 }
 
-/**
- * Public query: validate a discount code against a provided subtotal (centavos).
- * Returns a non-throwing result so the cart/checkout UI can show inline errors.
- * The server remains the source of truth — createOrder re-validates.
- */
-export const validateDiscount = query({
+// Task 18 / I3 — validateDiscount is public and unauthenticated (anyone
+// loading /shop/cart can call it pre-auth), and it confirms both a code's
+// validity AND its exact value — an unmetered oracle a scripted caller could
+// hammer with a wordlist of guessable promo codes. Two-tier cap mirroring
+// convex/leads.ts's VISITOR_MAX/OWNER_AGGREGATE_MAX pattern for the same "no
+// stable per-caller identity" problem (Convex actions don't receive the
+// caller's IP either): PER_VISITOR_MAX scopes the familiar cap to a
+// client-generated, localStorage-persisted id, and GLOBAL_MAX is the
+// backstop bounding total validation attempts shop-wide even when every call
+// brings a freshly rotated visitor id.
+const DISCOUNT_VALIDATE_VISITOR_MAX = 10;
+const DISCOUNT_VALIDATE_GLOBAL_MAX = 30;
+
+// Internal: check-and-record one discount-validation attempt. See the
+// comment above `validateDiscount` below for why this had to become an
+// action + internal-function split in the first place (queries cannot
+// write, so there was previously no way to meter this at all).
+export const recordDiscountValidationAttempt = internalMutation({
+  args: { visitorId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    await checkRateLimit(ctx, `discount-validate:${args.visitorId ?? "anon"}`, {
+      max: DISCOUNT_VALIDATE_VISITOR_MAX,
+      windowMs: 60_000,
+    });
+    await checkRateLimit(ctx, `discount-validate:global`, {
+      max: DISCOUNT_VALIDATE_GLOBAL_MAX,
+      windowMs: 60_000,
+    });
+  },
+});
+
+// Internal: the actual (non-throwing) validation logic, unchanged from
+// before other than living in its own query. Called via ctx.runQuery from
+// the `validateDiscount` action below, after the rate-limit gate passes.
+export const checkDiscountValidity = internalQuery({
   args: {
     code: v.string(),
     subtotal: v.number(),
@@ -120,40 +149,124 @@ export const validateDiscount = query({
   },
 });
 
-export const createOrder = mutation({
+/**
+ * Public entry point: validate a discount code against a provided subtotal
+ * (centavos). Returns a non-throwing result so the cart/checkout UI can show
+ * inline errors — same shape as before. The server remains the source of
+ * truth — createOrder re-validates. An action, not a query, so it can meter
+ * itself via ctx.runMutation before revealing anything (see
+ * recordDiscountValidationAttempt above); unlike a query this is not
+ * reactive, so client callers use useAction and hold the result in local
+ * state (see app/shop/cart/page.tsx, app/shop/checkout/page.tsx).
+ */
+type DiscountValidityResult =
+  | { valid: false; error: string }
+  | {
+      valid: true;
+      code: string;
+      type: "percentage" | "fixed";
+      value: number;
+      discountAmount: number;
+    };
+
+export const validateDiscount = action({
   args: {
-    guestEmail: v.optional(v.string()),
-    guestId: v.optional(v.string()),
-    shippingAddress: v.object({
-      fullName: v.string(),
-      addressLine1: v.string(),
-      addressLine2: v.optional(v.string()),
-      city: v.string(),
-      state: v.optional(v.string()),
-      postalCode: v.string(),
-      country: v.string(),
-      phone: v.string(),
-    }),
-    billingAddress: v.optional(v.object({
-      fullName: v.string(),
-      addressLine1: v.string(),
-      addressLine2: v.optional(v.string()),
-      city: v.string(),
-      state: v.optional(v.string()),
-      postalCode: v.string(),
-      country: v.string(),
-    })),
-    paymentProvider: v.literal("payrex"),
-    discountCode: v.optional(v.string()),
-    notes: v.optional(v.string()),
+    code: v.string(),
+    subtotal: v.number(),
+    // Client-generated, localStorage-persisted per-browser id (not
+    // authenticated — the caller is always anonymous here). Optional so an
+    // old cached client bundle degrades to sharing the "anon" bucket instead
+    // of a hard validator error.
+    visitorId: v.optional(v.string()),
   },
+  // Explicit return type annotation: without it, this action's handler
+  // return type is inferred FROM `internal.checkout.checkDiscountValidity`,
+  // whose generated type in turn depends on this module's own exports —
+  // TypeScript reports that cycle as "implicitly has type 'any' because it
+  // does not have a type annotation and is referenced directly or indirectly
+  // in its own initializer" (see convex/cards.ts's actions for the same
+  // pattern/reasoning).
+  handler: async (ctx, args): Promise<DiscountValidityResult> => {
+    await ctx.runMutation(internal.checkout.recordDiscountValidationAttempt, {
+      visitorId: args.visitorId,
+    });
+    return await ctx.runQuery(internal.checkout.checkDiscountValidity, {
+      code: args.code,
+      subtotal: args.subtotal,
+    });
+  },
+});
+
+const createOrderArgs = {
+  guestEmail: v.optional(v.string()),
+  guestId: v.optional(v.string()),
+  shippingAddress: v.object({
+    fullName: v.string(),
+    addressLine1: v.string(),
+    addressLine2: v.optional(v.string()),
+    city: v.string(),
+    state: v.optional(v.string()),
+    postalCode: v.string(),
+    country: v.string(),
+    phone: v.string(),
+  }),
+  billingAddress: v.optional(v.object({
+    fullName: v.string(),
+    addressLine1: v.string(),
+    addressLine2: v.optional(v.string()),
+    city: v.string(),
+    state: v.optional(v.string()),
+    postalCode: v.string(),
+    country: v.string(),
+  })),
+  paymentProvider: v.literal("payrex"),
+  discountCode: v.optional(v.string()),
+  notes: v.optional(v.string()),
+};
+
+const ORDER_MAX = 5;
+const ORDER_GLOBAL_MAX = 100;
+
+// Internal: check-and-record one order-creation attempt, keyed by the
+// caller's trusted Convex user id when authenticated, falling back to the
+// client-supplied guestId for anonymous checkout. This has to be its own
+// mutation, separate from `performCreateOrder`, for the same reason as
+// convex/cards.ts's `recordActivationAttempt` (Task 18 / I3, the same
+// atomic-rollback bug already fixed there in Task 1 and in convex/leads.ts
+// earlier in this task): `performCreateOrder` throws on attacker-reachable
+// conditions AFTER a rate-limit write would otherwise have already happened
+// in the same transaction — empty cart, out-of-stock item, invalid/expired
+// discount code — and Convex mutations are atomic, so that write would be
+// rolled back right along with the throw. Committing it here, via
+// `ctx.runMutation` from the `createOrder` action below (itself not one
+// atomic transaction), makes it survive.
+//
+// The per-key cap is keyed on `userId ?? guestId ?? "anon"`; `guestId` is
+// CLIENT-SUPPLIED (see contexts/CartContext.tsx), so a scripted caller can
+// trivially rotate it to dodge that cap entirely. `order:global` is the
+// backstop — it bounds total order-creation attempts shop-wide even when
+// every call brings a fresh guest id, mirroring convex/leads.ts's
+// OWNER_AGGREGATE_MAX pattern for the same "no stable per-caller identity"
+// problem.
+export const recordOrderAttempt = internalMutation({
+  args: { guestId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const authedUser = await getAuthedUser(ctx);
+    const key = authedUser?._id ?? args.guestId ?? "anon";
+    await checkRateLimit(ctx, `order:${key}`, { max: ORDER_MAX, windowMs: 60_000 });
+    await checkRateLimit(ctx, `order:global`, { max: ORDER_GLOBAL_MAX, windowMs: 60_000 });
+  },
+});
+
+// Internal: the actual order-creation logic, unchanged from before other
+// than living in its own mutation and no longer doing the rate-limit
+// bookkeeping itself (that now happens in `recordOrderAttempt` above).
+// Called from the `createOrder` action after the rate-limit gate passes.
+export const performCreateOrder = internalMutation({
+  args: createOrderArgs,
   handler: async (ctx, args) => {
     const authedUser = await getAuthedUser(ctx);
     const userId = authedUser?._id;
-    await checkRateLimit(ctx, `order:${userId ?? args.guestId ?? "anon"}`, {
-      max: 5,
-      windowMs: 60_000,
-    });
 
     if (!userId && !args.guestEmail) {
       throw new Error("Authentication or guest email is required");
@@ -277,6 +390,29 @@ export const createOrder = mutation({
       currency: "PHP",
       discountCode: args.discountCode,
     };
+  },
+});
+
+// Public entry point. An action rather than a mutation — see
+// `recordOrderAttempt` above for why. Client callers use `useAction`, not
+// `useMutation`; the calling convention (resolves on success, rejects on
+// error) is otherwise identical.
+export const createOrder = action({
+  args: createOrderArgs,
+  handler: async (
+    ctx,
+    args
+  ): Promise<{
+    orderId: Id<"orders">;
+    orderNumber: string;
+    total: number;
+    currency: string;
+    discountCode: string | undefined;
+  }> => {
+    await ctx.runMutation(internal.checkout.recordOrderAttempt, {
+      guestId: args.guestId,
+    });
+    return await ctx.runMutation(internal.checkout.performCreateOrder, args);
   },
 });
 
