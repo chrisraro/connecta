@@ -17,8 +17,16 @@ import { GUEST_CART_ID_KEY, DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
 import { PAYMENTS_ENABLED } from "@/lib/payments";
 import { PayrexCheckoutButton } from "@/components/shop/PayrexCheckoutButton";
 import { toUserMessage } from "@/lib/errors";
+import { toast } from "sonner";
 
 const formatPrice = formatPHP;
+
+// How long to wait after the last subtotal change before re-validating the
+// stored discount code — see app/shop/cart/page.tsx's identical constant for
+// the full rationale (Task 19 follow-up, Task 18 review): this effect
+// re-fires on every cart quantity change too, and validateDiscount is
+// metered against a single shop-wide bucket with no per-owner scoping.
+const DISCOUNT_REVALIDATE_DEBOUNCE_MS = 600;
 
 // Mirror of the guest id used by CartContext so guest orders find their cart.
 function getGuestId(): string {
@@ -99,19 +107,22 @@ export default function CheckoutPage() {
       return;
     }
     let cancelled = false;
-    validateDiscountAction({
-      code: discountCode,
-      subtotal,
-      visitorId: getGuestId(),
-    })
-      .then((result) => {
-        if (!cancelled) setDiscountResult(result);
+    const timeoutId = setTimeout(() => {
+      validateDiscountAction({
+        code: discountCode,
+        subtotal,
+        visitorId: getGuestId(),
       })
-      .catch((err) => {
-        if (!cancelled) setDiscountResult({ valid: false, error: toUserMessage(err) });
-      });
+        .then((result) => {
+          if (!cancelled) setDiscountResult(result);
+        })
+        .catch((err) => {
+          if (!cancelled) setDiscountResult({ valid: false, error: toUserMessage(err) });
+        });
+    }, DISCOUNT_REVALIDATE_DEBOUNCE_MS);
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [discountCode, subtotal]);
@@ -164,7 +175,7 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (!isStep1Valid()) {
-      alert("Please fill in all required fields");
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -187,16 +198,17 @@ export default function CheckoutPage() {
 
       const { url } = await createCheckoutSession({
         orderNumber: result.orderNumber,
+        // Only present for guest checkout (see convex/checkout.ts
+        // #performCreateOrder) — createCheckoutSession requires it to
+        // authorize a guest order since there's no signed-in identity to
+        // check ownership against (Task 19 / C2).
+        guestOrderToken: result.guestOrderToken,
       });
 
       window.location.href = url;
     } catch (error) {
       console.error("Checkout failed:", error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to start checkout. Please try again.";
-      alert(message);
+      toast.error(toUserMessage(error));
       setIsProcessing(false);
     }
   };

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useId, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
@@ -130,6 +130,9 @@ function GalleryUploader({
     const [localPreviews, setLocalPreviews] = useState<Record<number, string>>({});
     const inputRef = useRef<HTMLInputElement>(null);
     const generateUploadUrl = useMutation(api.images.generateUploadUrl);
+    // See components/ui/image-uploader.tsx for why this is the required
+    // server-side enforcement step (Task 19 / I4) and why it's an action.
+    const validateUpload = useAction(api.images.validateUpload);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -167,6 +170,7 @@ function GalleryUploader({
             });
             if (!result.ok) throw new Error("Upload failed");
             const { storageId } = await result.json();
+            await validateUpload({ storageId, clerkId: user.id });
             onAdd(storageId);
             setLocalPreviews(prev => {
                 const next = { ...prev };

@@ -329,6 +329,16 @@ export default defineSchema({
     orderNumber: v.string(),
     userId: v.optional(v.id("users")),
     guestEmail: v.optional(v.string()),
+    // Server-minted, cryptographically random secret, set only on guest
+    // orders (userId undefined) at creation time and returned to the client
+    // once. The one thing a guest checkout can present to prove "I am the
+    // person who created this order" — orderNumber alone cannot serve that
+    // role (predictable timestamp + 3-char suffix, see
+    // getOrderByNumber/getOrderForPaymentAuthorized) and guests have no
+    // Convex user id to check ownership against. Required by
+    // convex/payrex.ts#createCheckoutSession for any guest order (Task 19 /
+    // C2).
+    guestOrderToken: v.optional(v.string()),
     status: v.union(
       v.literal("pending"),
       v.literal("processing"),
