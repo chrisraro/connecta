@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
     Dialog,
@@ -23,7 +23,7 @@ export default function SettingsPage() {
     const { user } = useUser();
     const { signOut } = useClerk();
     const router = useRouter();
-    const deleteAccount = useMutation(api.users.deleteMyAccount);
+    const deleteAccount = useAction(api.users.deleteMyAccount);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -36,7 +36,21 @@ export default function SettingsPage() {
         setIsDeleting(true);
         setError(null);
         try {
-            await deleteAccount();
+            const result = await deleteAccount();
+            // Your Convex data (profiles, leads, etc.) is always erased at
+            // this point — that part is atomic and already committed. The
+            // Clerk identity itself may not be: if CLERK_SECRET_KEY isn't
+            // configured (or Clerk's API call failed), don't let that go
+            // unnoticed just because we're about to sign the tab out — see
+            // convex/users.ts#deleteMyAccount for why this can legitimately
+            // happen and isn't a bug in the erasure itself.
+            if (result.identityDeletion.status !== "deleted") {
+                console.warn(
+                    "Account data deletion completed, but Clerk identity deletion did not:",
+                    result.identityDeletion.status,
+                    result.identityDeletion.message
+                );
+            }
             await signOut();
             router.push("/");
         } catch (err: unknown) {
