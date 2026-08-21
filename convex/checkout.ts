@@ -388,10 +388,6 @@ export const internalConfirmOrderPayment = internalMutation({
       return { success: false, reason: "order_not_found" };
     }
 
-    if (order.paymentStatus === "paid" && args.paymentStatus === "paid") {
-      return { success: true, alreadyProcessed: true };
-    }
-
     // Once an order has reached a terminal payment state, ANY further
     // webhook — duplicate, replayed, stale, or out-of-order — must be a
     // no-op: no status change, no inventory re-decrement, no discount
