@@ -43,6 +43,12 @@ export default function ProfilesPage() {
         return <div className="flex justify-center p-12 text-zinc-500"><Loader2 className="animate-spin" /></div>;
     }
 
+    // "Create" affordances that are always visible (unlike the empty-state
+    // CTA below, which only renders when profiles.length === 0 and is
+    // therefore already safe) must link to editing an existing profile
+    // once one exists, not the bare no-id builder — see Task 12.
+    const createProfileHref = profiles.length > 0 ? `/dashboard/builder?id=${profiles[0]._id}` : "/dashboard/builder";
+
     const handleDelete = async (profileId: string) => {
         if (!user?.id) return;
         try {
@@ -64,8 +70,12 @@ export default function ProfilesPage() {
                         <h1 className="text-2xl md:text-3xl font-bold">My Profiles</h1>
                         <p className="text-muted-foreground text-sm">Manage your digital business cards.</p>
                     </div>
-                    {/* Mobile Create Button */}
-                    <Link href="/dashboard/builder" className="md:hidden">
+                    {/* Mobile Create Button. When a profile already exists,
+                        link straight to editing it — routing to the bare
+                        no-id builder here used to send an at-limit
+                        free-plan user into a "Create Profile" form that
+                        could never save (Task 12). */}
+                    <Link href={createProfileHref} className="md:hidden">
                         <Button size="icon" className="rounded-full h-10 w-10 bg-primary text-primary-foreground shadow-lg">
                             <Plus className="w-5 h-5" />
                         </Button>
@@ -75,13 +85,13 @@ export default function ProfilesPage() {
                 <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input 
-                            placeholder="Search profiles..." 
+                        <Input
+                            placeholder="Search profiles..."
                             className="pl-10 bg-muted/50 border-border rounded-2xl h-12 md:h-10 focus-visible:ring-primary"
                         />
                     </div>
 
-                    <Link href="/dashboard/builder" className="hidden md:block">
+                    <Link href={createProfileHref} className="hidden md:block">
                         <Button className="font-bold bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 rounded-xl">
                             <Plus className="w-4 h-4 mr-2" />
                             Create New

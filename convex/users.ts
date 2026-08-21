@@ -1,9 +1,11 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
-import { Doc } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 import { requireUser, requireUserMatching } from "./authz";
 import { acceptInvitesForCurrentUser } from "./teams";
 import { logAudit } from "./audit";
+import { insertNewProfile } from "./profiles";
+import { DEFAULT_DIGITAL_CARD } from "../lib/digitalCard";
 
 export const syncUser = mutation({
     args: {
@@ -113,7 +115,7 @@ export const updateOnboarding = mutation({
             ...(args.markCompleted ? { onboardingCompleted: true } : {}),
         });
 
-        let profileId: string | null = null;
+        let profileId: Id<"profiles"> | null = null;
         if (args.markCompleted) {
             const existingProfiles = await ctx.db
                 .query("profiles")
@@ -128,17 +130,21 @@ export const updateOnboarding = mutation({
                         ? { primary: "#ba9eff", background: "#0e0e0e", text: "#ffffff" }
                         : { primary: "#705838", background: "#fbf9f4", text: "#1b1c19" };
 
-                profileId = await ctx.db.insert("profiles", {
-                    ownerId: user._id,
+                // THE fix for Task 12: go through the exact same write path
+                // the builder's own `createProfile` uses (insertNewProfile,
+                // convex/profiles.ts), instead of a parallel, silently
+                // divergent `ctx.db.insert`. That old direct insert never
+                // assigned a slug and never seeded a digitalCard — see
+                // insertNewProfile's doc comment for the full history.
+                const created = await insertNewProfile(ctx, user._id, {
                     name: `${args.fullName}'s Profile`,
-                    profileType: profileType,
+                    profileType,
                     agentInfo: {
                         fullName: args.fullName,
                         title: args.title,
                         company: args.company || "",
                         phone: args.phone,
                         email: args.email || "",
-                        address: undefined,
                         website: args.website,
                         about: args.about,
                         avatarUrl: args.avatarUrl,
@@ -155,9 +161,9 @@ export const updateOnboarding = mutation({
                                 : ["Hero", "About", "Experience", "Education", "Projects", "Contact"],
                         heroStyle: "default",
                     },
-                    featuredProperties: [],
-                    featuredProjects: [],
+                    digitalCard: DEFAULT_DIGITAL_CARD,
                 });
+                profileId = created.id;
             } else {
                 profileId = existingProfiles[0]._id;
             }

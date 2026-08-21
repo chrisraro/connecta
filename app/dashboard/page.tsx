@@ -181,7 +181,15 @@ export default function DashboardPage() {
             {/* ─── Quick Actions ─────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <QuickAction href="/dashboard/cards" icon={SmartphoneNfc} label="Activate a card" />
-                <QuickAction href="/dashboard/builder" icon={Edit2} label="Edit profile" />
+                {/* When a profile already exists, link straight to editing
+                    it — routing to the bare no-id builder here used to send
+                    an at-limit free-plan user into a "Create Profile" form
+                    that could never save (Task 12). */}
+                <QuickAction
+                    href={profiles && profiles.length > 0 ? `/dashboard/builder?id=${profiles[0]._id}` : "/dashboard/builder"}
+                    icon={Edit2}
+                    label="Edit profile"
+                />
                 <QuickAction
                     href={profiles && profiles.length > 0 ? profilePath(profiles[0]) : "/dashboard/profiles"}
                     icon={ExternalLink}

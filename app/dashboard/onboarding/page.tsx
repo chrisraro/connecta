@@ -87,6 +87,11 @@ function OnboardingContent() {
     const claimCard = useAction(api.cards.claimCardByUuid);
     const linkProfile = useMutation(api.cards.linkProfile);
     const onboarding = useQuery(api.users.getOnboardingStatus, clerkUser?.id ? { clerkId: clerkUser.id } : "skip");
+    // Drives the "Profile Setup Complete" screen's "Go to Profile Builder"
+    // button below — same Task 12 fix as handleFinish's routing: link to
+    // the profile that already exists instead of a doomed no-id create.
+    const profiles = useQuery(api.profiles.getMyProfiles, clerkUser?.id ? { clerkId: clerkUser.id } : "skip");
+    const myProfileId = profiles && profiles.length > 0 ? profiles[0]._id : null;
 
     const [step, setStep] = useState(0);
     const [saving, setSaving] = useState(false);
@@ -254,7 +259,22 @@ function OnboardingContent() {
                 }
             }
 
-            router.push("/dashboard/builder");
+            // Task 12 fix: route to the profile we just created (or already
+            // had), so the builder EDITS it instead of entering "Create
+            // Profile" mode with no `?id=`. That create-mode entry used to
+            // be the default post-onboarding path, and it deterministically
+            // failed the free plan's very first Save — the just-created
+            // profile already consumed the plan's maxProfiles: 1, so
+            // createProfile's own count check rejected a second one with
+            // "Upgrade to Pro for unlimited profiles." updateOnboarding
+            // always returns a profileId when markCompleted is true (see
+            // convex/users.ts), so this only omits `?id=` in the impossible
+            // case where that invariant is somehow violated.
+            router.push(
+                result.profileId
+                    ? `/dashboard/builder?id=${result.profileId}`
+                    : "/dashboard/builder"
+            );
         } catch (err) {
             console.error("Failed to finish onboarding:", err);
         } finally {
@@ -320,7 +340,7 @@ function OnboardingContent() {
                             </div>
 
                             <div className="space-y-2">
-                                <Button className="w-full" size="lg" onClick={() => router.push("/dashboard/builder")}>
+                                <Button className="w-full" size="lg" onClick={() => router.push(myProfileId ? `/dashboard/builder?id=${myProfileId}` : "/dashboard/builder")}>
                                     <ArrowRight className="w-4 h-4 mr-2" /> Go to Profile Builder
                                 </Button>
                                 <Button variant="outline" className="w-full" onClick={() => {

@@ -112,6 +112,73 @@ async function enrichProfile(ctx: QueryCtx, profile: Doc<"profiles">) {
     return { ...profile, showBranding, teamBranding, resolvedImages };
 }
 
+/**
+ * Every field a brand-new profile row needs, minus the parts only the
+ * caller (owner id, gating) can supply. Deliberately typed off the schema
+ * (`Doc<"profiles">`) rather than hand-duplicated, so this can never drift
+ * from what `profiles` actually stores.
+ */
+export type NewProfileFields = {
+    name: string;
+    profileType?: Doc<"profiles">["profileType"];
+    agentInfo: Doc<"profiles">["agentInfo"];
+    layoutConfig: Doc<"profiles">["layoutConfig"];
+    featuredProperties?: Doc<"profiles">["featuredProperties"];
+    featuredProjects?: Doc<"profiles">["featuredProjects"];
+    products?: Doc<"profiles">["products"];
+    services?: Doc<"profiles">["services"];
+    propertyListings?: Doc<"profiles">["propertyListings"];
+    inlineProjects?: Doc<"profiles">["inlineProjects"];
+    digitalCard?: Doc<"profiles">["digitalCard"];
+    showStorefront?: Doc<"profiles">["showStorefront"];
+};
+
+/**
+ * THE single write path for inserting a brand-new profile row.
+ *
+ * `createProfile`'s create branch (below) and `updateOnboarding`
+ * (convex/users.ts, the "user finishes onboarding with zero profiles"
+ * branch) both call this instead of running their own `ctx.db.insert`, so
+ * a profile has the exact same shape — real slug via `assignUniqueSlug`,
+ * every array field defaulted the same way — no matter which door created
+ * it.
+ *
+ * Before Task 12, onboarding's completion step had its own parallel
+ * `ctx.db.insert("profiles", …)` that silently diverged from this one: no
+ * slug (public link stuck at `/p/<convexId>`), no `digitalCard`. Worse,
+ * because that profile already counted against the free plan's
+ * `maxProfiles: 1`, the very next thing the product did — send the user to
+ * the builder in "Create Profile" mode with no `?id=` — made the user's
+ * first Save fail every time with "Upgrade to Pro for unlimited profiles."
+ * See `app/dashboard/onboarding/page.tsx`'s `handleFinish`, which now
+ * routes to `/dashboard/builder?id=<the id returned here>` so the builder
+ * edits this row instead of trying to create a second one.
+ */
+export async function insertNewProfile(
+    ctx: MutationCtx,
+    ownerId: Id<"users">,
+    fields: NewProfileFields
+): Promise<{ id: Id<"profiles">; slug: string }> {
+    const slug = await assignUniqueSlug(ctx, slugSourceFor(fields));
+    const profileId = await ctx.db.insert("profiles", {
+        ownerId,
+        name: fields.name,
+        slug,
+        profileType: fields.profileType,
+        agentInfo: fields.agentInfo,
+        layoutConfig: fields.layoutConfig,
+        featuredProperties: fields.featuredProperties ?? [],
+        featuredProjects: fields.featuredProjects ?? [],
+        products: fields.products,
+        services: fields.services,
+        propertyListings: fields.propertyListings,
+        inlineProjects: fields.inlineProjects,
+        digitalCard: fields.digitalCard,
+        showStorefront: fields.showStorefront,
+    });
+    return { id: profileId, slug };
+}
+
 export const createProfile = mutation({
     args: {
         name: v.string(), // e.g., "My Luxury Profile"
@@ -281,12 +348,7 @@ export const createProfile = mutation({
             return { id: args.id, slug };
         }
 
-        const slug = await assignUniqueSlug(ctx, slugSourceFor(args));
-        const profileId = await ctx.db.insert("profiles", {
-            ...profileData,
-            slug,
-        });
-        return { id: profileId, slug };
+        return await insertNewProfile(ctx, user._id, profileData);
     },
 });
 
