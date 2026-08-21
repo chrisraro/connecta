@@ -94,3 +94,22 @@ describe("shouldRedirectAdminOnFirstLanding", () => {
         // Now admin stays on consumer /dashboard instead of bouncing back
     });
 });
+
+/**
+ * shouldRedirectAdminOnFirstLanding is exported, so it can be called from
+ * somewhere that has no sessionStorage — during SSR, or from the
+ * edge-runtime vitest project. An unguarded access there is a ReferenceError
+ * that takes down the whole page, and nothing in the suite would catch it
+ * because the effect that calls it today only ever runs in the browser.
+ */
+test("shouldRedirectAdminOnFirstLanding does not throw where sessionStorage is absent", () => {
+  const original = Reflect.getOwnPropertyDescriptor(globalThis, "sessionStorage");
+  // @ts-expect-error deliberately simulating a non-browser global
+  delete globalThis.sessionStorage;
+  try {
+    expect(() => shouldRedirectAdminOnFirstLanding("/dashboard")).not.toThrow();
+    expect(shouldRedirectAdminOnFirstLanding("/dashboard")).toBe(false);
+  } finally {
+    if (original) Object.defineProperty(globalThis, "sessionStorage", original);
+  }
+});

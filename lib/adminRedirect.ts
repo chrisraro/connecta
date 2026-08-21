@@ -53,6 +53,15 @@ export function shouldRedirectAdminOnFirstLanding(pathname: string | null | unde
         return false;
     }
 
+    // No sessionStorage outside the browser. This is called from a client
+    // effect today, so it never runs during SSR — but it is an exported
+    // helper, and an unguarded access would crash the whole page the first
+    // time someone calls it during render or from the edge-runtime test
+    // project. Fail closed: no storage means no redirect, never a throw.
+    if (typeof sessionStorage === "undefined") {
+        return false;
+    }
+
     // Only redirect if we haven't already done so in this session
     // Using sessionStorage so the flag persists across navigations within the same tab
     const redirectKey = "admin-redirect-done";
