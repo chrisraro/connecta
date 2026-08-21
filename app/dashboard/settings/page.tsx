@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { decideDeletionOutcome } from "@/lib/accountDeletion";
 
 export default function SettingsPage() {
     const { user } = useUser();
@@ -44,12 +46,15 @@ export default function SettingsPage() {
             // unnoticed just because we're about to sign the tab out — see
             // convex/users.ts#deleteMyAccount for why this can legitimately
             // happen and isn't a bug in the erasure itself.
-            if (result.identityDeletion.status !== "deleted") {
-                console.warn(
-                    "Account data deletion completed, but Clerk identity deletion did not:",
-                    result.identityDeletion.status,
-                    result.identityDeletion.message
-                );
+            //
+            // decideDeletionOutcome (lib/accountDeletion.ts) is the tested
+            // decision of whether to warn and how long to hold this screen
+            // before redirecting, so the warning is actually readable
+            // instead of a flash before signOut() navigates the tab away.
+            const outcome = decideDeletionOutcome(result.identityDeletion);
+            if (outcome.showWarningToast && outcome.toastMessage) {
+                toast.warning(outcome.toastMessage, { duration: outcome.redirectDelayMs });
+                await new Promise((resolve) => setTimeout(resolve, outcome.redirectDelayMs));
             }
             await signOut();
             router.push("/");

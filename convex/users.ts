@@ -503,13 +503,36 @@ export const deleteMyAccount = action({
             };
         }
 
-        const res = await fetch(
-            `https://api.clerk.com/v1/users/${encodeURIComponent(clerkId)}`,
-            {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${secretKey}` },
-            }
-        );
+        let res: Response;
+        try {
+            res = await fetch(
+                `https://api.clerk.com/v1/users/${encodeURIComponent(clerkId)}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${secretKey}` },
+                }
+            );
+        } catch (err) {
+            // `fetch` itself threw — DNS failure, TLS error, timeout, Clerk
+            // unreachable — rather than returning a non-OK response. The
+            // Convex erasure above already committed in its own transaction,
+            // so this action must NOT rethrow: an uncaught exception here
+            // would surface as a generic "Failed to delete account" while
+            // the user's data is already gone and they were never signed
+            // out. Report it the same way as a non-OK HTTP response instead.
+            console.error(
+                "deleteMyAccount: Clerk identity deletion threw before a response was received",
+                { error: err instanceof Error ? err.message : String(err) }
+            );
+            return {
+                ...erasure,
+                identityDeletion: {
+                    status: "failed",
+                    message:
+                        "Your data was deleted, but identity removal failed. Contact support.",
+                },
+            };
+        }
 
         // A 404 means the identity is already gone (a prior retry, or the
         // webhook beat this call to it) — that is a completed deletion, not

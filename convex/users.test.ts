@@ -662,6 +662,39 @@ test("deleteMyAccount reports identity deletion as failed (not silent success) w
   vi.unstubAllGlobals();
 });
 
+test("deleteMyAccount resolves with a failed identityDeletion (not a thrown exception) when the Clerk fetch call itself throws", async () => {
+  // Distinct from the 500-response case above: here `fetch` never returns a
+  // Response at all — it rejects, as it does for DNS failures, TLS errors,
+  // timeouts, or Clerk being unreachable. Convex erasure already committed
+  // in its own prior mutation call, so an uncaught throw here would leave
+  // the action itself rejecting: the UI would show a generic failure and
+  // never sign the user out, even though their data is already gone.
+  vi.stubEnv("CLERK_SECRET_KEY", "sk_test_abc123");
+  const t = convexTest(schema);
+  const seed = await seedFullAccount(t, "clerk_network_error_user");
+  const asUser = t.withIdentity({ subject: "clerk_network_error_user" });
+
+  const fetchMock = vi.fn(async () => {
+    throw new TypeError("fetch failed");
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  const result = await asUser.action(api.users.deleteMyAccount, {});
+
+  // The Convex erasure already committed — must not be treated as reverted
+  // just because the network call afterward blew up.
+  expect(result.success).toBe(true);
+  await t.run(async (ctx) => {
+    expect(await ctx.db.get(seed.userId)).toBeNull();
+  });
+  expect(result.identityDeletion.status).toBe("failed");
+  expect(errorSpy).toHaveBeenCalled();
+
+  errorSpy.mockRestore();
+  vi.unstubAllGlobals();
+});
+
 test("deleteMyAccount treats a 404 from Clerk (identity already gone) as a completed deletion, not a failure", async () => {
   vi.stubEnv("CLERK_SECRET_KEY", "sk_test_abc123");
   const t = convexTest(schema);
