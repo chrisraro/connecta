@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import schema from "./schema";
 import { internal, api } from "./_generated/api";
 import { DEFAULT_DIGITAL_CARD } from "../lib/digitalCard";
+import { resolveOnboardingPrefill } from "../lib/onboardingPrefill";
 
 /**
  * Seeds a user carrying the deprecated `credits` field — the orphan data that
@@ -623,6 +624,167 @@ test("updateOnboarding in edit mode preserves agentInfo fields the wizard never 
   expect(profile?.agentInfo.socialLinks).toEqual([
     { platform: "linkedin", url: "https://linkedin.com/in/preserve" },
   ]);
+});
+
+/**
+ * Reviewer Critical finding on the Task 17 / C3 fix above: the edit-branch
+ * merge (`{...existing.agentInfo, ...wizardAgentInfo}`) is only safe if the
+ * wizard's outgoing args are a faithful snapshot of current state. Before
+ * lib/onboardingPrefill.ts existed, the client prefilled edit mode from
+ * `onboarding.data` (`user.onboardingData`) — written ONLY by this wizard,
+ * never by the Profile Builder's `updateProfile`. So the instant a user set
+ * `website` via the Builder (the normal way to maintain a profile),
+ * onboardingData went stale, and reopening "Edit Profile Setup" without
+ * retyping `website` sent `website: undefined` back, silently wiping the
+ * live value via the merge. This test drives the wizard's args through the
+ * ACTUAL fixed prefill source (`resolveOnboardingPrefill`, reading the live
+ * profile, not onboardingData) and pins that the live-only value survives a
+ * completion that only retypes `title`.
+ *
+ * Against the pre-fix client behavior (prefilling from onboardingData
+ * instead), this exact scenario failed with
+ * `AssertionError: expected undefined to be 'https://real-site.example'` —
+ * confirmed by temporarily inlining that old construction before writing
+ * the fix.
+ */
+test("updateOnboarding in edit mode: a live agentInfo value absent from onboardingData survives a completion that doesn't resend it", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "survive_user" });
+  const userId = await t.run(async (ctx) =>
+    ctx.db.insert("users", {
+      email: "survive@test.dev", clerkId: "survive_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+      onboardingCompleted: true,
+      // Stale onboardingData — missing website/about/avatarUrl because the
+      // user set those later via the Profile Builder, which never writes
+      // onboardingData.
+      onboardingData: {
+        fullName: "Survive Person", title: "Old Title", company: "Acme",
+        phone: "0917000003", services: [],
+      },
+    })
+  );
+
+  const profileId = await t.run(async (ctx) =>
+    ctx.db.insert("profiles", {
+      ownerId: userId,
+      name: "Survive Person's Profile",
+      profileType: "individual",
+      agentInfo: {
+        fullName: "Survive Person", title: "Old Title", company: "Acme",
+        phone: "0917000003", email: "survive@test.dev", services: [],
+        socialLinks: [],
+        website: "https://real-site.example", // LIVE-only value
+        about: "Live about text",              // LIVE-only value
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#705838", background: "#fbf9f4", text: "#1b1c19" },
+        componentOrder: ["Hero", "About", "Experience", "Education", "Projects", "Contact"],
+        heroStyle: "default",
+      },
+      featuredProperties: [],
+    })
+  );
+
+  const profileDoc = await t.run(async (ctx) => ctx.db.get(profileId));
+
+  // What the FIXED wizard actually hydrates its form with in edit mode:
+  // the live profile, not onboardingData.
+  const prefill = resolveOnboardingPrefill({
+    isEditMode: true,
+    onboardingData: null,
+    profiles: [profileDoc!],
+    clerkUser: null,
+  });
+  expect(prefill?.website).toBe("https://real-site.example");
+
+  // User retypes ONLY the title — every other field is resent unchanged
+  // because the form was faithfully hydrated from the live profile, exactly
+  // matching app/dashboard/onboarding/page.tsx's saveProgress/handleFinish
+  // argument construction.
+  await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "survive_user",
+    profileCategory: prefill!.profileCategory,
+    email: "survive@test.dev",
+    fullName: prefill!.fullName,
+    title: "New Title After Edit",
+    company: prefill!.company || undefined,
+    phone: prefill!.phone,
+    website: prefill!.website || undefined,
+    about: prefill!.about || undefined,
+    avatarUrl: prefill!.avatarUrl || undefined,
+    services: prefill!.services,
+    markCompleted: true,
+  });
+
+  const updated = await t.run(async (ctx) => ctx.db.get(profileId));
+  expect(updated?.agentInfo.title).toBe("New Title After Edit");
+  expect(updated?.agentInfo.website).toBe("https://real-site.example");
+  expect(updated?.agentInfo.about).toBe("Live about text");
+});
+
+/**
+ * The other half of the same merge: a field the user DELIBERATELY clears
+ * must actually clear, not be silently kept because of some overzealous
+ * "never overwrite" guard. `website` is optional in the schema and the
+ * wizard sends `undefined` for a blank field (app/dashboard/onboarding/
+ * page.tsx: `website: website || undefined`) — this pins that an explicit
+ * clear reaches the live profile.
+ *
+ * `title` is excluded from this test on purpose: page.tsx:207,241 does
+ * `title: title || "Professional"`, so title can never actually be cleared
+ * through the UI (pre-existing, out of scope here).
+ */
+test("updateOnboarding in edit mode: a field the user deliberately clears actually clears on the live profile", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "clear_user" });
+  const userId = await t.run(async (ctx) =>
+    ctx.db.insert("users", {
+      email: "clear@test.dev", clerkId: "clear_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+      onboardingCompleted: true,
+    })
+  );
+
+  const profileId = await t.run(async (ctx) =>
+    ctx.db.insert("profiles", {
+      ownerId: userId,
+      name: "Clear Person's Profile",
+      profileType: "individual",
+      agentInfo: {
+        fullName: "Clear Person", title: "Designer", company: "Acme",
+        phone: "0917000004", email: "clear@test.dev", services: [],
+        socialLinks: [],
+        website: "https://to-be-cleared.example",
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#705838", background: "#fbf9f4", text: "#1b1c19" },
+        componentOrder: ["Hero", "About", "Experience", "Education", "Projects", "Contact"],
+        heroStyle: "default",
+      },
+      featuredProperties: [],
+    })
+  );
+
+  // User opens edit mode, clears the website field, resends everything
+  // else unchanged — same shape saveProgress/handleFinish would send.
+  await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "clear_user",
+    profileCategory: "individual",
+    email: "clear@test.dev",
+    fullName: "Clear Person",
+    title: "Designer",
+    company: "Acme",
+    phone: "0917000004",
+    website: undefined, // deliberately cleared
+    services: [],
+    markCompleted: true,
+  });
+
+  const updated = await t.run(async (ctx) => ctx.db.get(profileId));
+  expect(updated?.agentInfo.website).toBeUndefined();
 });
 
 test("deleteMyAccount rejects an unauthenticated caller", async () => {
