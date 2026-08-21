@@ -54,7 +54,46 @@ function messageFromConvexErrorData(data: unknown): string | null {
 // Matches the "Uncaught <ErrorType>: <message>" section of a Convex
 // transport envelope, stopping before the stack frame ("  at ...") or the
 // "Called by client" trailer that follows it on a real deployment.
-const UNCAUGHT_DETAIL_RE = /Uncaught (?:\w+):\s*([\s\S]*?)(?:\n\s*(?:at\s|Called by client)|$)/;
+//
+// The gap between the colon and the captured detail uses `[^\S\n]*`
+// (horizontal whitespace only), NOT `\s*`. `\s*` also matches newlines, so
+// when the detail is empty it would eat the newline+indent that the
+// stop-alternative below needs as a delimiter, letting the lazy capture
+// group swallow the stack frame itself instead of stopping before it.
+const UNCAUGHT_DETAIL_RE =
+  /Uncaught (?:\w+):[^\S\n]*([\s\S]*?)(?:\n\s*(?:at\s|Called by client)|$)/;
+
+// A message is unsafe to show a user if it's empty, if it's (or contains) a
+// raw Convex transport envelope, if it's exactly the meaningless literal
+// "Server Error", or if it's a raw stack-trace line. This is intentionally
+// narrow: a message that merely *ends* with the words "Server Error" (e.g.
+// "PayRex checkout session creation failed (500): Internal Server Error")
+// is legitimate diagnostic text and must NOT be caught here — only the
+// literal Convex-envelope shape is unsafe.
+//
+// This is the single predicate applied to BOTH candidate messages
+// toUserMessage ever considers showing: the raw fallback string when
+// unwrapping fails, and whatever unwrapConvexTransportNoise successfully
+// extracts. A leak closed on one path and not the other is how findings 1-3
+// happened — every candidate must clear the same bar.
+const CONVEX_ENVELOPE_PREFIX_RE = /^\[CONVEX\b/;
+const LITERAL_SERVER_ERROR_RE = /^Server Error$/;
+const STACK_FRAME_LINE_RE = /(^|\n)[^\S\n]*at\s+\S.*:\d+:\d+\)?[^\S\n]*($|\n)/;
+// Anchored to its own line (optionally the whole candidate): the real
+// trailer only ever appears as a standalone line at the end of the
+// envelope. Un-anchored, this would false-positive on ordinary prose that
+// happens to contain the substring "Called by client".
+const CALLED_BY_CLIENT_RE = /(^|\n)[^\S\n]*Called by client[^\S\n]*$/;
+
+function isUnsafeToShow(candidate: string): boolean {
+  const trimmed = candidate.trim();
+  if (!trimmed) return true;
+  if (CONVEX_ENVELOPE_PREFIX_RE.test(trimmed)) return true;
+  if (LITERAL_SERVER_ERROR_RE.test(trimmed)) return true;
+  if (STACK_FRAME_LINE_RE.test(trimmed)) return true;
+  if (CALLED_BY_CLIENT_RE.test(trimmed)) return true;
+  return false;
+}
 
 function unwrapConvexTransportNoise(raw: string): string | null {
   const match = raw.match(UNCAUGHT_DETAIL_RE);
@@ -70,18 +109,32 @@ function unwrapConvexTransportNoise(raw: string): string | null {
   try {
     const parsed = JSON.parse(inner);
     const fromData = messageFromConvexErrorData(parsed);
-    if (fromData) return fromData;
+    if (fromData) return isUnsafeToShow(fromData) ? null : fromData;
   } catch {
     // Not JSON — inner is already the plain message text.
   }
 
-  return inner;
+  return isUnsafeToShow(inner) ? null : inner;
 }
 
 function rawMessageOf(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === "string") return err;
   return "";
+}
+
+// Hard cap on how much text a toast/dialog is ever asked to render. A
+// message this long is already useless as UX copy regardless of what it
+// contains.
+const MAX_MESSAGE_LENGTH = 300;
+
+function capLength(message: string): string {
+  if (message.length <= MAX_MESSAGE_LENGTH) return message;
+  // Slice on code points, not raw UTF-16 code units: a plain `.slice()` can
+  // land inside a surrogate pair (e.g. an emoji) and cut it in half,
+  // producing a lone, invalid surrogate in the output.
+  const codePoints = Array.from(message);
+  return `${codePoints.slice(0, MAX_MESSAGE_LENGTH - 3).join("").trimEnd()}...`;
 }
 
 /**
@@ -92,7 +145,7 @@ function rawMessageOf(err: unknown): string {
 export function toUserMessage(err: unknown): string {
   if (err instanceof ConvexError) {
     const fromData = messageFromConvexErrorData(err.data);
-    if (fromData) return fromData;
+    if (fromData && !isUnsafeToShow(fromData)) return capLength(fromData);
     // A ConvexError with no usable .data (bare code, or no data at all)
     // falls through to the generic — its .message is Convex's own
     // boilerplate ("[CONVEX ...] Uncaught ConvexError: ..."), not written
@@ -103,15 +156,20 @@ export function toUserMessage(err: unknown): string {
   const raw = rawMessageOf(err).trim();
   if (!raw) return GENERIC_ERROR_MESSAGE;
 
+  // unwrapConvexTransportNoise already re-guards whatever it extracts with
+  // isUnsafeToShow — a nested/double-wrapped envelope is caught by that same
+  // predicate's `[CONVEX` prefix check, no special case needed — so a
+  // non-null result here is always safe to show.
   const unwrapped = unwrapConvexTransportNoise(raw);
-  if (unwrapped) return unwrapped;
+  if (unwrapped) return capLength(unwrapped);
 
   // Either the redacted production shape ("[CONVEX ...] Server Error" with
-  // nothing to unwrap) or some other unrecognized Convex transport noise —
-  // in both cases there's no safe detail left to show.
-  if (raw.startsWith("[CONVEX") || /Server Error\s*$/.test(raw)) {
+  // nothing to unwrap), some other unrecognized Convex transport noise, or
+  // an unwrap that itself extracted something unsafe — in all cases there's
+  // no safe detail left to show.
+  if (isUnsafeToShow(raw)) {
     return GENERIC_ERROR_MESSAGE;
   }
 
-  return raw;
+  return capLength(raw);
 }
