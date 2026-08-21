@@ -8,7 +8,7 @@ import { toUserMessage } from "@/lib/errors";
 import { Id } from "@/convex/_generated/dataModel";
 import { ProfileData } from "@/types/profile";
 import { ProfileImage } from "@/components/templates/ProfileImage";
-import { formatPHP } from "@/lib/payment";
+import { formatCatalogPrice } from "@/lib/payment";
 import { buildServiceCatalogItems, CatalogItem } from "@/lib/serviceCatalog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,7 +92,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
 
     const openInquiryModal = (item: CatalogItem) => {
         const defaultMsg = `Hi ${agent.fullName}, I am interested in inquiring about your offering: "${item.title}"${
-            item.price ? ` (${formatPHP(item.price)})` : ""
+            item.price ? ` (${formatCatalogPrice(item.price)})` : ""
         }. Please contact me with availability and details.`;
 
         setInquiryForm({ name: "", contact: "", message: defaultMsg });
@@ -317,7 +317,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                                     {item.price !== undefined && item.price > 0 && (
                                         <div className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-md border border-border px-3 py-1 rounded-xl shadow-lg">
                                             <span className="text-xs font-extrabold text-foreground">
-                                                {formatPHP(item.price)}
+                                                {formatCatalogPrice(item.price)}
                                             </span>
                                         </div>
                                     )}
@@ -383,7 +383,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                                     <h2 className="text-xl font-bold text-foreground">{selectedItem.title}</h2>
                                     {selectedItem.price !== undefined && selectedItem.price > 0 && (
                                         <p className="text-lg font-extrabold text-primary mt-0.5">
-                                            {formatPHP(selectedItem.price)}
+                                            {formatCatalogPrice(selectedItem.price)}
                                         </p>
                                     )}
                                 </div>
