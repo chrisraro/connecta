@@ -54,6 +54,8 @@ import { Id } from "@/convex/_generated/dataModel";
 import { profilePath } from "@/lib/profileUrl";
 import { deriveBuilderProfileFields, getBlocksForProfileType } from "@/lib/profileSections";
 import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
+import { resolveBuilderEntryRedirect, shouldPrefillCreateForm } from "@/lib/builderEntry";
+import { DEFAULT_DIGITAL_CARD } from "@/lib/digitalCard";
 
 // --- Types & Defaults ---
 
@@ -69,17 +71,6 @@ const INITIAL_AGENT_INFO: ProfileInfo = {
     avatarUrl: "",
     services: [],
     socialLinks: [],
-};
-
-const DEFAULT_DIGITAL_CARD: DigitalCardConfig = {
-    backgroundColor: "#1e1e1e",
-    textColor: "#ffffff",
-    layout: "split",
-    showQrCode: true,
-    theme: "dark",
-    cardBackgroundType: "solid",
-    cardGradientStart: "#000000",
-    cardGradientEnd: "#333333",
 };
 
 type Block = {
@@ -408,6 +399,47 @@ function BuilderContent() {
     const createProfile = useMutation(api.profiles.createProfile);
     const onboarding = useQuery(api.users.getOnboardingStatus, user?.id ? { clerkId: user.id } : "skip");
     const existingProfile = useQuery(api.profiles.getProfile, editingId ? { profileId: editingId as Id<"profiles"> } : "skip");
+    // Guards every "create profile" entry (no `?id=`) against the doomed
+    // save Task 12 found: a user already at their plan's profile limit
+    // landing on this blank form anyway. See lib/builderEntry.ts.
+    const myProfiles = useQuery(api.profiles.getMyProfiles, !editingId && user?.id ? { clerkId: user.id } : "skip");
+    const myPlan = useQuery(api.billing.getMyPlan, !editingId && user?.id ? { clerkId: user.id } : "skip");
+
+    // Tri-state: `undefined` while the two queries above are still loading
+    // (verdict not known yet), `null` once loaded with no redirect needed,
+    // or the target profile id once one IS needed. Already editing
+    // (`editingId` set) always short-circuits to `null` immediately.
+    //
+    // The prefill effect further down keys off this being exactly `null`
+    // (not just falsy) before it will prefill a blank form from onboarding
+    // data — otherwise there's a real race: on the very first render after
+    // a no-id navigation, `editingId` is still null and `onboarding?.data`
+    // may already be loaded, so the prefill effect's create-mode branch
+    // would fire and set `hasPrefilled = true` from the STALE onboarding
+    // snapshot before this redirect even has a verdict. Once `hasPrefilled`
+    // is true, the prefill effect's guard skips it forever — so even after
+    // the URL below correctly updates to `?id=<existing>`, the form would
+    // stay stuck showing onboarding-snapshot data instead of the real,
+    // possibly since-edited profile. Verified live: without this guard, an
+    // edited profile (e.g. retitled, type changed to "business") rendered
+    // its original onboarding answers after the redirect, not its current
+    // saved state.
+    const entryRedirectId: string | null | undefined = editingId
+        ? null
+        : myProfiles === undefined || myPlan === undefined
+            ? undefined
+            : resolveBuilderEntryRedirect(editingId, myProfiles, myPlan.limits.maxProfiles);
+
+    // Task 12: a "create profile" entry (no `?id=`) while the user is
+    // already at their plan's profile limit can never save — createProfile
+    // would throw "Upgrade to Pro for unlimited profiles." the moment they
+    // click Save. Redirect to editing their newest profile instead of
+    // showing a form that's doomed from the start.
+    useEffect(() => {
+        if (entryRedirectId) {
+            router.replace(`/dashboard/builder?id=${entryRedirectId}`);
+        }
+    }, [entryRedirectId, router]);
 
     // UI State
     const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -658,7 +690,18 @@ function BuilderContent() {
                 }
                 setHasPrefilled(true);
                 captureSnapshot();
-            } else if (!editingId && onboarding?.data) {
+            } else if (
+                // See shouldPrefillCreateForm's doc comment (lib/builderEntry.ts)
+                // for the full tri-state race this guards against: prefilling
+                // from the onboarding snapshot while a redirect is still
+                // pending (entryRedirectId undefined or a profile id) would
+                // flip `hasPrefilled` to true from the WRONG data source, and
+                // the guard above would then permanently skip the real
+                // `editingId && existingProfile` branch once the redirect
+                // actually lands.
+                shouldPrefillCreateForm(editingId, entryRedirectId, hasPrefilled, Boolean(onboarding?.data))
+                && onboarding?.data
+            ) {
                 const data = onboarding.data;
                 const type = (data.profileCategory || "individual") as ProfileType;
                 setProfileType(type);
@@ -682,7 +725,7 @@ function BuilderContent() {
             console.error("Prefill error:", err);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [onboarding, hasPrefilled, user, existingProfile, editingId]);
+    }, [onboarding, hasPrefilled, user, existingProfile, editingId, entryRedirectId]);
 
     // The prefill effect above calls captureSnapshot() synchronously right after
     // its setXxx(...) calls, in the same tick — but those state updates are

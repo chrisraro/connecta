@@ -445,3 +445,112 @@ test("internalBackfillSlugs re-slugs a stale possessive slug only when asked", a
   });
   expect(second.reslugged).toBe(0);
 });
+
+// Profile-count gating (createProfile, convex/profiles.ts:304-313): a free
+// plan's `maxProfiles: 1` is enforced only when `!args.id` — i.e. only when
+// the caller is creating a brand-new profile, never when patching an
+// existing one. Before this pair, NOTHING in the suite ever asserted the
+// reject path actually throws, or that the `!args.id` guard is what keeps
+// edits of an existing at-limit profile working. Without this coverage, a
+// refactor that dropped or inverted the `!args.id` condition would either
+// silently re-enable unlimited free profiles (reject path lost) or silently
+// lock a free user out of ever editing their own single profile again
+// (patch path broken) — and the test suite would stay green either way.
+test("createProfile REJECTS creating a second profile for a free-plan user already at the 1-profile limit", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "limit_user_reject" });
+  const ownerId = await t.run(async (ctx) => {
+    return await ctx.db.insert("users", {
+      email: "limit_reject@test.dev", clerkId: "limit_user_reject", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+  // Seed ONE existing profile directly, so the free plan's maxProfiles:1
+  // is already consumed before the mutation under test runs.
+  await t.run(async (ctx) => {
+    await ctx.db.insert("profiles", {
+      ownerId,
+      name: "Existing Profile",
+      agentInfo: {
+        fullName: "Existing Person", title: "Agent", company: "Co",
+        phone: "0917", email: "existing_reject@test.dev", services: [], socialLinks: [],
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+        componentOrder: ["Hero"], heroStyle: "default",
+      },
+      featuredProperties: [],
+    });
+  });
+
+  // No `id` supplied -> createProfile treats this as a request to create a
+  // NEW (second) profile -> must be rejected.
+  await expect(
+    asUser.mutation(api.profiles.createProfile, {
+      clerkId: "limit_user_reject",
+      name: "Second Profile",
+      agentInfo: {
+        fullName: "Second Person", title: "Agent", company: "Co",
+        phone: "0917", email: "second_reject@test.dev", services: [], socialLinks: [],
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+        componentOrder: ["Hero"], heroStyle: "default",
+      },
+      featuredProperties: [],
+    })
+  ).rejects.toThrow(/Upgrade to Pro for unlimited profiles/);
+});
+
+test("createProfile does NOT reject the SAME at-limit free-plan user patching their existing profile (WITH id)", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "limit_user_patch" });
+  const { ownerId, profileId } = await t.run(async (ctx) => {
+    const ownerId = await ctx.db.insert("users", {
+      email: "limit_patch@test.dev", clerkId: "limit_user_patch", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+    const profileId = await ctx.db.insert("profiles", {
+      ownerId,
+      name: "Existing Profile",
+      agentInfo: {
+        fullName: "Existing Person", title: "Agent", company: "Co",
+        phone: "0917", email: "existing_patch@test.dev", services: [], socialLinks: [],
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+        componentOrder: ["Hero"], heroStyle: "default",
+      },
+      featuredProperties: [],
+    });
+    return { ownerId, profileId };
+  });
+
+  // Same user, same at-limit account, but `id` IS supplied -> this is a
+  // patch of the existing profile, not a new one -> the count-check must
+  // stay open (complement of the reject test above).
+  const result = await asUser.mutation(api.profiles.createProfile, {
+    id: profileId,
+    clerkId: "limit_user_patch",
+    name: "Existing Profile (edited)",
+    agentInfo: {
+      fullName: "Existing Person", title: "Agent", company: "Co",
+      phone: "0917", email: "existing_patch@test.dev", services: [], socialLinks: [],
+    },
+    layoutConfig: {
+      themeId: "editorial",
+      colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
+      componentOrder: ["Hero"], heroStyle: "default",
+    },
+    featuredProperties: [],
+  });
+
+  expect(result.id).toBe(profileId);
+  const stillOne = await t.run(async (ctx) =>
+    ctx.db.query("profiles").withIndex("by_owner", (q) => q.eq("ownerId", ownerId)).collect()
+  );
+  expect(stillOne.length).toBe(1);
+});

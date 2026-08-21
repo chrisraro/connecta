@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
 import { internal, api } from "./_generated/api";
+import { DEFAULT_DIGITAL_CARD } from "../lib/digitalCard";
 
 /**
  * Seeds a user carrying the deprecated `credits` field — the orphan data that
@@ -326,6 +327,122 @@ test("deleteMyAccount cannot delete another user's account or data", async () =>
   await expect(
     t.mutation(api.users.deleteMyAccount, {})
   ).rejects.toThrow(/unauthorized/i);
+});
+
+/**
+ * updateOnboarding's first-completion profile auto-create — Task 12.
+ *
+ * Before this fix, `updateOnboarding` inserted the user's first profile
+ * directly (`ctx.db.insert("profiles", …)`), bypassing `createProfile`
+ * entirely. That produced a profile with no `slug` (public link stuck at
+ * `/p/<convexId>`) and no `digitalCard`, structurally different from any
+ * profile the builder itself creates. These tests pin the fix: onboarding
+ * completion must go through the same write path (`insertNewProfile`,
+ * shared with `createProfile`) and produce an identically-shaped row.
+ */
+test("updateOnboarding's first-completion profile gets a real slug, not the blank onboarding default", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "onboard_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "onboard@test.dev", clerkId: "onboard_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const result = await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "onboard_user",
+    profileCategory: "individual",
+    email: "onboard@test.dev",
+    fullName: "Onboard Person",
+    title: "Designer",
+    phone: "0917",
+    services: [],
+    markCompleted: true,
+  });
+
+  expect(result.profileId).not.toBeNull();
+  const profile = await t.run(async (ctx) => ctx.db.get(result.profileId!));
+  expect(profile?.slug).toBeDefined();
+  expect(profile?.slug).toMatch(/^onboard-person/);
+});
+
+test("updateOnboarding's first-completion profile gets a seeded digitalCard, matching a builder-created profile's shape", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "onboard_card_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "onboard_card@test.dev", clerkId: "onboard_card_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const result = await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "onboard_card_user",
+    profileCategory: "business",
+    email: "onboard_card@test.dev",
+    fullName: "Card Person",
+    title: "Owner",
+    phone: "0917",
+    services: [],
+    markCompleted: true,
+  });
+
+  const profile = await t.run(async (ctx) => ctx.db.get(result.profileId!));
+  expect(profile?.digitalCard).toEqual(DEFAULT_DIGITAL_CARD);
+});
+
+test("updateOnboarding does not consume a second profile slot when the builder later edits the same profile", async () => {
+  const t = convexTest(schema);
+  const asUser = t.withIdentity({ subject: "chain_user" });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("users", {
+      email: "chain@test.dev", clerkId: "chain_user", role: "agent",
+      subscriptionStatus: "active", plan: "free",
+    });
+  });
+
+  const { profileId } = await asUser.mutation(api.users.updateOnboarding, {
+    clerkId: "chain_user",
+    profileCategory: "individual",
+    email: "chain@test.dev",
+    fullName: "Chain Person",
+    title: "Freelancer",
+    phone: "0917",
+    services: [],
+    markCompleted: true,
+  });
+  expect(profileId).not.toBeNull();
+
+  // The builder's first Save after onboarding — exactly what used to throw
+  // "Upgrade to Pro for unlimited profiles." when the auto-created profile
+  // (uncounted-for by the caller) plus this "new" one exceeded the free
+  // plan's maxProfiles: 1. Passing the real id (Task 12 fix #2) makes this
+  // an EDIT, not a second create, so it must succeed.
+  await expect(
+    asUser.mutation(api.profiles.createProfile, {
+      id: profileId! as never,
+      clerkId: "chain_user",
+      name: "Chain Person's Profile",
+      profileType: "individual",
+      agentInfo: {
+        fullName: "Chain Person", title: "Freelancer", company: "",
+        phone: "0917", email: "chain@test.dev", services: [], socialLinks: [],
+      },
+      layoutConfig: {
+        themeId: "editorial",
+        colorPalette: { primary: "#705838", background: "#fbf9f4", text: "#1b1c19" },
+        componentOrder: ["Hero", "About", "Experience", "Education", "Projects", "Contact"],
+        heroStyle: "default",
+      },
+      featuredProperties: [],
+    })
+  ).resolves.not.toThrow();
+
+  const allProfiles = await t.run(async (ctx) =>
+    ctx.db.query("profiles").collect()
+  );
+  expect(allProfiles.length).toBe(1);
 });
 
 test("deleteMyAccount rejects an unauthenticated caller", async () => {
