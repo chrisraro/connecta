@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { ProductItem } from "@/types/profile";
+import { formatCatalogPrice } from "@/lib/payment";
 import { TemplateTheme } from "../theme";
 import { SectionShell } from "./SectionShell";
 
@@ -20,7 +21,7 @@ export function ProductsSection({ products, theme, index }: { products: ProductI
                 <p className="text-sm mt-1 leading-relaxed" style={{ color: theme.colors.inkSoft }}>{product.description}</p>
               </div>
               {product.price !== undefined && (
-                <span className="text-lg font-medium ml-4 shrink-0" style={{ color: theme.colors.accent }}>${product.price}</span>
+                <span className="text-lg font-medium ml-4 shrink-0" style={{ color: theme.colors.accent }}>{formatCatalogPrice(product.price)}</span>
               )}
             </div>
             {product.link && (
