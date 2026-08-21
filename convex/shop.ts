@@ -30,6 +30,13 @@ export const getCategories = query({
 // PRODUCT QUERIES
 // ==========================================
 
+// getProducts is the public storefront listing: no admin cap constant is
+// visible to it, and there's no pagination UI on the storefront today. Cap
+// the published catalog fetched per request instead of collecting every
+// published product ever created; in-memory search/sort/filter below still
+// runs over this capped set (unchanged from before).
+const PUBLISHED_PRODUCTS_CAP = 200;
+
 // Get published products with optional filters
 export const getProducts = query({
   args: {
@@ -47,10 +54,19 @@ export const getProducts = query({
     )),
   },
   handler: async (ctx, args) => {
+    // .order("desc") is load-bearing: within the by_published index, rows
+    // are otherwise iterated in ascending _creationTime (insertion) order,
+    // so an unordered .take(CAP) would return the SAME oldest CAP published
+    // products forever once the catalog exceeds the cap — a newly published
+    // product could never enter the result set no matter what `sortBy` the
+    // caller later applies. Descending order makes the cap drop the
+    // oldest/least-useful rows instead; the in-memory sort below (including
+    // the "newest" default) is unaffected since it re-sorts this set.
     let products = await ctx.db
       .query("products")
       .withIndex("by_published", (q) => q.eq("isPublished", true))
-      .collect();
+      .order("desc")
+      .take(PUBLISHED_PRODUCTS_CAP);
 
     // Filter by category
     if (args.categoryId) {

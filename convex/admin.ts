@@ -313,24 +313,57 @@ export const getAuditLogs = query({
   },
 });
 
+// Admin list views (getAllUsers, getCards) feed an admin table UI, not an
+// export/report — a hard cap keeps a single page load bounded regardless of
+// how large `users`/`cards` grow, instead of collecting the whole table on
+// every visit.
+const ADMIN_USER_LIST_CAP = 500;
+const ADMIN_CARDS_LIST_CAP = 500;
+
 export const getAllUsers = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
-    const users = await ctx.db.query("users").collect();
-    const allOrders = await ctx.db.query("orders").collect();
+    // .order("desc") is load-bearing: a full-table scan defaults to
+    // ascending insertion order, so an unordered .take(CAP) would return the
+    // SAME oldest CAP rows forever once the table exceeds the cap — newly
+    // created users could never enter the list. Descending order makes the
+    // cap drop the least-useful (oldest) rows instead.
+    const users = await ctx.db.query("users").order("desc").take(ADMIN_USER_LIST_CAP);
+
+    // Batch the admin-grant lookup: one collect instead of one indexed
+    // `by_user` query per user (was the N+1 half of this function). The
+    // admins table is bounded by how many grants have ever been issued, not
+    // by user count, so collecting it in full stays cheap regardless of how
+    // large `users` grows. Keep the EARLIEST admins row per user to exactly
+    // reproduce `.withIndex("by_user", eq(userId)).first()`'s tie-break
+    // (ascending _creationTime within a userId) — including the edge case
+    // where a user's very first (now-revoked) grant still wins over a later
+    // active regrant.
+    const allAdminGrants = await ctx.db.query("admins").collect();
+    const adminGrantByUser = new Map<Id<"users">, Doc<"admins">>();
+    for (const grant of allAdminGrants) {
+      if (!adminGrantByUser.has(grant.userId)) {
+        adminGrantByUser.set(grant.userId, grant);
+      }
+    }
+
     const usersWithRoles = await Promise.all(
       users.map(async (user) => {
-        const adminGrant = await ctx.db
-          .query("admins")
-          .withIndex("by_user", (q) => q.eq("userId", user._id))
-          .first();
+        const adminGrant = adminGrantByUser.get(user._id) ?? null;
         const isUserAdmin = !!adminGrant && !adminGrant.revokedAt;
+        // cards/orders stay per-user indexed lookups (by_owner / by_user) —
+        // each reads exactly the rows that belong to this user, unlike a
+        // full-table collect. Replaces the old full `orders` collect +
+        // in-JS filter, which read every order in the system on every call.
         const cards = await ctx.db
           .query("cards")
           .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
           .collect();
-        const orderCount = allOrders.filter((o) => o.userId === user._id).length;
+        const orders = await ctx.db
+          .query("orders")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
         return {
           id: user._id,
           clerkId: user.clerkId,
@@ -343,7 +376,7 @@ export const getAllUsers = query({
           planExpiresAt: user.planExpiresAt ?? null,
           onboardingCompleted: user.onboardingCompleted || false,
           cardCount: cards.length,
-          orderCount,
+          orderCount: orders.length,
           createdAt: user._creationTime,
         };
       })
@@ -356,7 +389,9 @@ export const getCards = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
-    const cards = await ctx.db.query("cards").collect();
+    // See the matching comment on getAllUsers above: without .order("desc")
+    // the cap would freeze on the same oldest CAP cards forever.
+    const cards = await ctx.db.query("cards").order("desc").take(ADMIN_CARDS_LIST_CAP);
     return cards;
   },
 });

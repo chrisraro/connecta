@@ -36,7 +36,7 @@ export default function AdminAnalyticsPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold text-foreground">Sales Analytics</h1>
-                <p className="text-muted-foreground mt-1">Revenue, orders, and top products (PHP)</p>
+                <p className="text-muted-foreground mt-1">Revenue, orders, and top products from the last 90 days (PHP)</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -47,7 +47,7 @@ export default function AdminAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-emerald-500">{formatPHP(analytics.totalRevenue)}</div>
-                        <p className="text-xs text-muted-foreground mt-1">From paid orders</p>
+                        <p className="text-xs text-muted-foreground mt-1">From paid orders, last 90 days</p>
                     </CardContent>
                 </Card>
 
@@ -58,7 +58,7 @@ export default function AdminAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{analytics.paidOrderCount}</div>
-                        <p className="text-xs text-muted-foreground mt-1">of {analytics.totalOrders} total</p>
+                        <p className="text-xs text-muted-foreground mt-1">of {analytics.totalOrders} in the last 90 days</p>
                     </CardContent>
                 </Card>
 
@@ -69,7 +69,7 @@ export default function AdminAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{formatPHP(analytics.averageOrderValue)}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Per paid order</p>
+                        <p className="text-xs text-muted-foreground mt-1">Per paid order, last 90 days</p>
                     </CardContent>
                 </Card>
 
@@ -80,7 +80,7 @@ export default function AdminAnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-green-500">{analytics.statusCounts.delivered}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Completed orders</p>
+                        <p className="text-xs text-muted-foreground mt-1">Completed orders, last 90 days</p>
                     </CardContent>
                 </Card>
             </div>
@@ -129,7 +129,7 @@ export default function AdminAnalyticsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="bg-card border-border text-foreground">
                     <CardHeader>
-                        <CardTitle className="text-lg">Orders by Status</CardTitle>
+                        <CardTitle className="text-lg">Orders by Status (Last 90 Days)</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {Object.entries(analytics.statusCounts).map(([status, count]) => (
@@ -143,7 +143,7 @@ export default function AdminAnalyticsPage() {
 
                 <Card className="bg-card border-border text-foreground">
                     <CardHeader>
-                        <CardTitle className="text-lg">Top Products (by quantity)</CardTitle>
+                        <CardTitle className="text-lg">Top Products (by quantity, last 90 days)</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {analytics.topProducts.length === 0 ? (

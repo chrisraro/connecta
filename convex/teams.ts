@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, MutationCtx } from "./_generated/server";
+import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { requireUser } from "./authz";
 import { effectivePlan } from "./billing";
@@ -15,6 +15,26 @@ import { effectivePlan } from "./billing";
 
 function isBusiness(user: Doc<"users">): boolean {
   return effectivePlan(user) === "business";
+}
+
+// Members = users whose teamId points at this team (schema.ts's `by_teamId`
+// index), PLUS the owner as a fallback for the rare case their own teamId
+// hasn't been backfilled yet (legacy data / pre-billing-flow teams). Used by
+// every function below that needs "who's on this team" instead of scanning
+// the whole users table.
+async function loadTeamMembers(
+  ctx: QueryCtx | MutationCtx,
+  team: Doc<"teams">
+): Promise<Doc<"users">[]> {
+  const members = await ctx.db
+    .query("users")
+    .withIndex("by_teamId", (q) => q.eq("teamId", team._id))
+    .collect();
+  if (members.some((u) => u._id === team.ownerId)) {
+    return members;
+  }
+  const owner = await ctx.db.get(team.ownerId);
+  return owner ? [...members, owner] : members;
 }
 
 // Load the owner's team, asserting the caller owns it and is on business plan.
@@ -71,10 +91,8 @@ export const getMyTeam = query({
 
     const isOwner = team.ownerId === user._id;
 
-    // Members = users whose teamId points at this team.
-    const allUsers = await ctx.db.query("users").collect();
-    const members = allUsers
-      .filter((u) => u.teamId === team!._id || u._id === team!.ownerId)
+    const teamMembers = await loadTeamMembers(ctx, team);
+    const members = teamMembers
       .map((u) => ({
         userId: u._id,
         name: u.name ?? null,
@@ -126,10 +144,12 @@ export const inviteMember = mutation({
     }
 
     // Seat check: current members + pending invites must stay within seats.
+    const memberCount = (await loadTeamMembers(ctx, team)).length;
+    // "Already a member / existing account?" below matches by email across
+    // the WHOLE users table (not just this team) — there's no by_email index
+    // on users, so that lookup stays a full collect; only the seat-count
+    // above (which schema.ts's by_teamId index exists for) is converted.
     const allUsers = await ctx.db.query("users").collect();
-    const memberCount = allUsers.filter(
-      (u) => u.teamId === team._id || u._id === team.ownerId
-    ).length;
     const invites = await ctx.db
       .query("teamInvites")
       .withIndex("by_team", (q) => q.eq("teamId", team._id))
@@ -271,10 +291,7 @@ export async function acceptInvitesForCurrentUser(
   for (const invite of pending) {
     const team = await ctx.db.get(invite.teamId);
     if (!team) continue;
-    const allUsers = await ctx.db.query("users").collect();
-    const memberCount = allUsers.filter(
-      (u) => u.teamId === team._id || u._id === team.ownerId
-    ).length;
+    const memberCount = (await loadTeamMembers(ctx, team)).length;
     if (memberCount >= team.seats) continue;
     await ctx.db.patch(user._id, { teamId: team._id });
     await ctx.db.patch(invite._id, { status: "accepted" });
@@ -304,10 +321,8 @@ export const getTeamLeads = query({
       .first();
     if (!team) return [];
 
-    const allUsers = await ctx.db.query("users").collect();
-    const memberIds = allUsers
-      .filter((u) => u.teamId === team._id || u._id === team.ownerId)
-      .map((u) => ({ id: u._id, name: u.name ?? u.email }));
+    const teamMembers = await loadTeamMembers(ctx, team);
+    const memberIds = teamMembers.map((u) => ({ id: u._id, name: u.name ?? u.email }));
 
     const out: Array<{
       _id: Id<"leads">;
