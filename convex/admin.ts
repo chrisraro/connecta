@@ -453,21 +453,38 @@ export const deleteCards = mutation({
   handler: async (ctx, args) => {
     const adminUser = await requireAdmin(ctx, args.clerkId);
     let deletedCount = 0;
+    // Physical cards are never deleted while "active" — same policy
+    // enforced in users.ts/maintenance.ts's user-purge paths, which return
+    // an active/linked card to inventory instead of hard-deleting it. An
+    // admin destroying a real customer's paired card row here would
+    // silently orphan their NFC tag/QR with no way to recover the link.
+    // "inventory" (never issued) and "lost" (already reported gone, not
+    // physically recoverable through the normal unpair flow) are the only
+    // statuses safe to hard-delete.
+    const skippedIds: Id<"cards">[] = [];
     for (const cardId of args.cardIds) {
       const card = await ctx.db.get(cardId);
-      if (card) {
-        await ctx.db.delete(cardId);
-        deletedCount++;
+      if (!card) continue;
+      if (card.status === "active") {
+        skippedIds.push(cardId);
+        continue;
       }
+      await ctx.db.delete(cardId);
+      deletedCount++;
     }
     await logAudit(ctx, {
       userId: adminUser._id,
       action: "delete",
       resourceType: "card",
       resourceId: args.cardIds.join(","),
-      changes: { deletedCount, requested: args.cardIds.length },
+      changes: { deletedCount, requested: args.cardIds.length, skipped: skippedIds.length },
     });
-    return { success: true, deletedCount, totalRequested: args.cardIds.length };
+    return {
+      success: true,
+      deletedCount,
+      totalRequested: args.cardIds.length,
+      skippedIds,
+    };
   },
 });
 

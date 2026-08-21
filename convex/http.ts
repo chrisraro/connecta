@@ -192,11 +192,36 @@ const payrexWebhook = httpAction(async (ctx, request) => {
             ? (metaB.order_number as string)
             : undefined);
 
-        await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
-          orderNumber,
-          paymentIntentId,
-          paymentStatus: isPaid ? "paid" : "failed",
-        });
+        const result = await ctx.runMutation(
+          internal.checkout.internalConfirmOrderPayment,
+          {
+            orderNumber,
+            paymentIntentId,
+            paymentStatus: isPaid ? "paid" : "failed",
+          }
+        );
+
+        if (!result.success) {
+          // A handled business-rule rejection (order not found, insufficient
+          // stock, discount limit reached) — not a thrown error, so the
+          // try/catch below never sees it. Without this, the ack below still
+          // returns 200 and the failure is completely invisible. For
+          // "order_not_found" specifically this is the closest thing to a
+          // genuinely lost payment: PayRex captured money for an order
+          // number that never existed, was deleted, or doesn't match — a
+          // permanent mismatch, not a transient one, so retrying the same
+          // event for PayRex's full retry window wouldn't fix it. We still
+          // ack 200 (no retry storm for a mismatch that will never resolve
+          // itself) but log once so it can be triaged. No payload dump, no
+          // PII — only the ids/reason needed to correlate against PayRex's
+          // dashboard and this app's orders table.
+          console.error("payrex webhook: order payment confirmation did not apply", {
+            eventId: event.id ?? "unknown",
+            eventType: event.type ?? "unknown",
+            orderNumber: orderNumber ?? "unknown",
+            reason: result.reason,
+          });
+        }
       }
     } catch {
       // No payload dump, no PII — only the event id/type identify which

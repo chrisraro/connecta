@@ -155,6 +155,117 @@ test("payrex webhook handler returns 500 and logs only the event id/type (no pay
   errorSpy.mockRestore();
 });
 
+test("payrex webhook handler acks 200 but logs event context when the order can't be resolved (money captured, order missing/mismatched)", async () => {
+  vi.stubEnv("PAYREX_WEBHOOK_SECRET", WEBHOOK_SECRET);
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  const t = convexTest(schema);
+  const freshSeconds = String(Math.floor(Date.now() / 1000));
+
+  // A paid event whose order_number doesn't match any real order (deleted
+  // order, or a metadata/order-number mismatch) and whose data.id also
+  // doesn't match any order's paymentIntentId — internalConfirmOrderPayment
+  // returns { success: false, reason: "order_not_found" } (a handled
+  // result, not a thrown error), which the outer try/catch never sees.
+  const res = await postSignedWebhook(
+    t,
+    {
+      id: "evt_lost_payment",
+      type: "checkout_session.payment.paid",
+      data: {
+        id: "cs_no_match",
+        attributes: { metadata: { order_number: "TF-2026-DOESNOTEXIST" } },
+      },
+    },
+    freshSeconds
+  );
+
+  // This is a permanent mismatch, not a transient failure — retrying the
+  // same event for PayRex's full retry window won't fix it, so we still
+  // ack 200 (no retry storm) but must not do so silently.
+  expect(res.status).toBe(200);
+  expect(errorSpy).toHaveBeenCalledTimes(1);
+  const [, meta] = errorSpy.mock.calls[0];
+  expect(meta).toMatchObject({
+    eventId: "evt_lost_payment",
+    eventType: "checkout_session.payment.paid",
+    orderNumber: "TF-2026-DOESNOTEXIST",
+    reason: "order_not_found",
+  });
+  // No payload dump, no PII: only ids/reason, nothing else from the event.
+  const loggedText = errorSpy.mock.calls[0].map((a) => JSON.stringify(a)).join(" ");
+  expect(loggedText).not.toContain("cs_no_match");
+
+  errorSpy.mockRestore();
+});
+
+test("payrex webhook handler does not log when the order payment confirmation applies successfully", async () => {
+  vi.stubEnv("PAYREX_WEBHOOK_SECRET", WEBHOOK_SECRET);
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  const t = convexTest(schema);
+
+  const productId = await t.run(async (ctx) =>
+    ctx.db.insert("products", {
+      name: "Limited Card",
+      slug: "limited-card-nolog",
+      basePrice: 50000,
+      sku: "LC-NOLOG-1",
+      inventory: 5,
+      lowStockThreshold: 1,
+      trackInventory: true,
+      isPublished: true,
+      isFeatured: false,
+      tags: [],
+      images: [],
+      primaryImageIndex: 0,
+      shippingRequired: true,
+    })
+  );
+  const orderNumber = "TF-2026-NOLOGOK";
+  await t.run(async (ctx) =>
+    ctx.db.insert("orders", {
+      orderNumber,
+      status: "pending",
+      items: [
+        { productId, productName: "Limited Card", quantity: 1, unitPrice: 50000, total: 50000 },
+      ],
+      subtotal: 50000,
+      tax: 0,
+      shipping: 0,
+      total: 50000,
+      currency: "PHP",
+      paymentProvider: "payrex",
+      paymentStatus: "pending",
+      guestEmail: "buyer@test.dev",
+      shippingAddress: {
+        fullName: "Buyer",
+        addressLine1: "1 St",
+        city: "Manila",
+        postalCode: "1000",
+        country: "PH",
+        phone: "0917",
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    })
+  );
+
+  const freshSeconds = String(Math.floor(Date.now() / 1000));
+  const res = await postSignedWebhook(
+    t,
+    {
+      id: "evt_ok",
+      type: "checkout_session.payment.paid",
+      data: { id: "cs_ok", attributes: { metadata: { order_number: orderNumber } } },
+    },
+    freshSeconds
+  );
+
+  expect(res.status).toBe(200);
+  expect(errorSpy).not.toHaveBeenCalled();
+
+  errorSpy.mockRestore();
+});
+
 test("payrex webhook handler is idempotent: a PayRex retry of the same paid event only applies once", async () => {
   vi.stubEnv("PAYREX_WEBHOOK_SECRET", WEBHOOK_SECRET);
   const t = convexTest(schema);

@@ -37,6 +37,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Id } from "@/convex/_generated/dataModel";
 import { SIGMATAP } from "@/lib/brand";
 import { classifyNfcWriteError, withRetries, isDuplicateRegistrationError } from "@/lib/nfc";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 // Define NDEF types since they might not be in the global scope
 interface NDEFReadingEvent extends Event {
@@ -306,14 +308,25 @@ export default function AdminFactoryPage() {
 
         setIsDeleting(true);
         try {
-            await deleteCards({
+            const result = await deleteCards({
                 clerkId: user!.id!,
                 cardIds: Array.from(selectedIds)
             });
+            // deleteCards refuses to delete "active" cards (physical cards
+            // are never destroyed while paired to a customer — only
+            // returned to inventory) and reports them back as skippedIds
+            // instead of throwing, so a partial delete needs its own
+            // messaging rather than falling into the catch block.
+            if (result.skippedIds.length > 0) {
+                toast.warning(
+                    `Deleted ${result.deletedCount} card(s). Skipped ${result.skippedIds.length} active card(s) — unpair them first.`
+                );
+            } else {
+                toast.success(`Deleted ${result.deletedCount} card(s).`);
+            }
             setSelectedIds(new Set());
         } catch (err) {
-            const error = err as Error;
-            alert(error.message || "Failed to delete cards.");
+            toast.error(toUserMessage(err));
         } finally {
             setIsDeleting(false);
         }
@@ -328,16 +341,20 @@ export default function AdminFactoryPage() {
 
         setIsDeleting(true);
         try {
-            await deleteCards({
+            const result = await deleteCards({
                 clerkId: user!.id!,
                 cardIds: [id]
             });
-            const newSet = new Set(selectedIds);
-            newSet.delete(id);
-            setSelectedIds(newSet);
+            if (result.skippedIds.length > 0) {
+                toast.warning("This card is active and cannot be deleted — unpair it first.");
+            } else {
+                toast.success("Card deleted.");
+                const newSet = new Set(selectedIds);
+                newSet.delete(id);
+                setSelectedIds(newSet);
+            }
         } catch (err) {
-            const error = err as Error;
-            alert(error.message || "Failed to delete card.");
+            toast.error(toUserMessage(err));
         } finally {
             setIsDeleting(false);
         }
