@@ -54,7 +54,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { profilePath } from "@/lib/profileUrl";
 import { deriveBuilderProfileFields, getBlocksForProfileType } from "@/lib/profileSections";
 import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
-import { resolveBuilderEntryRedirect } from "@/lib/builderEntry";
+import { resolveBuilderEntryRedirect, shouldPrefillCreateForm } from "@/lib/builderEntry";
 import { DEFAULT_DIGITAL_CARD } from "@/lib/digitalCard";
 
 // --- Types & Defaults ---
@@ -690,17 +690,18 @@ function BuilderContent() {
                 }
                 setHasPrefilled(true);
                 captureSnapshot();
-            } else if (!editingId && entryRedirectId === null && onboarding?.data) {
-                // entryRedirectId === null (not just falsy) means the
-                // limit-check above has actually resolved AND decided no
-                // redirect is needed — as opposed to `undefined` (still
-                // loading) or a profile id (a redirect to `?id=` is about
-                // to happen). Prefilling from the onboarding snapshot while
-                // a redirect is still pending would flip `hasPrefilled` to
-                // true from the WRONG data source, and the guard above
-                // would then permanently skip the real
+            } else if (
+                // See shouldPrefillCreateForm's doc comment (lib/builderEntry.ts)
+                // for the full tri-state race this guards against: prefilling
+                // from the onboarding snapshot while a redirect is still
+                // pending (entryRedirectId undefined or a profile id) would
+                // flip `hasPrefilled` to true from the WRONG data source, and
+                // the guard above would then permanently skip the real
                 // `editingId && existingProfile` branch once the redirect
-                // actually lands — see entryRedirectId's comment above.
+                // actually lands.
+                shouldPrefillCreateForm(editingId, entryRedirectId, hasPrefilled, Boolean(onboarding?.data))
+                && onboarding?.data
+            ) {
                 const data = onboarding.data;
                 const type = (data.profileCategory || "individual") as ProfileType;
                 setProfileType(type);

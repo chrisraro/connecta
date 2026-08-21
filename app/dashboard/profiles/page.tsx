@@ -30,6 +30,7 @@ import { useState } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { profilePath } from "@/lib/profileUrl";
+import { newestProfileId } from "@/lib/builderEntry";
 
 export default function ProfilesPage() {
     const { user } = useUser();
@@ -46,8 +47,14 @@ export default function ProfilesPage() {
     // "Create" affordances that are always visible (unlike the empty-state
     // CTA below, which only renders when profiles.length === 0 and is
     // therefore already safe) must link to editing an existing profile
-    // once one exists, not the bare no-id builder — see Task 12.
-    const createProfileHref = profiles.length > 0 ? `/dashboard/builder?id=${profiles[0]._id}` : "/dashboard/builder";
+    // once one exists, not the bare no-id builder — see Task 12. Picks the
+    // NEWEST profile (matching resolveBuilderEntryRedirect and
+    // app/dashboard/page.tsx's "Edit profile" quick action, both of which
+    // reuse the same `newestProfileId` helper) so a multi-profile account
+    // isn't routed to a different profile depending on which nav link was
+    // clicked — see Task 12 review.
+    const editProfileId = profiles.length > 0 ? newestProfileId(profiles) : null;
+    const createProfileHref = editProfileId ? `/dashboard/builder?id=${editProfileId}` : "/dashboard/builder";
 
     const handleDelete = async (profileId: string) => {
         if (!user?.id) return;

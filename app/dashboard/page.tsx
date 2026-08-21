@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { profilePath } from "@/lib/profileUrl";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
+import { newestProfileId } from "@/lib/builderEntry";
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -26,6 +27,12 @@ export default function DashboardPage() {
     const cards = useQuery(api.users.getMyCards, clerkId ? { clerkId } : "skip");
 
     const primaryProfile = profiles && profiles.length > 0 ? profiles[0] : null;
+    // The profile the "Edit profile" quick action below routes to, kept
+    // consistent with resolveBuilderEntryRedirect's own newest-by-
+    // _creationTime pick (Task 12 review) — a multi-profile account (e.g.
+    // downgraded from Pro) must not be routed to a different profile
+    // depending on which nav link was clicked.
+    const editProfileId = profiles ? newestProfileId(profiles) : null;
     const activeCardProfile = selectedModalProfile || primaryProfile;
 
     const isOnboardingComplete = onboarding?.completed ?? true;
@@ -186,7 +193,7 @@ export default function DashboardPage() {
                     an at-limit free-plan user into a "Create Profile" form
                     that could never save (Task 12). */}
                 <QuickAction
-                    href={profiles && profiles.length > 0 ? `/dashboard/builder?id=${profiles[0]._id}` : "/dashboard/builder"}
+                    href={editProfileId ? `/dashboard/builder?id=${editProfileId}` : "/dashboard/builder"}
                     icon={Edit2}
                     label="Edit profile"
                 />
