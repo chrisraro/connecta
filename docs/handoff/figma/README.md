@@ -21,6 +21,12 @@ folder, but as real editable FigJam shapes and connectors — not flat vectors:
   plan gate.
 - **Lead Capture and Shop** — including the offline queue and the
   `PAYMENTS_ENABLED` placeholder branch.
+- **Sitemap: Public, Auth and Shop** — the public, auth, shop and API routes.
+- **Sitemap: Dashboard and Admin** — the authenticated routes on both sides of
+  the admin split.
+
+The sitemap is two diagrams rather than one because 42 routes in a single
+flowchart stops being readable; the split is by authentication boundary.
 
 ### What is in the Design file
 
@@ -56,10 +62,18 @@ small fix once the plan is upgraded:
 
 ### Still to do in Figma
 
-- The **39-route sitemap** diagram (source: `sitemap.svg` in this folder).
-- A **cover page** for the Design file.
+- A **cover page** for the Design file. The script is written and syntax-checked
+  — [`cover-page.plugin.js`](./cover-page.plugin.js) — it just needs one
+  `use_figma` call, or a paste into Figma's plugin console. It renders the title
+  block, a contents summary, the plan constraints and the two known defects.
 - Visual QA of `Button Icon`, `Badge`, `Input` and `Card` — they were created
-  and their structure confirmed, but the rate limit hit before screenshots.
+  and their structure confirmed by the API's return values, but the tool-call
+  cap hit before screenshots. Button, both foundations sections and all six
+  FigJam diagrams *were* visually verified.
+
+The Starter tool-call cap refills slowly — roughly a couple of calls at a
+time — so these are best finished in a session where the budget isn't already
+spent, or after upgrading.
 
 ### Two real defects these files surfaced
 
