@@ -1,8 +1,81 @@
-# Importing the design artifacts into Figma
+# The design artifacts in Figma
 
-This folder has no `.fig` file. That is deliberate, and there is now a
-better route than a file anyway — read both sections below before going
-looking for one.
+**These now exist as live, native Figma files.** The SVG/JSON/HTML exports in
+this folder are kept as the offline, version-controlled source of truth — but
+you almost certainly want the links first.
+
+| What | Link |
+|---|---|
+| Diagrams (FigJam) | https://www.figma.com/board/CEvkzFpxmc8WELLBQMH2ZN |
+| Design system (Figma Design) | https://www.figma.com/design/jIGbCViAJZt2FFye1KkF7C |
+
+### What is in the FigJam board
+
+Four diagrams, generated from the same Mermaid sources as the SVGs in this
+folder, but as real editable FigJam shapes and connectors — not flat vectors:
+
+- **SigmaTap — Data Model (ERD)** — all 20 tables, keys, cardinality, and the
+  dead fields called out inline so nobody builds on them.
+- **NFC Card Lifecycle** — admin factory → tap/scan → claim → activation.
+- **Auth, Onboarding and First Profile** — including the admin split and the
+  plan gate.
+- **Lead Capture and Shop** — including the offline queue and the
+  `PAYMENTS_ENABLED` placeholder branch.
+
+### What is in the Design file
+
+Built directly from `app/globals.css`, `components/templates/theme.ts`,
+`lib/fonts.ts` and `components/ui/**` — not from a screenshot, and not from
+this folder's `tokens.json`.
+
+- **113 variables** across 5 collections — Theme (64), Template (18),
+  Typography (18), Brand (7), Radius (6). Every one has an explicit scope and
+  Dev Mode code syntax (`var(--background)`, `TEMPLATE_THEMES.editorial.colors.ink`).
+- **17 styles** — 15 text styles (font size and family bound to variables) and
+  2 effect styles for `--e-raised` / `--e-overlay`.
+- **Foundations page** — 89 colour swatches whose fills are *bound to the
+  variables*, so the board cannot drift from the tokens; the type ramp in all
+  six real families; radius and elevation samples.
+- **Components page** — `Button` (24 variants), `Button Icon` (24),
+  `Badge` (4), `Input` (5 states), `Card`. Fills, strokes and radii are
+  variable-bound rather than hardcoded.
+
+### Known limits of the current Figma files
+
+These are Figma **Starter plan** limits, not modelling decisions. Each is a
+small fix once the plan is upgraded:
+
+1. **No light/dark mode switcher.** Multi-mode variable collections are a paid
+   feature, so `light/` and `dark/` are variable *groups* inside one
+   collection rather than two modes. All 64 values are present and correct.
+   Upgrading lets you add a second mode and move the `dark/` values into it.
+2. **3 pages maximum.** One-page-per-component is not possible, so components
+   share the Components page.
+3. **MCP tool-call cap.** The build hit the Starter rate limit before the
+   sitemap diagram and the cover page were finished. See "Still to do" below.
+
+### Still to do in Figma
+
+- The **39-route sitemap** diagram (source: `sitemap.svg` in this folder).
+- A **cover page** for the Design file.
+- Visual QA of `Button Icon`, `Badge`, `Input` and `Card` — they were created
+  and their structure confirmed, but the rate limit hit before screenshots.
+
+### Two real defects these files surfaced
+
+Building the components from source rather than from a screenshot exposed two
+things worth fixing in code:
+
+1. **`Badge` variant `destructive` is unreadable in light mode.**
+   `components/ui/badge.tsx` puts `text-destructive-foreground` on
+   `bg-destructive`, and `app/globals.css:75-76` set both to the *same*
+   `oklch(0.577 0.245 27.325)`. Red text on a red pill. The Figma component
+   reproduces it faithfully rather than quietly correcting it.
+2. **`Card` does not use the elevation tokens.** This design system defines
+   exactly two elevations (`--e-raised`, `--e-overlay`), but
+   `components/ui/card.tsx` uses Tailwind's `shadow-sm`. The shadcn primitives
+   predate the elevation rule and were never migrated.
+
 
 ## Why there's no `.fig` file
 

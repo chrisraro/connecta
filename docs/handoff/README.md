@@ -35,9 +35,17 @@ in `lib/payments.ts:18`) pending a gateway decision — see `07-ROADMAP.md`.
 | [`06-DESIGN-SYSTEM.md`](./06-DESIGN-SYSTEM.md) | The colour system (oklch, light/dark/system theming), typography (6 font families, per-template mechanism), spacing, the `--r-*`/`--e-*` scales, the component inventory, and three hard-won layout rules previously-shipped bugs taught this codebase |
 | [`07-ROADMAP.md`](./07-ROADMAP.md) | Honest current state: what shipped in the 21-task production-audit wave, what's explicitly deferred (the payment gateway), carried-but-unfixed findings, and outstanding actions only a human/dashboard can do |
 
-Companion Figma import artifacts live under `docs/handoff/figma/` — see
-[`figma/README.md`](./figma/README.md) for how to pull them into an actual
-Figma canvas.
+The design artifacts also exist as **live Figma files**:
+
+| What | Link |
+|---|---|
+| Diagrams — ERD + 3 user flows (FigJam) | https://www.figma.com/board/CEvkzFpxmc8WELLBQMH2ZN |
+| Design system — 113 variables, 17 styles, 5 components | https://www.figma.com/design/jIGbCViAJZt2FFye1KkF7C |
+
+The offline exports under `docs/handoff/figma/` remain the version-controlled
+source of truth. See [`figma/README.md`](./figma/README.md) for what is in each
+Figma file, the Starter-plan limits currently affecting them, and how to import
+the offline artifacts if you would rather rebuild from those.
 
 ## First day: 30 minutes, start to running
 
