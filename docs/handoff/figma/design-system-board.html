@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>SigmaTap Design System Board</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /* Self-contained: no external requests, no CDN fonts. Every font named in
+     this file is loaded by the real app via next/font/google (see
+     lib/fonts.ts) — NOT loaded here. System-stack fallbacks stand in so this
+     page renders correctly offline and imports cleanly via html.to.design;
+     the actual typeface is named in the caption under every sample. */
+  :root {
+    --page-bg: #f7f5f1;
+    --panel-bg: #ffffff;
+    --ink: #16140f;
+    --ink-soft: #6b6558;
+    --line: #e4ded3;
+    --mono-stack: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+    --sans-stack: -apple-system, "Segoe UI", Arial, sans-serif;
+    --serif-stack: Georgia, "Times New Roman", serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--page-bg);
+    color: var(--ink);
+    font-family: var(--sans-stack);
+  }
+  body {
+    padding: 48px 5vw 96px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  header.doc-header {
+    margin-bottom: 56px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 28px;
+  }
+  header.doc-header h1 {
+    font-size: 34px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  header.doc-header p {
+    margin: 4px 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+    max-width: 74ch;
+    line-height: 1.6;
+  }
+  header.doc-header code {
+    font-family: var(--mono-stack);
+    background: #eeeae1;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  section.block {
+    margin-bottom: 64px;
+  }
+  section.block > h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-soft);
+    margin: 0 0 4px;
+    font-weight: 700;
+  }
+  section.block > h3.block-title {
+    font-size: 24px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  section.block > p.block-note {
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    line-height: 1.6;
+    max-width: 82ch;
+    margin: 0 0 24px;
+  }
+  section.block > p.block-note code {
+    font-family: var(--mono-stack);
+    font-size: 12.5px;
+    background: #eeeae1;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  /* ---- Color swatches ---- */
+  .theme-group {
+    margin-bottom: 32px;
+  }
+  .theme-group > h4 {
+    font-size: 15px;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .theme-group > h4 .tag {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--ink);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 12px;
+  }
+  .swatch {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--panel-bg);
+  }
+  .swatch .chip {
+    height: 64px;
+    width: 100%;
+  }
+  .swatch .meta {
+    padding: 8px 10px 10px;
+  }
+  .swatch .meta .name {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0 0 2px;
+  }
+  .swatch .meta .hex {
+    font-family: var(--mono-stack);
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .swatch .meta .oklch {
+    font-family: var(--mono-stack);
+    font-size: 10px;
+    color: var(--ink-soft);
+    margin: 2px 0 0;
+    word-break: break-word;
+  }
+
+  /* ---- Type scale ---- */
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-row .label {
+    width: 96px;
+    flex-shrink: 0;
+    font-family: var(--mono-stack);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .type-row .sample {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.15;
+  }
+
+  /* ---- Font family cards ---- */
+  .font-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .font-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel-bg);
+    padding: 18px;
+  }
+  .font-card .sample {
+    font-size: 26px;
+    margin: 4px 0 10px;
+  }
+  .font-card .var {
+    font-family: var(--mono-stack);
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .font-card .role {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-top: 6px;
+  }
+
+  /* ---- Radii ---- */
+  .radius-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .radius-item { text-align: center; }
+  .radius-item .box {
+    width: 96px;
+    height: 96px;
+    background: #cfae7f;
+    border: 1px solid var(--line);
+  }
+  .radius-item .cap {
+    margin-top: 8px;
+    font-family: var(--mono-stack);
+    font-size: 12px;
+  }
+
+  /* ---- Elevations ---- */
+  .elevation-row {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    padding: 20px 0;
+  }
+  .elevation-item { text-align: center; }
+  .elevation-item .box {
+    width: 160px;
+    height: 100px;
+    background: #ffffff;
+    border-radius: 12px;
+  }
+  .elevation-item .cap {
+    margin-top: 14px;
+    font-family: var(--mono-stack);
+    font-size: 12px;
+  }
+
+  /* ---- Component inventory ---- */
+  .inv-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 28px;
+  }
+  .inv-col h5 {
+    font-size: 13px;
+    margin: 0 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+  }
+  .inv-col ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .inv-col li {
+    font-family: var(--mono-stack);
+    font-size: 12.5px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .inv-col li .n { color: var(--ink); }
+  .inv-col li .d { color: var(--ink-soft); font-family: var(--sans-stack); font-size: 11.5px; }
+
+  table.templates {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.templates th, table.templates td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.templates th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+  }
+  .swatch-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  footer.doc-footer {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+    color: var(--ink-soft);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>SigmaTap — Design System Board</h1>
+  <p>Generated from source, not from a rendered page. All values below trace to <code>app/globals.css</code>, <code>lib/fonts.ts</code>, <code>components/templates/theme.ts</code> and <code>components/ui/**</code> as of commit <code>4116d50</code>. Full citations and the hard-won layout rules live in <code>docs/handoff/06-DESIGN-SYSTEM.md</code>.</p>
+  <p>Import: drag this file onto a Figma canvas via the <strong>html.to.design</strong> plugin to get editable layers, or open it directly in any browser — it has no external requests.</p>
+</header>
+
+<section class="block" id="color-system">
+  <h2>01 — Colour</h2>
+  <h3 class="block-title">Colour system</h3>
+  <p class="block-note">Every value is <code>oklch()</code> in source (<code>app/globals.css</code>). Hex shown here was computed with the CSS Color 4 OKLab conversion matrices and cross-checked against known references (white/black/mid-grey round-trips exactly) — see <code>docs/handoff/06-DESIGN-SYSTEM.md</code> for the verification method. The oklch string is kept under each swatch so nothing is lost.</p>
+
+  <div class="theme-group">
+    <h4><span class="tag">Light</span> app/globals.css :root, lines 60–113</h4>
+    <div class="swatch-grid" id="swatches-light"></div>
+  </div>
+
+  <div class="theme-group">
+    <h4><span class="tag">Dark</span> app/globals.css .dark, lines 116–159 — this is also the app-wide DEFAULT (ThemeProvider defaultTheme="dark", app/layout.tsx:55–60)</h4>
+    <div class="swatch-grid" id="swatches-dark"></div>
+  </div>
+
+  <div class="theme-group">
+    <h4><span class="tag">Brand</span> app/globals.css :root, lines 103–113 — theme-invariant (not redefined in .dark)</h4>
+    <div class="swatch-grid" id="swatches-brand"></div>
+  </div>
+</section>
+
+<section class="block" id="template-colors">
+  <h3 class="block-title">Profile template palettes</h3>
+  <p class="block-note">Already hex in source (<code>components/templates/theme.ts</code>) — independent of the app-shell light/dark theme above. A public profile is not affected by the visitor's OS colour-scheme preference.</p>
+  <table class="templates">
+    <thead>
+      <tr><th>Template</th><th>Background</th><th>Surface</th><th>Ink</th><th>Ink soft</th><th>Accent</th><th>Line</th></tr>
+    </thead>
+    <tbody id="template-table-body"></tbody>
+  </table>
+</section>
+
+<section class="block" id="type-scale">
+  <h2>02 — Type</h2>
+  <h3 class="block-title">Type scale</h3>
+  <p class="block-note"><strong>UNVERIFIED as a SigmaTap-authored scale:</strong> <code>app/globals.css</code> has no <code>--text-*</code> overrides and there is no <code>tailwind.config.*</code> in this repo, so every <code>text-*</code> utility resolves to Tailwind v4's shipped default (confirmed by reading <code>node_modules/tailwindcss/theme.css:299-324</code> directly). Rendered here in the system sans fallback, not the real Geist face.</p>
+  <div id="type-scale-rows"></div>
+</section>
+
+<section class="block" id="fonts">
+  <h3 class="block-title">Font-per-template mechanism</h3>
+  <p class="block-note">6 families total, all loaded via <code>next/font/google</code> in <code>lib/fonts.ts</code> and applied to <code>&lt;html&gt;</code> as CSS variables (never per-component). 3 are app-wide; 3 are per-template display faces only used inside a rendered profile. No CDN fonts are loaded on THIS page — the sample text below renders in a system fallback; the real typeface name is in each card's caption.</p>
+  <div class="font-grid" id="font-cards"></div>
+</section>
+
+<section class="block" id="radii">
+  <h2>03 — Radii</h2>
+  <h3 class="block-title">Enforced radius scale</h3>
+  <p class="block-note">"SigmaTap — enforced scales. Exactly three radii, exactly two elevations." — <code>app/globals.css:96</code>. Consumed as <code>rounded-[var(--r-sm|md|lg)]</code>, e.g. <code>components/templates/sections/HeroSection.tsx:74,96,218</code>. Distinct from Tailwind/shadcn's own <code>--radius-sm..4xl</code> scale (<code>app/globals.css:48-54</code>), which is also present and used by generic UI primitives.</p>
+  <div class="radius-row" id="radius-row"></div>
+</section>
+
+<section class="block" id="elevations">
+  <h2>04 — Elevation</h2>
+  <h3 class="block-title">Enforced elevation scale</h3>
+  <p class="block-note"><code>app/globals.css:100-101</code>. Applied as <code>style={{ boxShadow: 'var(--e-raised)' }}</code>, e.g. <code>components/templates/sections/HeroSection.tsx:97</code>.</p>
+  <div class="elevation-row" id="elevation-row"></div>
+</section>
+
+<section class="block" id="inventory">
+  <h2>05 — Components</h2>
+  <h3 class="block-title">Component inventory</h3>
+  <p class="block-note">27 files under <code>components/ui/</code> (shadcn "new-york" style + SigmaTap-authored primitives, see <code>components.json</code>), 15 files under <code>components/templates/sections/</code> (14 renderable sections + the shared <code>SectionShell</code> frame), and 3 profile templates in <code>components/templates/theme.ts</code>.</p>
+  <div class="inv-columns">
+    <div class="inv-col">
+      <h5>components/ui — 27</h5>
+      <ul id="ui-list"></ul>
+    </div>
+    <div class="inv-col">
+      <h5>components/templates/sections — 15</h5>
+      <ul id="sections-list"></ul>
+    </div>
+  </div>
+</section>
+
+<footer class="doc-footer">
+  SigmaTap handoff package — docs/handoff/figma/design-system-board.html — derived from source at commit 4116d50. Self-contained: no external network requests.
+</footer>
+
+<script>
+  // All data is authored inline (source-derived, see 06-DESIGN-SYSTEM.md for
+  // citations) and rendered into static markup on load. No network calls,
+  // no external dependencies — this keeps the page renderable both as a
+  // plain file and as an html.to.design import.
+
+  const lightColors = [
+    ["background","#fbfaf7","oklch(0.985 0.004 80)"],
+    ["foreground","#100d09","oklch(0.16 0.01 80)"],
+    ["card","#ffffff","oklch(1 0 0)"],
+    ["popover","#ffffff","oklch(1 0 0)"],
+    ["primary","#14110c","oklch(0.18 0.012 80)"],
+    ["primary-foreground","#fbfaf7","oklch(0.985 0.004 80)"],
+    ["secondary","#f4f1ed","oklch(0.96 0.006 80)"],
+    ["muted","#f4f1ed","oklch(0.96 0.006 80)"],
+    ["muted-foreground","#58554f","oklch(0.45 0.01 80)"],
+    ["accent","#f4f1ed","oklch(0.96 0.006 80)"],
+    ["destructive","#e7000b","oklch(0.577 0.245 27.325)"],
+    ["border","#ebe7e2","oklch(0.93 0.008 80)"],
+    ["input","#ebe7e2","oklch(0.93 0.008 80)"],
+    ["ring","#696257","oklch(0.5 0.02 80)"],
+    ["chart-1","#f54900","oklch(0.646 0.222 41.116)"],
+    ["chart-2","#009689","oklch(0.6 0.118 184.704)"],
+    ["chart-3","#104e64","oklch(0.398 0.07 227.392)"],
+    ["chart-4","#ffb900","oklch(0.828 0.189 84.429)"],
+    ["chart-5","#fe9a00","oklch(0.769 0.188 70.08)"],
+    ["sidebar","#fbfaf7","oklch(0.985 0.004 80)"],
+    ["sidebar-primary","#14110c","oklch(0.18 0.012 80)"],
+    ["sidebar-accent","#f4f1ed","oklch(0.96 0.006 80)"],
+    ["sidebar-border","#ebe7e2","oklch(0.93 0.008 80)"],
+  ];
+  const darkColors = [
+    ["background","#030609","oklch(0.12 0.01 240)"],
+    ["foreground","#f0f6fa","oklch(0.97 0.008 240)"],
+    ["card","#070c10","oklch(0.15 0.012 240)"],
+    ["popover","#070c10","oklch(0.15 0.012 240)"],
+    ["primary","#f0f6fa","oklch(0.97 0.008 240)"],
+    ["primary-foreground","#030609","oklch(0.12 0.01 240)"],
+    ["secondary","#0d1216","oklch(0.18 0.012 240)"],
+    ["muted","#0d1216","oklch(0.18 0.012 240)"],
+    ["muted-foreground","#8a9095","oklch(0.65 0.01 240)"],
+    ["accent","#0d1216","oklch(0.18 0.012 240)"],
+    ["destructive","#82181a","oklch(0.396 0.141 25.723)"],
+    ["border","#161b20","oklch(0.22 0.012 240)"],
+    ["input","#161b20","oklch(0.22 0.012 240)"],
+    ["ring","#495762","oklch(0.45 0.025 240)"],
+    ["chart-1","#1447e6","oklch(0.488 0.243 264.376)"],
+    ["chart-2","#00bc7d","oklch(0.696 0.17 162.48)"],
+    ["chart-3","#fe9a00","oklch(0.769 0.188 70.08)"],
+    ["chart-4","#ad46ff","oklch(0.627 0.265 303.9) — gamut-clipped"],
+    ["chart-5","#ff2056","oklch(0.645 0.246 16.439) — gamut-clipped"],
+    ["sidebar","#05080b","oklch(0.13 0.01 240)"],
+    ["sidebar-primary","#495762","oklch(0.45 0.025 240)"],
+    ["sidebar-accent","#0d1216","oklch(0.18 0.012 240)"],
+    ["sidebar-border","#161b20","oklch(0.22 0.012 240)"],
+  ];
+  const brandColors = [
+    ["sigmatap-seal","#8d2c27","oklch(0.44 0.132 27)"],
+    ["sigmatap-seal-hover","#7f1817","oklch(0.39 0.138 27)"],
+    ["sigmatap-ink","#201916","oklch(0.22 0.012 40)"],
+    ["sigmatap-ink-soft","#5f5652","oklch(0.46 0.014 40)"],
+    ["sigmatap-paper","#fcfaf8","oklch(0.985 0.003 60)"],
+    ["sigmatap-surface","#f5f1ef","oklch(0.96 0.005 55)"],
+    ["sigmatap-line","#e3ddd9","oklch(0.9 0.008 50)"],
+  ];
+
+  function renderSwatches(containerId, items) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = items.map(([name, hex, oklch]) => `
+      <div class="swatch">
+        <div class="chip" style="background:${hex}"></div>
+        <div class="meta">
+          <p class="name">${name}</p>
+          <p class="hex">${hex}</p>
+          <p class="oklch">${oklch}</p>
+        </div>
+      </div>
+    `).join("");
+  }
+  renderSwatches("swatches-light", lightColors);
+  renderSwatches("swatches-dark", darkColors);
+  renderSwatches("swatches-brand", brandColors);
+
+  const templates = [
+    ["Editorial","#fbf9f4","#f3f0e9","#1f1d18","#5b564c","#7a5c34","#ddd6c9"],
+    ["Kinetic","#0e0e10","#17171a","#f2f0ee","#a9a5a0","#c9a227","#2a2a2f"],
+    ["Architectural","#f7f8f9","#ffffff","#16191c","#535a61","#1f3d5c","#dfe3e7"],
+  ];
+  document.getElementById("template-table-body").innerHTML = templates.map(row => {
+    const [name, ...colors] = row;
+    return `<tr><td><strong>${name}</strong></td>${colors.map(c =>
+      `<td><span class="swatch-dot" style="background:${c}"></span>${c}</td>`
+    ).join("")}</tr>`;
+  }).join("");
+
+  const typeScale = [
+    ["text-xs","0.75rem / 12px"],
+    ["text-sm","0.875rem / 14px"],
+    ["text-base","1rem / 16px"],
+    ["text-lg","1.125rem / 18px"],
+    ["text-xl","1.25rem / 20px"],
+    ["text-2xl","1.5rem / 24px"],
+    ["text-3xl","1.875rem / 30px"],
+    ["text-4xl","2.25rem / 36px"],
+    ["text-5xl","3rem / 48px"],
+    ["text-6xl","3.75rem / 60px"],
+  ];
+  document.getElementById("type-scale-rows").innerHTML = typeScale.map(([cls, size]) => `
+    <div class="type-row">
+      <div class="label">${cls}<br/>${size}</div>
+      <div class="sample" style="font-size:${size.split(' / ')[1]}">SigmaTap Aa 123</div>
+    </div>
+  `).join("");
+
+  const fonts = [
+    ["--font-display", "Fraunces", "'Times New Roman', serif", "app/page.tsx, components/legal/LegalPage.tsx — marketing + legal headings only, never inside a rendered profile."],
+    ["--font-body", "Geist", "Arial, sans-serif", "App-wide UI/body face (mapped to Tailwind --font-sans) AND the body face inside all 3 profile templates."],
+    ["--font-mono", "Geist Mono", "ui-monospace, monospace", "Order numbers, SKUs, audit/codes across admin + shop tables."],
+    ["--font-tpl-editorial", "Newsreader", "Georgia, serif", "Editorial template's display face (also reused app-wide as Tailwind --font-serif)."],
+    ["--font-tpl-kinetic", "Space Grotesk", "Arial, sans-serif", "Kinetic template's display face."],
+    ["--font-tpl-architectural", "Manrope", "Arial, sans-serif", "Architectural template's display face."],
+  ];
+  document.getElementById("font-cards").innerHTML = fonts.map(([cssVar, real, fallbackStack, role]) => `
+    <div class="font-card">
+      <div class="var">${cssVar}</div>
+      <div class="sample" style="font-family:${fallbackStack}">Aa Sigma 123</div>
+      <div><strong>${real}</strong> <span style="color:var(--ink-soft);font-size:12px">(shown here in a system fallback — not loaded on this page)</span></div>
+      <div class="role">${role}</div>
+    </div>
+  `).join("");
+
+  const radii = [["--r-sm","6px"], ["--r-md","12px"], ["--r-lg","20px"]];
+  document.getElementById("radius-row").innerHTML = radii.map(([name, px]) => `
+    <div class="radius-item">
+      <div class="box" style="border-radius:${px}"></div>
+      <div class="cap">${name}<br/>${px}</div>
+    </div>
+  `).join("");
+
+  const elevations = [
+    ["--e-raised", "0 1px 2px rgba(28,22,20,0.04), 0 2px 8px rgba(28,22,20,0.06)"],
+    ["--e-overlay", "0 4px 12px rgba(28,22,20,0.08), 0 12px 32px rgba(28,22,20,0.12)"],
+  ];
+  document.getElementById("elevation-row").innerHTML = elevations.map(([name, shadow]) => `
+    <div class="elevation-item">
+      <div class="box" style="box-shadow:${shadow}"></div>
+      <div class="cap">${name}</div>
+    </div>
+  `).join("");
+
+  const uiComponents = [
+    ["alert.tsx", "Alert, AlertTitle, AlertDescription (cva variants: default, destructive)"],
+    ["alert-dialog.tsx", "Radix alert-dialog wrapper"],
+    ["badge.tsx", "Badge (cva variants: default, secondary, destructive, outline)"],
+    ["button.tsx", "Button (cva variants: default/destructive/outline/secondary/ghost/link × 8 sizes)"],
+    ["card.tsx", "Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, CardFooter"],
+    ["checkbox.tsx", "Checkbox (Radix)"],
+    ["DigitalCardModal.tsx", "SigmaTap-authored: digital business-card share modal"],
+    ["digital-business-card.tsx", "SigmaTap-authored: vCard/share card renderer"],
+    ["dialog.tsx", "Radix dialog wrapper"],
+    ["dropdown-menu.tsx", "Radix dropdown-menu wrapper"],
+    ["empty-state.tsx", "SigmaTap-authored: empty-state placeholder"],
+    ["form.tsx", "FormItem, FormLabel, FormControl, FormDescription, FormMessage"],
+    ["image-uploader.tsx", "SigmaTap-authored: image upload control"],
+    ["input.tsx", "Input"],
+    ["label.tsx", "Label"],
+    ["notifications-popover.tsx", "SigmaTap-authored: notification bell popover"],
+    ["reveal.tsx", "SigmaTap-authored: scroll-reveal wrapper"],
+    ["select.tsx", "Radix select wrapper"],
+    ["sheet.tsx", "Sheet, SheetTrigger, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription"],
+    ["skeleton.tsx", "Skeleton loading placeholder"],
+    ["switch.tsx", "Switch (Radix)"],
+    ["table.tsx", "Radix-adjacent table primitives"],
+    ["tabs.tsx", "Tabs (cva variants: default, line)"],
+    ["textarea.tsx", "Textarea"],
+    ["theme-toggle.tsx", "SigmaTap-authored: light/dark toggle w/ View Transitions circular wipe"],
+    ["tilt-card.tsx", "SigmaTap-authored: pointer-tilt card effect"],
+    ["toaster.tsx", "sonner Toaster wrapper"],
+  ];
+  document.getElementById("ui-list").innerHTML = uiComponents.map(([n, d]) =>
+    `<li><span class="n">${n}</span><br/><span class="d">${d}</span></li>`
+  ).join("");
+
+  const sectionComponents = [
+    ["SectionShell.tsx", "Shared frame: background alternation, measure/rhythm, rule style, heading placement"],
+    ["HeroSection.tsx", "3 branches: editorial-stack, full-bleed-portrait, structured-split"],
+    ["AboutSection.tsx", ""],
+    ["CertificationSection.tsx", "Never shows a numbered heading tag"],
+    ["ContactSection.tsx", ""],
+    ["EducationSection.tsx", ""],
+    ["ExperienceSection.tsx", ""],
+    ["GallerySection.tsx", ""],
+    ["InlineProjectsSection.tsx", "Sibling of ProjectsSection under the same Projects componentOrder id"],
+    ["ProductsSection.tsx", ""],
+    ["ProjectsSection.tsx", "Sibling of InlineProjectsSection"],
+    ["PropertyListingsSection.tsx", ""],
+    ["ServicesSection.tsx", ""],
+    ["TechStackSection.tsx", ""],
+    ["TestimonialsSection.tsx", ""],
+  ];
+  document.getElementById("sections-list").innerHTML = sectionComponents.map(([n, d]) =>
+    `<li><span class="n">${n}</span>${d ? `<br/><span class="d">${d}</span>` : ""}</li>`
+  ).join("");
+</script>
+
+</body>
+</html>
