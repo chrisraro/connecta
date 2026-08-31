@@ -8,7 +8,7 @@ import { UserButton } from "@clerk/nextjs";
 import { LayoutDashboard, Users, CreditCard, Settings, SmartphoneNfc, MessageSquare, Sparkles, Zap, LayoutTemplate, ChevronRight, Loader2, Building2, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { Button } from "@/components/ui/button";
 import { NotificationsPopover } from "@/components/ui/notifications-popover";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -204,7 +204,7 @@ function DashboardSidebar({ className }: { className?: string }) {
     return (
         <aside className={`flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground ${className}`}>
             <div className="p-6 flex items-center gap-2 font-bold text-xl">
-                <SigmaTapMark className="h-6 w-6 text-primary" />
+                <ConnectaMark className="h-6 w-6 text-primary" />
                 <span className="text-foreground font-black tracking-tight">{CONNECTA.name}</span>
             </div>
             <nav className="flex-1 px-4 space-y-2 py-4">

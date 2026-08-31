@@ -16,7 +16,7 @@ import {
   Check,
 } from "lucide-react";
 import Link from "next/link";
-import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Reveal } from "@/components/ui/reveal";
 import { CONNECTA } from "@/lib/brand";
@@ -36,7 +36,7 @@ export default function LandingPage() {
             href="/"
             className="flex min-h-11 shrink-0 items-center gap-2 text-xl font-bold tracking-tight"
           >
-            <SigmaTapMark className="h-6 w-6 text-primary" />
+            <ConnectaMark className="h-6 w-6 text-primary" />
             <span>{CONNECTA.name}</span>
           </Link>
 
@@ -349,7 +349,7 @@ export default function LandingPage() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Link href="/" className="flex min-h-11 items-center gap-2 text-lg font-bold tracking-tight">
-                <SigmaTapMark className="h-5 w-5 text-primary" />
+                <ConnectaMark className="h-5 w-5 text-primary" />
                 <span>{CONNECTA.name}</span>
               </Link>
               <p className="mt-3 max-w-xs text-sm text-muted-foreground">

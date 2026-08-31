@@ -7,8 +7,8 @@ brand and product, without touching the running app.
 marketing/
 ├── README.md              this file
 ├── brand/
-│   ├── sigmatap-mark.svg   the monogram (copy of public/brand/sigmatap-mark.svg)
-│   ├── sigmatap-icon.svg   the seal / app icon (copy of public/brand/sigmatap-icon.svg)
+│   ├── connecta-mark.svg   the monogram (copy of public/brand/connecta-mark.svg)
+│   ├── connecta-icon.svg   the seal / app icon (copy of public/brand/connecta-icon.svg)
 │   └── brand-sheet.html    self-contained reference page — mark at multiple
 │                           sizes, on light + dark, the colour ramp with hex,
 │                           the type scale, correct/incorrect usage

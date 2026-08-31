@@ -10,7 +10,7 @@ import { ProfileData, ProfileType, DigitalCardConfig } from "@/types/profile";
 import { Loader2, SearchX, QrCode, Store, UserCheck } from "lucide-react";
 import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import Link from "next/link";
-import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { CONNECTA } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 
@@ -59,7 +59,7 @@ export function ProfileView({ lookup }: { lookup: { by: "id"; profileId: string 
                     href="/"
                     className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                    <SigmaTapMark className="h-4 w-4" />
+                    <ConnectaMark className="h-4 w-4" />
                     Go to {CONNECTA.name}
                 </Link>
             </div>

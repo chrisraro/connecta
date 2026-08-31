@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { CONNECTA } from "@/lib/brand";
 
 export default function AdminLayout({
@@ -106,7 +106,7 @@ export default function AdminLayout({
             {/* Mobile Header */}
             <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-background sticky top-0 z-40">
                 <div className="flex items-center gap-2 font-bold text-lg text-red-600">
-                    <SigmaTapMark className="h-5 w-5" />
+                    <ConnectaMark className="h-5 w-5" />
                     <span>{CONNECTA.name} Admin</span>
                 </div>
                 <Sheet>
@@ -127,7 +127,7 @@ export default function AdminLayout({
                         */}
                         <SheetHeader className="p-6 border-b border-border space-y-0">
                             <SheetTitle className="flex items-center gap-2 font-bold text-xl text-red-600">
-                                <SigmaTapMark className="h-5 w-5" />
+                                <ConnectaMark className="h-5 w-5" />
                                 <span>{CONNECTA.name} Admin</span>
                             </SheetTitle>
                         </SheetHeader>
@@ -200,7 +200,7 @@ export default function AdminLayout({
             {/* Admin Sidebar (Desktop) */}
             <aside className="w-64 bg-background border-r border-border hidden md:flex flex-col">
                 <div className="p-6 flex items-center gap-2 font-bold text-xl text-red-600">
-                    <SigmaTapMark className="h-5 w-5" />
+                    <ConnectaMark className="h-5 w-5" />
                     <span>{CONNECTA.name} Admin</span>
                 </div>
 

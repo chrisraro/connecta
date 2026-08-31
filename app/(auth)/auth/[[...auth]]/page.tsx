@@ -2,7 +2,7 @@ import { SignIn, SignUp } from '@clerk/nextjs';
 import { ArrowLeft, Loader2, Sparkles, ShieldCheck, Zap, SmartphoneNfc } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { SigmaTapMark } from '@/components/brand/SigmaTapMark';
+import { ConnectaMark } from '@/components/brand/ConnectaMark';
 import { CONNECTA } from '@/lib/brand';
 
 export default function AuthPage({
@@ -63,7 +63,7 @@ async function AuthContent({
         {/* Brand Branding & Header */}
         <div className="w-full text-center mb-6 space-y-3">
           <div className="inline-flex items-center justify-center p-3 rounded-3xl bg-primary/10 border border-primary/20 shadow-xl mb-1">
-            <SigmaTapMark className="w-10 h-10 text-primary" />
+            <ConnectaMark className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
             {CONNECTA.name}

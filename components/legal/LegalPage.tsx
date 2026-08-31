@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, TriangleAlert } from "lucide-react";
-import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
+import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { CONNECTA } from "@/lib/brand";
 
 /**
@@ -35,7 +35,7 @@ export function LegalPage({
             href="/"
             className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
           >
-            <SigmaTapMark className="h-5 w-5 text-primary" />
+            <ConnectaMark className="h-5 w-5 text-primary" />
             <span>{CONNECTA.name}</span>
           </Link>
           <Link

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Generates SigmaTap's raster brand assets from the source seal SVG
- * (public/brand/sigmatap-icon.svg) using sharp.
+ * Generates the product's raster brand assets from the source seal SVG
+ * (public/brand/connecta-icon.svg) using sharp.
  *
  * Why this exists: the seal SVG is the single source of truth for the mark
- * (see the comments in sigmatap-icon.svg / sigmatap-mark.svg for the design
+ * (see the comments in connecta-icon.svg / connecta-mark.svg for the design
  * rationale, including why the mark has no radiating NFC arcs). Every
  * raster derivative — favicon, PWA icons, apple-touch-icon, OG fallback —
  * must be regenerated from it rather than hand-exported, so a future
@@ -20,7 +20,7 @@ import sharp from "sharp";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 
-const ICON_SVG_PATH = path.join(root, "public/brand/sigmatap-icon.svg");
+const ICON_SVG_PATH = path.join(root, "public/brand/connecta-icon.svg");
 const iconSvg = readFileSync(ICON_SVG_PATH, "utf8");
 
 // The seal SVG's viewBox is 64x64 user units, and sharp/librsvg rasterizes
@@ -30,7 +30,7 @@ const iconSvg = readFileSync(ICON_SVG_PATH, "utf8");
 const SVG_NATIVE_SIZE = 64;
 const BASE_DENSITY = 72;
 
-const SEAL_RED = "#8a2f22"; // matches --sigmatap-seal in app/globals.css
+const SEAL_RED = "#8a2f22"; // matches --connecta-brand in app/globals.css
 const PAPER = "#fbfaf7"; // matches the light-theme --background
 const INK = "#030609"; // matches the dark-theme --background (app default theme)
 
@@ -115,7 +115,7 @@ function buildOgSvg() {
       font-weight="700"
       fill="#fbfaf7"
       letter-spacing="-2"
-    >SigmaTap</text>
+    >Connecta</text>
     <text
       x="${sealX + sealSize + 60}"
       y="380"
