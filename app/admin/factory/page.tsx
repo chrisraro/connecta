@@ -433,6 +433,7 @@ export default function AdminFactoryPage() {
                         onClick={isScanning ? stopScanning : startScanning}
                         disabled={!isScanning && !nfcHost}
                         title={!isScanning && !nfcHost ? "No NFC host configured — see the notice below." : undefined}
+                        aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
                         className={isScanning
                             ? "bg-muted text-foreground border border-border hover:bg-accent h-12 px-6 rounded-2xl"
                             : "bg-red-600 hover:bg-red-700 text-foreground font-bold h-12 px-8 rounded-2xl shadow-lg shadow-red-900/20"
@@ -454,7 +455,7 @@ export default function AdminFactoryPage() {
             </div>
 
             {!nfcHost && (
-                <Alert variant="destructive" className="mb-8">
+                <Alert variant="destructive" className="mb-8" id="nfc-host-warning">
                     <ShieldAlert className="h-4 w-4" />
                     <AlertTitle>Card writing is unavailable</AlertTitle>
                     <AlertDescription>
@@ -571,6 +572,7 @@ export default function AdminFactoryPage() {
                                     }}
                                     disabled={!nfcHost}
                                     title={!nfcHost ? "No NFC host configured — see the notice above." : undefined}
+                                    aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
                                     className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-foreground rounded-xl"
                                 >
                                     <Printer className="w-4 h-4 mr-2" />
@@ -665,6 +667,7 @@ export default function AdminFactoryPage() {
                                                             }}
                                                             disabled={!nfcHost}
                                                             title={nfcHost ? "Print Sticker" : "No NFC host configured — see the notice above."}
+                                                            aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
                                                         >
                                                             <Printer className="w-4 h-4" />
                                                         </Button>
