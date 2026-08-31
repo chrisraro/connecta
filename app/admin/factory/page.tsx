@@ -68,7 +68,7 @@ interface NDEFReadingEvent extends Event {
  * any of those cards are in circulation. See docs/rename-runbook.md.
  */
 const PRODUCTION_DOMAIN = (
-    process.env.NEXT_PUBLIC_APP_URL || "https://connecta.vercel.app"
+    process.env.NEXT_PUBLIC_APP_URL || "https://sigmatap.vercel.app"
 ).replace(/\/+$/, "");
 
 export default function AdminFactoryPage() {
