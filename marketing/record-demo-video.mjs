@@ -1,5 +1,5 @@
 /**
- * Records a product demo video of SigmaTap, end to end, driving the real app.
+ * Records a product demo video of Connecta, end to end, driving the real app.
  *
  *   node marketing/record-demo-video.mjs
  *
@@ -9,7 +9,7 @@
  *     so a ~200MB browser dep isn't forced on every install)
  *   - CLERK_SECRET_KEY in .env.local               (for the demo sign-in)
  *
- * Output: marketing/video/sigmatap-demo.webm  (VP8, 1440x900, ~52s)
+ * Output: marketing/video/connecta-demo.webm  (VP8, 1440x900, ~52s)
  *
  * FORMAT NOTE
  * -----------
@@ -19,9 +19,9 @@
  * Safari support is patchy and several ad platforms require mp4. To convert,
  * use a full ffmpeg install:
  *
- *   ffmpeg -i marketing/video/sigmatap-demo.webm \
+ *   ffmpeg -i marketing/video/connecta-demo.webm \
  *     -c:v libx264 -pix_fmt yuv420p -crf 23 -preset medium \
- *     -movflags +faststart marketing/video/sigmatap-demo.mp4
+ *     -movflags +faststart marketing/video/connecta-demo.mp4
  *
  * WHY IT USES A DEMO PERSONA
  * --------------------------
@@ -41,15 +41,15 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const BASE_URL = process.env.SIGMATAP_BASE_URL ?? "http://localhost:3000";
+const BASE_URL = process.env.CONNECTA_BASE_URL ?? "http://localhost:3000";
 const OUT_DIR = join(ROOT, "marketing", "video");
 const RAW_DIR = join(OUT_DIR, ".raw");
 const CHROME =
-  process.env.SIGMATAP_CHROME ??
+  process.env.CONNECTA_CHROME ??
   "C:/Users/raroc/AppData/Local/ms-playwright/chromium-1228/chrome-win64/chrome.exe";
 
 const VIEWPORT = { width: 1440, height: 900 };
-const DEMO_USER_EMAIL = "sigmatap-marketing-demo@sigmatap.example";
+const DEMO_USER_EMAIL = "connecta-marketing-demo@connecta.example";
 
 const env = readFileSync(join(ROOT, ".env.local"), "utf8");
 const CLERK_SECRET = env.match(/^CLERK_SECRET_KEY=(.+)$/m)?.[1]?.trim().replace(/^"|"$/g, "");
@@ -199,7 +199,7 @@ try {
 // Playwright names videos by an internal id; give it a stable filename.
 const raw = readdirSync(RAW_DIR).filter((f) => f.endsWith(".webm")).sort();
 if (raw.length === 0) throw new Error("no video produced");
-const final = join(OUT_DIR, "sigmatap-demo.webm");
+const final = join(OUT_DIR, "connecta-demo.webm");
 if (existsSync(final)) rmSync(final);
 renameSync(join(RAW_DIR, raw[0]), final);
 rmSync(RAW_DIR, { recursive: true, force: true });

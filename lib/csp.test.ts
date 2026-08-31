@@ -3,7 +3,7 @@ import nextConfig from "../next.config";
 
 // Regression test for the 2026-08-20 production outage: Clerk's bot-protection
 // widget (Cloudflare Turnstile, mounted into `#clerk-captcha`) never loaded on
-// https://sigmatap.vercel.app/auth?mode=signup because the CSP in
+// https://connecta.vercel.app/auth?mode=signup because the CSP in
 // next.config.ts didn't allow challenges.cloudflare.com anywhere. The widget
 // script was blocked by script-src, its iframe by frame-src, and its runtime
 // calls by connect-src — Clerk showed "The CAPTCHA failed to load..." and

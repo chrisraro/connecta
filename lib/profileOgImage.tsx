@@ -12,7 +12,7 @@ import { CONNECTA } from "@/lib/brand";
 
 export const ogImageSize = { width: 1200, height: 630 };
 export const ogImageContentType = "image/png";
-export const ogImageAlt = "SigmaTap profile";
+export const ogImageAlt = `${CONNECTA.name} profile`;
 
 // next/og's edge runtime can't load the next/font instances used elsewhere
 // in the app (Task 2's per-template fonts) — those are webpack-bundled

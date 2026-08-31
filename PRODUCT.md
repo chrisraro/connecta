@@ -8,11 +8,11 @@ product
 
 ## Users
 
-Two audiences: (1) creators/professionals/businesses who build and share a digital profile — a "tap" card / link-in-bio page (NFC card + QR + shareable profile URL) — to capture leads and showcase links, often as part of a team/organization; (2) SigmaTap's own admin/ops staff who run the back office (shop orders/inventory for physical NFC cards, plans/billing, user & team management, analytics, audit log).
+Two audiences: (1) creators/professionals/businesses who build and share a digital profile — a "tap" card / link-in-bio page (NFC card + QR + shareable profile URL) — to capture leads and showcase links, often as part of a team/organization; (2) Connecta's own admin/ops staff who run the back office (shop orders/inventory for physical NFC cards, plans/billing, user & team management, analytics, audit log).
 
 ## Product Purpose
 
-SigmaTap lets users build a shareable digital profile/business-card page (`/p`, `/t`), attach it to a physical NFC/QR card ordered through an in-app shop, capture leads from visitors, and manage everything through a dashboard (builder, cards, leads, team, billing, settings) on a subscription plan. An admin back office handles shop fulfillment, plan/discount management, user oversight, and platform analytics/audit trail. Payments run through PayRex; the old Stripe/PayPal webhook routes are retired and now return HTTP 410 for any lingering traffic.
+Connecta lets users build a shareable digital profile/business-card page (`/p`, `/t`), attach it to a physical NFC/QR card ordered through an in-app shop, capture leads from visitors, and manage everything through a dashboard (builder, cards, leads, team, billing, settings) on a subscription plan. An admin back office handles shop fulfillment, plan/discount management, user oversight, and platform analytics/audit trail. Payments run through PayRex; the old Stripe/PayPal webhook routes are retired and now return HTTP 410 for any lingering traffic.
 
 ## Brand Personality
 

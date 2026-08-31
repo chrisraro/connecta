@@ -471,26 +471,25 @@ Indexes: `by_user(userId)`, `by_checkoutId(payrexCheckoutId)`, `by_status(status
 
 ---
 
-## Frozen legacy values: `lib/storage-keys.ts`
+## localStorage keys: `lib/storage-keys.ts`
 
-Three of the four exported localStorage key constants deliberately retain their pre-rename literal
-string value, and must never be changed even though the product itself was renamed away from
-"tapfolio":
+Four exported localStorage key constants are shared across the guest-checkout flow (`CartContext`,
+`shop/cart`, `shop/checkout`, offline-leads) — the literal string must stay byte-identical everywhere
+it's used:
 
 ```
-GUEST_CART_ID_KEY = "tapfolio_guest_cart_id"   // lib/storage-keys.ts:14
-DISCOUNT_CODE_KEY = "tapfolio_discount_code"    // lib/storage-keys.ts:15
-OFFLINE_LEADS_KEY = "tapfolio_offline_leads"    // lib/storage-keys.ts:16
+GUEST_CART_ID_KEY = "connecta_guest_cart_id"    // lib/storage-keys.ts:9
+DISCOUNT_CODE_KEY = "connecta_discount_code"    // lib/storage-keys.ts:10
+OFFLINE_LEADS_KEY = "connecta_offline_leads"    // lib/storage-keys.ts:11
+LEAD_VISITOR_ID_KEY = "lead_visitor_id"         // lib/storage-keys.ts:14
 ```
 
-Per the file's own header comment (`lib/storage-keys.ts:1-13`): changing any of these three values would
-orphan whatever is already written under the old key in a real user's browser (an existing guest cart, an
-applied discount code, or queued offline leads) — a client-side migration would be required first, and
-none exists. `lib/brand.test.ts`'s `INFRA_EXCEPTIONS` allowlist exists specifically to let these three
-`export const` lines keep the retired brand-name literal without failing the repo's brand-consistency
-test. A fourth key, `LEAD_VISITOR_ID_KEY = "lead_visitor_id"` (`lib/storage-keys.ts:21`), was added later
-and deliberately does **not** carry the old brand prefix — it's a genuinely new key with no pre-rename
-history to preserve.
+The first three previously carried a `tapfolio_` prefix and were updated to `connecta_` as part of the
+Connecta rename (see `docs/rename-runbook.md`). No dual-read migration was implemented, so any client
+still holding a cart, discount code, or queued offline lead under the retired `tapfolio_*` key names will
+not be picked up after this change. `LEAD_VISITOR_ID_KEY` (per-browser identity for `createLead`'s
+visitor-scoped rate limit, `convex/leads.ts`) was added later and deliberately carries no brand prefix at
+all — it's unaffected by any brand rename.
 
 ## Cross-reference
 

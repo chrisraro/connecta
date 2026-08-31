@@ -37,7 +37,7 @@ const ALL_PRESENT = {
 
 function stubHealthyEnv() {
   vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "pk_test_abc");
-  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://sigmatap.example");
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://connecta.example");
   vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "https://nautical-tortoise-962.convex.cloud");
 }
 
@@ -85,7 +85,7 @@ test("GET /api/health returns 503 and no internal error detail when Convex is un
 
 test("GET /api/health returns 503 when NEXT_PUBLIC_CONVEX_URL itself is unset", async () => {
   vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "pk_test_abc");
-  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://sigmatap.example");
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://connecta.example");
   vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "");
 
   const { GET } = await import("./route");

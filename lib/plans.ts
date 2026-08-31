@@ -8,6 +8,7 @@
  */
 
 import { ConvexError } from "convex/values";
+import { CONNECTA } from "@/lib/brand";
 
 export type PlanId = "free" | "pro" | "business";
 
@@ -49,7 +50,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
       "2 basic templates",
       "Up to 100 leads",
       "NFC + QR sharing",
-      "SigmaTap branding",
+      `${CONNECTA.name} branding`,
     ],
   },
   pro: {

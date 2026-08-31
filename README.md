@@ -1,16 +1,13 @@
-# SigmaTap
+# Connecta
 
-SigmaTap is a premium NFC digital business card platform. A user taps a
-physical SigmaTap card (or lets someone scan its QR code) to instantly share
+Connecta is a premium NFC digital business card platform. A user taps a
+physical Connecta card (or lets someone scan its QR code) to instantly share
 a branded profile, and every visit can capture a lead straight into the
 user's dashboard.
 
-The name pairs the Greek sigma (Σ, "sum of") with the product's core action,
-the NFC tap: every tap sums into a shareable profile and a captured lead.
-Tagline: "Every tap counts." (Previously named "Herald," after the medieval
-herald's duties of announcing a person and designing their coat of arms,
-before that name collided with a live, unrelated company operating as
-tapfolio.me.)
+The name is the product's promise in one word: a tap turns a stranger into
+a connection. Tagline: "tap.connect.grow." (See `docs/rename-runbook.md`
+for the full naming history.)
 
 The app is a Next.js (App Router) frontend backed by Convex, with Clerk for
 auth, Resend for transactional email, and PayRex for Philippine payment

@@ -35,7 +35,7 @@ test("createLead throttles more than 5 leads per owner within a minute", async (
 /**
  * Task 17 / I2 — the rate limit used to be keyed ONLY on the profile owner
  * (`lead:${ownerId}`), so every anonymous visitor to one profile shared a
- * single 5/min bucket. SigmaTap's flagship scenario is NFC taps at a
+ * single 5/min bucket. Connecta's flagship scenario is NFC taps at a
  * networking event: ten different prospects tapping the same card and
  * submitting the contact form within a minute would throttle half of them,
  * even though each is a distinct, legitimate visitor who has never

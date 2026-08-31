@@ -169,3 +169,12 @@ inherited. Prefer deriving the value so the question cannot arise.
   valid, because those keys exist in real users' browsers and renaming them
   orphans in-flight carts and unsynced offline leads. Unlike the NFC host,
   this one does not depend on a fact that can silently expire.
+
+---
+
+## Name history
+
+Tapfolio → Herald → SigmaTap → Connecta. The first change was forced by a
+live, unrelated company operating as tapfolio.me. The second retired the
+medieval-herald metaphor. The third is the current name; the tagline moved
+from "Every tap counts." to "tap.connect.grow.".

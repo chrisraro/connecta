@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Id } from "@/convex/_generated/dataModel";
 import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import Link from "next/link";
+import { CONNECTA } from "@/lib/brand";
 
 interface Lead {
     _id: Id<"leads">;
@@ -121,7 +122,7 @@ export default function LeadsPage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `sigmatap-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `${CONNECTA.name.toLowerCase()}-leads-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };

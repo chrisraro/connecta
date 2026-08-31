@@ -9,6 +9,8 @@
  * via the settings table key `planPricing`.
  */
 
+import { CONNECTA } from "../lib/brand";
+
 export type PlanId = "free" | "pro" | "business";
 
 export interface PlanLimits {
@@ -24,7 +26,7 @@ export interface PlanLimits {
   allowedTemplateIds: string[] | null;
   /** Cap on how many stored leads are viewable. null = unlimited. */
   leadViewCap: number | null;
-  /** Whether "Powered by SigmaTap" branding shows on public profile. */
+  /** Whether "Powered by Connecta" branding shows on public profile. */
   showBranding: boolean;
   /** Whether lead CSV export is available. */
   canExportLeads: boolean;
@@ -64,7 +66,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
       "2 basic templates",
       "Up to 100 leads",
       "NFC + QR sharing",
-      "SigmaTap branding",
+      `${CONNECTA.name} branding`,
     ],
   },
   pro: {

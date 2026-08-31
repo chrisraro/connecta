@@ -12,7 +12,7 @@ const ALL_PRESENT: ConfigPresence = {
 
 const ALL_ENV = {
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_abc",
-  NEXT_PUBLIC_APP_URL: "https://sigmatap.example",
+  NEXT_PUBLIC_APP_URL: "https://connecta.example",
   NEXT_PUBLIC_CONVEX_URL: "https://nautical-tortoise-962.convex.cloud",
 };
 
