@@ -35,7 +35,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Id } from "@/convex/_generated/dataModel";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 import { classifyNfcWriteError, withRetries, isDuplicateRegistrationError } from "@/lib/nfc";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
@@ -671,7 +671,7 @@ export default function AdminFactoryPage() {
                             className="bg-white p-4 rounded-lg flex flex-col items-center justify-center shadow-2xl"
                             style={{ width: '200px', height: '200px' }}
                         >
-                            <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">{SIGMATAP.name}</div>
+                            <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">{CONNECTA.name}</div>
 
                             <QRCodeSVG
                                 value={`${PRODUCTION_DOMAIN}/t/${selectedCard?.uuid || ""}`}

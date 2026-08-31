@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
 import { TEMPLATE_IDS, TemplateId } from "@/components/templates/theme";
 import { buildDemoProfile } from "@/components/marketing/demoProfile";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 
 /**
  * Internal-only route: renders the full, unscaled public-profile page for
@@ -23,7 +23,7 @@ export function generateStaticParams() {
 }
 
 export const metadata: Metadata = {
-  title: `${SIGMATAP.name} — template preview`,
+  title: `${CONNECTA.name} — template preview`,
   robots: { index: false, follow: false },
 };
 

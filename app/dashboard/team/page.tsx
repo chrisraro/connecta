@@ -28,7 +28,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Building2, Loader2, UserPlus, Trash2, X, Save, Crown } from "lucide-react";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
@@ -182,7 +182,7 @@ export default function TeamPage() {
                                 </Button>
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                Existing {SIGMATAP.name}{" "}users join instantly. Others join when they sign in
+                                Existing {CONNECTA.name}{" "}users join instantly. Others join when they sign in
                                 with that email.
                             </p>
                         </div>

@@ -3,7 +3,7 @@ import { ArrowLeft, Loader2, Sparkles, ShieldCheck, Zap, SmartphoneNfc } from 'l
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { SigmaTapMark } from '@/components/brand/SigmaTapMark';
-import { SIGMATAP } from '@/lib/brand';
+import { CONNECTA } from '@/lib/brand';
 
 export default function AuthPage({
   searchParams,
@@ -66,7 +66,7 @@ async function AuthContent({
             <SigmaTapMark className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-            {SIGMATAP.name}
+            {CONNECTA.name}
           </h1>
           <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto leading-relaxed">
             Elevate your digital business card, manage leads CRM &amp; share via NFC instantly.

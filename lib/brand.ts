@@ -1,18 +1,17 @@
 /**
- * SigmaTap brand constants and contrast utilities.
+ * Connecta brand constants and contrast utilities.
  *
- * The name pairs the Greek sigma (Σ, "sum of") with the product's core
- * action, the NFC tap: every tap sums into a shareable profile and a
- * captured lead. (Previously "Herald", named for the medieval herald's two
- * duties — announcing a person, designing their coat of arms — before that
- * name collided with a live, unrelated company operating as tapfolio.me.)
+ * The name is the product's promise in one word: a tap turns a stranger into
+ * a connection. Every user-facing surface reads the name from CONNECTA below
+ * rather than hardcoding it — lib/brand.test.ts fails the build the day a
+ * bare string literal reappears in app/** or components/**.
  */
 
 // No domain is owned yet — the product currently runs on a *.vercel.app
 // deployment, with a .ph domain planned but not purchased. This literal is
 // only a last-resort fallback for local/dev environments that never set
 // NEXT_PUBLIC_APP_URL; it must never be treated as a live, reachable host.
-const FALLBACK_DOMAIN = "sigmatap.example";
+const FALLBACK_DOMAIN = "connecta.example";
 
 /** Bare host (no protocol/path) derived from a NEXT_PUBLIC_APP_URL-shaped value. */
 function domainFromAppUrl(raw: string | undefined): string | undefined {
@@ -27,7 +26,7 @@ function domainFromAppUrl(raw: string | undefined): string | undefined {
 }
 
 /**
- * Builds the SIGMATAP brand constant from env, defaulting to the literals
+ * Builds the CONNECTA brand constant from env, defaulting to the literals
  * below. This product owns no domain yet — it runs on a `*.vercel.app`
  * deployment, with a `.ph` domain planned but not purchased — so every
  * customer-facing surface that needs a host (order-confirmation emails, the
@@ -37,18 +36,18 @@ function domainFromAppUrl(raw: string | undefined): string | undefined {
  * computed constant below) so tests can exercise it against arbitrary env
  * without reaching for module-reset tricks.
  */
-export function buildSigmaTap(env: Record<string, string | undefined>) {
+export function buildConnecta(env: Record<string, string | undefined>) {
   const domain = domainFromAppUrl(env.NEXT_PUBLIC_APP_URL) || FALLBACK_DOMAIN;
   const supportEmail = env.SUPPORT_EMAIL?.trim() || `support@${domain}`;
   return {
-    name: "SigmaTap",
-    tagline: "Every tap counts.",
+    name: "Connecta",
+    tagline: "tap.connect.grow.",
     domain,
     supportEmail,
   };
 }
 
-export const SIGMATAP = buildSigmaTap(typeof process !== "undefined" ? process.env : {});
+export const CONNECTA = buildConnecta(typeof process !== "undefined" ? process.env : {});
 
 export function parseHex(hex: string): { r: number; g: number; b: number } | null {
   let c = hex.trim().toLowerCase().replace(/^#/, "");

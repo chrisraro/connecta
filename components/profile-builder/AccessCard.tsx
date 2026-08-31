@@ -5,7 +5,7 @@ import { ProfileInfo } from "@/types/profile";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 import { ProfileImage } from "@/components/templates/ProfileImage";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 import { profileUrl as buildProfileUrl } from "@/lib/profileUrl";
 
 interface AccessCardProps {
@@ -87,7 +87,7 @@ export function AccessCard({ profileId, profileSlug, agent, className }: AccessC
             
             {/* Bottom Tagline */}
             <div className="mt-6 pt-4 border-t border-white/5 text-[8px] tracking-[0.5em] text-zinc-600 uppercase text-center">
-                {SIGMATAP.name} Digital Identity
+                {CONNECTA.name} Digital Identity
             </div>
         </div>
     );

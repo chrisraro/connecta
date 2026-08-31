@@ -3,7 +3,7 @@
 import { useQuery } from "convex/react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 
 /**
  * Clerk -> Convex auth chain smoke test.
@@ -87,7 +87,7 @@ export default function AuthCheckPage() {
         Verifies that a Clerk session actually produces a verified identity
         inside a Convex query. Every link below must pass for authenticated
         {" "}
-        {SIGMATAP.name} features to work.
+        {CONNECTA.name} features to work.
       </p>
 
       <ul className="mt-8 flex flex-col gap-3">

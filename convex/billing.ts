@@ -19,7 +19,7 @@ import {
   PLAN_GRACE_DAYS,
   DEFAULT_PLAN_PRICING,
 } from "./plans";
-import { SIGMATAP } from "../lib/brand";
+import { CONNECTA } from "../lib/brand";
 
 /**
  * Billing & subscriptions (Phase 4).
@@ -259,7 +259,7 @@ export const createUpgradeCheckout = action({
     for (const method of ["gcash", "maya", "card", "qrph"]) {
       pairs.push(["payment_methods[]", method]);
     }
-    pairs.push(["line_items[][name]", `${SIGMATAP.name} ${planName} — 30 days`]);
+    pairs.push(["line_items[][name]", `${CONNECTA.name} ${planName} — 30 days`]);
     pairs.push(["line_items[][amount]", String(amount)]);
     pairs.push(["line_items[][quantity]", "1"]);
     pairs.push(["metadata[invoice_id]", invoiceId]);

@@ -18,7 +18,7 @@ import {
     ChevronRight, ChevronLeft, CheckCircle2, Sparkles, X,
     Building2, Store, Edit, ArrowRight, Loader2, SmartphoneNfc, AlertCircle
 } from "lucide-react";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 import { resolveOnboardingPrefill } from "@/lib/onboardingPrefill";
 
 type ProfileCategory = "individual" | "company" | "business";
@@ -73,7 +73,7 @@ const CATEGORY_FIELDS: Record<ProfileCategory, { nameLabel: string; namePlacehol
 // instant that mutation lands — no further click required to persist
 // anything.
 const STEPS = [
-    { id: "welcome",  title: `Welcome to ${SIGMATAP.name}`,    icon: Sparkles },
+    { id: "welcome",  title: `Welcome to ${CONNECTA.name}`,    icon: Sparkles },
     { id: "type",     title: "Profile Type",            icon: Building2 },
     { id: "identity", title: "Your Identity",           icon: User },
     { id: "contact",  title: "Contact Details",         icon: Phone },
@@ -395,7 +395,7 @@ function OnboardingContent() {
                                     </div>
                                     <div className="text-left">
                                         <p className="text-sm font-semibold text-primary">Card Activated!</p>
-                                        <p className="text-xs text-muted-foreground">Your physical {SIGMATAP.name} card is now live and linked to your profile.</p>
+                                        <p className="text-xs text-muted-foreground">Your physical {CONNECTA.name} card is now live and linked to your profile.</p>
                                     </div>
                                 </div>
                             )}
@@ -456,7 +456,7 @@ function OnboardingContent() {
                         <div>
                             {cardClaimed ? (
                                 <>
-                                    <p className="text-sm font-semibold text-primary">{SIGMATAP.name} Card Detected!</p>
+                                    <p className="text-sm font-semibold text-primary">{CONNECTA.name} Card Detected!</p>
                                     <p className="text-xs text-muted-foreground">Your card has been activated and will be linked to your profile.</p>
                                 </>
                             ) : claimError ? (
@@ -467,12 +467,12 @@ function OnboardingContent() {
                             ) : isClaiming ? (
                                 <>
                                     <p className="text-sm font-semibold text-primary">Activating Your Card...</p>
-                                    <p className="text-xs text-muted-foreground">Please wait while we set up your {SIGMATAP.name} card.</p>
+                                    <p className="text-xs text-muted-foreground">Please wait while we set up your {CONNECTA.name} card.</p>
                                 </>
                             ) : (
                                 <>
                                     <p className="text-sm font-semibold text-primary">Card Detected!</p>
-                                    <p className="text-xs text-muted-foreground">Preparing to activate your {SIGMATAP.name} card...</p>
+                                    <p className="text-xs text-muted-foreground">Preparing to activate your {CONNECTA.name} card...</p>
                                 </>
                             )}
                         </div>
@@ -510,7 +510,7 @@ function OnboardingContent() {
                         {step === 0 && (
                             <div className="flex-1 flex flex-col justify-center space-y-4">
                                 <p className="text-muted-foreground leading-relaxed">
-                                    {SIGMATAP.name} turns your professional profile into a shareable digital card — accessible via <strong>NFC tap</strong> or <strong>QR code</strong>.
+                                    {CONNECTA.name} turns your professional profile into a shareable digital card — accessible via <strong>NFC tap</strong> or <strong>QR code</strong>.
                                 </p>
                                 <div className="grid grid-cols-2 gap-3 mt-4">
                                     {[

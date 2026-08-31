@@ -2,7 +2,7 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { Resend } from "resend";
-import { SIGMATAP } from "../lib/brand";
+import { CONNECTA } from "../lib/brand";
 
 // HTML-escape untrusted strings before interpolating them into an email
 // template — Resend does not auto-escape (Security audit #4).
@@ -33,7 +33,7 @@ export const sendLeadNotification = internalAction({
         const propertyText = args.propertyName ? `regarding ${args.propertyName}` : "from your profile";
         await resend.emails.send({
             // TODO(ops): once a real domain is registered (see lib/brand.ts), verify it as a Resend sending domain before launch; onboarding@resend.dev only delivers to the account owner.
-            from: `${SIGMATAP.name} <onboarding@resend.dev>`,
+            from: `${CONNECTA.name} <onboarding@resend.dev>`,
             to: args.toEmail,
             subject: `New Lead ${propertyText} - ${args.inquirerName}`,
             html: `
@@ -43,7 +43,7 @@ export const sendLeadNotification = internalAction({
                 ${args.propertyName ? `<p><strong>Interest:</strong> ${args.propertyName}</p>` : ""}
                 <p><strong>Message:</strong><br/>${args.message || "No message provided."}</p>
                 <br/>
-                <p>Log in to your ${SIGMATAP.name} dashboard to reply.</p>
+                <p>Log in to your ${CONNECTA.name} dashboard to reply.</p>
             `,
         });
     },
@@ -95,7 +95,7 @@ export const sendOrderConfirmation = internalAction({
                 // as a Resend sending domain before launch. This shares the sandbox
                 // limitation of sendLeadNotification above — Resend's
                 // *.resend.dev test sender only reliably delivers to the account owner.
-                from: `${SIGMATAP.name} Shop <orders@resend.dev>`,
+                from: `${CONNECTA.name} Shop <orders@resend.dev>`,
                 to: args.toEmail,
                 subject: `Order Confirmation - ${args.orderNumber}`,
                 html: `
@@ -162,8 +162,8 @@ export const sendOrderConfirmation = internalAction({
                             </table>
                         </div>
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
-                            <p>If you have any questions about your order, please contact us at ${SIGMATAP.supportEmail}</p>
-                            <p>&copy; ${new Date().getFullYear()} ${SIGMATAP.name}. All rights reserved.</p>
+                            <p>If you have any questions about your order, please contact us at ${CONNECTA.supportEmail}</p>
+                            <p>&copy; ${new Date().getFullYear()} ${CONNECTA.name}. All rights reserved.</p>
                         </div>
                     </div>
                 `,

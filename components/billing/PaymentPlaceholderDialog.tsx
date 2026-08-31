@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 
 /**
  * The single dialog every payment entry point opens instead of calling a
@@ -51,7 +51,7 @@ export function PaymentPlaceholderDialog({
         <DialogFooter>
           <Button asChild variant="outline">
             <a
-              href={`mailto:${SIGMATAP.supportEmail}?subject=${encodeURIComponent(
+              href={`mailto:${CONNECTA.supportEmail}?subject=${encodeURIComponent(
                 mailSubject
               )}`}
             >

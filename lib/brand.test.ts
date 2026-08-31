@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { contrastRatio, meetsAA, SIGMATAP, buildSigmaTap } from "./brand";
+import { contrastRatio, meetsAA, CONNECTA, buildConnecta } from "./brand";
 
 test("contrastRatio computes the WCAG ratio for black on white", () => {
   expect(contrastRatio("#000000", "#ffffff")).toBeCloseTo(21, 0);
@@ -26,41 +26,39 @@ test("meetsAA is more permissive for large text", () => {
   expect(meetsAA("#8a8178", "#fbf9f4", false)).toBe(false);
 });
 
-test("SIGMATAP brand constant carries the product name", () => {
-  expect(SIGMATAP.name).toBe("SigmaTap");
+test("CONNECTA brand constant carries the product name", () => {
+  expect(CONNECTA.name).toBe("Connecta");
 });
 
-// No domain is registered yet — the product runs on a *.vercel.app
-// deployment, with a .ph domain planned but not purchased. buildSigmaTap()
-// must let both the domain and the support inbox be overridden via env, with
-// the honestly-inert literal below (an RFC 2606 reserved TLD, guaranteed
-// never to resolve) as fallback only — it must never be a domain-shaped
-// string that could be mistaken for something this project actually owns.
-test("buildSigmaTap falls back to sigmatap.example when NEXT_PUBLIC_APP_URL is unset", () => {
-  expect(buildSigmaTap({}).domain).toBe("sigmatap.example");
+test("CONNECTA brand constant carries the tagline", () => {
+  expect(CONNECTA.tagline).toBe("tap.connect.grow.");
 });
 
-test("buildSigmaTap derives the domain from NEXT_PUBLIC_APP_URL when set", () => {
-  expect(buildSigmaTap({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).domain).toBe(
+test("buildConnecta falls back to connecta.example when NEXT_PUBLIC_APP_URL is unset", () => {
+  expect(buildConnecta({}).domain).toBe("connecta.example");
+});
+
+test("buildConnecta derives the domain from NEXT_PUBLIC_APP_URL when set", () => {
+  expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).domain).toBe(
     "app.example.com"
   );
 });
 
-test("buildSigmaTap derives the domain from a NEXT_PUBLIC_APP_URL that has no protocol", () => {
-  expect(buildSigmaTap({ NEXT_PUBLIC_APP_URL: "app.example.com/" }).domain).toBe(
+test("buildConnecta derives the domain from a NEXT_PUBLIC_APP_URL that has no protocol", () => {
+  expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "app.example.com/" }).domain).toBe(
     "app.example.com"
   );
 });
 
-test("buildSigmaTap defaults supportEmail to support@<domain>", () => {
-  expect(buildSigmaTap({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).supportEmail).toBe(
+test("buildConnecta defaults supportEmail to support@<domain>", () => {
+  expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).supportEmail).toBe(
     "support@app.example.com"
   );
 });
 
-test("buildSigmaTap lets SUPPORT_EMAIL override the support inbox independently of the domain", () => {
+test("buildConnecta lets SUPPORT_EMAIL override the support inbox independently of the domain", () => {
   expect(
-    buildSigmaTap({ NEXT_PUBLIC_APP_URL: "https://app.example.com", SUPPORT_EMAIL: "help@realcompany.com" })
+    buildConnecta({ NEXT_PUBLIC_APP_URL: "https://app.example.com", SUPPORT_EMAIL: "help@realcompany.com" })
       .supportEmail
   ).toBe("help@realcompany.com");
 });

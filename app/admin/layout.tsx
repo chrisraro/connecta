@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 
 export default function AdminLayout({
     children,
@@ -107,7 +107,7 @@ export default function AdminLayout({
             <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-background sticky top-0 z-40">
                 <div className="flex items-center gap-2 font-bold text-lg text-red-600">
                     <SigmaTapMark className="h-5 w-5" />
-                    <span>{SIGMATAP.name} Admin</span>
+                    <span>{CONNECTA.name} Admin</span>
                 </div>
                 <Sheet>
                     <SheetTrigger asChild>
@@ -128,7 +128,7 @@ export default function AdminLayout({
                         <SheetHeader className="p-6 border-b border-border space-y-0">
                             <SheetTitle className="flex items-center gap-2 font-bold text-xl text-red-600">
                                 <SigmaTapMark className="h-5 w-5" />
-                                <span>{SIGMATAP.name} Admin</span>
+                                <span>{CONNECTA.name} Admin</span>
                             </SheetTitle>
                         </SheetHeader>
                         <nav className="p-4 space-y-2">
@@ -201,7 +201,7 @@ export default function AdminLayout({
             <aside className="w-64 bg-background border-r border-border hidden md:flex flex-col">
                 <div className="p-6 flex items-center gap-2 font-bold text-xl text-red-600">
                     <SigmaTapMark className="h-5 w-5" />
-                    <span>{SIGMATAP.name} Admin</span>
+                    <span>{CONNECTA.name} Admin</span>
                 </div>
 
                 <div className="px-6 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">

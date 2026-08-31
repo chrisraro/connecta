@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, TriangleAlert } from "lucide-react";
 import { SigmaTapMark } from "@/components/brand/SigmaTapMark";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 
 /**
  * Shared shell for /privacy and /terms.
@@ -36,7 +36,7 @@ export function LegalPage({
             className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
           >
             <SigmaTapMark className="h-5 w-5 text-primary" />
-            <span>{SIGMATAP.name}</span>
+            <span>{CONNECTA.name}</span>
           </Link>
           <Link
             href="/"
@@ -94,7 +94,7 @@ export function LegalPage({
 
       <footer className="border-t border-border">
         <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-muted-foreground sm:px-6">
-          &copy; {new Date().getFullYear()} {SIGMATAP.name}. All rights reserved.
+          &copy; {new Date().getFullYear()} {CONNECTA.name}. All rights reserved.
         </div>
       </footer>
     </div>
@@ -116,7 +116,7 @@ export function DraftNotice() {
           Draft — not legal advice, not yet approved for launch.
         </p>
         <p className="mt-1">
-          This page was generated from an engineering audit of what {SIGMATAP.name}&apos;s
+          This page was generated from an engineering audit of what {CONNECTA.name}&apos;s
           codebase actually does. It has not been reviewed by a
           Philippine-qualified lawyer or the company&apos;s Data Protection
           Officer, and must not be treated as a compliant policy until it has

@@ -7,7 +7,7 @@ import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 
 export default function ShopLayout({
   children,
@@ -52,7 +52,7 @@ export default function ShopLayout({
             {/* Logo & Navigation */}
             <div className="flex items-center gap-6">
               <Link href="/" className="flex min-h-11 items-center gap-2 font-bold text-xl tracking-tight">
-                {SIGMATAP.name}
+                {CONNECTA.name}
               </Link>
 
               <nav className="hidden md:flex items-center gap-1" aria-label="Shop">
@@ -137,7 +137,7 @@ export default function ShopLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <h3 className="font-bold mb-2">About {SIGMATAP.name}</h3>
+              <h3 className="font-bold mb-2">About {CONNECTA.name}</h3>
               <p className="text-sm text-muted-foreground">
                 Premium NFC-enabled digital business cards and portfolio solutions.
               </p>
@@ -166,7 +166,7 @@ export default function ShopLayout({
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} {SIGMATAP.name}. All rights reserved.
+            &copy; {new Date().getFullYear()} {CONNECTA.name}. All rights reserved.
           </div>
         </div>
       </footer>

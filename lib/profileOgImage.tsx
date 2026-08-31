@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { resolveTheme } from "@/components/templates/theme";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 
 /**
  * Shared OG-image renderer for both public profile routes — `/p/<id>` (the
@@ -51,7 +51,7 @@ export function renderProfileOgImage(profile: OgProfile) {
       accentColor: palette.accent,
     }
   );
-  const { fullName, title, company } = profile?.agentInfo ?? { fullName: SIGMATAP.name, title: SIGMATAP.tagline, company: "" };
+  const { fullName, title, company } = profile?.agentInfo ?? { fullName: CONNECTA.name, title: CONNECTA.tagline, company: "" };
 
   return new ImageResponse(
     (
@@ -85,7 +85,7 @@ export function renderProfileOgImage(profile: OgProfile) {
               marginBottom: "28px",
             }}
           >
-            {SIGMATAP.name}
+            {CONNECTA.name}
           </div>
           <div
             style={{
@@ -120,10 +120,10 @@ export function renderProfileOgImage(profile: OgProfile) {
           }}
         >
           <div style={{ display: "flex", fontSize: 26, color: theme.colors.inkSoft }}>
-            {SIGMATAP.tagline}
+            {CONNECTA.tagline}
           </div>
           <div style={{ display: "flex", fontSize: 26, fontWeight: 600, color: theme.colors.accent }}>
-            {SIGMATAP.domain}
+            {CONNECTA.domain}
           </div>
         </div>
       </div>

@@ -20,7 +20,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import { SIGMATAP } from "@/lib/brand";
+import { CONNECTA } from "@/lib/brand";
 import { isFullScreenDashboardRoute } from "@/lib/dashboardChrome";
 import { shouldRedirectAdminOnFirstLanding } from "@/lib/adminRedirect";
 import { toast } from "sonner";
@@ -205,7 +205,7 @@ function DashboardSidebar({ className }: { className?: string }) {
         <aside className={`flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground ${className}`}>
             <div className="p-6 flex items-center gap-2 font-bold text-xl">
                 <SigmaTapMark className="h-6 w-6 text-primary" />
-                <span className="text-foreground font-black tracking-tight">{SIGMATAP.name}</span>
+                <span className="text-foreground font-black tracking-tight">{CONNECTA.name}</span>
             </div>
             <nav className="flex-1 px-4 space-y-2 py-4">
                 {menuItems.map((item) => {
@@ -290,7 +290,7 @@ function MobileHeader() {
         if (pathname.startsWith("/dashboard/team")) return "Team";
         if (pathname.startsWith("/dashboard/billing")) return "Billing";
         if (pathname.startsWith("/dashboard/settings")) return "Settings";
-        return SIGMATAP.name;
+        return CONNECTA.name;
     };
 
     return (
