@@ -1,1 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="#8a2f22" fill-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    PLACEHOLDER ARTWORK — this is not the final app icon.
+
+    The sigma-in-a-disc geometry below is carried over unchanged from the
+    product's previous identity. It has not been replaced with Connecta's
+    own icon yet — treat this as provisional, not a finished design
+    decision. See components/brand/ConnectaMark.tsx for the same warning
+    on this identity's monogram counterpart, and marketing/README.md for
+    how this file is used.
+  -->
+  <path fill="#8a2f22" fill-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/>
+</svg>

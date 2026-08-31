@@ -159,17 +159,37 @@ test("no user-facing source file still says either retired brand name", () => {
 // that no allowlist is needed at all.
 const CURRENT_BRAND_WORD = /\bConnecta\b/;
 
-const NEW_BRAND_STRING_SCAN_DIRS = ["app", "components"];
+// convex/** renders customer-facing brand copy (order-confirmation emails,
+// lead notifications — see convex/email.ts) and lib/** is where the brand
+// constant itself lives, so both need the same guard as app/** and
+// components/**: a hardcoded brand string anywhere in either is exactly
+// the bug this test exists to catch.
+const NEW_BRAND_STRING_SCAN_DIRS = ["app", "components", "convex", "lib"];
 
 const NEW_BRAND_STRING_EXCEPTIONS: Record<string, string[]> = {};
 
-test("no new hardcoded occurrence of the current brand name in app/** or components/**", () => {
+// lib/brand.ts is the single source of truth this whole guard protects: it
+// necessarily defines `name: "Connecta"` once, by design, so every OTHER
+// file can import CONNECTA.name instead of hardcoding the string. Excluding
+// it here is a structural fact about where the constant lives — the same
+// shape of exception `selfPath` already grants this test file itself in
+// the STALE_BRAND test above — not a "the old name is allowed to leak
+// here" carve-out, so it does not go in NEW_BRAND_STRING_EXCEPTIONS.
+// This test file is excluded for the same reason: its own assertions and
+// comments necessarily quote "Connecta" to describe what the guard does.
+const NEW_BRAND_STRING_STRUCTURALLY_EXEMPT = [
+  join("lib", "brand.ts"),
+  join("lib", "brand.test.ts"),
+];
+
+test("no new hardcoded occurrence of the current brand name in app/**, components/**, convex/**, or lib/**", () => {
   const offenders: string[] = [];
   for (const dir of NEW_BRAND_STRING_SCAN_DIRS) {
     const root = join(process.cwd(), dir);
     for (const file of walk(root)) {
       if (!/\.(tsx?|css)$/.test(file)) continue;
       const rel = file.replace(process.cwd(), "").replace(/^[\\/]/, "");
+      if (NEW_BRAND_STRING_STRUCTURALLY_EXEMPT.includes(rel)) continue;
       const allowedLines = NEW_BRAND_STRING_EXCEPTIONS[rel] ?? [];
       const content = readFileSync(file, "utf8");
       const remaining = content

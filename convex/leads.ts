@@ -14,7 +14,7 @@ const MAX_PROPERTY_NAME = 200;
 
 // Task 17 / I2 — the cap was keyed ONLY on the profile owner
 // (`lead:${ownerId}`), so every anonymous visitor to one profile shared a
-// single 5/min bucket: Connecta's flagship scenario (NFC taps at a
+// single 5/min bucket: the product's flagship scenario (NFC taps at a
 // networking event) meant ten different prospects tapping the same card in
 // a minute throttled half of them, none of whom had ever submitted before.
 //

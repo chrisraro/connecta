@@ -7,8 +7,8 @@ brand and product, without touching the running app.
 marketing/
 ├── README.md              this file
 ├── brand/
-│   ├── connecta-mark.svg   the monogram (copy of public/brand/connecta-mark.svg)
-│   ├── connecta-icon.svg   the seal / app icon (copy of public/brand/connecta-icon.svg)
+│   ├── connecta-mark.svg   the monogram (copy of public/brand/connecta-mark.svg) — PLACEHOLDER, see below
+│   ├── connecta-icon.svg   the app icon (copy of public/brand/connecta-icon.svg) — PLACEHOLDER, see below
 │   └── brand-sheet.html    self-contained reference page — mark at multiple
 │                           sizes, on light + dark, the colour ramp with hex,
 │                           the type scale, correct/incorrect usage
@@ -18,34 +18,37 @@ marketing/
 
 ## Brand basics
 
-**The mark.** A solid Greek sigma (Σ) — pairing "sum" with the product's
-core action, the NFC tap: every tap sums into a shareable profile and a
-captured lead. Deliberately has **no radiating NFC arcs**: three variants
-pairing the sigma with arcs were rendered and compared at 150px/48px/20px,
-and the arcs read as "3" or a mirrored sigma at large size and collapsed to
-an unreadable blob below ~34px. Radiating arcs are also the digital-business-
-card category's commodity signifier (Popl, Blinq, Tapik, TapiTag all use
-them) — the solid counter-form alone carries the identity instead. Drawn as
-a single SVG path in `currentColor` so it inherits from any surface and
-never needs a recolour pass.
+> **PLACEHOLDER ARTWORK.** The mark and icon below are carried over
+> unchanged from the product's previous identity (a solid Greek sigma).
+> Neither has been redesigned as Connecta's own lettermark yet — treat
+> everything in this section as provisional, not a finished design
+> decision. **Do not send this artwork to a printer or embosser as
+> final.** The same warning is carried as a comment in
+> `brand/connecta-mark.svg`, `brand/connecta-icon.svg`, and
+> `components/brand/ConnectaMark.tsx`.
 
-**The seal.** The app icon is the same sigma struck *into* a wax seal —
+**The mark.** A solid Greek sigma (Σ), inherited unchanged from the
+product's previous identity pending a redesign of Connecta's own
+lettermark. Drawn as a single SVG path in `currentColor` so it inherits
+from any surface and never needs a recolour pass.
+
+**The brand icon.** The app icon is the same sigma struck *into* a disc —
 the disc and the monogram are subpaths of one `fill-rule="evenodd"` path, so
 the knockout is real transparency rather than a shape sitting on top of a
-circle. That negative-space relationship is the point: it's what stops the
-icon from reading as "a logo on a coloured circle."
+circle. Also placeholder artwork, inherited unchanged pending the same
+redesign.
 
 **Palette.** One saturated brand colour carrying real surface area (the
-seal), plus warm neutrals tinted toward that same hue rather than generic
-warm-gray, and the light/dark app surface pair. Hex values below are the
+brand icon), plus warm neutrals tinted toward that same hue rather than
+generic warm-gray, and the light/dark app surface pair. Hex values below are the
 computed sRGB output of the OKLCH tokens in `app/globals.css` (read live via
 a headless-browser canvas conversion — OKLCH doesn't have one canonical hex,
 so these are what actually renders).
 
 | Name | Hex | Token |
 |---|---|---|
-| Seal | `#8d2c27` | `--connecta-brand` |
-| Seal — hover | `#7f1817` | `--connecta-brand-hover` |
+| Brand | `#8d2c27` | `--connecta-brand` |
+| Brand — hover | `#7f1817` | `--connecta-brand-hover` |
 | Ink | `#201916` | `--connecta-ink` |
 | Ink — soft | `#5f5652` | `--connecta-ink-soft` |
 | Paper | `#fcfaf8` | `--connecta-paper` |

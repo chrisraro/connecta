@@ -99,7 +99,7 @@ test("createProfile assigns a unique slug derived from the profile name", async 
     clerkId: "slug_user_1",
     name: "Christian Raro",
     agentInfo: {
-      fullName: "Christian Raro", title: "Founder", company: "Connecta",
+      fullName: "Christian Raro", title: "Founder", company: "Riverside Media",
       phone: "0917", email: "c@connecta.example", services: [], socialLinks: [],
     },
     layoutConfig: {
@@ -387,7 +387,7 @@ test("slug derives from the person's name, not the \"X's Profile\" record label"
     // Exactly what the builder writes: "<fullName>'s Profile".
     name: "Christian Raro's Profile",
     agentInfo: {
-      fullName: "Christian Raro", title: "Developer", company: "Connecta",
+      fullName: "Christian Raro", title: "Developer", company: "Riverside Media",
       phone: "0917", email: "c@test.dev", services: [], socialLinks: [],
     },
     layoutConfig: {

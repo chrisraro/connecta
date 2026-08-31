@@ -25,15 +25,19 @@ This file records exactly what has been migrated, what is deliberately frozen, a
 | `public/manifest.json`, `app/layout.tsx` metadata | SigmaTap name/icons |
 | CSS identity tokens in `app/globals.css` | `--sigmatap-seal` / `-hover` / `-ink` / `-ink-soft` / `-paper` / `-surface` / `-line` (renamed from `--herald-*`; values unchanged) |
 
-A guard test (`lib/brand.test.ts`) scans `.ts/.tsx/.css/.md/.json` for **either** stale brand name (`tapfolio` or `herald`) and fails the build if either reappears outside the documented exceptions. A second test fails the build the day a new hardcoded `SigmaTap` string literal appears in `app/**`/`components/**` instead of going through the `SIGMATAP` constant — the same mechanism that made this rename a one-line edit in `lib/brand.ts` instead of a repo-wide sweep.
+A guard test (`lib/brand.test.ts`) scans `.ts/.tsx/.css/.md/.json` for **any** of the three retired brand names (`tapfolio`, `herald`, `sigmatap`) and fails the build if any of them reappears. Its allowlist is empty — both literal freezes that used to justify entries there have been lifted; see below. A second test fails the build the day a new hardcoded `Connecta` string literal (case-sensitive, word-bounded: `\bConnecta\b`) appears in `app/**`, `components/**`, `convex/**`, or `lib/**` instead of going through the `CONNECTA` constant — the same mechanism that made each rename a one-line edit in `lib/brand.ts` instead of a repo-wide sweep.
 
 ---
 
-## Deliberately NOT renamed — do not "finish" these
+## Previously frozen literals — both freezes lifted (2026-08-31)
 
-Two references to the **original** Tapfolio name survive on purpose. Both are load-bearing. `lib/brand.test.ts` allowlists them by exact line. Neither is affected by the Herald → SigmaTap rename — they were frozen during the first rename and remain frozen now.
+Two references to the **original** Tapfolio name survived on purpose through the first two renames (Tapfolio → Herald and Herald → SigmaTap), because rewriting them risked breaking real, already-shipped state rather than just relabeling text. `lib/brand.test.ts` allowlisted each by exact line for as long as that risk was real.
+
+**Both freezes have since been lifted, as part of the Connecta rename:**
 
 ### 1. localStorage keys — `lib/storage-keys.ts`
+
+The three keys were renamed from
 
 ```
 tapfolio_guest_cart_id
@@ -41,17 +45,15 @@ tapfolio_discount_code
 tapfolio_offline_leads
 ```
 
-These strings live in **real users' browsers right now**. Renaming them orphans every in-flight guest cart and every unsynced offline lead — silently, with no error. The constant names were updated; the string values must stay byte-identical.
+to `connecta_guest_cart_id`, `connecta_discount_code`, `connecta_offline_leads`. These strings used to live in real users' browsers, so renaming them would have silently orphaned every in-flight guest cart and every unsynced offline lead. A data purge on **2026-08-31** removed every account but one, leaving no live population behind these keys — the byte-identical constraint that justified the freeze no longer holds, so the rename went ahead as a plain find-and-replace.
 
-If you ever genuinely need to migrate them, it's a dual-read migration (read new key, fall back to old, write new, delete old), not a find-and-replace.
+If a similar situation arises again in the future (a live population depending on an old client-storage key), the correct fix is a dual-read migration (read new key, fall back to old, write new, delete old) — not a blind rename, and not a new allowlist entry.
 
-### 2. `PRODUCTION_DOMAIN` — `app/admin/factory/page.tsx`
+### 2. The NFC host — `app/admin/factory/page.tsx`
 
-```
-https://tapfolio-beta.vercel.app
-```
+The hardcoded `PRODUCTION_DOMAIN` constant (`https://tapfolio-beta.vercel.app`) was **deleted outright**, not renamed. It doesn't exist any more. The host physically written onto NFC tags and printed QR codes is now derived at read time from `NEXT_PUBLIC_APP_URL` via `resolveNfcHost()` (`lib/nfcHost.ts`), with no fallback — the page refuses to write tags or print labels when the env var is unset, rather than guessing a host. This was actually already in motion before the purge — see "The NFC host, and why the 'frozen' literal was the bug" below for the full story of why a frozen literal was the wrong shape for this value in the first place, independent of any purge.
 
-This URL is **physically written onto NFC tags** by the card factory page. Every card already in a customer's wallet points at it. See the Vercel section below — this is the highest-risk item in the whole migration, for both renames.
+`lib/brand.test.ts`'s allowlist is now **empty** for both guard tests. Keep it that way: a new entry there means a retired brand name (`tapfolio`, `herald`, or `sigmatap`) is shipping to users again.
 
 ---
 
@@ -63,13 +65,13 @@ This URL is **physically written onto NFC tags** by the card factory page. Every
 
 Safe sequence:
 
-1. **Buy and attach a real custom domain first** (a `.ph` domain is planned but **not purchased yet** — `lib/brand.ts` does not hardcode one; it derives `SIGMATAP.domain` from `NEXT_PUBLIC_APP_URL`, falling back to the honestly-inert `sigmatap.example` when unset). Cards should never have pointed at a `.vercel.app` URL — that was the original mistake.
+1. **Buy and attach a real custom domain first** (a `.ph` domain is planned but **not purchased yet** — `lib/brand.ts` does not hardcode one; it derives `CONNECTA.domain` from `NEXT_PUBLIC_APP_URL`, falling back to the honestly-inert `connecta.example` when unset). Cards should never have pointed at a `.vercel.app` URL — that was the original mistake.
 2. Add it as a Vercel domain and make it primary.
 3. **Keep `tapfolio-beta.vercel.app` alive permanently** as a redirect to the new domain. Do not delete it, do not rename the project out from under it, do not let it lapse. It is now legacy infrastructure serving physical hardware.
-4. Only then update `PRODUCTION_DOMAIN` in `app/admin/factory/page.tsx`, so *newly written* cards use the new domain. Old cards keep working via the redirect.
+4. Only then update `NEXT_PUBLIC_APP_URL` on Vercel to the new domain and redeploy, so *newly written* cards use it. There is no separate `PRODUCTION_DOMAIN` constant to update any more — the NFC host is derived from `NEXT_PUBLIC_APP_URL` at read time via `resolveNfcHost()` (`lib/nfcHost.ts`); see "Previously frozen literals" above. Old cards keep working via the redirect.
 5. Renaming the Vercel *project label* itself is cosmetic and safe **only after** a custom domain is primary.
 
-Also update on Vercel: `NEXT_PUBLIC_APP_URL` (this drives `metadataBase`, OG image URLs, and `SIGMATAP.supportEmail` — see `lib/brand.ts`).
+Also update on Vercel: `NEXT_PUBLIC_APP_URL` (this drives `metadataBase`, OG image URLs, the NFC host, and `CONNECTA.supportEmail` — see `lib/brand.ts`).
 
 ### 2. Convex
 
@@ -109,7 +111,7 @@ The working directory is still `…/TapFolio/Tapfolio`. Renaming it is safe — 
 
 ## Not a rename, but part of the same decision
 
-No domain is registered for this product yet — it currently runs on a `*.vercel.app` deployment. `lib/brand.ts` derives `SIGMATAP.domain` and `SIGMATAP.supportEmail` from `NEXT_PUBLIC_APP_URL` / `SUPPORT_EMAIL` rather than hardcoding a domain, so nothing breaks and no unowned domain is presented as live in customer-facing output (order-confirmation emails, OG image footers) before one is registered. When a real domain (`.ph` or otherwise) is purchased: set `NEXT_PUBLIC_APP_URL` to it, verify it as a Resend sending domain (or transactional email stays in sandbox mode and reaches nobody — see the `TODO(ops)` comment in `convex/email.ts`), and follow the Vercel sequence above before pointing new NFC cards at it.
+No domain is registered for this product yet — it currently runs on a `*.vercel.app` deployment. `lib/brand.ts` derives `CONNECTA.domain` and `CONNECTA.supportEmail` from `NEXT_PUBLIC_APP_URL` / `SUPPORT_EMAIL` rather than hardcoding a domain, so nothing breaks and no unowned domain is presented as live in customer-facing output (order-confirmation emails, OG image footers) before one is registered. When a real domain (`.ph` or otherwise) is purchased: set `NEXT_PUBLIC_APP_URL` to it, verify it as a Resend sending domain (or transactional email stays in sandbox mode and reaches nobody — see the `TODO(ops)` comment in `convex/email.ts`), and follow the Vercel sequence above before pointing new NFC cards at it.
 
 
 ---
@@ -162,13 +164,19 @@ The lesson worth carrying: an allowlist entry justified by a fact about the
 world ("this host is live") needs re-checking against the world, not just
 inherited. Prefer deriving the value so the question cannot arise.
 
-### Still not renamed
+### Still not renamed, at the time of this section
 
 - The local working directory is still `…/TapFolio/Tapfolio` (harmless).
-- `lib/storage-keys.ts` literals remain frozen — that justification is still
-  valid, because those keys exist in real users' browsers and renaming them
-  orphans in-flight carts and unsynced offline leads. Unlike the NFC host,
-  this one does not depend on a fact that can silently expire.
+- `lib/storage-keys.ts` literals remained frozen through this rename — that
+  justification was still valid at the time, because those keys existed in
+  real users' browsers and renaming them would have orphaned in-flight carts
+  and unsynced offline leads. Unlike the NFC host, this one did not depend on
+  a fact that could silently expire.
+
+  **Update, Connecta rename:** a data purge on 2026-08-31 removed every
+  account but one, leaving no live population behind the old keys. The
+  freeze was lifted and the keys were renamed to `connecta_*` — see
+  "Previously frozen literals — both freezes lifted (2026-08-31)" above.
 
 ---
 

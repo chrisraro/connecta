@@ -1,24 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Connecta">
   <title>Connecta</title>
   <!--
-    The Connecta monogram: a solid Greek sigma.
+    PLACEHOLDER ARTWORK — this is not the final mark.
 
-    DESIGN NOTE — why there are no NFC arcs.
-
-    The originating concept paired the sigma with radiating arcs. Three
-    variants of that pairing were rendered and compared at 150px, 48px and
-    20px. Two findings killed the arcs:
-
-      1. They destroyed legibility. With arcs attached the letterform read
-         as "3" or a mirrored sigma at large size, and collapsed to an
-         unreadable blob below ~34px, which is favicon territory.
-      2. Radiating arcs are the digital-business-card category's commodity
-         signifier — Popl, Blinq, Tapik and TapiTag all use them. Adopting
-         them makes the brand look like every competitor rather than itself.
-
-    The solid counter-form survives at 20px and is unambiguously a sigma, so
-    the letterform alone carries the identity. Signal/tap is expressed through
-    motion and product context, not by bolting a wifi glyph onto a letter.
+    The geometry below (a solid Greek sigma) is carried over unchanged from
+    the product's previous identity. It has not been replaced with
+    Connecta's own lettermark yet — treat this as provisional, not a
+    finished design decision. See components/brand/ConnectaMark.tsx, which
+    carries the same warning on the inline-delivery version of this
+    artwork, and marketing/README.md for how this file is used.
 
     Drawn in currentColor so it inherits from context and needs no network
     request when inlined.

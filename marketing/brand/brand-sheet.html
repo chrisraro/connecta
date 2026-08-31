@@ -10,8 +10,8 @@
     src: local("Georgia");
   }
   :root {
-    --seal: #8d2c27;
-    --seal-hover: #7f1817;
+    --brand: #8d2c27;
+    --brand-hover: #7f1817;
     --ink: #201916;
     --ink-soft: #5f5652;
     --paper: #fcfaf8;
@@ -44,7 +44,7 @@
     gap: 1rem;
     margin-bottom: 0.5rem;
   }
-  header.page-head svg { width: 40px; height: 40px; color: var(--seal); }
+  header.page-head svg { width: 40px; height: 40px; color: var(--brand); }
   header.page-head h1 {
     font-size: 1.75rem;
     margin: 0;
@@ -56,6 +56,16 @@
     font-size: 0.95rem;
     margin: 0 0 3.5rem;
   }
+  .placeholder-banner {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 0.85rem 1rem;
+    margin: 0 0 2rem;
+  }
   section { margin-bottom: 4rem; }
   section h2 {
     font-family: Arial, Helvetica, sans-serif;
@@ -63,7 +73,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: var(--seal);
+    color: var(--brand);
     border-bottom: 1px solid var(--line);
     padding-bottom: 0.75rem;
     margin-bottom: 1.75rem;
@@ -93,7 +103,7 @@
     border-radius: var(--r-md);
     box-shadow: var(--e-raised);
   }
-  .mark-tile.light { background: var(--surface); color: var(--seal); }
+  .mark-tile.light { background: var(--surface); color: var(--brand); }
   .mark-tile.dark { background: var(--dark-bg); color: var(--dark-fg); }
   .mark-tile span {
     font-family: Arial, Helvetica, sans-serif;
@@ -102,19 +112,19 @@
     opacity: 0.6;
   }
 
-  /* ── Seal icon on assorted grounds ───────────────────────────────── */
-  .seal-row { display: flex; flex-wrap: wrap; gap: 1.5rem; }
-  .seal-tile {
+  /* ── Icon on assorted grounds ────────────────────────────────────── */
+  .brand-row { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  .brand-tile {
     width: 96px; height: 96px;
     border-radius: var(--r-lg);
     display: flex; align-items: center; justify-content: center;
     box-shadow: var(--e-raised);
   }
-  .seal-tile.on-paper { background: var(--paper); border: 1px solid var(--line); }
-  .seal-tile.on-surface { background: var(--surface); }
-  .seal-tile.on-dark { background: var(--dark-bg); }
-  .seal-tile.on-seal { background: var(--seal); }
-  .seal-tile svg { width: 56px; height: 56px; }
+  .brand-tile.on-paper { background: var(--paper); border: 1px solid var(--line); }
+  .brand-tile.on-surface { background: var(--surface); }
+  .brand-tile.on-dark { background: var(--dark-bg); }
+  .brand-tile.on-brand { background: var(--brand); }
+  .brand-tile svg { width: 56px; height: 56px; }
 
   /* ── Color ramp ───────────────────────────────────────────────────── */
   .swatch-grid {
@@ -142,7 +152,7 @@
   }
   .swatch .label .token {
     font-size: 0.7rem;
-    color: var(--seal);
+    color: var(--brand);
     font-family: "Courier New", monospace;
     display: block;
     margin-top: 0.15rem;
@@ -182,7 +192,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--seal);
+    color: var(--brand);
     display: block;
     margin-bottom: 0.5rem;
   }
@@ -219,7 +229,7 @@
     gap: 0.5rem;
   }
   .usage-card.good .verdict { color: #1a6b3d; }
-  .usage-card.bad .verdict { color: var(--seal); }
+  .usage-card.bad .verdict { color: var(--brand); }
   .usage-card .verdict b { font-size: 1rem; }
 
   footer.page-foot {
@@ -234,20 +244,31 @@
   @media (prefers-color-scheme: dark) {
     body { background: #0b0908; color: #f1ece7; }
     .subtitle, p.note { color: #b9aea6; }
-    .swatch .label, .stack-card, .usage-card { background: #17130f; }
-    .swatch, .usage-card { border-color: #332a24; }
+    .swatch .label, .stack-card, .usage-card, .placeholder-banner { background: #17130f; }
+    .swatch, .usage-card, .placeholder-banner { border-color: #332a24; }
     section h2 { border-color: #332a24; }
     footer.page-foot { border-color: #332a24; color: #b9aea6; }
   }
 
   @media print {
     body { background: #fff; }
-    .mark-tile.dark, .seal-tile.on-dark { break-inside: avoid; }
+    .mark-tile.dark, .brand-tile.on-dark { break-inside: avoid; }
   }
 </style>
 </head>
 <body>
+<!--
+  PLACEHOLDER ARTWORK: the mark and icon on this page are carried over
+  unchanged from the product's previous identity (a solid Greek sigma).
+  Neither has been redesigned as Connecta's own lettermark yet — treat
+  everything below as provisional, not a finished design decision. Do not
+  send this sheet to a printer or embosser as final artwork. The same
+  warning is carried in public/brand/connecta-mark.svg,
+  public/brand/connecta-icon.svg, and components/brand/ConnectaMark.tsx.
+-->
 <div class="wrap">
+
+  <div class="placeholder-banner">Placeholder artwork — the mark and icon below are inherited unchanged from the previous identity and have not been redesigned as Connecta's own. Not final; see marketing/README.md.</div>
 
   <header class="page-head">
     <svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
@@ -257,7 +278,7 @@
 
   <section>
     <h2>01 · The mark</h2>
-    <p class="note">A solid Greek sigma (Σ) — pairing “sum” with the product's core action, the NFC tap: every tap sums into a shareable profile and a captured lead. Deliberately has no radiating NFC arcs; that variant read as “3” or a mirrored sigma at large size and collapsed to mush below ~34px, and arcs are the category's commodity signifier anyway (Popl, Blinq, Tapik, TapiTag all use them). One path, drawn in <code>currentColor</code>, so it inherits from any surface.</p>
+    <p class="note">Placeholder artwork: a solid Greek sigma (Σ), inherited unchanged from the product's previous identity and not yet redesigned as Connecta's own lettermark. One path, drawn in <code>currentColor</code>, so it inherits from any surface.</p>
     <div class="mark-row">
       <div class="mark-tile light" style="width:220px;height:220px;">
         <svg viewBox="0 0 64 64" fill="none" style="width:120px;height:120px;"><path fill="currentColor" fill-rule="evenodd" d="M16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
@@ -283,16 +304,16 @@
   </section>
 
   <section>
-    <h2>02 · The seal (app icon)</h2>
-    <p class="note">A wax seal's design is pressed <em>into</em> the wax — the sigma is knocked out of the disc rather than sitting on top of it. One path, <code>fill-rule="evenodd"</code>: the disc and the monogram are subpaths of the same shape, so the knockout is real transparency and it composites correctly on any background.</p>
-    <div class="seal-row">
-      <div class="seal-tile on-paper">
+    <h2>02 · The icon</h2>
+    <p class="note">Placeholder artwork, inherited unchanged from the previous identity: the sigma is knocked out of a disc rather than sitting on top of it. One path, <code>fill-rule="evenodd"</code>: the disc and the monogram are subpaths of the same shape, so the knockout is real transparency and it composites correctly on any background.</p>
+    <div class="brand-row">
+      <div class="brand-tile on-paper">
         <svg viewBox="0 0 64 64"><path fill="#8a2f22" fill-rule="evenodd" clip-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
       </div>
-      <div class="seal-tile on-surface">
+      <div class="brand-tile on-surface">
         <svg viewBox="0 0 64 64"><path fill="#8a2f22" fill-rule="evenodd" clip-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
       </div>
-      <div class="seal-tile on-dark">
+      <div class="brand-tile on-dark">
         <svg viewBox="0 0 64 64"><path fill="#8a2f22" fill-rule="evenodd" clip-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
       </div>
     </div>
@@ -300,15 +321,15 @@
 
   <section>
     <h2>03 · Colour</h2>
-    <p class="note">One saturated brand colour carrying real surface area (the seal), warm neutrals tinted toward its own hue rather than toward generic warmth, plus the light/dark surface pair the product ships with. Hex values below are computed sRGB, read live from <code>app/globals.css</code>'s OKLCH tokens.</p>
+    <p class="note">One saturated brand colour carrying real surface area (the icon), warm neutrals tinted toward its own hue rather than toward generic warmth, plus the light/dark surface pair the product ships with. Hex values below are computed sRGB, read live from <code>app/globals.css</code>'s OKLCH tokens.</p>
     <div class="swatch-grid">
       <div class="swatch">
         <div class="chip" style="background:#8d2c27"></div>
-        <div class="label"><span class="name">Seal</span><span class="hex">#8d2c27</span><span class="token">--connecta-brand</span></div>
+        <div class="label"><span class="name">Brand</span><span class="hex">#8d2c27</span><span class="token">--connecta-brand</span></div>
       </div>
       <div class="swatch">
         <div class="chip" style="background:#7f1817"></div>
-        <div class="label"><span class="name">Seal — hover</span><span class="hex">#7f1817</span><span class="token">--connecta-brand-hover</span></div>
+        <div class="label"><span class="name">Brand — hover</span><span class="hex">#7f1817</span><span class="token">--connecta-brand-hover</span></div>
       </div>
       <div class="swatch">
         <div class="chip" style="background:#201916"></div>
@@ -394,7 +415,7 @@
     <div class="usage-grid">
       <div class="usage-card good">
         <div class="stage" style="background:var(--surface);">
-          <svg viewBox="0 0 64 64" fill="none" style="width:56px;height:56px;color:var(--seal);"><path fill="currentColor" fill-rule="evenodd" d="M16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
+          <svg viewBox="0 0 64 64" fill="none" style="width:56px;height:56px;color:var(--brand);"><path fill="currentColor" fill-rule="evenodd" d="M16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
         </div>
         <div class="verdict"><b>✓</b> Single colour, clear space, on a calm ground.</div>
       </div>
@@ -412,7 +433,7 @@
       </div>
       <div class="usage-card bad">
         <div class="stage" style="background:var(--surface);">
-          <svg viewBox="0 0 64 64" fill="none" style="width:56px;height:56px;color:var(--seal);transform:scaleX(-1) rotate(12deg);"><path fill="currentColor" fill-rule="evenodd" d="M16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
+          <svg viewBox="0 0 64 64" fill="none" style="width:56px;height:56px;color:var(--brand);transform:scaleX(-1) rotate(12deg);"><path fill="currentColor" fill-rule="evenodd" d="M16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/></svg>
         </div>
         <div class="verdict"><b>✗</b> Never mirror, skew, rotate, or otherwise distort the geometry.</div>
       </div>

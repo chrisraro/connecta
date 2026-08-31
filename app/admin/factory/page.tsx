@@ -16,6 +16,7 @@ import {
     ShieldCheck,
     ShieldAlert,
     AlertCircle,
+    TriangleAlert,
     Trash2,
     CheckSquare,
     Square
@@ -79,6 +80,13 @@ export default function AdminFactoryPage() {
     // directly here rather than passing the whole process.env object through
     // at runtime. See the comment block above for why there is no fallback.
     const nfcHost = resolveNfcHost({ NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL });
+    // resolveNfcHost already guarantees an absolute http(s) URL, so this
+    // parse cannot throw. Surfaced so the operator sees exactly what host
+    // is about to be burned into a tag, and so a local-only host (which
+    // Web NFC will happily write on port-forwarded Chrome for Android) gets
+    // an explicit warning instead of shipping silently.
+    const nfcHostname = nfcHost ? new URL(nfcHost).hostname : null;
+    const isLocalNfcHost = nfcHostname === "localhost" || nfcHostname === "127.0.0.1";
     const cardsList = useQuery(api.admin.getCards, user?.id ? { clerkId: user.id } : "skip");
     const registerCard = useMutation(api.admin.registerSingleCard);
     const deleteCards = useMutation(api.admin.deleteCards);
@@ -262,9 +270,21 @@ export default function AdminFactoryPage() {
 
     const handleManualRegister = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        // Same guard as startScanning: writing a tag (or printing a label
+        // for one) with no configured host would encode a URL that points
+        // nowhere and, once shipped, can't be repointed. The form fields
+        // are also disabled for this case below; this is the same guard
+        // enforced at the entry point in case it's ever submitted anyway.
+        if (!nfcHost) {
+            setScanError(
+                "Card writing is unavailable: no NFC host is configured for this deployment."
+            );
+            return;
+        }
+
         const formData = new FormData(e.currentTarget);
         const uuid = formData.get("uuid") as string;
-        
+
         if (!uuid) return;
         if (!user?.id) {
             alert("User not authenticated.");
@@ -454,6 +474,15 @@ export default function AdminFactoryPage() {
                 </div>
             </div>
 
+            {nfcHost && (
+                <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+                    <span className="text-muted-foreground font-medium">Encoding host:</span>
+                    <code className="font-mono text-foreground bg-muted px-2 py-1 rounded-md break-all">
+                        {nfcHost}
+                    </code>
+                </div>
+            )}
+
             {!nfcHost && (
                 <Alert variant="destructive" className="mb-8" id="nfc-host-warning">
                     <ShieldAlert className="h-4 w-4" />
@@ -463,6 +492,19 @@ export default function AdminFactoryPage() {
                         <code className="font-mono">NEXT_PUBLIC_APP_URL</code> and redeploy
                         before scanning or printing labels — tags written without it would
                         point nowhere, and once shipped they can&apos;t be repointed.
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            {isLocalNfcHost && (
+                <Alert className="mb-8" id="nfc-local-host-warning">
+                    <TriangleAlert className="h-4 w-4" />
+                    <AlertTitle>Tags written now only work on this machine</AlertTitle>
+                    <AlertDescription>
+                        The configured NFC host resolves to <code className="font-mono">{nfcHostname}</code>.
+                        Cards encoded while this is set will only open correctly on this
+                        computer — set <code className="font-mono">NEXT_PUBLIC_APP_URL</code> to
+                        a public deployment before writing tags meant to leave it.
                     </AlertDescription>
                 </Alert>
             )}
@@ -534,14 +576,22 @@ export default function AdminFactoryPage() {
                         <form onSubmit={handleManualRegister} className="space-y-4">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold uppercase text-muted-foreground ml-1">Card UID / Serial</label>
-                                <Input 
+                                <Input
                                     name="uuid"
-                                    placeholder="e.g. 04:A1:B2:C3:D4:E5:F6" 
+                                    placeholder="e.g. 04:A1:B2:C3:D4:E5:F6"
                                     className="bg-background border-border h-12 rounded-xl text-foreground font-mono"
                                     required
+                                    disabled={!nfcHost}
+                                    aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
                                 />
                             </div>
-                            <Button type="submit" className="w-full bg-muted hover:bg-accent text-foreground h-12 rounded-xl">
+                            <Button
+                                type="submit"
+                                className="w-full bg-muted hover:bg-accent text-foreground h-12 rounded-xl"
+                                disabled={!nfcHost}
+                                title={!nfcHost ? "No NFC host configured — see the notice above." : undefined}
+                                aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
+                            >
                                 Register Manually
                             </Button>
                         </form>

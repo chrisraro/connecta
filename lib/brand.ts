@@ -1,5 +1,5 @@
 /**
- * Connecta brand constants and contrast utilities.
+ * Brand constants and contrast utilities for the current product name.
  *
  * The name is the product's promise in one word: a tap turns a stranger into
  * a connection. Every user-facing surface reads the name from CONNECTA below
