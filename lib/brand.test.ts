@@ -86,11 +86,15 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-// Covers BOTH retired brand names — this product has been renamed twice
-// (Tapfolio -> Herald -> SigmaTap) and neither old name should resurface.
-// Built from fragments so this file does not match its own check.
+// Covers all three retired brand names — this product has been renamed three
+// times (Tapfolio -> Herald -> SigmaTap -> Connecta) and none should
+// resurface. Built from fragments so this file does not match its own check.
 const STALE_BRAND = new RegExp(
-  ["tap", "folio"].join("") + "|" + ["her", "ald"].join(""),
+  [
+    ["tap", "folio"].join(""),
+    ["her", "ald"].join(""),
+    ["sigma", "tap"].join(""),
+  ].join("|"),
   "i"
 );
 
@@ -111,39 +115,14 @@ const STALE_BRAND = new RegExp(
 // is how app/admin/factory/page.tsx was able to print an unrelated,
 // unowned domain that nobody caught until a full-branch audit; see the
 // final-review-fixes report.)
-const INFRA_EXCEPTIONS: Record<string, string[]> = {
-  // localStorage keys for the guest cart id, an applied discount code, and
-  // offline-captured leads. Read back by these exact string values from
-  // CartContext.tsx / shop/cart/page.tsx / shop/checkout/page.tsx /
-  // offline-leads.ts (all of which now import the constants from here
-  // instead of holding their own literal) — renaming any of them would
-  // orphan a value already written to a real user's browser under the old
-  // key before the first rename shipped.
-  // Test fixtures that exercise the QR parser against the literal hosts
-  // printed on already-shipped cards. Two generations of physical stock
-  // carry retired hostnames; the parser must keep accepting them, so the
-  // fixtures must keep naming them.
-  [join("components", "dashboard", "QrClaimScanner.test.ts")]: [
-    '"https://herald-ph.vercel.app",',
-    '"https://tapfolio-beta.vercel.app",',
-  ],
-  [join("lib", "storage-keys.ts")]: [
-    'export const GUEST_CART_ID_KEY = "tapfolio_guest_cart_id";',
-    'export const DISCOUNT_CODE_KEY = "tapfolio_discount_code";',
-    'export const OFFLINE_LEADS_KEY = "tapfolio_offline_leads";',
-  ],
-  // Rename-history comment in the brand-constants module itself.
-  [join("lib", "brand.ts")]: [
-    '* captured lead. (Previously "Herald", named for the medieval herald\'s two',
-    '* name collided with a live, unrelated company operating as tapfolio.me.)',
-  ],
-  // Rename-history paragraph in the top-level README.
-  [join("README.md")]: [
-    'Tagline: "Every tap counts." (Previously named "Herald," after the medieval',
-    "herald's duties of announcing a person and designing their coat of arms,",
-    "tapfolio.me.)",
-  ],
-};
+// Every previous rename had to freeze literals that could not change without
+// breaking runtime behaviour: localStorage keys already written to real
+// browsers, and deployment hosts printed on shipped NFC cards. A purge on
+// 2026-08-31 removed every account but one and left a single test card, so
+// no live population sits behind either. Both freezes were lifted with the
+// Connecta rename and this allowlist is now empty. Keep it that way: a new
+// entry here means a retired brand name is shipping to users again.
+const INFRA_EXCEPTIONS: Record<string, string[]> = {};
 
 test("no user-facing source file still says either retired brand name", () => {
   const selfPath = join("lib", "brand.test.ts");
@@ -166,42 +145,23 @@ test("no user-facing source file still says either retired brand name", () => {
 // call sites hardcoded the CURRENT brand name ("Herald") as a string literal
 // instead of importing HERALD from this module, which made the first rename
 // (Tapfolio -> Herald) an expensive repo-wide sweep instead of a one-line
-// edit here. The second rename (Herald -> SigmaTap) stayed cheap because that
-// migration had already happened — this test now protects SigmaTap the same
-// way, and fails the day someone types a new `>SigmaTap<` or
-// `"...SigmaTap..."` into app/** or components/** instead of
-// `{SIGMATAP.name}`.
+// edit here. Both later renames (Herald -> SigmaTap, SigmaTap -> Connecta)
+// stayed cheap because that migration had already happened — this test now
+// protects Connecta the same way, and fails the day someone types a new
+// `>Connecta<` or `"...Connecta..."` into app/** or components/** instead of
+// `{CONNECTA.name}`.
 //
-// `\bSigmaTap\b` is deliberately case-sensitive with word boundaries: it
-// does NOT match `SigmaTapMark` / `buildSigmaTap` (no boundary between
-// "SigmaTap" and the adjoining word character) or `SIGMATAP` /
-// `sigmatap-mark.svg` / `--sigmatap-seal` (wrong case) — those are
-// legitimate, not brand-string leaks, so they need no allowlist entry at
-// all. Only a handful of doc comments that *talk about* the brand name (not
-// render it) remain and are allowlisted by exact line below, same
-// line-scoped mechanism as INFRA_EXCEPTIONS above.
-const CURRENT_BRAND_WORD = /\bSigmaTap\b/;
+// `\bConnecta\b` is deliberately case-sensitive with word boundaries: it does
+// NOT match `ConnectaMark` / `buildConnecta` (no boundary between "Connecta"
+// and the adjoining word character) or `CONNECTA` / `connecta-mark.svg` /
+// `--connecta-brand` (wrong case) — those are legitimate, not brand-string
+// leaks. Doc comments must say "the product" rather than the bare name, so
+// that no allowlist is needed at all.
+const CURRENT_BRAND_WORD = /\bConnecta\b/;
 
 const NEW_BRAND_STRING_SCAN_DIRS = ["app", "components"];
 
-// Line-scoped exceptions: comment-only mentions of "SigmaTap" that describe
-// the mark/design system rather than render brand copy. Deliberately kept
-// as prose, not migrated to the constant (rule 2 in the migration task).
-const NEW_BRAND_STRING_EXCEPTIONS: Record<string, string[]> = {
-  [join("components", "brand", "SigmaTapMark.tsx")]: [
-    "* SigmaTap's monogram — a solid Greek sigma. Inlined from the source SVG",
-    '*  visible word "SigmaTap" — it\'s then decorative and hidden from the',
-    '*  accessibility tree so screen readers don\'t announce "SigmaTap" twice. */',
-  ],
-  [join("app", "globals.css")]: [
-    "/* SigmaTap — enforced scales. Exactly three radii, exactly two elevations. */",
-    "/* SigmaTap identity — the sigma struck into a seal disc. Committed color",
-  ],
-  // Rename-history comment naming both retired stages.
-  [join("app", "admin", "factory", "page.tsx")]: [
-    "// (Tapfolio -> Herald -> SigmaTap) — this is the real, live Vercel",
-  ],
-};
+const NEW_BRAND_STRING_EXCEPTIONS: Record<string, string[]> = {};
 
 test("no new hardcoded occurrence of the current brand name in app/** or components/**", () => {
   const offenders: string[] = [];
@@ -219,5 +179,5 @@ test("no new hardcoded occurrence of the current brand name in app/** or compone
       if (CURRENT_BRAND_WORD.test(remaining)) offenders.push(rel);
     }
   }
-  expect(offenders, `hardcoded "SigmaTap" outside SIGMATAP constant in:\n${offenders.join("\n")}`).toEqual([]);
+  expect(offenders, `hardcoded "Connecta" outside CONNECTA constant in:\n${offenders.join("\n")}`).toEqual([]);
 });
