@@ -3,17 +3,18 @@
 import { useUser } from "@clerk/nextjs";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { 
-    Copy, 
-    Download, 
-    Loader2, 
-    Plus, 
-    SmartphoneNfc, 
-    Printer, 
-    X, 
-    QrCode, 
+import {
+    Copy,
+    Download,
+    Loader2,
+    Plus,
+    SmartphoneNfc,
+    Printer,
+    X,
+    QrCode,
     Zap,
     ShieldCheck,
+    ShieldAlert,
     AlertCircle,
     Trash2,
     CheckSquare,
@@ -37,8 +38,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Id } from "@/convex/_generated/dataModel";
 import { CONNECTA } from "@/lib/brand";
 import { classifyNfcWriteError, withRetries, isDuplicateRegistrationError } from "@/lib/nfc";
+import { resolveNfcHost } from "@/lib/nfcHost";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 // Define NDEF types since they might not be in the global scope
 interface NDEFReadingEvent extends Event {
@@ -61,18 +64,21 @@ interface NDEFReadingEvent extends Event {
  *
  * Deriving it from NEXT_PUBLIC_APP_URL means the encoded host tracks whatever
  * the deployment actually is, so it cannot drift out of sync with a rename
- * again. The fallback only covers local/dev builds that have not set the var.
+ * again. There is no fallback: when the var is unset, resolveNfcHost returns
+ * null and this page refuses to write tags or generate labels rather than
+ * guess a host — see lib/nfcHost.ts.
  *
  * The retired host has since been re-aliased to the live deployment so cards
  * written while it was dead resolve again — keep that alias for as long as
  * any of those cards are in circulation. See docs/rename-runbook.md.
  */
-const PRODUCTION_DOMAIN = (
-    process.env.NEXT_PUBLIC_APP_URL || "https://sigmatap.vercel.app"
-).replace(/\/+$/, "");
 
 export default function AdminFactoryPage() {
     const { user, isLoaded } = useUser();
+    // NEXT_PUBLIC_APP_URL is inlined by Next at build time, so it's read
+    // directly here rather than passing the whole process.env object through
+    // at runtime. See the comment block above for why there is no fallback.
+    const nfcHost = resolveNfcHost({ NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL });
     const cardsList = useQuery(api.admin.getCards, user?.id ? { clerkId: user.id } : "skip");
     const registerCard = useMutation(api.admin.registerSingleCard);
     const deleteCards = useMutation(api.admin.deleteCards);
@@ -104,6 +110,17 @@ export default function AdminFactoryPage() {
     const [ndefStatus, setNdefStatus] = useState<string | null>(null);
 
     const startScanning = async () => {
+        // No host configured — writing a tag would encode a URL that points
+        // nowhere and, once shipped, can't be repointed. The scan button is
+        // also disabled for this case; this is the same guard enforced at
+        // the entry point in case it's ever called some other way.
+        if (!nfcHost) {
+            setScanError(
+                "Card writing is unavailable: no NFC host is configured for this deployment."
+            );
+            return;
+        }
+
         if (!("NDEFReader" in window)) {
             setScanError("Web NFC is not supported on this browser/device. Use Chrome on Android.");
             return;
@@ -142,7 +159,7 @@ export default function AdminFactoryPage() {
                     // Write ONLY the URL to the NFC tag
                     // This ensures maximum compatibility across all devices
                     // The vCard download will happen on the profile page when loaded
-                    const url = `${PRODUCTION_DOMAIN}/t/${serialNumber}`;
+                    const url = `${nfcHost}/t/${serialNumber}`;
                     console.log("Writing NDEF URL:", url);
 
                     // A wobbling/lifted card loses coupling mid-write, which
@@ -412,10 +429,12 @@ export default function AdminFactoryPage() {
                             Delete Selected ({selectedIds.size})
                         </Button>
                     )}
-                    <Button 
+                    <Button
                         onClick={isScanning ? stopScanning : startScanning}
-                        className={isScanning 
-                            ? "bg-muted text-foreground border border-border hover:bg-accent h-12 px-6 rounded-2xl" 
+                        disabled={!isScanning && !nfcHost}
+                        title={!isScanning && !nfcHost ? "No NFC host configured — see the notice below." : undefined}
+                        className={isScanning
+                            ? "bg-muted text-foreground border border-border hover:bg-accent h-12 px-6 rounded-2xl"
                             : "bg-red-600 hover:bg-red-700 text-foreground font-bold h-12 px-8 rounded-2xl shadow-lg shadow-red-900/20"
                         }
                     >
@@ -433,6 +452,19 @@ export default function AdminFactoryPage() {
                     </Button>
                 </div>
             </div>
+
+            {!nfcHost && (
+                <Alert variant="destructive" className="mb-8">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Card writing is unavailable</AlertTitle>
+                    <AlertDescription>
+                        No NFC host is configured for this deployment. Set{" "}
+                        <code className="font-mono">NEXT_PUBLIC_APP_URL</code> and redeploy
+                        before scanning or printing labels — tags written without it would
+                        point nowhere, and once shipped they can&apos;t be repointed.
+                    </AlertDescription>
+                </Alert>
+            )}
 
             {/* How It Works Info */}
             <div className="mb-8 bg-card/50 border border-border rounded-3xl p-6">
@@ -532,11 +564,13 @@ export default function AdminFactoryPage() {
                                     <div className="text-[10px] uppercase font-black text-emerald-500/60 tracking-widest">Card ID (UID)</div>
                                     <div className="text-xs font-mono text-muted-foreground truncate">{lastRegistered.uuid}</div>
                                 </div>
-                                <Button 
+                                <Button
                                     onClick={() => {
                                         setSelectedCard(lastRegistered);
                                         setShowPrintDialog(true);
                                     }}
+                                    disabled={!nfcHost}
+                                    title={!nfcHost ? "No NFC host configured — see the notice above." : undefined}
                                     className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-foreground rounded-xl"
                                 >
                                     <Printer className="w-4 h-4 mr-2" />
@@ -621,15 +655,16 @@ export default function AdminFactoryPage() {
                                                 </TableCell>
                                                 <TableCell className="text-right pr-6">
                                                     <div className="flex items-center justify-end gap-1">
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            size="icon" 
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
                                                             className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                                                             onClick={() => {
                                                                 setSelectedCard(card);
                                                                 setShowPrintDialog(true);
                                                             }}
-                                                            title="Print Sticker"
+                                                            disabled={!nfcHost}
+                                                            title={nfcHost ? "Print Sticker" : "No NFC host configured — see the notice above."}
                                                         >
                                                             <Printer className="w-4 h-4" />
                                                         </Button>
@@ -673,16 +708,27 @@ export default function AdminFactoryPage() {
                         >
                             <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">{CONNECTA.name}</div>
 
-                            <QRCodeSVG
-                                value={`${PRODUCTION_DOMAIN}/t/${selectedCard?.uuid || ""}`}
-                                size={110}
-                                level="H"
-                                marginSize={1}
-                            />
+                            {nfcHost ? (
+                                <>
+                                    <QRCodeSVG
+                                        value={`${nfcHost}/t/${selectedCard?.uuid || ""}`}
+                                        size={110}
+                                        level="H"
+                                        marginSize={1}
+                                    />
 
-                            <div className="mt-2 text-black font-mono text-[9px] text-center px-2 truncate max-w-full">
-                                {PRODUCTION_DOMAIN.replace(/^https?:\/\//, "")}/t/{selectedCard?.uuid?.substring(0, 8)}...
-                            </div>
+                                    <div className="mt-2 text-black font-mono text-[9px] text-center px-2 truncate max-w-full">
+                                        {nfcHost.replace(/^https?:\/\//, "")}/t/{selectedCard?.uuid?.substring(0, 8)}...
+                                    </div>
+                                </>
+                            ) : (
+                                // Defense in depth: the buttons that open this dialog are
+                                // disabled whenever nfcHost is null, but never fall through
+                                // to rendering an empty or "null" host if it opens anyway.
+                                <div className="text-black text-[11px] text-center px-3 font-medium">
+                                    No NFC host configured — this label can&apos;t be generated.
+                                </div>
+                            )}
 
                             {/* The manual-entry fallback promises "the
                                 6-character code found on your card or its
