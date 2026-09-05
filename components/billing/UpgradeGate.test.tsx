@@ -7,7 +7,7 @@ describe("UpgradeGate", () => {
     render(
       <UpgradeGate locked={false} reason="Unused when unlocked">
         <button>Kinetic template</button>
-      </UpgradeGate>
+      </UpgradeGate>,
     );
     expect(screen.getByRole("button", { name: "Kinetic template" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /get pro/i })).not.toBeInTheDocument();
@@ -17,34 +17,26 @@ describe("UpgradeGate", () => {
     render(
       <UpgradeGate locked reason="This template is available on Pro & Business.">
         <button>Kinetic template</button>
-      </UpgradeGate>
+      </UpgradeGate>,
     );
     // The feature itself is still visible, not hidden — only interaction is
     // blocked (this is the exact complaint the gating rework fixes: pro
     // features must not silently vanish for free users).
     expect(screen.getByText("Kinetic template")).toBeInTheDocument();
-    expect(
-      screen.getByText("This template is available on Pro & Business.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("This template is available on Pro & Business.")).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: /get pro/i });
     expect(cta).toHaveAttribute("href", "/dashboard/billing");
   });
 
   test("locked=true with no children (banner, the default) renders the reason and a Get Pro CTA with no feature preview", () => {
-    render(
-      <UpgradeGate locked reason="Upgrade to Pro to activate more than one card." />
-    );
-    expect(
-      screen.getByText("Upgrade to Pro to activate more than one card.")
-    ).toBeInTheDocument();
+    render(<UpgradeGate locked reason="Upgrade to Pro to activate more than one card." />);
+    expect(screen.getByText("Upgrade to Pro to activate more than one card.")).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: /get pro/i });
     expect(cta).toHaveAttribute("href", "/dashboard/billing");
   });
 
   test('variant="inline" renders a compact CTA carrying the reason as its accessible name, for tight toolbar slots', () => {
-    render(
-      <UpgradeGate locked reason="CSV export is a Pro feature." variant="inline" />
-    );
+    render(<UpgradeGate locked reason="CSV export is a Pro feature." variant="inline" />);
     const cta = screen.getByRole("link", { name: /csv export is a pro feature.*get pro/i });
     expect(cta).toHaveAttribute("href", "/dashboard/billing");
   });
@@ -53,7 +45,7 @@ describe("UpgradeGate", () => {
     render(
       <UpgradeGate locked reason="Team workspace is a Business feature." variant="banner">
         <button>Team roster</button>
-      </UpgradeGate>
+      </UpgradeGate>,
     );
     expect(screen.queryByRole("button", { name: "Team roster" })).not.toBeInTheDocument();
     expect(screen.getByText("Team workspace is a Business feature.")).toBeInTheDocument();

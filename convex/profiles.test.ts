@@ -90,8 +90,11 @@ test("createProfile assigns a unique slug derived from the profile name", async 
   const asUser = t.withIdentity({ subject: "slug_user_1" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "slug1@test.dev", clerkId: "slug_user_1", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "slug1@test.dev",
+      clerkId: "slug_user_1",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -99,13 +102,19 @@ test("createProfile assigns a unique slug derived from the profile name", async 
     clerkId: "slug_user_1",
     name: "Christian Raro",
     agentInfo: {
-      fullName: "Christian Raro", title: "Founder", company: "Riverside Media",
-      phone: "0917", email: "c@connecta.example", services: [], socialLinks: [],
+      fullName: "Christian Raro",
+      title: "Founder",
+      company: "Riverside Media",
+      phone: "0917",
+      email: "c@connecta.example",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "editorial",
       colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
@@ -120,8 +129,11 @@ test("a second profile with the same name gets a distinct slug", async () => {
   for (const n of ["1", "2"]) {
     await t.run(async (ctx) => {
       await ctx.db.insert("users", {
-        email: `dup${n}@test.dev`, clerkId: `dup_user_${n}`, role: "agent",
-        subscriptionStatus: "active", plan: "free",
+        email: `dup${n}@test.dev`,
+        clerkId: `dup_user_${n}`,
+        role: "agent",
+        subscriptionStatus: "active",
+        plan: "free",
       });
     });
   }
@@ -130,13 +142,19 @@ test("a second profile with the same name gets a distinct slug", async () => {
       clerkId,
       name: "Same Name",
       agentInfo: {
-        fullName: "Same Name", title: "T", company: "C",
-        phone: "0917", email: "s@test.dev", services: [], socialLinks: [],
+        fullName: "Same Name",
+        title: "T",
+        company: "C",
+        phone: "0917",
+        email: "s@test.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -156,21 +174,30 @@ test("getProfileBySlug resolves the same profile as getProfile", async () => {
   const asUser = t.withIdentity({ subject: "bs_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "bs@test.dev", clerkId: "bs_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "bs@test.dev",
+      clerkId: "bs_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
   const { id } = await asUser.mutation(api.profiles.createProfile, {
     clerkId: "bs_user",
     name: "Bridget Solano",
     agentInfo: {
-      fullName: "Bridget Solano", title: "Architect", company: "Solano",
-      phone: "0917", email: "b@test.dev", services: [], socialLinks: [],
+      fullName: "Bridget Solano",
+      title: "Architect",
+      company: "Solano",
+      phone: "0917",
+      email: "b@test.dev",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "architectural",
       colorPalette: { primary: "#1f3d5c", background: "#f7f8f9", text: "#16191c" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
@@ -184,8 +211,11 @@ test("createProfile UPDATE assigns a slug to a legacy profile that has none", as
   const asUser = t.withIdentity({ subject: "legacy_user" });
   const profileId = await t.run(async (ctx) => {
     const ownerId = await ctx.db.insert("users", {
-      email: "legacy@test.dev", clerkId: "legacy_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "legacy@test.dev",
+      clerkId: "legacy_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
     // Simulate a pre-slug-feature row: inserted directly, bypassing
     // createProfile, so it has no `slug` — exactly like every profile that
@@ -194,13 +224,19 @@ test("createProfile UPDATE assigns a slug to a legacy profile that has none", as
       ownerId,
       name: "Legacy Profile",
       agentInfo: {
-        fullName: "Legacy Person", title: "Agent", company: "Old Co",
-        phone: "0917", email: "legacy@old.dev", services: [], socialLinks: [],
+        fullName: "Legacy Person",
+        title: "Agent",
+        company: "Old Co",
+        phone: "0917",
+        email: "legacy@old.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -214,13 +250,19 @@ test("createProfile UPDATE assigns a slug to a legacy profile that has none", as
     clerkId: "legacy_user",
     name: "Legacy Profile",
     agentInfo: {
-      fullName: "Legacy Person", title: "Agent", company: "Old Co",
-      phone: "0917", email: "legacy@old.dev", services: [], socialLinks: [],
+      fullName: "Legacy Person",
+      title: "Agent",
+      company: "Old Co",
+      phone: "0917",
+      email: "legacy@old.dev",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "editorial",
       colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
@@ -235,8 +277,11 @@ test("createProfile UPDATE never changes a slug that already exists", async () =
   const asUser = t.withIdentity({ subject: "stable_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "stable@test.dev", clerkId: "stable_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "stable@test.dev",
+      clerkId: "stable_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -244,13 +289,19 @@ test("createProfile UPDATE never changes a slug that already exists", async () =
     clerkId: "stable_user",
     name: "Stable Name",
     agentInfo: {
-      fullName: "Stable Name", title: "T", company: "C",
-      phone: "0917", email: "stable@test.dev", services: [], socialLinks: [],
+      fullName: "Stable Name",
+      title: "T",
+      company: "C",
+      phone: "0917",
+      email: "stable@test.dev",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "editorial",
       colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
@@ -265,13 +316,19 @@ test("createProfile UPDATE never changes a slug that already exists", async () =
     clerkId: "stable_user",
     name: "A Totally Different Name",
     agentInfo: {
-      fullName: "A Totally Different Name", title: "T", company: "C",
-      phone: "0917", email: "stable@test.dev", services: [], socialLinks: [],
+      fullName: "A Totally Different Name",
+      title: "T",
+      company: "C",
+      phone: "0917",
+      email: "stable@test.dev",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "editorial",
       colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
@@ -285,20 +342,29 @@ test("internalBackfillSlugs assigns a slug to a slugless profile and is a no-op 
   const t = convexTest(schema);
   const profileId = await t.run(async (ctx) => {
     const ownerId = await ctx.db.insert("users", {
-      email: "backfill@test.dev", clerkId: "backfill_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "backfill@test.dev",
+      clerkId: "backfill_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
     return await ctx.db.insert("profiles", {
       ownerId,
       name: "Needs A Slug",
       agentInfo: {
-        fullName: "Needs A Slug", title: "Agent", company: "Old Co",
-        phone: "0917", email: "needs@old.dev", services: [], socialLinks: [],
+        fullName: "Needs A Slug",
+        title: "Agent",
+        company: "Old Co",
+        phone: "0917",
+        email: "needs@old.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -323,21 +389,30 @@ test("internalBackfillSlugs pages through every profile via its cursor", async (
   const TOTAL = 7;
   await t.run(async (ctx) => {
     const ownerId = await ctx.db.insert("users", {
-      email: "pager@test.dev", clerkId: "pager_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "pager@test.dev",
+      clerkId: "pager_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
     for (let i = 0; i < TOTAL; i++) {
       await ctx.db.insert("profiles", {
         ownerId,
         name: `Pager Person ${i}`,
         agentInfo: {
-          fullName: `Pager Person ${i}`, title: "Agent", company: "Co",
-          phone: "0917", email: `p${i}@old.dev`, services: [], socialLinks: [],
+          fullName: `Pager Person ${i}`,
+          title: "Agent",
+          company: "Co",
+          phone: "0917",
+          email: `p${i}@old.dev`,
+          services: [],
+          socialLinks: [],
         },
         layoutConfig: {
           themeId: "editorial",
           colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-          componentOrder: ["Hero"], heroStyle: "default",
+          componentOrder: ["Hero"],
+          heroStyle: "default",
         },
         featuredProperties: [],
       });
@@ -349,11 +424,13 @@ test("internalBackfillSlugs pages through every profile via its cursor", async (
   let backfilled = 0;
   let pages = 0;
   for (;;) {
-    const run: { backfilled: number; isDone: boolean; cursor: string | null } =
-      await t.mutation(internal.profiles.internalBackfillSlugs, {
+    const run: { backfilled: number; isDone: boolean; cursor: string | null } = await t.mutation(
+      internal.profiles.internalBackfillSlugs,
+      {
         cursor,
         batchSize: 3,
-      });
+      },
+    );
     backfilled += run.backfilled;
     pages++;
     if (run.isDone) break;
@@ -377,8 +454,11 @@ test("slug derives from the person's name, not the \"X's Profile\" record label"
   const asUser = t.withIdentity({ subject: "derive_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "derive@test.dev", clerkId: "derive_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "derive@test.dev",
+      clerkId: "derive_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -387,13 +467,19 @@ test("slug derives from the person's name, not the \"X's Profile\" record label"
     // Exactly what the builder writes: "<fullName>'s Profile".
     name: "Christian Raro's Profile",
     agentInfo: {
-      fullName: "Christian Raro", title: "Developer", company: "Riverside Media",
-      phone: "0917", email: "c@test.dev", services: [], socialLinks: [],
+      fullName: "Christian Raro",
+      title: "Developer",
+      company: "Riverside Media",
+      phone: "0917",
+      email: "c@test.dev",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "editorial",
       colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
@@ -406,21 +492,30 @@ test("internalBackfillSlugs re-slugs a stale possessive slug only when asked", a
   const t = convexTest(schema);
   const profileId = await t.run(async (ctx) => {
     const ownerId = await ctx.db.insert("users", {
-      email: "stale@test.dev", clerkId: "stale_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "stale@test.dev",
+      clerkId: "stale_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
     return await ctx.db.insert("profiles", {
       ownerId,
       name: "Judy Ann Balilla's Profile",
       slug: "judy-ann-balillas-profile", // legacy derivation
       agentInfo: {
-        fullName: "Judy Ann Balilla", title: "Teacher", company: "NCF",
-        phone: "0917", email: "j@test.dev", services: [], socialLinks: [],
+        fullName: "Judy Ann Balilla",
+        title: "Teacher",
+        company: "NCF",
+        phone: "0917",
+        email: "j@test.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -462,8 +557,11 @@ test("createProfile REJECTS creating a second profile for a free-plan user alrea
   const asUser = t.withIdentity({ subject: "limit_user_reject" });
   const ownerId = await t.run(async (ctx) => {
     return await ctx.db.insert("users", {
-      email: "limit_reject@test.dev", clerkId: "limit_user_reject", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "limit_reject@test.dev",
+      clerkId: "limit_user_reject",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
   // Seed ONE existing profile directly, so the free plan's maxProfiles:1
@@ -473,13 +571,19 @@ test("createProfile REJECTS creating a second profile for a free-plan user alrea
       ownerId,
       name: "Existing Profile",
       agentInfo: {
-        fullName: "Existing Person", title: "Agent", company: "Co",
-        phone: "0917", email: "existing_reject@test.dev", services: [], socialLinks: [],
+        fullName: "Existing Person",
+        title: "Agent",
+        company: "Co",
+        phone: "0917",
+        email: "existing_reject@test.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -498,13 +602,19 @@ test("createProfile REJECTS creating a second profile for a free-plan user alrea
       clerkId: "limit_user_reject",
       name: "Second Profile",
       agentInfo: {
-        fullName: "Second Person", title: "Agent", company: "Co",
-        phone: "0917", email: "second_reject@test.dev", services: [], socialLinks: [],
+        fullName: "Second Person",
+        title: "Agent",
+        company: "Co",
+        phone: "0917",
+        email: "second_reject@test.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -523,8 +633,11 @@ test("createProfile REJECTS a free-plan user selecting a Pro-only template, with
   const asUser = t.withIdentity({ subject: "template_lock_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "template_lock@test.dev", clerkId: "template_lock_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "template_lock@test.dev",
+      clerkId: "template_lock_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -534,15 +647,21 @@ test("createProfile REJECTS a free-plan user selecting a Pro-only template, with
       clerkId: "template_lock_user",
       name: "Kinetic Profile",
       agentInfo: {
-        fullName: "Kinetic Person", title: "Agent", company: "Co",
-        phone: "0917", email: "kinetic@test.dev", services: [], socialLinks: [],
+        fullName: "Kinetic Person",
+        title: "Agent",
+        company: "Co",
+        phone: "0917",
+        email: "kinetic@test.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         // "kinetic" is Pro/Business-only — free's allowedTemplateIds is
         // ["editorial", "architectural"] (convex/plans.ts).
         themeId: "kinetic",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -561,20 +680,29 @@ test("createProfile does NOT reject the SAME at-limit free-plan user patching th
   const asUser = t.withIdentity({ subject: "limit_user_patch" });
   const { ownerId, profileId } = await t.run(async (ctx) => {
     const ownerId = await ctx.db.insert("users", {
-      email: "limit_patch@test.dev", clerkId: "limit_user_patch", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "limit_patch@test.dev",
+      clerkId: "limit_user_patch",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
     const profileId = await ctx.db.insert("profiles", {
       ownerId,
       name: "Existing Profile",
       agentInfo: {
-        fullName: "Existing Person", title: "Agent", company: "Co",
-        phone: "0917", email: "existing_patch@test.dev", services: [], socialLinks: [],
+        fullName: "Existing Person",
+        title: "Agent",
+        company: "Co",
+        phone: "0917",
+        email: "existing_patch@test.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -589,20 +717,29 @@ test("createProfile does NOT reject the SAME at-limit free-plan user patching th
     clerkId: "limit_user_patch",
     name: "Existing Profile (edited)",
     agentInfo: {
-      fullName: "Existing Person", title: "Agent", company: "Co",
-      phone: "0917", email: "existing_patch@test.dev", services: [], socialLinks: [],
+      fullName: "Existing Person",
+      title: "Agent",
+      company: "Co",
+      phone: "0917",
+      email: "existing_patch@test.dev",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "editorial",
       colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
 
   expect(result.id).toBe(profileId);
   const stillOne = await t.run(async (ctx) =>
-    ctx.db.query("profiles").withIndex("by_owner", (q) => q.eq("ownerId", ownerId)).collect()
+    ctx.db
+      .query("profiles")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .collect(),
   );
   expect(stillOne.length).toBe(1);
 });

@@ -9,18 +9,21 @@ This document provides a comprehensive guide to understanding the Connecta codeb
 Connecta is a digital business card and CRM platform designed for modern professionals. It consists of the following components:
 
 ### Frontend
+
 - **Framework:** Next.js 16 (App Router, using React 19)
 - **Styling:** Tailwind CSS (v4 with PostCSS)
 - **UI Components:** Shadcn/ui for dashboards, and custom mobile-first layouts for public profiles
 - **Typography:** Uses Google Fonts (Inter, Space Grotesk, Noto Serif, Manrope) depending on the selected template.
 
 ### Backend & Database
+
 - **Platform:** Convex (Real-time, Serverless database and functions)
   - Real-time client subscription allows immediate UI updates on the dashboard or public profiles.
   - Server actions are not used; the client communicates directly with Convex functions via `useQuery` and `useMutation` hooks.
   - HTTP Actions (`convex/http.ts`) handle external incoming webhooks.
 
 ### Third-Party Integrations
+
 - **Authentication:** Clerk (fully integrated with Convex server-side JWT verification)
 - **Payment Gateway:** PayRex (GCash, Maya, Credit Card, QR Ph; base currency PHP)
   - Replaces old Stripe/PayPal integrations.
@@ -76,19 +79,21 @@ CONVEX_DEPLOYMENT=...
 
 Configure these settings inside the **Convex Dashboard Settings -> Environment Variables**:
 
-| Variable | Description | Source |
-|---|---|---|
-| `RESEND_API_KEY` | Resend API Key for sending transaction emails | Resend Dashboard |
-| `PAYREX_SECRET_KEY` | PayRex Secret Key (`pr_test_...`) for creating checkout sessions | PayRex Dashboard |
-| `PAYREX_WEBHOOK_SECRET` | Secret key used to verify incoming webhook signatures | Generated on webhook creation |
-| `NEXT_PUBLIC_APP_URL` | Base URL of your frontend app (e.g. `http://localhost:3000` or production URL) | Setup specific |
+| Variable                | Description                                                                    | Source                        |
+| ----------------------- | ------------------------------------------------------------------------------ | ----------------------------- |
+| `RESEND_API_KEY`        | Resend API Key for sending transaction emails                                  | Resend Dashboard              |
+| `PAYREX_SECRET_KEY`     | PayRex Secret Key (`pr_test_...`) for creating checkout sessions               | PayRex Dashboard              |
+| `PAYREX_WEBHOOK_SECRET` | Secret key used to verify incoming webhook signatures                          | Generated on webhook creation |
+| `NEXT_PUBLIC_APP_URL`   | Base URL of your frontend app (e.g. `http://localhost:3000` or production URL) | Setup specific                |
 
 ---
 
 ## 4. Setup Guide (Connecting Services)
 
 ### Step 1: Install Node.js & NPM
+
 Before installing dependencies, ensure you have **Node.js (LTS version)** installed on your machine.
+
 - If you use Windows Package Manager, open a Command Prompt or PowerShell window and run:
   ```powershell
   winget install OpenJS.NodeJS
@@ -96,12 +101,15 @@ Before installing dependencies, ensure you have **Node.js (LTS version)** instal
 - Alternatively, download and install Node.js from the official site: https://nodejs.org/
 
 ### Step 2: Install Project Dependencies
+
 Once Node.js is installed, run `npm install` in the project root to fetch local packages:
+
 ```bash
 npm install
 ```
 
 ### Step 3: Connect and Configure Convex
+
 1. Start the Convex development server locally. This will guide you through logging into Convex, initializing your project, and downloading code generation files:
    ```bash
    npx convex dev
@@ -109,6 +117,7 @@ npm install
 2. Verify that Convex generates client-side files like [`api.d.ts`](convex/_generated/api.d.ts) inside `convex/_generated/`.
 
 ### Step 4: Create the Clerk JWT Template (manual, no API)
+
 Convex verifies signed-in users by checking a Clerk-issued JWT against
 `convex/auth.config.ts`, which expects `applicationID: "convex"` — i.e. a
 Clerk JWT Template literally named `convex`. **This has to be created by
@@ -128,7 +137,9 @@ fail silently (Convex treats the user as signed out).
    production-instance version of this step).
 
 ### Step 5: Register PayRex Webhooks
+
 Since the PayRex Dashboard does not yet support a user interface for webhook configuration, you must register the webhook endpoint programmatically.
+
 1. Run a `POST` request to `https://api.payrexhq.com/v1/webhooks` with basic authentication (`username = PAYREX_SECRET_KEY`, `password = empty`):
    ```bash
    # Example using cURL
@@ -141,6 +152,7 @@ Since the PayRex Dashboard does not yet support a user interface for webhook con
 2. Save the webhook secret key returned in the response payload as `PAYREX_WEBHOOK_SECRET` inside your Convex environment variables dashboard.
 
 ### Step 6: Provision First Admin
+
 1. Create a user account by logging into the frontend (`http://localhost:3000/auth`).
 2. Retrieve your Clerk User ID (starts with `user_...`) from the Clerk Dashboard.
 3. Grant this user the first superadmin role by running:

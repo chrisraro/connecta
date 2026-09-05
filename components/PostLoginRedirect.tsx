@@ -29,7 +29,7 @@ function PostLoginRedirectInner() {
   // Check admin status
   const adminStatus = useQuery(
     api.admin.checkAdminStatus,
-    isLoaded && user ? { clerkId: user.id } : "skip"
+    isLoaded && user ? { clerkId: user.id } : "skip",
   );
 
   useEffect(() => {
@@ -40,9 +40,7 @@ function PostLoginRedirectInner() {
       if (adminStatus.isAdmin) {
         router.push("/admin");
       } else if (cardUuid) {
-        router.push(
-          `/dashboard/onboarding?card_uuid=${encodeURIComponent(cardUuid)}`
-        );
+        router.push(`/dashboard/onboarding?card_uuid=${encodeURIComponent(cardUuid)}`);
       } else {
         router.push("/dashboard");
       }
@@ -52,9 +50,7 @@ function PostLoginRedirectInner() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30">
       <Loader2 className="w-10 h-10 animate-spin text-yellow-500 mb-4" />
-      <p className="text-sm text-muted-foreground">
-        Checking your account...
-      </p>
+      <p className="text-sm text-muted-foreground">Checking your account...</p>
     </div>
   );
 }

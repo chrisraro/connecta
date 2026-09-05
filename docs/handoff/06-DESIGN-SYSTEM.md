@@ -64,7 +64,7 @@ Theming is `next-themes` (`^0.4.6`, per `docs/handoff/02-TECH-STACK.md`), wired 
 - `enableSystem` is on, but **no UI in this app ever calls `setTheme("system")`.** The only
   user-facing control is `components/ui/theme-toggle.tsx`, and both of its `setTheme` calls
   (`theme-toggle.tsx:19,31`) are a binary `theme === "dark" ? "light" : "dark"` — never `"system"`.
-  So the "system" leg of the triple is *reachable in the library* but *not exposed* by this app: a
+  So the "system" leg of the triple is _reachable in the library_ but _not exposed_ by this app: a
   visitor lands on dark, and from then on can only toggle explicitly between light and dark, with
   their choice persisted to `localStorage` (`next-themes` default key `"theme"`) and NOT re-derived
   from the OS on a later visit.
@@ -120,14 +120,14 @@ All 6 families are loaded once via `next/font/google` in `lib/fonts.ts:1-59` and
 variables on `<html>` through `allFontVariables` (`lib/fonts.ts:52-59`, consumed at
 `app/layout.tsx:52`) — **never loaded per-component.** `display: "swap"` is set on every one.
 
-| CSS variable | Family | `lib/fonts.ts` | Role |
-|---|---|---|---|
-| `--font-display` | Fraunces (variable, axes `SOFT`/`WONK`/`opsz`) | `:11-16` | SigmaTap's own marketing/legal display face — `app/page.tsx:108,411`, `components/legal/LegalPage.tsx:56,63`. Never used inside a rendered profile. |
-| `--font-body` | Geist | `:19-23` | App-wide UI/body face, mapped to Tailwind's `--font-sans` (`app/globals.css:16`) — "Serif is banned on dashboard surfaces" (`lib/fonts.ts:18`). **Also** the body face inside all 3 profile templates (see below). |
-| `--font-mono` | Geist Mono | `:25-29` | Order numbers, SKUs, audit entries across admin/shop tables (16 files reference `font-mono`, e.g. `app/admin/shop/orders/page.tsx`). |
-| `--font-tpl-editorial` | Newsreader | `:33-37` | Editorial template's display/heading face. Also reused app-wide as Tailwind's `--font-serif` (`app/globals.css:17`), so any incidental `font-serif` utility elsewhere in the app resolves to this face too. |
-| `--font-tpl-kinetic` | Space Grotesk | `:39-43` | Kinetic template's display/heading face. |
-| `--font-tpl-architectural` | Manrope | `:45-49` | Architectural template's display/heading face. |
+| CSS variable               | Family                                         | `lib/fonts.ts` | Role                                                                                                                                                                                                               |
+| -------------------------- | ---------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--font-display`           | Fraunces (variable, axes `SOFT`/`WONK`/`opsz`) | `:11-16`       | SigmaTap's own marketing/legal display face — `app/page.tsx:108,411`, `components/legal/LegalPage.tsx:56,63`. Never used inside a rendered profile.                                                                |
+| `--font-body`              | Geist                                          | `:19-23`       | App-wide UI/body face, mapped to Tailwind's `--font-sans` (`app/globals.css:16`) — "Serif is banned on dashboard surfaces" (`lib/fonts.ts:18`). **Also** the body face inside all 3 profile templates (see below). |
+| `--font-mono`              | Geist Mono                                     | `:25-29`       | Order numbers, SKUs, audit entries across admin/shop tables (16 files reference `font-mono`, e.g. `app/admin/shop/orders/page.tsx`).                                                                               |
+| `--font-tpl-editorial`     | Newsreader                                     | `:33-37`       | Editorial template's display/heading face. Also reused app-wide as Tailwind's `--font-serif` (`app/globals.css:17`), so any incidental `font-serif` utility elsewhere in the app resolves to this face too.        |
+| `--font-tpl-kinetic`       | Space Grotesk                                  | `:39-43`       | Kinetic template's display/heading face.                                                                                                                                                                           |
+| `--font-tpl-architectural` | Manrope                                        | `:45-49`       | Architectural template's display/heading face.                                                                                                                                                                     |
 
 **The mechanism:** each template's identity is "primarily typographic"
 (`components/templates/ProfileRenderer.tsx:26`). `components/templates/theme.ts`'s `fontVars`
@@ -157,21 +157,21 @@ file (`components.json:7` even has an empty `"config": ""`). **UNVERIFIED as a S
 scale** — every `text-*` utility class in this codebase (`text-xs` through `text-9xl`) is Tailwind
 v4's own shipped default, confirmed by reading `node_modules/tailwindcss/theme.css:299-324` directly:
 
-| Utility | Size | Line height |
-|---|---|---|
-| `text-xs` | 0.75rem (12px) | 1rem |
-| `text-sm` | 0.875rem (14px) | 1.25rem |
-| `text-base` | 1rem (16px) | 1.5rem |
-| `text-lg` | 1.125rem (18px) | 1.75rem |
-| `text-xl` | 1.25rem (20px) | 1.75rem |
-| `text-2xl` | 1.5rem (24px) | 2rem |
-| `text-3xl` | 1.875rem (30px) | 2.25rem |
-| `text-4xl` | 2.25rem (36px) | 2.5rem |
-| `text-5xl` | 3rem (48px) | 1 |
-| `text-6xl` | 3.75rem (60px) | 1 |
-| `text-7xl` | 4.5rem (72px) | 1 |
-| `text-8xl` | 6rem (96px) | 1 |
-| `text-9xl` | 8rem (128px) | 1 |
+| Utility     | Size            | Line height |
+| ----------- | --------------- | ----------- |
+| `text-xs`   | 0.75rem (12px)  | 1rem        |
+| `text-sm`   | 0.875rem (14px) | 1.25rem     |
+| `text-base` | 1rem (16px)     | 1.5rem      |
+| `text-lg`   | 1.125rem (18px) | 1.75rem     |
+| `text-xl`   | 1.25rem (20px)  | 1.75rem     |
+| `text-2xl`  | 1.5rem (24px)   | 2rem        |
+| `text-3xl`  | 1.875rem (30px) | 2.25rem     |
+| `text-4xl`  | 2.25rem (36px)  | 2.5rem      |
+| `text-5xl`  | 3rem (48px)     | 1           |
+| `text-6xl`  | 3.75rem (60px)  | 1           |
+| `text-7xl`  | 4.5rem (72px)   | 1           |
+| `text-8xl`  | 6rem (96px)     | 1           |
+| `text-9xl`  | 8rem (128px)    | 1           |
 
 Real usage varies per hero layout rather than following a fixed hierarchy — e.g.
 `HeroSection.tsx`'s three hero variants use `text-4xl` (editorial-stack name, `:111`), `text-5xl
@@ -183,7 +183,7 @@ what is semantically the same element (the profile owner's name), because each t
 
 `app/globals.css` has no `--spacing` override, so every `p-*`/`m-*`/`gap-*` utility is a multiple of
 Tailwind v4's single default spacing unit, `--spacing: 0.25rem` (`node_modules/tailwindcss/theme.css:277`,
-un-overridden). Not a SigmaTap-specific token. The one place a *semantic* spacing decision is
+un-overridden). Not a SigmaTap-specific token. The one place a _semantic_ spacing decision is
 made is per-template `rhythm` (vertical section spacing) — see below.
 
 ## Composition: how templates differ beyond colour
@@ -193,14 +193,14 @@ Colour is deliberately not what makes the three templates distinct (`ProfileRend
 carries a `composition` object (`theme.ts:8-21`) with 6 independent axes, resolved into layout
 classes by `components/templates/sections/measure.ts` and `.../imagery.ts`:
 
-| Axis | Editorial | Kinetic | Architectural |
-|---|---|---|---|
-| `hero` | editorial-stack | full-bleed-portrait | structured-split |
-| `measure` | wide (`max-w-2xl`) | full (`w-full`) | narrow (`max-w-md`) |
-| `rhythm` | cinematic (`py-20 md:py-32`) | tight (`py-10 md:py-14`) | generous (`py-14 md:py-20`) |
-| `rule` | hairline | numbered | none |
-| `headingPlacement` | beside | above | above |
-| `imagery` | bleed | masonry | inset |
+| Axis               | Editorial                    | Kinetic                  | Architectural               |
+| ------------------ | ---------------------------- | ------------------------ | --------------------------- |
+| `hero`             | editorial-stack              | full-bleed-portrait      | structured-split            |
+| `measure`          | wide (`max-w-2xl`)           | full (`w-full`)          | narrow (`max-w-md`)         |
+| `rhythm`           | cinematic (`py-20 md:py-32`) | tight (`py-10 md:py-14`) | generous (`py-14 md:py-20`) |
+| `rule`             | hairline                     | numbered                 | none                        |
+| `headingPlacement` | beside                       | above                    | above                       |
+| `imagery`          | bleed                        | masonry                  | inset                       |
 
 `SectionShell.tsx` (`components/templates/sections/SectionShell.tsx:35-114`) is the shared frame
 every content section renders through — it owns background alternation (`surface` vs `background`
@@ -215,18 +215,18 @@ without a `heading` (Hero, Certification) used to offset every section after the
 
 `app/globals.css:96-99`: **exactly three**, per the file's own comment.
 
-| Token | Value | Example consumer |
-|---|---|---|
-| `--r-sm` | `6px` | `HeroSection.tsx:74` (social link chips), `imagery.ts:26` (gallery items) |
-| `--r-md` | `12px` | `HeroSection.tsx:218` (structured-split avatar) |
-| `--r-lg` | `20px` | `HeroSection.tsx:96` (editorial-stack avatar) |
+| Token    | Value  | Example consumer                                                          |
+| -------- | ------ | ------------------------------------------------------------------------- |
+| `--r-sm` | `6px`  | `HeroSection.tsx:74` (social link chips), `imagery.ts:26` (gallery items) |
+| `--r-md` | `12px` | `HeroSection.tsx:218` (structured-split avatar)                           |
+| `--r-lg` | `20px` | `HeroSection.tsx:96` (editorial-stack avatar)                             |
 
 Consumed as an arbitrary-value Tailwind class, `rounded-[var(--r-sm)]` etc. — not through the
 generic `rounded-*` scale.
 
 This is **distinct** from the Tailwind/shadcn radius scale also present in the same file
 (`app/globals.css:48-54`): `--radius-sm` through `--radius-4xl` all derive via `calc()` from a
-single `--radius: 0.5rem` (`app/globals.css:58`), and power the *generic* `rounded-sm`/`rounded-md`/
+single `--radius: 0.5rem` (`app/globals.css:58`), and power the _generic_ `rounded-sm`/`rounded-md`/
 etc. utilities used by shadcn primitives (buttons, cards, inputs) throughout the app shell. Two
 radius systems coexist on purpose: `--r-*` is the enforced, minimal scale for profile-template
 content; the shadcn scale is what `components/ui/**` primitives use out of the box.
@@ -235,9 +235,9 @@ content; the shadcn scale is what `components/ui/**` primitives use out of the b
 
 `app/globals.css:100-101`: **exactly two**.
 
-| Token | Value |
-|---|---|
-| `--e-raised` | `0 1px 2px rgb(28 22 20 / 0.04), 0 2px 8px rgb(28 22 20 / 0.06)` |
+| Token         | Value                                                               |
+| ------------- | ------------------------------------------------------------------- |
+| `--e-raised`  | `0 1px 2px rgb(28 22 20 / 0.04), 0 2px 8px rgb(28 22 20 / 0.06)`    |
 | `--e-overlay` | `0 4px 12px rgb(28 22 20 / 0.08), 0 12px 32px rgb(28 22 20 / 0.12)` |
 
 Applied via inline `style`, not a Tailwind utility — e.g.
@@ -295,7 +295,7 @@ designer/developer will re-break these unless they know about them going in.
 ### 1. Flex children need `min-w-0` — `truncate`/`line-clamp` are inert without it
 
 CSS flex items default to `min-width: auto`, which means a flex child never shrinks below its
-content's intrinsic width — `truncate` (which needs `overflow: hidden` + a *constrained* width to do
+content's intrinsic width — `truncate` (which needs `overflow: hidden` + a _constrained_ width to do
 anything) silently has no effect until every flex ancestor in the chain is given `min-w-0`.
 
 Real example, `app/dashboard/leads/page.tsx:237-256`, with the bug documented inline:
@@ -348,7 +348,7 @@ small table — the bug only manifests once a table grows past the cap.
 `app/globals.css:178-180` sets `html, body { overflow-x: clip; }` deliberately, in place of
 Tailwind's `overflow-x-hidden` (`overflow-x: hidden`) — the file's own comment
 (`app/globals.css:162-177`) explains why: `hidden` on only one axis makes the browser silently
-compute the *other*, unset axis as `auto` too (the CSS "mismatched axis" quirk), which turns `body`
+compute the _other_, unset axis as `auto` too (the CSS "mismatched axis" quirk), which turns `body`
 into an unintended scroll container and breaks every `position: sticky` descendant. `clip` is exempt
 from that quirk and never creates a scroll container, so it was the correct fix for that bug
 (commit `209f57b`).
@@ -373,8 +373,8 @@ measuring, when manually checking for horizontal overflow in this codebase — `
 alone will report false negatives.** Earlier audit passes (`.superpowers/sdd/task-2-fixes-report.md`,
 `.superpowers/sdd/mobile-polish-report.md`) used `documentElement.scrollWidth === clientWidth` as
 their overflow check; that check still incidentally read correctly in those reports because both
-sides collapse to the viewport width together under `clip` — it happens to still catch a *false*
-"equal" reading, but it can no longer catch a *real* overflow the way it could before `clip` was
+sides collapse to the viewport width together under `clip` — it happens to still catch a _false_
+"equal" reading, but it can no longer catch a _real_ overflow the way it could before `clip` was
 introduced, which is the trap for a future check that assumes it can.
 
 ## Importing these artifacts into Figma

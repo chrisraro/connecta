@@ -52,11 +52,7 @@ export function HeroProfilePreview() {
               response sees one <h1>, which a useEffect tag-swap could never
               deliver.
             */}
-            <ProfileRenderer
-              data={demoProfile}
-              templateId="editorial"
-              headingLevel="h2"
-            />
+            <ProfileRenderer data={demoProfile} templateId="editorial" headingLevel="h2" />
           </div>
         </div>
       </TiltCard>

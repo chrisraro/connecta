@@ -67,10 +67,7 @@ export function LegalPage({
 
           {/* Table of contents — hidden on small screens to avoid pushing the
               actual content below the fold on a 390px viewport. */}
-          <nav
-            aria-label="On this page"
-            className="hidden lg:block"
-          >
+          <nav aria-label="On this page" className="hidden lg:block">
             <div className="sticky top-24 rounded-[var(--r-md)] border border-border bg-card p-5 shadow-[var(--e-raised)]">
               <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 On this page
@@ -112,17 +109,14 @@ export function DraftNotice() {
         aria-hidden="true"
       />
       <div className="text-sm leading-6 text-amber-900 dark:text-amber-200">
-        <p className="font-semibold">
-          Draft — not legal advice, not yet approved for launch.
-        </p>
+        <p className="font-semibold">Draft — not legal advice, not yet approved for launch.</p>
         <p className="mt-1">
-          This page was generated from an engineering audit of what {CONNECTA.name}&apos;s
-          codebase actually does. It has not been reviewed by a
-          Philippine-qualified lawyer or the company&apos;s Data Protection
-          Officer, and must not be treated as a compliant policy until it has
-          been. Placeholders in brackets — like{" "}
-          <Placeholder>[COMPANY LEGAL NAME]</Placeholder> — mark facts that
-          have not been supplied yet and must be filled in before publication.
+          This page was generated from an engineering audit of what {CONNECTA.name}&apos;s codebase
+          actually does. It has not been reviewed by a Philippine-qualified lawyer or the
+          company&apos;s Data Protection Officer, and must not be treated as a compliant policy
+          until it has been. Placeholders in brackets — like{" "}
+          <Placeholder>[COMPANY LEGAL NAME]</Placeholder> — mark facts that have not been supplied
+          yet and must be filled in before publication.
         </p>
       </div>
     </div>

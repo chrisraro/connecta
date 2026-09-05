@@ -21,19 +21,19 @@ but are never populated or never read.
 
 Indexes: `by_clerkId(clerkId)`, `by_teamId(teamId)`.
 
-| Field | Type | Optional | Notes |
-|---|---|---|---|
-| `email` | `string` | no | |
-| `clerkId` | `string` | no | FK-equivalent to Clerk's user id; indexed, this is how every Convex function resolves "who is calling" |
-| `name` | `string` | yes | |
-| `role` | `"agent" \| "admin"` | no | Coarse role. Fine-grained admin permissions live in the separate `admins` table below |
-| `subscriptionStatus` | `string` | no | Free-text status string (not a literal union) |
-| `plan` | `"free" \| "pro" \| "business"` | yes | |
-| `planExpiresAt` | `number` | yes | ms epoch |
-| `teamId` | `Id<"teams">` | yes | |
-| `onboardingCompleted` | `boolean` | yes | |
-| `onboardingData` | object (see below) | yes | A **full copy** of onboarding-wizard answers, not a reference. See "Known drift" below |
-| `credits` | `number` | yes | **DEAD** — deprecated, see below |
+| Field                 | Type                            | Optional | Notes                                                                                                  |
+| --------------------- | ------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| `email`               | `string`                        | no       |                                                                                                        |
+| `clerkId`             | `string`                        | no       | FK-equivalent to Clerk's user id; indexed, this is how every Convex function resolves "who is calling" |
+| `name`                | `string`                        | yes      |                                                                                                        |
+| `role`                | `"agent" \| "admin"`            | no       | Coarse role. Fine-grained admin permissions live in the separate `admins` table below                  |
+| `subscriptionStatus`  | `string`                        | no       | Free-text status string (not a literal union)                                                          |
+| `plan`                | `"free" \| "pro" \| "business"` | yes      |                                                                                                        |
+| `planExpiresAt`       | `number`                        | yes      | ms epoch                                                                                               |
+| `teamId`              | `Id<"teams">`                   | yes      |                                                                                                        |
+| `onboardingCompleted` | `boolean`                       | yes      |                                                                                                        |
+| `onboardingData`      | object (see below)              | yes      | A **full copy** of onboarding-wizard answers, not a reference. See "Known drift" below                 |
+| `credits`             | `number`                        | yes      | **DEAD** — deprecated, see below                                                                       |
 
 `onboardingData` shape (`convex/schema.ts:15-27`): `profileCategory` (`"individual"\|"company"\|"business"`,
 optional), `email` (optional), `fullName` (required string), `title` (required string), `company`
@@ -53,7 +53,7 @@ found live accounts where `onboardingData.profileCategory` and the live profile'
 and one account where `onboardingData` has real typed answers but the linked `profiles` row's `agentInfo`
 is entirely blank (created directly through the builder, bypassing onboarding —
 `.superpowers/sdd/audit-dataflow.md:66-113`). Treat `profiles` as authoritative for anything currently
-live; `onboardingData` is only reliable as a resume-prefill for an *in-progress* wizard.
+live; `onboardingData` is only reliable as a resume-prefill for an _in-progress_ wizard.
 
 ---
 
@@ -61,14 +61,14 @@ live; `onboardingData` is only reliable as a resume-prefill for an *in-progress*
 
 Indexes: `by_uuid(uuid)`, `by_owner(ownerId)`, `by_activationCode(activationCode)`.
 
-| Field | Type | Optional | Notes |
-|---|---|---|---|
-| `ownerId` | `Id<"users">` | no | |
-| `uuid` | `string` | no | Printed on the physical NFC tag / QR code, resolves `/t/<uuid>` |
-| `activationCode` | `string` | no | 6-character code used to activate a card |
-| `status` | `"inventory" \| "active" \| "lost"` | no | |
-| `linkedProfileId` | `Id<"profiles">` | yes | Set once the card is linked to a profile |
-| `tapCount` | `number` | no | |
+| Field             | Type                                | Optional | Notes                                                           |
+| ----------------- | ----------------------------------- | -------- | --------------------------------------------------------------- |
+| `ownerId`         | `Id<"users">`                       | no       |                                                                 |
+| `uuid`            | `string`                            | no       | Printed on the physical NFC tag / QR code, resolves `/t/<uuid>` |
+| `activationCode`  | `string`                            | no       | 6-character code used to activate a card                        |
+| `status`          | `"inventory" \| "active" \| "lost"` | no       |                                                                 |
+| `linkedProfileId` | `Id<"profiles">`                    | yes      | Set once the card is linked to a profile                        |
+| `tapCount`        | `number`                            | no       |                                                                 |
 
 ---
 
@@ -78,22 +78,22 @@ Indexes: `by_owner(ownerId)`, `by_slug(slug)`.
 
 Top-level fields:
 
-| Field | Type | Optional | Notes |
-|---|---|---|---|
-| `ownerId` | `Id<"users">` | no | |
-| `name` | `string` | no | Machine-generated as `"<fullName>'s Profile"` (`convex/users.ts:133`); an internal dashboard label, **never rendered to a public visitor** — `ProfileRenderer`/`StorefrontView` never read `data.name`. Minor, not urgent to remove |
-| `slug` | `string` | yes | Vanity URL segment. **Only assigned by the builder's `createProfile`** (`convex/profiles.ts`); onboarding's direct insert path does not set it — see "Two creation paths" below |
-| `profileType` | `"individual" \| "company" \| "business"` | yes | Selects initial theme/template defaults at creation time. The **public render path never reads it** — `ProfileRenderer.tsx` and `StorefrontView.tsx` both destructure props without `profileType`; the already-computed `componentOrder` (inside `layoutConfig`) is what actually drives the page |
-| `agentInfo` | object, see below | no | The authoritative identity/content record for the profile |
-| `digitalCard` | object, see below | yes | Theming for the separate digital-business-card surface (distinct from the public profile page — see "Two color systems" below) |
-| `layoutConfig` | object, see below | no | Theming/ordering for the public profile page |
-| `featuredProperties` | `Id<"properties">[]` | no (always `[]`) | **DEAD**, see below |
-| `featuredProjects` | `string[]` | yes (always `[]`) | **DEAD**, see below |
-| `products` | `{title, description, price?, image?, link?}[]` | yes | Storefront product catalog — alive, editable, rendered |
-| `services` | `{title, description, price?, image?}[]` | yes | **DEAD (top-level)** — do not confuse with `agentInfo.services`, see below |
-| `propertyListings` | `{title, description?, price?, location?, image?, status?, link?}[]` | yes | Alive — real-estate listing blocks, editable in the builder |
-| `inlineProjects` | `{title, description?, category?, image?, link?}[]` | yes | Alive — portfolio project blocks, editable in the builder |
-| `showStorefront` | `boolean` | yes | |
+| Field                | Type                                                                 | Optional          | Notes                                                                                                                                                                                                                                                                                             |
+| -------------------- | -------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ownerId`            | `Id<"users">`                                                        | no                |                                                                                                                                                                                                                                                                                                   |
+| `name`               | `string`                                                             | no                | Machine-generated as `"<fullName>'s Profile"` (`convex/users.ts:133`); an internal dashboard label, **never rendered to a public visitor** — `ProfileRenderer`/`StorefrontView` never read `data.name`. Minor, not urgent to remove                                                               |
+| `slug`               | `string`                                                             | yes               | Vanity URL segment. **Only assigned by the builder's `createProfile`** (`convex/profiles.ts`); onboarding's direct insert path does not set it — see "Two creation paths" below                                                                                                                   |
+| `profileType`        | `"individual" \| "company" \| "business"`                            | yes               | Selects initial theme/template defaults at creation time. The **public render path never reads it** — `ProfileRenderer.tsx` and `StorefrontView.tsx` both destructure props without `profileType`; the already-computed `componentOrder` (inside `layoutConfig`) is what actually drives the page |
+| `agentInfo`          | object, see below                                                    | no                | The authoritative identity/content record for the profile                                                                                                                                                                                                                                         |
+| `digitalCard`        | object, see below                                                    | yes               | Theming for the separate digital-business-card surface (distinct from the public profile page — see "Two color systems" below)                                                                                                                                                                    |
+| `layoutConfig`       | object, see below                                                    | no                | Theming/ordering for the public profile page                                                                                                                                                                                                                                                      |
+| `featuredProperties` | `Id<"properties">[]`                                                 | no (always `[]`)  | **DEAD**, see below                                                                                                                                                                                                                                                                               |
+| `featuredProjects`   | `string[]`                                                           | yes (always `[]`) | **DEAD**, see below                                                                                                                                                                                                                                                                               |
+| `products`           | `{title, description, price?, image?, link?}[]`                      | yes               | Storefront product catalog — alive, editable, rendered                                                                                                                                                                                                                                            |
+| `services`           | `{title, description, price?, image?}[]`                             | yes               | **DEAD (top-level)** — do not confuse with `agentInfo.services`, see below                                                                                                                                                                                                                        |
+| `propertyListings`   | `{title, description?, price?, location?, image?, status?, link?}[]` | yes               | Alive — real-estate listing blocks, editable in the builder                                                                                                                                                                                                                                       |
+| `inlineProjects`     | `{title, description?, category?, image?, link?}[]`                  | yes               | Alive — portfolio project blocks, editable in the builder                                                                                                                                                                                                                                         |
+| `showStorefront`     | `boolean`                                                            | yes               |                                                                                                                                                                                                                                                                                                   |
 
 `agentInfo` shape (`convex/schema.ts:59-98`): `fullName`, `title`, `company`, `phone`, `email` (all
 required strings), `additionalPhones?: string[]`, `additionalEmails?: string[]`, `address?: string`
@@ -196,17 +196,17 @@ completeness: `ownerId: Id<"users">`, `title: string`, `description?: string`,
 
 Index: `by_owner(ownerId)`.
 
-| Field | Type | Optional | Notes |
-|---|---|---|---|
-| `ownerId` | `Id<"users">` | no | |
-| `propertyId` | `Id<"properties">` | yes | **DEAD FK** — see below |
-| `propertyName` | `string` | yes | **DEAD** — same reason |
-| `inquirerName` | `string` | no | |
-| `inquirerContact` | `string` | no | |
-| `message` | `string` | yes | |
-| `status` | `"new" \| "contacted" \| "closed"` | no | |
-| `lastContactedAt` | `number` | yes | |
-| `createdAt` | `number` | no | |
+| Field             | Type                               | Optional | Notes                   |
+| ----------------- | ---------------------------------- | -------- | ----------------------- |
+| `ownerId`         | `Id<"users">`                      | no       |                         |
+| `propertyId`      | `Id<"properties">`                 | yes      | **DEAD FK** — see below |
+| `propertyName`    | `string`                           | yes      | **DEAD** — same reason  |
+| `inquirerName`    | `string`                           | no       |                         |
+| `inquirerContact` | `string`                           | no       |                         |
+| `message`         | `string`                           | yes      |                         |
+| `status`          | `"new" \| "contacted" \| "closed"` | no       |                         |
+| `lastContactedAt` | `number`                           | yes      |                         |
+| `createdAt`       | `number`                           | no       |                         |
 
 **DEAD: `propertyId` / `propertyName`.** Accepted by `createLead` (`convex/leads.ts:18-56`) and displayed
 by the leads dashboard (always falling back to `"General Inquiry"`), but **none** of the three real call
@@ -220,16 +220,16 @@ Sampled 10 live leads: none carry either field.
 
 Indexes: `by_user(userId)`, `by_user_read(userId, read)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `userId` | `Id<"users">` | no |
-| `type` | `"new_lead" \| "system"` | no |
-| `read` | `boolean` | no |
-| `title` | `string` | no |
-| `message` | `string` | no |
-| `link` | `string` | yes |
-| `data` | `any` | yes |
-| `createdAt` | `number` | no |
+| Field       | Type                     | Optional |
+| ----------- | ------------------------ | -------- |
+| `userId`    | `Id<"users">`            | no       |
+| `type`      | `"new_lead" \| "system"` | no       |
+| `read`      | `boolean`                | no       |
+| `title`     | `string`                 | no       |
+| `message`   | `string`                 | no       |
+| `link`      | `string`                 | yes      |
+| `data`      | `any`                    | yes      |
+| `createdAt` | `number`                 | no       |
 
 ---
 
@@ -237,16 +237,16 @@ Indexes: `by_user(userId)`, `by_user_read(userId, read)`.
 
 Indexes: `by_user(userId)`, `by_resource(resourceType, resourceId)`, `by_timestamp(timestamp)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `userId` | `Id<"users">` | no |
-| `action` | `string` | no |
-| `resourceType` | `string` | no |
-| `resourceId` | `string` | no |
-| `changes` | `any` | yes |
-| `ipAddress` | `string` | yes |
-| `userAgent` | `string` | yes |
-| `timestamp` | `number` | no |
+| Field          | Type          | Optional |
+| -------------- | ------------- | -------- |
+| `userId`       | `Id<"users">` | no       |
+| `action`       | `string`      | no       |
+| `resourceType` | `string`      | no       |
+| `resourceId`   | `string`      | no       |
+| `changes`      | `any`         | yes      |
+| `ipAddress`    | `string`      | yes      |
+| `userAgent`    | `string`      | yes      |
+| `timestamp`    | `number`      | no       |
 
 ---
 
@@ -269,15 +269,15 @@ Fine-grained admin role table, separate from `users.role`. | Field | Type | Opti
 
 Indexes: `by_slug(slug)`, `by_active(isActive)`, `by_parent(parentId)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `name` | `string` | no |
-| `slug` | `string` | no |
-| `description` | `string` | yes |
-| `parentId` | `Id<"productCategories">` | yes — self-referencing, for nested categories |
-| `image` | `string` | yes |
-| `isActive` | `boolean` | no |
-| `sortOrder` | `number` | no |
+| Field         | Type                      | Optional                                      |
+| ------------- | ------------------------- | --------------------------------------------- |
+| `name`        | `string`                  | no                                            |
+| `slug`        | `string`                  | no                                            |
+| `description` | `string`                  | yes                                           |
+| `parentId`    | `Id<"productCategories">` | yes — self-referencing, for nested categories |
+| `image`       | `string`                  | yes                                           |
+| `isActive`    | `boolean`                 | no                                            |
+| `sortOrder`   | `number`                  | no                                            |
 
 ---
 
@@ -288,29 +288,29 @@ Indexes: `by_slug(slug)`, `by_category(categoryId)`, `by_published(isPublished)`
 Shop-side product catalog (distinct from the alive `profiles.products` per-profile storefront items —
 these back the shared shop, not an individual agent's profile page).
 
-| Field | Type | Optional |
-|---|---|---|
-| `name` | `string` | no |
-| `slug` | `string` | no |
-| `description` | `string` | yes |
-| `categoryId` | `Id<"productCategories">` | yes |
-| `basePrice` | `number` | no |
-| `compareAtPrice` | `number` | yes |
-| `costPrice` | `number` | yes |
-| `sku` | `string` | no |
-| `barcode` | `string` | yes |
-| `inventory` | `number` | no |
-| `lowStockThreshold` | `number` | no |
-| `trackInventory` | `boolean` | no |
-| `isPublished` | `boolean` | no |
-| `isFeatured` | `boolean` | no |
-| `tags` | `string[]` | no |
-| `images` | `string[]` | no |
-| `primaryImageIndex` | `number` | no |
-| `weight` | `number` | yes |
-| `dimensions` | `{length, width, height, unit: "cm"\|"in"}` | yes |
-| `shippingRequired` | `boolean` | no |
-| `metadata` | `any` | yes |
+| Field               | Type                                        | Optional |
+| ------------------- | ------------------------------------------- | -------- |
+| `name`              | `string`                                    | no       |
+| `slug`              | `string`                                    | no       |
+| `description`       | `string`                                    | yes      |
+| `categoryId`        | `Id<"productCategories">`                   | yes      |
+| `basePrice`         | `number`                                    | no       |
+| `compareAtPrice`    | `number`                                    | yes      |
+| `costPrice`         | `number`                                    | yes      |
+| `sku`               | `string`                                    | no       |
+| `barcode`           | `string`                                    | yes      |
+| `inventory`         | `number`                                    | no       |
+| `lowStockThreshold` | `number`                                    | no       |
+| `trackInventory`    | `boolean`                                   | no       |
+| `isPublished`       | `boolean`                                   | no       |
+| `isFeatured`        | `boolean`                                   | no       |
+| `tags`              | `string[]`                                  | no       |
+| `images`            | `string[]`                                  | no       |
+| `primaryImageIndex` | `number`                                    | no       |
+| `weight`            | `number`                                    | yes      |
+| `dimensions`        | `{length, width, height, unit: "cm"\|"in"}` | yes      |
+| `shippingRequired`  | `boolean`                                   | no       |
+| `metadata`          | `any`                                       | yes      |
 
 ---
 
@@ -318,15 +318,15 @@ these back the shared shop, not an individual agent's profile page).
 
 Indexes: `by_product(productId)`, `by_sku(sku)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `productId` | `Id<"products">` | no |
-| `name` | `string` | no |
-| `sku` | `string` | no |
-| `price` | `number` | no |
-| `inventory` | `number` | no |
-| `options` | `{optionName, optionValue}[]` | no |
-| `image` | `string` | yes |
+| Field       | Type                          | Optional |
+| ----------- | ----------------------------- | -------- |
+| `productId` | `Id<"products">`              | no       |
+| `name`      | `string`                      | no       |
+| `sku`       | `string`                      | no       |
+| `price`     | `number`                      | no       |
+| `inventory` | `number`                      | no       |
+| `options`   | `{optionName, optionValue}[]` | no       |
+| `image`     | `string`                      | yes      |
 
 ---
 
@@ -334,13 +334,13 @@ Indexes: `by_product(productId)`, `by_sku(sku)`.
 
 Indexes: `by_user(userId)`, `by_guest(guestId)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `userId` | `Id<"users">` | yes |
-| `guestId` | `string` | yes — set for guest checkout; `userId`/`guestId` are mutually intended (not schema-enforced) |
-| `items` | `{productId: Id<"products">, variationId?: Id<"productVariations">, quantity: number, priceAtAdd: number}[]` | no |
-| `createdAt` | `number` | no |
-| `updatedAt` | `number` | no |
+| Field       | Type                                                                                                         | Optional                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `userId`    | `Id<"users">`                                                                                                | yes                                                                                          |
+| `guestId`   | `string`                                                                                                     | yes — set for guest checkout; `userId`/`guestId` are mutually intended (not schema-enforced) |
+| `items`     | `{productId: Id<"products">, variationId?: Id<"productVariations">, quantity: number, priceAtAdd: number}[]` | no                                                                                           |
+| `createdAt` | `number`                                                                                                     | no                                                                                           |
+| `updatedAt` | `number`                                                                                                     | no                                                                                           |
 
 The guest-cart id is persisted client-side under the `GUEST_CART_ID_KEY` localStorage key — see
 "Frozen legacy storage keys" below.
@@ -352,27 +352,27 @@ The guest-cart id is persisted client-side under the `GUEST_CART_ID_KEY` localSt
 Indexes: `by_orderNumber(orderNumber)`, `by_user(userId)`, `by_status(status)`,
 `by_paymentStatus(paymentStatus)`, `by_createdAt(createdAt)`, `by_paymentIntentId(paymentIntentId)`.
 
-| Field | Type | Optional | Notes |
-|---|---|---|---|
-| `orderNumber` | `string` | no | Human-facing order reference |
-| `userId` | `Id<"users">` | yes | Absent for guest orders |
-| `guestEmail` | `string` | yes | |
-| `guestOrderToken` | `string` | yes | Server-minted random secret, set only on guest orders at creation and returned to the client once — see field comment `convex/schema.ts:332-341` for the full ownership-proof rationale (guests have no Convex user id to check against, and `orderNumber` alone is predictable) |
-| `status` | `"pending"\|"processing"\|"shipped"\|"delivered"\|"cancelled"\|"refunded"` | no | |
-| `items` | `{productId, productName, variationId?, variationName?, quantity, unitPrice, total}[]` | no | |
-| `subtotal` / `tax` / `shipping` / `total` | `number` | no | |
-| `discount` | `number` | yes | |
-| `appliedDiscountCode` | `string` | yes | |
-| `currency` | `string` | no | |
-| `paymentProvider` | `"payrex"\|"stripe"\|"paypal"` | no | `stripe`/`paypal` are in the type union but their webhook routes return `410 Gone` — see `docs/handoff/02-TECH-STACK.md`; PayRex is the only live provider |
-| `paymentStatus` | `"pending"\|"paid"\|"failed"\|"refunded"` | no | |
-| `paymentIntentId` | `string` | yes | |
-| `payrexCheckoutId` | `string` | yes | |
-| `paidAt` | `number` | yes | |
-| `shippingAddress` | `{fullName, addressLine1, addressLine2?, city, state?, postalCode, country, phone}` | no | |
-| `billingAddress` | same shape minus `phone` | yes | |
-| `notes` | `string` | yes | |
-| `createdAt` / `updatedAt` | `number` | no | |
+| Field                                     | Type                                                                                   | Optional | Notes                                                                                                                                                                                                                                                                            |
+| ----------------------------------------- | -------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `orderNumber`                             | `string`                                                                               | no       | Human-facing order reference                                                                                                                                                                                                                                                     |
+| `userId`                                  | `Id<"users">`                                                                          | yes      | Absent for guest orders                                                                                                                                                                                                                                                          |
+| `guestEmail`                              | `string`                                                                               | yes      |                                                                                                                                                                                                                                                                                  |
+| `guestOrderToken`                         | `string`                                                                               | yes      | Server-minted random secret, set only on guest orders at creation and returned to the client once — see field comment `convex/schema.ts:332-341` for the full ownership-proof rationale (guests have no Convex user id to check against, and `orderNumber` alone is predictable) |
+| `status`                                  | `"pending"\|"processing"\|"shipped"\|"delivered"\|"cancelled"\|"refunded"`             | no       |                                                                                                                                                                                                                                                                                  |
+| `items`                                   | `{productId, productName, variationId?, variationName?, quantity, unitPrice, total}[]` | no       |                                                                                                                                                                                                                                                                                  |
+| `subtotal` / `tax` / `shipping` / `total` | `number`                                                                               | no       |                                                                                                                                                                                                                                                                                  |
+| `discount`                                | `number`                                                                               | yes      |                                                                                                                                                                                                                                                                                  |
+| `appliedDiscountCode`                     | `string`                                                                               | yes      |                                                                                                                                                                                                                                                                                  |
+| `currency`                                | `string`                                                                               | no       |                                                                                                                                                                                                                                                                                  |
+| `paymentProvider`                         | `"payrex"\|"stripe"\|"paypal"`                                                         | no       | `stripe`/`paypal` are in the type union but their webhook routes return `410 Gone` — see `docs/handoff/02-TECH-STACK.md`; PayRex is the only live provider                                                                                                                       |
+| `paymentStatus`                           | `"pending"\|"paid"\|"failed"\|"refunded"`                                              | no       |                                                                                                                                                                                                                                                                                  |
+| `paymentIntentId`                         | `string`                                                                               | yes      |                                                                                                                                                                                                                                                                                  |
+| `payrexCheckoutId`                        | `string`                                                                               | yes      |                                                                                                                                                                                                                                                                                  |
+| `paidAt`                                  | `number`                                                                               | yes      |                                                                                                                                                                                                                                                                                  |
+| `shippingAddress`                         | `{fullName, addressLine1, addressLine2?, city, state?, postalCode, country, phone}`    | no       |                                                                                                                                                                                                                                                                                  |
+| `billingAddress`                          | same shape minus `phone`                                                               | yes      |                                                                                                                                                                                                                                                                                  |
+| `notes`                                   | `string`                                                                               | yes      |                                                                                                                                                                                                                                                                                  |
+| `createdAt` / `updatedAt`                 | `number`                                                                               | no       |                                                                                                                                                                                                                                                                                  |
 
 ---
 
@@ -380,19 +380,19 @@ Indexes: `by_orderNumber(orderNumber)`, `by_user(userId)`, `by_status(status)`,
 
 Indexes: `by_code(code)`, `by_active(isActive)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `code` | `string` | no |
-| `type` | `"percentage" \| "fixed"` | no |
-| `value` | `number` | no |
-| `minOrderValue` | `number` | yes |
-| `maxDiscountAmount` | `number` | yes |
-| `usageLimit` | `number` | yes |
-| `usedCount` | `number` | no |
-| `validFrom` | `number` | no |
-| `validUntil` | `number` | yes |
-| `isActive` | `boolean` | no |
-| `applicableProducts` | `Id<"products">[]` | yes |
+| Field                | Type                      | Optional |
+| -------------------- | ------------------------- | -------- |
+| `code`               | `string`                  | no       |
+| `type`               | `"percentage" \| "fixed"` | no       |
+| `value`              | `number`                  | no       |
+| `minOrderValue`      | `number`                  | yes      |
+| `maxDiscountAmount`  | `number`                  | yes      |
+| `usageLimit`         | `number`                  | yes      |
+| `usedCount`          | `number`                  | no       |
+| `validFrom`          | `number`                  | no       |
+| `validUntil`         | `number`                  | yes      |
+| `isActive`           | `boolean`                 | no       |
+| `applicableProducts` | `Id<"products">[]`        | yes      |
 
 ---
 
@@ -400,12 +400,12 @@ Indexes: `by_code(code)`, `by_active(isActive)`.
 
 Index: `by_key(key)`. Generic key/value store.
 
-| Field | Type | Optional |
-|---|---|---|
-| `key` | `string` | no |
-| `value` | `any` | no |
-| `updatedAt` | `number` | no |
-| `updatedBy` | `Id<"users">` | yes |
+| Field       | Type          | Optional |
+| ----------- | ------------- | -------- |
+| `key`       | `string`      | no       |
+| `value`     | `any`         | no       |
+| `updatedAt` | `number`      | no       |
+| `updatedBy` | `Id<"users">` | yes      |
 
 ---
 
@@ -414,11 +414,11 @@ Index: `by_key(key)`. Generic key/value store.
 Index: `by_key(key)`. Backs `convex/rateLimit.ts`'s sliding-window limiter — see
 `docs/handoff/02-TECH-STACK.md` Trap 5 for the atomicity gotcha around this table.
 
-| Field | Type | Optional |
-|---|---|---|
-| `key` | `string` | no | Resource-scoped key, e.g. `activate:<userId>`, `lead:<ownerId>` — not IP-based, Convex mutations don't receive caller IP |
-| `windowStart` | `number` | no |
-| `count` | `number` | no |
+| Field         | Type     | Optional |
+| ------------- | -------- | -------- |
+| `key`         | `string` | no       | Resource-scoped key, e.g. `activate:<userId>`, `lead:<ownerId>` — not IP-based, Convex mutations don't receive caller IP |
+| `windowStart` | `number` | no       |
+| `count`       | `number` | no       |
 
 ---
 
@@ -426,15 +426,15 @@ Index: `by_key(key)`. Backs `convex/rateLimit.ts`'s sliding-window limiter — s
 
 Index: `by_owner(ownerId)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `name` | `string` | no |
-| `ownerId` | `Id<"users">` | no |
-| `seats` | `number` | no |
-| `logoUrl` | `string` | yes |
-| `accentColor` | `string` | yes |
-| `companyName` | `string` | yes |
-| `createdAt` | `number` | no |
+| Field         | Type          | Optional |
+| ------------- | ------------- | -------- |
+| `name`        | `string`      | no       |
+| `ownerId`     | `Id<"users">` | no       |
+| `seats`       | `number`      | no       |
+| `logoUrl`     | `string`      | yes      |
+| `accentColor` | `string`      | yes      |
+| `companyName` | `string`      | yes      |
+| `createdAt`   | `number`      | no       |
 
 ---
 
@@ -442,13 +442,13 @@ Index: `by_owner(ownerId)`.
 
 Indexes: `by_team(teamId)`, `by_email(email)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `teamId` | `Id<"teams">` | no |
-| `email` | `string` | no |
-| `invitedBy` | `Id<"users">` | no |
-| `status` | `"pending" \| "accepted" \| "revoked"` | no |
-| `createdAt` | `number` | no |
+| Field       | Type                                   | Optional |
+| ----------- | -------------------------------------- | -------- |
+| `teamId`    | `Id<"teams">`                          | no       |
+| `email`     | `string`                               | no       |
+| `invitedBy` | `Id<"users">`                          | no       |
+| `status`    | `"pending" \| "accepted" \| "revoked"` | no       |
+| `createdAt` | `number`                               | no       |
 
 ---
 
@@ -457,17 +457,17 @@ Indexes: `by_team(teamId)`, `by_email(email)`.
 Indexes: `by_user(userId)`, `by_checkoutId(payrexCheckoutId)`, `by_status(status)`,
 `by_paymentIntentId(paymentIntentId)`.
 
-| Field | Type | Optional |
-|---|---|---|
-| `userId` | `Id<"users">` | no |
-| `plan` | `"pro" \| "business"` | no |
-| `amountCentavos` | `number` | no |
-| `periodDays` | `number` | no |
-| `payrexCheckoutId` | `string` | yes |
-| `paymentIntentId` | `string` | yes |
-| `status` | `"pending" \| "paid" \| "expired"` | no |
-| `periodStart` / `periodEnd` | `number` | yes |
-| `createdAt` | `number` | no |
+| Field                       | Type                               | Optional |
+| --------------------------- | ---------------------------------- | -------- |
+| `userId`                    | `Id<"users">`                      | no       |
+| `plan`                      | `"pro" \| "business"`              | no       |
+| `amountCentavos`            | `number`                           | no       |
+| `periodDays`                | `number`                           | no       |
+| `payrexCheckoutId`          | `string`                           | yes      |
+| `paymentIntentId`           | `string`                           | yes      |
+| `status`                    | `"pending" \| "paid" \| "expired"` | no       |
+| `periodStart` / `periodEnd` | `number`                           | yes      |
+| `createdAt`                 | `number`                           | no       |
 
 ---
 

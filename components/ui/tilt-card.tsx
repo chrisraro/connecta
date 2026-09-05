@@ -23,9 +23,7 @@ export function TiltCard({
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    const reduce = window.matchMedia?.(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const finePointer = window.matchMedia?.("(pointer: fine)").matches;
     if (!reduce && finePointer) setInteractive(true);
   }, []);
@@ -43,11 +41,11 @@ export function TiltCard({
       if (frame.current) cancelAnimationFrame(frame.current);
       frame.current = requestAnimationFrame(() => {
         el.style.transform = `perspective(1100px) rotateX(${rotX.toFixed(
-          2
+          2,
         )}deg) rotateY(${rotY.toFixed(2)}deg)`;
       });
     },
-    [interactive]
+    [interactive],
   );
 
   const reset = React.useCallback(() => {
@@ -68,7 +66,7 @@ export function TiltCard({
         // Idle float only when interactive (so it degrades to static otherwise)
         interactive && !hovering && "motion-safe:animate-[float-y_6s_ease-in-out_infinite]",
         "transition-transform duration-300 ease-out [transform-style:preserve-3d]",
-        className
+        className,
       )}
     >
       {children}

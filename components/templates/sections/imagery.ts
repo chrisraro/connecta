@@ -34,9 +34,7 @@ export function galleryItemClass(theme: TemplateTheme, index: number): string {
  *  Uses `gap` (not `space-y`) so it composes cleanly with the per-card
  *  classes below without doubling up margins. */
 export function projectListClass(theme: TemplateTheme): string {
-  return theme.composition.imagery === "masonry"
-    ? "columns-2 gap-4"
-    : "flex flex-col gap-6";
+  return theme.composition.imagery === "masonry" ? "columns-2 gap-4" : "flex flex-col gap-6";
 }
 
 /** Per-card class. Masonry cards carry their own bottom margin because CSS

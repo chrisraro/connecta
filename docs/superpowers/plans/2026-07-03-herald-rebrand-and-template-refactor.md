@@ -27,6 +27,7 @@
 ## Task 1: Herald brand foundation — tokens, real fonts, enforced scales
 
 **Files:**
+
 - Create: `lib/brand.ts`
 - Create: `lib/fonts.ts`
 - Modify: `app/globals.css`
@@ -34,6 +35,7 @@
 - Test: `lib/brand.test.ts`
 
 **Interfaces:**
+
 - Produces: `HERALD` brand constant (`lib/brand.ts`) exporting `{ name, tagline, domain }` and `contrastRatio(a, b): number` / `meetsAA(fg, bg, large?): boolean` helpers used by later tasks to assert palette legibility.
 - Produces: `lib/fonts.ts` exporting `displayFont`, `bodyFont`, `monoFont` (next/font instances) plus `templateFonts` — a map of the four faces the three templates actually need, each a real loaded `next/font` instance exposing `.variable`.
 - Produces: CSS custom properties `--r-sm|md|lg`, `--e-raised`, `--e-overlay`, and the Herald color ramp, all consumed by Tasks 2–4.
@@ -98,7 +100,11 @@ export const HERALD = {
 
 function parseHex(hex: string): { r: number; g: number; b: number } | null {
   let c = hex.trim().toLowerCase().replace(/^#/, "");
-  if (c.length === 3) c = c.split("").map((ch) => ch + ch).join("");
+  if (c.length === 3)
+    c = c
+      .split("")
+      .map((ch) => ch + ch)
+      .join("");
   if (!/^[0-9a-f]{6}$/.test(c)) return null;
   return {
     r: parseInt(c.slice(0, 2), 16),
@@ -114,11 +120,7 @@ function relativeLuminance(hex: string): number {
     const s = v / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   };
-  return (
-    0.2126 * toLinear(rgb.r) +
-    0.7152 * toLinear(rgb.g) +
-    0.0722 * toLinear(rgb.b)
-  );
+  return 0.2126 * toLinear(rgb.r) + 0.7152 * toLinear(rgb.g) + 0.0722 * toLinear(rgb.b);
 }
 
 /** WCAG 2.1 contrast ratio between two hex colors. Range 1–21. */
@@ -146,14 +148,7 @@ Expected: PASS — 6 tests.
 This closes the single worst craft failure found in the audit: all three templates specify faces that are never loaded, so they render in Helvetica/Times on iOS.
 
 ```typescript
-import {
-  Fraunces,
-  Geist,
-  Geist_Mono,
-  Manrope,
-  Space_Grotesk,
-  Newsreader,
-} from "next/font/google";
+import { Fraunces, Geist, Geist_Mono, Manrope, Space_Grotesk, Newsreader } from "next/font/google";
 
 /** Herald's own display face — high-contrast variable serif with real character. */
 export const displayFont = Fraunces({
@@ -218,23 +213,23 @@ Delete the `@import url(...fonts.googleapis.com...)` on line 1 — it is render-
 Then, inside the existing `:root` block, **add** these (do not remove existing tokens yet; Task 2 retires the unused ones):
 
 ```css
-  /* Herald — enforced scales. Exactly three radii, exactly two elevations. */
-  --r-sm: 6px;
-  --r-md: 12px;
-  --r-lg: 20px;
-  --e-raised: 0 1px 2px rgb(28 22 20 / 0.04), 0 2px 8px rgb(28 22 20 / 0.06);
-  --e-overlay: 0 4px 12px rgb(28 22 20 / 0.08), 0 12px 32px rgb(28 22 20 / 0.12);
+/* Herald — enforced scales. Exactly three radii, exactly two elevations. */
+--r-sm: 6px;
+--r-md: 12px;
+--r-lg: 20px;
+--e-raised: 0 1px 2px rgb(28 22 20 / 0.04), 0 2px 8px rgb(28 22 20 / 0.06);
+--e-overlay: 0 4px 12px rgb(28 22 20 / 0.08), 0 12px 32px rgb(28 22 20 / 0.12);
 
-  /* Herald identity — the seal pressed into wax. Committed color strategy:
+/* Herald identity — the seal pressed into wax. Committed color strategy:
      one saturated brand color carrying real surface area, warm neutrals
      tinted toward its own hue rather than toward generic warmth. */
-  --herald-seal: oklch(0.44 0.132 27);
-  --herald-seal-hover: oklch(0.39 0.138 27);
-  --herald-ink: oklch(0.22 0.012 40);
-  --herald-ink-soft: oklch(0.46 0.014 40);
-  --herald-paper: oklch(0.985 0.003 60);
-  --herald-surface: oklch(0.96 0.005 55);
-  --herald-line: oklch(0.90 0.008 50);
+--herald-seal: oklch(0.44 0.132 27);
+--herald-seal-hover: oklch(0.39 0.138 27);
+--herald-ink: oklch(0.22 0.012 40);
+--herald-ink-soft: oklch(0.46 0.014 40);
+--herald-paper: oklch(0.985 0.003 60);
+--herald-surface: oklch(0.96 0.005 55);
+--herald-line: oklch(0.9 0.008 50);
 ```
 
 Then **remove** the blanket heading-serif override. Find the rule that sets `h1..h6 { font-family: var(--font-serif) }` and delete it — it silently forces Tinos onto every dashboard, shop and admin heading. Headings pick their face from their surface instead (brand surfaces opt into `--font-display`).
@@ -260,6 +255,7 @@ git commit -m "feat(herald): brand tokens, real font loading, enforced radius/el
 ## Task 2: Collapse three templates into one renderer + theme descriptors
 
 **Files:**
+
 - Create: `components/templates/theme.ts`
 - Create: `components/templates/sections/` — one file per section (15 files)
 - Create: `components/templates/ProfileRenderer.tsx`
@@ -270,6 +266,7 @@ git commit -m "feat(herald): brand tokens, real font loading, enforced radius/el
 - Test: `components/templates/theme.test.ts`
 
 **Interfaces:**
+
 - Consumes: `contrastRatio`/`meetsAA` from `lib/brand.ts` (Task 1); the font variables from `lib/fonts.ts` (Task 1).
 - Produces: `TemplateTheme` type and `TEMPLATE_THEMES: Record<TemplateId, TemplateTheme>` from `components/templates/theme.ts`. `resolveTheme(templateId, userPalette)` merges a user's chosen colors over a template's defaults and returns a fully-resolved theme with contrast-corrected muted/ink values.
 - Produces: `<ProfileRenderer data={profileData} />` — the single entry point replacing all three template components. It reads `data.componentOrder`, resolves the theme from `data.theme` + `layoutConfig.themeId`, and renders sections in order.
@@ -295,7 +292,7 @@ test("every template's default body text clears WCAG AA on its own background", 
     const t = TEMPLATE_THEMES[id];
     expect(
       meetsAA(t.colors.ink, t.colors.background),
-      `${id}: ink ${t.colors.ink} on bg ${t.colors.background}`
+      `${id}: ink ${t.colors.ink} on bg ${t.colors.background}`,
     ).toBe(true);
   }
 });
@@ -305,7 +302,7 @@ test("every template's muted text clears WCAG AA — no opacity-suffix muting", 
     const t = TEMPLATE_THEMES[id];
     expect(
       meetsAA(t.colors.inkSoft, t.colors.background),
-      `${id}: inkSoft ${t.colors.inkSoft} on bg ${t.colors.background}`
+      `${id}: inkSoft ${t.colors.inkSoft} on bg ${t.colors.background}`,
     ).toBe(true);
   }
 });
@@ -485,20 +482,14 @@ export interface UserPalette {
  * we fall back to the template's ink rather than shipping unreadable text
  * on someone's business card.
  */
-export function resolveTheme(
-  templateId: string,
-  palette: UserPalette | undefined
-): TemplateTheme {
-  const base =
-    TEMPLATE_THEMES[(templateId as TemplateId)] ?? TEMPLATE_THEMES.editorial;
+export function resolveTheme(templateId: string, palette: UserPalette | undefined): TemplateTheme {
+  const base = TEMPLATE_THEMES[templateId as TemplateId] ?? TEMPLATE_THEMES.editorial;
   if (!palette) return base;
 
   const background = palette.backgroundColor || base.colors.background;
   const requestedInk = palette.textColor || base.colors.ink;
   const ink = meetsAA(requestedInk, background) ? requestedInk : base.colors.ink;
-  const inkSoft = meetsAA(base.colors.inkSoft, background)
-    ? base.colors.inkSoft
-    : ink;
+  const inkSoft = meetsAA(base.colors.inkSoft, background) ? base.colors.inkSoft : ink;
 
   return {
     ...base,
@@ -528,6 +519,7 @@ Read `components/templates/Editorial.tsx` in full first. It defines exactly thes
 Create one file per section under `components/templates/sections/`, e.g. `components/templates/sections/HeroSection.tsx`. Each exports a single named component whose props are `{ theme: TemplateTheme }` **plus** the data it already received. Replace the old `theme: TemplateProps["data"]["theme"]` prop with the richer `theme: TemplateTheme` from `./theme`.
 
 Inside each section, replace hardcoded values as follows:
+
 - Every `style={{ color: theme.textColor }}` → `style={{ color: theme.colors.ink }}`
 - Every muted-text `${theme.textColor}60` / `opacity-60` pattern → `style={{ color: theme.colors.inkSoft }}`
 - Every `backgroundColor: COLORS.surface` → `theme.colors.surface`
@@ -565,7 +557,7 @@ export function rhythmClass(theme: TemplateTheme): string {
 }
 ```
 
-Every section wrapper uses `className={\`${measureClass(theme)} ${rhythmClass(theme)}\`}` instead of a hardcoded `max-w-md mx-auto px-6 py-10`.
+Every section wrapper uses `className={\`${measureClass(theme)} ${rhythmClass(theme)}\`}`instead of a hardcoded`max-w-md mx-auto px-6 py-10`.
 
 `HeroSection` additionally branches on `theme.composition.hero` to render one of the three architectures (`editorial-stack` / `full-bleed-portrait` / `structured-split`). This is the single most important composition difference — implement all three variants; do not render the same markup for all three.
 
@@ -593,13 +585,7 @@ import { TestimonialsSection } from "./sections/TestimonialsSection";
 import { GallerySection } from "./sections/GallerySection";
 import { ContactSection } from "./sections/ContactSection";
 
-export function ProfileRenderer({
-  data,
-  templateId,
-}: {
-  data: ProfileData;
-  templateId: string;
-}) {
+export function ProfileRenderer({ data, templateId }: { data: ProfileData; templateId: string }) {
   const {
     agent,
     projects,
@@ -623,27 +609,47 @@ export function ProfileRenderer({
     Hero: () => <HeroSection agent={agent} theme={theme} resolvedImages={resolvedImages} />,
     About: () => <AboutSection agent={agent} theme={theme} />,
     Certification: () =>
-      agent.certification ? <CertificationSection certification={agent.certification} theme={theme} /> : null,
+      agent.certification ? (
+        <CertificationSection certification={agent.certification} theme={theme} />
+      ) : null,
     Education: () =>
-      agent.education?.length ? <EducationSection education={agent.education} theme={theme} /> : null,
+      agent.education?.length ? (
+        <EducationSection education={agent.education} theme={theme} />
+      ) : null,
     TechStack: () =>
-      agent.techStack?.length ? <TechStackSection techStack={agent.techStack} theme={theme} /> : null,
+      agent.techStack?.length ? (
+        <TechStackSection techStack={agent.techStack} theme={theme} />
+      ) : null,
     Services: () =>
       agent.services?.length ? <ServicesSection services={agent.services} theme={theme} /> : null,
     Experience: () =>
-      agent.experience?.length ? <ExperienceSection experience={agent.experience} theme={theme} /> : null,
+      agent.experience?.length ? (
+        <ExperienceSection experience={agent.experience} theme={theme} />
+      ) : null,
     Projects: () => (
       <>
-        {inlineProjects?.length ? <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} /> : null}
-        {projects?.length ? <ProjectsSection projects={projects} theme={theme} resolvedImages={resolvedImages} /> : null}
+        {inlineProjects?.length ? (
+          <InlineProjectsSection inlineProjects={inlineProjects} theme={theme} />
+        ) : null}
+        {projects?.length ? (
+          <ProjectsSection projects={projects} theme={theme} resolvedImages={resolvedImages} />
+        ) : null}
       </>
     ),
-    Products: () => (products?.length ? <ProductsSection products={products} theme={theme} /> : null),
+    Products: () =>
+      products?.length ? <ProductsSection products={products} theme={theme} /> : null,
     Properties: () =>
-      propertyListings?.length ? <PropertyListingsSection propertyListings={propertyListings} theme={theme} /> : null,
+      propertyListings?.length ? (
+        <PropertyListingsSection propertyListings={propertyListings} theme={theme} />
+      ) : null,
     Testimonials: () =>
-      agent.testimonials?.length ? <TestimonialsSection testimonials={agent.testimonials} theme={theme} /> : null,
-    Gallery: () => (agent.gallery?.length ? <GallerySection gallery={agent.gallery} theme={theme} resolvedImages={resolvedImages} /> : null),
+      agent.testimonials?.length ? (
+        <TestimonialsSection testimonials={agent.testimonials} theme={theme} />
+      ) : null,
+    Gallery: () =>
+      agent.gallery?.length ? (
+        <GallerySection gallery={agent.gallery} theme={theme} resolvedImages={resolvedImages} />
+      ) : null,
     Contact: () => <ContactSection theme={theme} ownerId={ownerId} />,
   };
 
@@ -690,6 +696,7 @@ Expected: both pass. Then confirm the reduction:
 ```bash
 find components/templates -name "*.tsx" -o -name "*.ts" | xargs wc -l | tail -1
 ```
+
 Expected: total well under 1,400 lines (down from 2,687 for the three template files alone). Report the actual number.
 
 - [ ] **Step 9: Manual verification**
@@ -708,6 +715,7 @@ git commit -m "refactor(templates): one renderer + theme descriptors, 2687 -> ~9
 ## Task 3: Public profile — server render, vanity slugs, metadata, OG images
 
 **Files:**
+
 - Modify: `convex/schema.ts` (add `slug` to `profiles` + index)
 - Modify: `convex/profiles.ts` (slug generation, `getProfileBySlug`)
 - Create: `app/[slug]/page.tsx` (vanity route)
@@ -717,6 +725,7 @@ git commit -m "refactor(templates): one renderer + theme descriptors, 2687 -> ~9
 - Test: `lib/slug.test.ts`
 
 **Interfaces:**
+
 - Consumes: `<ProfileRenderer>` from Task 2.
 - Produces: `slugify(name, suffix?)` in `lib/slug.ts`. `profiles.slug` (optional string, unique, indexed `by_slug`). `getProfileBySlug` query. Both `/p/<id>` and `/<slug>` render the same profile; `/p/<id>` remains permanently valid because it is printed on already-shipped cards.
 
@@ -772,9 +781,27 @@ Expected: FAIL — `./slug` does not exist.
 ```typescript
 /** Route segments a profile slug may never occupy. */
 const RESERVED = new Set([
-  "p", "t", "api", "auth", "sign-in", "sign-up", "dashboard", "admin",
-  "shop", "privacy", "terms", "pricing", "about", "contact", "support",
-  "blog", "docs", "_next", "favicon.ico", "opengraph-image", "robots.txt",
+  "p",
+  "t",
+  "api",
+  "auth",
+  "sign-in",
+  "sign-up",
+  "dashboard",
+  "admin",
+  "shop",
+  "privacy",
+  "terms",
+  "pricing",
+  "about",
+  "contact",
+  "support",
+  "blog",
+  "docs",
+  "_next",
+  "favicon.ico",
+  "opengraph-image",
+  "robots.txt",
   "sitemap.xml",
 ]);
 
@@ -819,8 +846,11 @@ test("createProfile assigns a unique slug derived from the profile name", async 
   const asUser = t.withIdentity({ subject: "slug_user_1" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "slug1@test.dev", clerkId: "slug_user_1", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "slug1@test.dev",
+      clerkId: "slug_user_1",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -828,13 +858,19 @@ test("createProfile assigns a unique slug derived from the profile name", async 
     clerkId: "slug_user_1",
     name: "Christian Raro",
     agentInfo: {
-      fullName: "Christian Raro", title: "Founder", company: "Herald",
-      phone: "0917", email: "c@herald.ph", services: [], socialLinks: [],
+      fullName: "Christian Raro",
+      title: "Founder",
+      company: "Herald",
+      phone: "0917",
+      email: "c@herald.ph",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "editorial",
       colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
@@ -849,8 +885,11 @@ test("a second profile with the same name gets a distinct slug", async () => {
   for (const n of ["1", "2"]) {
     await t.run(async (ctx) => {
       await ctx.db.insert("users", {
-        email: `dup${n}@test.dev`, clerkId: `dup_user_${n}`, role: "agent",
-        subscriptionStatus: "active", plan: "free",
+        email: `dup${n}@test.dev`,
+        clerkId: `dup_user_${n}`,
+        role: "agent",
+        subscriptionStatus: "active",
+        plan: "free",
       });
     });
   }
@@ -859,13 +898,19 @@ test("a second profile with the same name gets a distinct slug", async () => {
       clerkId,
       name: "Same Name",
       agentInfo: {
-        fullName: "Same Name", title: "T", company: "C",
-        phone: "0917", email: "s@test.dev", services: [], socialLinks: [],
+        fullName: "Same Name",
+        title: "T",
+        company: "C",
+        phone: "0917",
+        email: "s@test.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
         colorPalette: { primary: "#7a5c34", background: "#fbf9f4", text: "#1f1d18" },
-        componentOrder: ["Hero"], heroStyle: "default",
+        componentOrder: ["Hero"],
+        heroStyle: "default",
       },
       featuredProperties: [],
     });
@@ -883,21 +928,30 @@ test("getProfileBySlug resolves the same profile as getProfile", async () => {
   const asUser = t.withIdentity({ subject: "bs_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "bs@test.dev", clerkId: "bs_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "bs@test.dev",
+      clerkId: "bs_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
   const id = await asUser.mutation(api.profiles.createProfile, {
     clerkId: "bs_user",
     name: "Bridget Solano",
     agentInfo: {
-      fullName: "Bridget Solano", title: "Architect", company: "Solano",
-      phone: "0917", email: "b@test.dev", services: [], socialLinks: [],
+      fullName: "Bridget Solano",
+      title: "Architect",
+      company: "Solano",
+      phone: "0917",
+      email: "b@test.dev",
+      services: [],
+      socialLinks: [],
     },
     layoutConfig: {
       themeId: "architectural",
       colorPalette: { primary: "#1f3d5c", background: "#f7f8f9", text: "#16191c" },
-      componentOrder: ["Hero"], heroStyle: "default",
+      componentOrder: ["Hero"],
+      heroStyle: "default",
     },
     featuredProperties: [],
   });
@@ -924,7 +978,7 @@ async function assignUniqueSlug(ctx: MutationCtx, name: string): Promise<string>
   const candidates = [
     base,
     ...Array.from({ length: 12 }, (_, i) =>
-      slugify(name, Math.random().toString(36).slice(2, 5) + i)
+      slugify(name, Math.random().toString(36).slice(2, 5) + i),
     ),
   ];
   for (const candidate of candidates) {
@@ -974,13 +1028,22 @@ Split `app/p/[id]/page.tsx` into a server shell plus a client renderer:
 `generateMetadata` shape:
 
 ```typescript
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
-  const profile = await fetchQuery(api.profiles.getProfile, { profileId: id as Id<"profiles"> }).catch(() => null);
+  const profile = await fetchQuery(api.profiles.getProfile, {
+    profileId: id as Id<"profiles">,
+  }).catch(() => null);
   if (!profile) return { title: "Profile not found — Herald" };
   const { fullName, title, company, about } = profile.agentInfo;
   const heading = [fullName, title].filter(Boolean).join(" — ");
-  const description = about?.slice(0, 160) || [title, company].filter(Boolean).join(" at ") || `${fullName} on Herald`;
+  const description =
+    about?.slice(0, 160) ||
+    [title, company].filter(Boolean).join(" at ") ||
+    `${fullName} on Herald`;
   return {
     title: `${heading} | Herald`,
     description,
@@ -1002,11 +1065,12 @@ Expected: both pass. In the build output, confirm `/p/[id]` is no longer listed 
 - [ ] **Step 13: Manual verification**
 
 Run `npm run dev`. Then:
+
 1. `curl -s http://localhost:3000/p/<a-real-profile-id> | grep -i "<title>\|og:title\|og:description"` — confirm real per-profile metadata is present **in the served HTML**, not injected later by JS.
 2. Visit `http://localhost:3000/p/<id>/opengraph-image` and confirm a real 1200×630 image renders with the person's name.
 3. Create a new profile in the builder, then visit `http://localhost:3000/<its-slug>` and confirm it renders identically to `/p/<id>`.
 4. Visit `http://localhost:3000/definitely-not-a-real-slug` and confirm a 404, not a crash.
-Stop the dev server.
+   Stop the dev server.
 
 - [ ] **Step 14: Commit**
 
@@ -1020,10 +1084,12 @@ git commit -m "feat(profile): server-render with real metadata, dynamic OG image
 ## Task 4: Rebrand every user-facing surface to Herald
 
 **Files:**
+
 - Modify: `app/layout.tsx`, `app/page.tsx`, `components/DashboardLayout.tsx`, `app/dashboard/layout.tsx`, `convex/email.ts`, `app/shop/layout.tsx`, `README.md`, `.env.example`
 - Test: `lib/brand.test.ts` (append)
 
 **Interfaces:**
+
 - Consumes: `HERALD` from `lib/brand.ts` (Task 1).
 - Produces: zero occurrences of "Tapfolio"/"TapFolio" in user-visible strings.
 
@@ -1037,7 +1103,8 @@ import { join } from "node:path";
 
 function walk(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
-    if (["node_modules", ".next", ".git", "docs", ".firecrawl", ".superpowers"].includes(entry)) continue;
+    if (["node_modules", ".next", ".git", "docs", ".firecrawl", ".superpowers"].includes(entry))
+      continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full, acc);
     else if (/\.(tsx?|css)$/.test(entry)) acc.push(full);
@@ -1068,8 +1135,9 @@ Expected: FAIL, listing every file still containing the old name.
 - [ ] **Step 3: Replace the brand across those files**
 
 Work through the failing list. Rules:
+
 - User-visible copy → "Herald".
-- `convex/email.ts` `from:` → `Herald <notifications@herald.ph>` **and** keep the existing `RESEND_API_KEY` guard. (Note: the audit found this address is a Resend *sandbox* sender that silently fails — replacing the display name does not fix delivery. Add a `// TODO(ops): verify herald.ph sending domain in Resend before launch; onboarding@resend.dev only delivers to the account owner.` comment directly above it.)
+- `convex/email.ts` `from:` → `Herald <notifications@herald.ph>` **and** keep the existing `RESEND_API_KEY` guard. (Note: the audit found this address is a Resend _sandbox_ sender that silently fails — replacing the display name does not fix delivery. Add a `// TODO(ops): verify herald.ph sending domain in Resend before launch; onboarding@resend.dev only delivers to the account owner.` comment directly above it.)
 - `README.md` — replace the untouched `create-next-app` boilerplate with a real Herald README: what it is, prerequisites, `.env` setup, `npm i && npx convex dev && npm run dev`, how to run tests, how to deploy.
 - `.env.example` — add the three missing vars the code actually reads: `RESEND_API_KEY`, `PAYREX_SECRET_KEY`, `PAYREX_WEBHOOK_SECRET`.
 

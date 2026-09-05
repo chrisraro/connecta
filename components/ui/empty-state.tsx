@@ -33,36 +33,25 @@ export function EmptyState({
 }: EmptyStateProps) {
   const renderAction = (a: EmptyStateAction, variant: "default" | "outline") => {
     const btn = (
-      <Button
-        variant={variant}
-        className="rounded-2xl px-6"
-        onClick={a.onClick}
-        type="button"
-      >
+      <Button variant={variant} className="rounded-2xl px-6" onClick={a.onClick} type="button">
         {a.label}
       </Button>
     );
-    return a.href ? (
-      <Link href={a.href}>{btn}</Link>
-    ) : (
-      btn
-    );
+    return a.href ? <Link href={a.href}>{btn}</Link> : btn;
   };
 
   return (
     <div
       className={cn(
         "flex flex-col items-center justify-center text-center rounded-[2rem] border border-dashed border-border bg-card/50 px-6 py-14",
-        className
+        className,
       )}
     >
       <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted text-muted-foreground">
         <Icon className="h-8 w-8" aria-hidden="true" />
       </div>
       <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
-      {description && (
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>
-      )}
+      {description && <p className="mt-2 max-w-sm text-sm text-muted-foreground">{description}</p>}
       {(action || secondaryAction) && (
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           {action && renderAction(action, "default")}

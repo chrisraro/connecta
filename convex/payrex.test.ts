@@ -16,7 +16,7 @@ const VALID_SHIPPING_ADDRESS = {
 async function seedUserOwnedOrder(
   t: ReturnType<typeof convexTest>,
   ownerClerkId: string,
-  orderNumber: string
+  orderNumber: string,
 ) {
   return await t.run(async (ctx) => {
     const ownerId = await ctx.db.insert("users", {
@@ -49,7 +49,7 @@ async function seedUserOwnedOrder(
 async function seedGuestOrder(
   t: ReturnType<typeof convexTest>,
   orderNumber: string,
-  guestOrderToken: string | undefined
+  guestOrderToken: string | undefined,
 ) {
   return await t.run(async (ctx) => {
     return await ctx.db.insert("orders", {
@@ -90,7 +90,7 @@ test("createCheckoutSession rejects an unauthenticated caller for a signed-in us
   await seedUserOwnedOrder(t, "owner_clerk_id", "TF-2026-OWNED1");
 
   await expect(
-    t.action(api.payrex.createCheckoutSession, { orderNumber: "TF-2026-OWNED1" })
+    t.action(api.payrex.createCheckoutSession, { orderNumber: "TF-2026-OWNED1" }),
   ).rejects.toThrow(ConvexError);
 });
 
@@ -109,7 +109,7 @@ test("createCheckoutSession rejects a caller who is authenticated but does not o
   const asStranger = t.withIdentity({ subject: "stranger_clerk_id" });
 
   await expect(
-    asStranger.action(api.payrex.createCheckoutSession, { orderNumber: "TF-2026-OWNED2" })
+    asStranger.action(api.payrex.createCheckoutSession, { orderNumber: "TF-2026-OWNED2" }),
   ).rejects.toThrow(ConvexError);
 });
 
@@ -118,7 +118,7 @@ test("createCheckoutSession rejects a guest checkout request with no token", asy
   await seedGuestOrder(t, "TF-2026-GUEST1", "correct-token");
 
   await expect(
-    t.action(api.payrex.createCheckoutSession, { orderNumber: "TF-2026-GUEST1" })
+    t.action(api.payrex.createCheckoutSession, { orderNumber: "TF-2026-GUEST1" }),
   ).rejects.toThrow(ConvexError);
 });
 
@@ -130,7 +130,7 @@ test("createCheckoutSession rejects a guest checkout request with the wrong toke
     t.action(api.payrex.createCheckoutSession, {
       orderNumber: "TF-2026-GUEST2",
       guestOrderToken: "guessed-token",
-    })
+    }),
   ).rejects.toThrow(ConvexError);
 });
 
@@ -142,7 +142,7 @@ test("createCheckoutSession rejects when the order has no stored guest token at 
     t.action(api.payrex.createCheckoutSession, {
       orderNumber: "TF-2026-GUEST3",
       guestOrderToken: "anything",
-    })
+    }),
   ).rejects.toThrow(ConvexError);
 });
 
@@ -150,7 +150,7 @@ test("createCheckoutSession rejects an unknown order number", async () => {
   const t = convexTest(schema);
 
   await expect(
-    t.action(api.payrex.createCheckoutSession, { orderNumber: "TF-2026-NOPE" })
+    t.action(api.payrex.createCheckoutSession, { orderNumber: "TF-2026-NOPE" }),
   ).rejects.toThrow(ConvexError);
 });
 
@@ -161,12 +161,12 @@ test("createCheckoutSession succeeds for the order's authenticated owner", async
 
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () =>
-      new Response(
-        JSON.stringify({ id: "cs_123", url: "https://pay.payrexhq.com/cs_123" }),
-        { status: 200 }
-      )
-    )
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ id: "cs_123", url: "https://pay.payrexhq.com/cs_123" }), {
+          status: 200,
+        }),
+    ),
   );
 
   const result = await asOwner.action(api.payrex.createCheckoutSession, {
@@ -182,12 +182,12 @@ test("createCheckoutSession succeeds for a guest presenting the correct token", 
 
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () =>
-      new Response(
-        JSON.stringify({ id: "cs_456", url: "https://pay.payrexhq.com/cs_456" }),
-        { status: 200 }
-      )
-    )
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ id: "cs_456", url: "https://pay.payrexhq.com/cs_456" }), {
+          status: 200,
+        }),
+    ),
   );
 
   const result = await t.action(api.payrex.createCheckoutSession, {
@@ -220,12 +220,12 @@ test("createCheckoutSession lets an admin start checkout on behalf of a customer
 
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () =>
-      new Response(
-        JSON.stringify({ id: "cs_789", url: "https://pay.payrexhq.com/cs_789" }),
-        { status: 200 }
-      )
-    )
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ id: "cs_789", url: "https://pay.payrexhq.com/cs_789" }), {
+          status: 200,
+        }),
+    ),
   );
 
   const result = await asAdmin.action(api.payrex.createCheckoutSession, {

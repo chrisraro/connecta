@@ -43,8 +43,7 @@ function stubHealthyEnv() {
 
 test("GET /api/health returns 200, no-store, and healthy status when everything is configured", async () => {
   stubHealthyEnv();
-  queryImpl = (name) =>
-    name === "health:ping" ? { ok: true } : ALL_PRESENT;
+  queryImpl = (name) => (name === "health:ping" ? { ok: true } : ALL_PRESENT);
 
   const { GET } = await import("./route");
   const res = await GET();

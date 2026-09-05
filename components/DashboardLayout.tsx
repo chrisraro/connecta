@@ -13,11 +13,7 @@ import { Loader2 } from "lucide-react";
  * - Admins → /admin/dashboard (if they land on /dashboard)
  * - Non-admins → /dashboard (if they land on /admin/*)
  */
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
@@ -25,7 +21,7 @@ export default function DashboardLayout({
   // Check admin status
   const adminStatus = useQuery(
     api.admin.checkAdminStatus,
-    isLoaded && user ? { clerkId: user.id } : "skip"
+    isLoaded && user ? { clerkId: user.id } : "skip",
   );
 
   useEffect(() => {

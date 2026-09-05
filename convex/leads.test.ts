@@ -12,7 +12,7 @@ test("createLead throttles more than 5 leads per owner within a minute", async (
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   for (let i = 0; i < 5; i++) {
@@ -28,7 +28,7 @@ test("createLead throttles more than 5 leads per owner within a minute", async (
       ownerId,
       inquirerName: "Visitor 6",
       inquirerContact: "visitor6@test.dev",
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 
@@ -52,7 +52,7 @@ test("createLead does not throttle distinct visitors sharing one owner — the b
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   // Ten taps in a minute, ten different prospects — none has submitted
@@ -64,7 +64,7 @@ test("createLead does not throttle distinct visitors sharing one owner — the b
         visitorId: `visitor_${i}`,
         inquirerName: `Prospect ${i}`,
         inquirerContact: `prospect${i}@test.dev`,
-      })
+      }),
     ).resolves.toBeDefined();
   }
 });
@@ -87,7 +87,7 @@ test("createLead still enforces an aggregate per-owner cap even when every call 
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   for (let i = 0; i < 30; i++) {
@@ -105,7 +105,7 @@ test("createLead still enforces an aggregate per-owner cap even when every call 
       visitorId: "flood_visitor_30",
       inquirerName: "Flood 30",
       inquirerContact: "flood30@test.dev",
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 
@@ -129,7 +129,7 @@ test("createLead's rate limit still accumulates across repeated invalid-input at
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   // Exhaust VISITOR_MAX (5) with genuinely invalid input — the input defect
@@ -144,7 +144,7 @@ test("createLead's rate limit still accumulates across repeated invalid-input at
         visitorId: "invalid_input_visitor",
         inquirerName: "",
         inquirerContact: "",
-      })
+      }),
     ).rejects.toThrow(/name and contact are required/i);
   }
 
@@ -154,6 +154,6 @@ test("createLead's rate limit still accumulates across repeated invalid-input at
       visitorId: "invalid_input_visitor",
       inquirerName: "",
       inquirerContact: "",
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });

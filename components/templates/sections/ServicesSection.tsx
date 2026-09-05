@@ -4,7 +4,15 @@ import { SectionShell } from "./SectionShell";
 
 type Services = NonNullable<ProfileInfo["services"]>;
 
-export function ServicesSection({ services, theme, index }: { services: Services; theme: TemplateTheme; index: number }) {
+export function ServicesSection({
+  services,
+  theme,
+  index,
+}: {
+  services: Services;
+  theme: TemplateTheme;
+  index: number;
+}) {
   return (
     <SectionShell theme={theme} index={index} heading="Services">
       <div className="flex flex-wrap gap-3">

@@ -24,5 +24,5 @@
  * taps near the bottom of the viewport regardless of step content length.
  */
 export function isFullScreenDashboardRoute(pathname: string | null | undefined): boolean {
-    return pathname === "/dashboard/onboarding";
+  return pathname === "/dashboard/onboarding";
 }

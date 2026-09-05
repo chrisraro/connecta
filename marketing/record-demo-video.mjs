@@ -52,7 +52,10 @@ const VIEWPORT = { width: 1440, height: 900 };
 const DEMO_USER_EMAIL = "connecta-marketing-demo@connecta.example";
 
 const env = readFileSync(join(ROOT, ".env.local"), "utf8");
-const CLERK_SECRET = env.match(/^CLERK_SECRET_KEY=(.+)$/m)?.[1]?.trim().replace(/^"|"$/g, "");
+const CLERK_SECRET = env
+  .match(/^CLERK_SECRET_KEY=(.+)$/m)?.[1]
+  ?.trim()
+  .replace(/^"|"$/g, "");
 if (!CLERK_SECRET) throw new Error("CLERK_SECRET_KEY not found in .env.local");
 
 async function clerkApi(method, endpoint, body) {
@@ -87,7 +90,7 @@ async function glide(page, toY, ms = 2200) {
         }
         requestAnimationFrame(step);
       }),
-    [toY, ms]
+    [toY, ms],
   );
 }
 
@@ -143,21 +146,27 @@ try {
 
   // ── 3. Sign in as the demo account ──────────────────────────────────────
   console.log("scene 3: dashboard");
-  const users = await clerkApi("GET", `/users?email_address=${encodeURIComponent(DEMO_USER_EMAIL)}`);
+  const users = await clerkApi(
+    "GET",
+    `/users?email_address=${encodeURIComponent(DEMO_USER_EMAIL)}`,
+  );
   if (!Array.isArray(users) || users.length === 0) {
     throw new Error(
-      `demo user ${DEMO_USER_EMAIL} not found — run marketing/generate-mockups.mjs first, it seeds the account`
+      `demo user ${DEMO_USER_EMAIL} not found — run marketing/generate-mockups.mjs first, it seeds the account`,
     );
   }
-  const ticket = (await clerkApi("POST", "/sign_in_tokens", {
-    user_id: users[0].id,
-    expires_in_seconds: 3600,
-  })).token;
+  const ticket = (
+    await clerkApi("POST", "/sign_in_tokens", {
+      user_id: users[0].id,
+      expires_in_seconds: 3600,
+    })
+  ).token;
 
   await page.waitForFunction(() => Boolean(window.Clerk?.loaded), { timeout: 25000 });
   await page.evaluate(async (t) => {
     const signIn = await window.Clerk.client.signIn.create({ strategy: "ticket", ticket: t });
-    if (signIn.status === "complete") await window.Clerk.setActive({ session: signIn.createdSessionId });
+    if (signIn.status === "complete")
+      await window.Clerk.setActive({ session: signIn.createdSessionId });
   }, ticket);
 
   await page.goto(`${BASE_URL}/dashboard`, { waitUntil: "networkidle" });
@@ -197,7 +206,9 @@ try {
 }
 
 // Playwright names videos by an internal id; give it a stable filename.
-const raw = readdirSync(RAW_DIR).filter((f) => f.endsWith(".webm")).sort();
+const raw = readdirSync(RAW_DIR)
+  .filter((f) => f.endsWith(".webm"))
+  .sort();
 if (raw.length === 0) throw new Error("no video produced");
 const final = join(OUT_DIR, "connecta-demo.webm");
 if (existsSync(final)) rmSync(final);

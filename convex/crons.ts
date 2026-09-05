@@ -14,7 +14,7 @@ crons.daily(
   "downgrade-expired-plans",
   { hourUTC: 18, minuteUTC: 0 }, // ~02:00 PHT
   internal.billing.internalDowngradeExpired,
-  {}
+  {},
 );
 
 export default crons;

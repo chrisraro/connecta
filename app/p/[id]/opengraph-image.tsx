@@ -14,7 +14,9 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    const profile = await fetchQuery(api.profiles.getProfile, { profileId: id as Id<"profiles"> }).catch(() => null);
-    return renderProfileOgImage(profile);
+  const { id } = await params;
+  const profile = await fetchQuery(api.profiles.getProfile, {
+    profileId: id as Id<"profiles">,
+  }).catch(() => null);
+  return renderProfileOgImage(profile);
 }

@@ -8,7 +8,10 @@ export async function isAdmin(ctx: QueryCtx | MutationCtx, userId: Id<"users">):
   return isActiveAdmin(ctx, userId);
 }
 
-export async function requireAdmin(ctx: QueryCtx | MutationCtx, clerkId: string): Promise<Doc<"users">> {
+export async function requireAdmin(
+  ctx: QueryCtx | MutationCtx,
+  clerkId: string,
+): Promise<Doc<"users">> {
   await requireUserMatching(ctx, clerkId);
   return requireAdminAuthed(ctx);
 }
@@ -18,7 +21,7 @@ export async function requireAdmin(ctx: QueryCtx | MutationCtx, clerkId: string)
 // admin, suspending users).
 export async function requireSuperadmin(
   ctx: QueryCtx | MutationCtx,
-  clerkId: string
+  clerkId: string,
 ): Promise<{ user: Doc<"users">; adminId: Id<"admins"> }> {
   const user = await requireAdmin(ctx, clerkId);
   const admin = await ctx.db
@@ -147,7 +150,7 @@ export const listAdmins = query({
           grantedBy: admin.grantedBy,
           user: user ? { name: user.name, email: user.email } : null,
         };
-      })
+      }),
     );
     return adminDetails;
   },
@@ -190,8 +193,8 @@ export const getDashboardStats = query({
     const users = await ctx.db.query("users").collect();
     const totalUsers = users.length;
     const cards = await ctx.db.query("cards").collect();
-    const inventoryCards = cards.filter(card => card.status === "inventory").length;
-    const activeCards = cards.filter(card => card.status === "active").length;
+    const inventoryCards = cards.filter((card) => card.status === "inventory").length;
+    const activeCards = cards.filter((card) => card.status === "active").length;
     const leads = await ctx.db.query("leads").collect();
     const totalLeads = leads.length;
     return { totalUsers, inventoryCards, activeCards, totalLeads };
@@ -224,7 +227,7 @@ export const getAdminDashboard = query({
     const revenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
 
     const lowStockCount = products.filter(
-      (p) => p.trackInventory && p.inventory <= p.lowStockThreshold
+      (p) => p.trackInventory && p.inventory <= p.lowStockThreshold,
     ).length;
 
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -308,7 +311,7 @@ export const getAuditLogs = query({
           actorName: actor?.name ?? null,
           actorEmail: actor?.email ?? null,
         };
-      })
+      }),
     );
   },
 });
@@ -379,7 +382,7 @@ export const getAllUsers = query({
           orderCount: orders.length,
           createdAt: user._creationTime,
         };
-      })
+      }),
     );
     return usersWithRoles;
   },
@@ -584,7 +587,7 @@ export const internalBootstrapAdmin = internalMutation({
         `No users row for "${email}". Sign in to the deployed app once so ` +
           `syncUser creates it, then re-run. Existing accounts: ${
             known.length ? known.join(", ") : "(none — the table is empty)"
-          }`
+          }`,
       );
     }
 

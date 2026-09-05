@@ -50,11 +50,7 @@ export function PaymentPlaceholderDialog({
         <p className="text-sm text-muted-foreground">{supportBody}</p>
         <DialogFooter>
           <Button asChild variant="outline">
-            <a
-              href={`mailto:${CONNECTA.supportEmail}?subject=${encodeURIComponent(
-                mailSubject
-              )}`}
-            >
+            <a href={`mailto:${CONNECTA.supportEmail}?subject=${encodeURIComponent(mailSubject)}`}>
               <Mail className="mr-2 h-4 w-4" />
               Email support
             </a>

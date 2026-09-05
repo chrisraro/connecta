@@ -23,11 +23,13 @@
 ## Task 0: Test infrastructure (Vitest + convex-test + Testing Library)
 
 **Files:**
+
 - Create: `vitest.config.ts`
 - Create: `convex/setup.test.ts`
 - Modify: `package.json` (add `devDependencies` and a `test` script)
 
 **Interfaces:**
+
 - Produces: `npm test` runs Vitest once; `npm run test:watch` runs it in watch mode. All later tasks' tests use `import { convexTest } from "convex-test";` and `import schema from "./schema";` (for `convex/*.test.ts`) or `@testing-library/react` + `@testing-library/jest-dom` (for `lib/*.test.ts`, `app/**/*.test.tsx`).
 
 - [ ] **Step 1: Install test dependencies**
@@ -117,6 +119,7 @@ git commit -m "test: add Vitest + convex-test harness"
 ## Task 1: Platform lockdown (Auth #1 Critical, Auth #2 High, Auth #3 Medium)
 
 **Files:**
+
 - Modify: `convex/admin.ts:156-188` (`setupFirstAdmin`)
 - Modify: `convex/checkout.ts:284-293` (`getOrderByNumber`)
 - Modify: `middleware.ts`
@@ -124,6 +127,7 @@ git commit -m "test: add Vitest + convex-test harness"
 - Test: `convex/checkout.test.ts`
 
 **Interfaces:**
+
 - Consumes: `requireUser(ctx)` and `getAuthedUser(ctx)` from `convex/authz.ts` (already defined, do not modify).
 - Produces: `setupFirstAdmin` now requires the caller to be authenticated and to match `args.clerkId` (same contract every other function in `admin.ts` already uses via `requireUserMatching`). `getOrderByNumber` now requires the caller to own the order (`order.userId === user._id`) OR be an authenticated admin — guests can no longer look up arbitrary orders by number; the shop order-confirmation page must pass the caller's Clerk id.
 
@@ -150,7 +154,7 @@ test("setupFirstAdmin rejects an unauthenticated caller", async () => {
   });
 
   await expect(
-    t.mutation(api.admin.setupFirstAdmin, { clerkId: "victim_clerk_id" })
+    t.mutation(api.admin.setupFirstAdmin, { clerkId: "victim_clerk_id" }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -168,7 +172,7 @@ test("setupFirstAdmin rejects a caller impersonating another clerkId", async () 
   const asAttacker = t.withIdentity({ subject: "attacker_clerk_id" });
 
   await expect(
-    asAttacker.mutation(api.admin.setupFirstAdmin, { clerkId: "victim_clerk_id" })
+    asAttacker.mutation(api.admin.setupFirstAdmin, { clerkId: "victim_clerk_id" }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -332,7 +336,7 @@ test("getOrderByNumber rejects a caller who does not own the order", async () =>
   const asStranger = t.withIdentity({ subject: "stranger_clerk_id" });
 
   await expect(
-    asStranger.query(api.checkout.getOrderByNumber, { orderNumber: "TF-2026-TESTORD" })
+    asStranger.query(api.checkout.getOrderByNumber, { orderNumber: "TF-2026-TESTORD" }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -341,7 +345,7 @@ test("getOrderByNumber rejects an unauthenticated caller", async () => {
   await seedOrder(t, "owner_clerk_id");
 
   await expect(
-    t.query(api.checkout.getOrderByNumber, { orderNumber: "TF-2026-TESTORD" })
+    t.query(api.checkout.getOrderByNumber, { orderNumber: "TF-2026-TESTORD" }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -429,54 +433,54 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
-    '/',
-    '/auth(.*)',    // Unified auth route (includes callback)
-    '/p/(.*)',      // Public profiles
-    '/t/(.*)',      // NFC Tap redirects
-    '/shop(.*)',    // Public shop (browsing, cart, checkout)
-    '/api/webhooks(.*)', // Payment webhooks
+  "/",
+  "/auth(.*)", // Unified auth route (includes callback)
+  "/p/(.*)", // Public profiles
+  "/t/(.*)", // NFC Tap redirects
+  "/shop(.*)", // Public shop (browsing, cart, checkout)
+  "/api/webhooks(.*)", // Payment webhooks
 ]);
 
-const isAdminRoute = createRouteMatcher(['/admin(.*)']);
+const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-    const { pathname } = req.nextUrl;
+  const { pathname } = req.nextUrl;
 
-    // Single URL Experience: Redirect old auth paths to /auth
-    if (pathname === '/sign-in' || pathname === '/sign-up') {
-        return NextResponse.redirect(new URL('/auth', req.url));
-    }
-    if (pathname.startsWith('/auth/') && pathname !== '/auth' && pathname !== '/auth/callback') {
-        return NextResponse.redirect(new URL('/auth', req.url));
-    }
+  // Single URL Experience: Redirect old auth paths to /auth
+  if (pathname === "/sign-in" || pathname === "/sign-up") {
+    return NextResponse.redirect(new URL("/auth", req.url));
+  }
+  if (pathname.startsWith("/auth/") && pathname !== "/auth" && pathname !== "/auth/callback") {
+    return NextResponse.redirect(new URL("/auth", req.url));
+  }
 
-    // Protect all non-public routes (requires authentication)
-    if (!isPublicRoute(req)) {
-        await auth.protect();
-    }
+  // Protect all non-public routes (requires authentication)
+  if (!isPublicRoute(req)) {
+    await auth.protect();
+  }
 
-    // Defense-in-depth: /admin/* also requires the "admin" role claim on the
-    // Clerk session (populated via a Clerk session-token JWT template mapping
-    // publicMetadata.role -> sessionClaims.metadata.role). The real
-    // authorization gate remains convex/authz.ts:requireAdmin on every admin
-    // Convex function — this check only stops the admin UI shell itself from
-    // rendering for non-admins (Auth audit #3).
-    if (isAdminRoute(req)) {
-        const { sessionClaims } = await auth();
-        const role = (sessionClaims?.metadata as { role?: string } | undefined)?.role;
-        if (role !== "admin" && role !== "superadmin") {
-            return NextResponse.redirect(new URL('/dashboard', req.url));
-        }
+  // Defense-in-depth: /admin/* also requires the "admin" role claim on the
+  // Clerk session (populated via a Clerk session-token JWT template mapping
+  // publicMetadata.role -> sessionClaims.metadata.role). The real
+  // authorization gate remains convex/authz.ts:requireAdmin on every admin
+  // Convex function — this check only stops the admin UI shell itself from
+  // rendering for non-admins (Auth audit #3).
+  if (isAdminRoute(req)) {
+    const { sessionClaims } = await auth();
+    const role = (sessionClaims?.metadata as { role?: string } | undefined)?.role;
+    if (role !== "admin" && role !== "superadmin") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
+  }
 });
 
 export const config = {
-    matcher: [
-        // Skip Next.js internals and all static files, unless found in search params
-        '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-        // Always run for API routes
-        '/(api|trpc)(.*)',
-    ],
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+  ],
 };
 ```
 
@@ -498,12 +502,14 @@ git commit -m "fix: require identity checks in setupFirstAdmin and getOrderByNum
 ## Task 2: Payment idempotency and failure handling (Payments #1, #2 Critical)
 
 **Files:**
+
 - Modify: `convex/billing.ts:190-266` (`createUpgradeCheckout`)
 - Modify: `convex/http.ts:109-154` (webhook handler)
 - Modify: `convex/checkout.ts:340-446` (`internalConfirmOrderPayment` — add a `"failed"`/expired branch is already supported by the `paymentStatus` union; this task wires the webhook to actually call it)
 - Test: `convex/billing.test.ts`
 
 **Interfaces:**
+
 - Consumes: `PLAN_LIMITS`, `PLAN_PERIOD_DAYS` from `convex/plans.ts` (unchanged).
 - Produces: `createUpgradeCheckout` now reuses an existing `pending` invoice for the same `(userId, plan)` pair instead of always inserting a new one, and passes an `Idempotency-Key` header to PayRex derived from the invoice id (stable across retries of the same invoice). The webhook now also handles `payment_intent.payment_failed` / `checkout_session.expire` event types by calling `internal.checkout.internalConfirmOrderPayment` with `paymentStatus: "failed"` (shop orders) or a new `internal.billing.internalFailInvoice` (subscriptions).
 
@@ -568,7 +574,7 @@ test("findOrCreatePendingInvoice reuses an existing pending invoice for the same
     ctx.db
       .query("subscriptionInvoices")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect()
+      .collect(),
   );
   expect(invoices.length).toBe(1);
 });
@@ -621,12 +627,7 @@ export const findOrCreatePendingInvoice = internalMutation({
     const existing = await ctx.db
       .query("subscriptionInvoices")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("plan"), args.plan),
-          q.eq(q.field("status"), "pending")
-        )
-      )
+      .filter((q) => q.and(q.eq(q.field("plan"), args.plan), q.eq(q.field("status"), "pending")))
       .first();
     if (existing) {
       return existing._id;
@@ -646,33 +647,35 @@ export const findOrCreatePendingInvoice = internalMutation({
 Then in `createUpgradeCheckout` (line 211-214), replace:
 
 ```typescript
-    const invoiceId = await ctx.runMutation(
-      internal.billing.createPendingInvoice,
-      { userId: me.userId, plan: args.plan, amountCentavos: amount }
-    );
+const invoiceId = await ctx.runMutation(internal.billing.createPendingInvoice, {
+  userId: me.userId,
+  plan: args.plan,
+  amountCentavos: amount,
+});
 ```
 
 with:
 
 ```typescript
-    const invoiceId = await ctx.runMutation(
-      internal.billing.findOrCreatePendingInvoice,
-      { userId: me.userId, plan: args.plan, amountCentavos: amount }
-    );
+const invoiceId = await ctx.runMutation(internal.billing.findOrCreatePendingInvoice, {
+  userId: me.userId,
+  plan: args.plan,
+  amountCentavos: amount,
+});
 ```
 
 And add an idempotency key to the PayRex request. In the same function, after the `pairs` array is built (after line 228 `pairs.push(["metadata[invoice_id]", invoiceId]);`), pass an `Idempotency-Key` header derived from the invoice id so a retried `fetch` against the same pending invoice doesn't create a second PayRex session:
 
 ```typescript
-    const res = await fetch("https://api.payrexhq.com/checkout_sessions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: "Basic " + btoa(`${secretKey}:`),
-        "Idempotency-Key": `upgrade-invoice-${invoiceId}`,
-      },
-      body,
-    });
+const res = await fetch("https://api.payrexhq.com/checkout_sessions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded",
+    Authorization: "Basic " + btoa(`${secretKey}:`),
+    "Idempotency-Key": `upgrade-invoice-${invoiceId}`,
+  },
+  body,
+});
 ```
 
 (This replaces the existing `headers: {...}` block at lines 236-239 — same two keys, plus the new `Idempotency-Key` line.)
@@ -757,88 +760,70 @@ with:
 And after the existing `if (invoiceId) { ... } else { ... }` block (which currently ends at line 153 with the shop-order `internalConfirmOrderPayment` call), change both branches to pass through the correct status instead of hardcoding `"paid"`. Replace the whole inner block (lines 118-153):
 
 ```typescript
-    // Subscription invoice id (Phase 4 plan upgrades) takes priority — it
-    // routes to the billing activation path instead of the shop order path.
-    const invoiceId =
-      (typeof metaA?.invoice_id === "string"
-        ? (metaA.invoice_id as string)
-        : undefined) ??
-      (typeof metaB?.invoice_id === "string"
-        ? (metaB.invoice_id as string)
-        : undefined);
+// Subscription invoice id (Phase 4 plan upgrades) takes priority — it
+// routes to the billing activation path instead of the shop order path.
+const invoiceId =
+  (typeof metaA?.invoice_id === "string" ? (metaA.invoice_id as string) : undefined) ??
+  (typeof metaB?.invoice_id === "string" ? (metaB.invoice_id as string) : undefined);
 
-    // Fall back to the payment intent id (event.data.id for payment_intent.*).
-    const paymentIntentId =
-      typeof event.data.id === "string" ? event.data.id : undefined;
+// Fall back to the payment intent id (event.data.id for payment_intent.*).
+const paymentIntentId = typeof event.data.id === "string" ? event.data.id : undefined;
 
-    if (invoiceId) {
-      // Plan upgrade/renewal: activate the subscription invoice.
-      await ctx.runMutation(internal.billing.internalActivateInvoice, {
-        invoiceId: invoiceId as Id<"subscriptionInvoices">,
-        paymentIntentId,
-      });
-    } else {
-      // Existing shop order flow.
-      const orderNumber =
-        (typeof metaA?.order_number === "string"
-          ? (metaA.order_number as string)
-          : undefined) ??
-        (typeof metaB?.order_number === "string"
-          ? (metaB.order_number as string)
-          : undefined);
+if (invoiceId) {
+  // Plan upgrade/renewal: activate the subscription invoice.
+  await ctx.runMutation(internal.billing.internalActivateInvoice, {
+    invoiceId: invoiceId as Id<"subscriptionInvoices">,
+    paymentIntentId,
+  });
+} else {
+  // Existing shop order flow.
+  const orderNumber =
+    (typeof metaA?.order_number === "string" ? (metaA.order_number as string) : undefined) ??
+    (typeof metaB?.order_number === "string" ? (metaB.order_number as string) : undefined);
 
-      await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
-        orderNumber,
-        paymentIntentId,
-        paymentStatus: "paid",
-      });
-    }
+  await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber,
+    paymentIntentId,
+    paymentStatus: "paid",
+  });
+}
 ```
 
 with:
 
 ```typescript
-    // Subscription invoice id (Phase 4 plan upgrades) takes priority — it
-    // routes to the billing activation path instead of the shop order path.
-    const invoiceId =
-      (typeof metaA?.invoice_id === "string"
-        ? (metaA.invoice_id as string)
-        : undefined) ??
-      (typeof metaB?.invoice_id === "string"
-        ? (metaB.invoice_id as string)
-        : undefined);
+// Subscription invoice id (Phase 4 plan upgrades) takes priority — it
+// routes to the billing activation path instead of the shop order path.
+const invoiceId =
+  (typeof metaA?.invoice_id === "string" ? (metaA.invoice_id as string) : undefined) ??
+  (typeof metaB?.invoice_id === "string" ? (metaB.invoice_id as string) : undefined);
 
-    // Fall back to the payment intent id (event.data.id for payment_intent.*).
-    const paymentIntentId =
-      typeof event.data.id === "string" ? event.data.id : undefined;
+// Fall back to the payment intent id (event.data.id for payment_intent.*).
+const paymentIntentId = typeof event.data.id === "string" ? event.data.id : undefined;
 
-    if (invoiceId) {
-      if (isPaid) {
-        await ctx.runMutation(internal.billing.internalActivateInvoice, {
-          invoiceId: invoiceId as Id<"subscriptionInvoices">,
-          paymentIntentId,
-        });
-      } else {
-        await ctx.runMutation(internal.billing.internalFailInvoice, {
-          invoiceId: invoiceId as Id<"subscriptionInvoices">,
-        });
-      }
-    } else {
-      // Existing shop order flow.
-      const orderNumber =
-        (typeof metaA?.order_number === "string"
-          ? (metaA.order_number as string)
-          : undefined) ??
-        (typeof metaB?.order_number === "string"
-          ? (metaB.order_number as string)
-          : undefined);
+if (invoiceId) {
+  if (isPaid) {
+    await ctx.runMutation(internal.billing.internalActivateInvoice, {
+      invoiceId: invoiceId as Id<"subscriptionInvoices">,
+      paymentIntentId,
+    });
+  } else {
+    await ctx.runMutation(internal.billing.internalFailInvoice, {
+      invoiceId: invoiceId as Id<"subscriptionInvoices">,
+    });
+  }
+} else {
+  // Existing shop order flow.
+  const orderNumber =
+    (typeof metaA?.order_number === "string" ? (metaA.order_number as string) : undefined) ??
+    (typeof metaB?.order_number === "string" ? (metaB.order_number as string) : undefined);
 
-      await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
-        orderNumber,
-        paymentIntentId,
-        paymentStatus: isPaid ? "paid" : "failed",
-      });
-    }
+  await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
+    orderNumber,
+    paymentIntentId,
+    paymentStatus: isPaid ? "paid" : "failed",
+  });
+}
 ```
 
 ### Step 8: Run test to verify it passes
@@ -863,12 +848,14 @@ git commit -m "fix: idempotent invoice creation + handle failed/expired PayRex w
 ## Task 3: Inventory/discount race fixes + cart quantity clamp (Backend #1/#2/#3, Payments #3/#4)
 
 **Files:**
+
 - Modify: `convex/checkout.ts` (`internalConfirmOrderPayment`, `resolveDiscount` call site inside it)
 - Modify: `convex/shop.ts:218-259` (`addToCart`), `convex/shop.ts:329-350` (`updateCartItem`)
 - Test: `convex/checkout.test.ts` (append)
 - Test: `convex/shop.test.ts`
 
 **Interfaces:**
+
 - Produces: `internalConfirmOrderPayment` now re-validates stock and the discount's `usageLimit`/`validUntil`/`isActive` immediately before decrementing inventory / incrementing `usedCount`, and marks the order `"failed"` (not `"paid"`) if either re-check fails instead of silently overselling or over-redeeming. `addToCart` and `updateCartItem` reject `quantity < 1`.
 
 ### Step 1: Write the failing tests for cart quantity clamping
@@ -910,7 +897,7 @@ test("addToCart rejects zero or negative quantity", async () => {
       guestId: "guest-1",
       productId,
       quantity: 0,
-    })
+    }),
   ).rejects.toThrow(/quantity/i);
 
   await expect(
@@ -918,7 +905,7 @@ test("addToCart rejects zero or negative quantity", async () => {
       guestId: "guest-1",
       productId,
       quantity: -3,
-    })
+    }),
   ).rejects.toThrow(/quantity/i);
 });
 
@@ -945,7 +932,7 @@ test("updateCartItem rejects a negative quantity (zero still means remove)", asy
       guestId: "guest-1",
       productId,
       quantity: -1,
-    })
+    }),
   ).rejects.toThrow(/quantity/i);
 });
 ```
@@ -960,17 +947,17 @@ Expected: FAIL — `addToCart` currently accepts `quantity: 0` / negative values
 In `convex/shop.ts`, inside `addToCart`'s handler, right after the opening `let userId;` block resolution and before `// Validate product exists and is published` (i.e. immediately after line 235's closing brace, before line 237's comment), add:
 
 ```typescript
-    if (!Number.isInteger(args.quantity) || args.quantity < 1) {
-      throw new Error("Quantity must be a positive whole number");
-    }
+if (!Number.isInteger(args.quantity) || args.quantity < 1) {
+  throw new Error("Quantity must be a positive whole number");
+}
 ```
 
 In `updateCartItem`, the existing check at line 348 is `if (args.quantity < 0)`. `0` is intentionally still allowed there (it means "remove the item," handled a few lines down). Tighten it to also reject non-integers and keep `0` legal:
 
 ```typescript
-    if (!Number.isInteger(args.quantity) || args.quantity < 0) {
-      throw new Error("Quantity must be a non-negative whole number");
-    }
+if (!Number.isInteger(args.quantity) || args.quantity < 0) {
+  throw new Error("Quantity must be a non-negative whole number");
+}
 ```
 
 (This replaces line 348's existing `if (args.quantity < 0) { throw new Error("Quantity must be non-negative"); }`.)
@@ -1011,7 +998,7 @@ async function seedPendingOrder(
   t: ReturnType<typeof convexTest>,
   productId: any,
   quantity: number,
-  orderNumber: string
+  orderNumber: string,
 ) {
   return await t.run(async (ctx) => {
     return await ctx.db.insert("orders", {
@@ -1071,7 +1058,7 @@ test("internalConfirmOrderPayment fails the second of two concurrent orders that
     ctx.db
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", orderNumberB))
-      .first()
+      .first(),
   );
   expect(orderB?.paymentStatus).toBe("failed");
 });
@@ -1137,7 +1124,7 @@ test("internalConfirmOrderPayment stops a discount from being redeemed past its 
     ctx.db
       .query("discounts")
       .withIndex("by_code", (q) => q.eq("code", "ONECODE"))
-      .first()
+      .first(),
   );
   expect(discount?.usedCount).toBe(1);
 
@@ -1145,7 +1132,7 @@ test("internalConfirmOrderPayment stops a discount from being redeemed past its 
     ctx.db
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", orderNumberB))
-      .first()
+      .first(),
   );
   expect(orderB?.paymentStatus).toBe("failed");
 });
@@ -1161,114 +1148,110 @@ Expected: FAIL — both new tests fail (inventory goes to `-1`; `usedCount` reac
 In `convex/checkout.ts`, replace the inventory-decrement loop and discount-increment block (lines 389-416):
 
 ```typescript
-    for (const item of order.items) {
-      const product = await ctx.db.get(item.productId);
-      if (product && product.trackInventory) {
-        await ctx.db.patch(product._id, {
-          inventory: product.inventory - item.quantity,
-        });
-      }
-      if (item.variationId) {
-        const variation = await ctx.db.get(item.variationId);
-        if (variation) {
-          await ctx.db.patch(variation._id, {
-            inventory: variation.inventory - item.quantity,
-          });
-        }
-      }
+for (const item of order.items) {
+  const product = await ctx.db.get(item.productId);
+  if (product && product.trackInventory) {
+    await ctx.db.patch(product._id, {
+      inventory: product.inventory - item.quantity,
+    });
+  }
+  if (item.variationId) {
+    const variation = await ctx.db.get(item.variationId);
+    if (variation) {
+      await ctx.db.patch(variation._id, {
+        inventory: variation.inventory - item.quantity,
+      });
     }
+  }
+}
 
-    if (order.appliedDiscountCode) {
-      const discount = await ctx.db
-        .query("discounts")
-        .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
-        .first();
-      if (discount) {
-        await ctx.db.patch(discount._id, {
-          usedCount: discount.usedCount + 1,
-        });
-      }
-    }
+if (order.appliedDiscountCode) {
+  const discount = await ctx.db
+    .query("discounts")
+    .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
+    .first();
+  if (discount) {
+    await ctx.db.patch(discount._id, {
+      usedCount: discount.usedCount + 1,
+    });
+  }
+}
 ```
 
 with:
 
 ```typescript
-    // Re-validate stock and the discount's usage limit HERE, immediately
-    // before committing, instead of trusting the create-time check — closes
-    // the overselling / usage-limit-bypass race between two orders paid
-    // concurrently for the same last-unit product or single-use code
-    // (Backend #1/#2/#3, Payments #3/#4).
-    for (const item of order.items) {
-      const product = await ctx.db.get(item.productId);
-      if (product && product.trackInventory && product.inventory < item.quantity) {
-        await ctx.db.patch(order._id, {
-          paymentStatus: "failed",
-          status: order.status,
-          updatedAt: Date.now(),
-        });
-        return { success: false, reason: "insufficient_stock" };
-      }
-      if (item.variationId) {
-        const variation = await ctx.db.get(item.variationId);
-        if (variation && variation.inventory < item.quantity) {
-          await ctx.db.patch(order._id, {
-            paymentStatus: "failed",
-            status: order.status,
-            updatedAt: Date.now(),
-          });
-          return { success: false, reason: "insufficient_stock" };
-        }
-      }
+// Re-validate stock and the discount's usage limit HERE, immediately
+// before committing, instead of trusting the create-time check — closes
+// the overselling / usage-limit-bypass race between two orders paid
+// concurrently for the same last-unit product or single-use code
+// (Backend #1/#2/#3, Payments #3/#4).
+for (const item of order.items) {
+  const product = await ctx.db.get(item.productId);
+  if (product && product.trackInventory && product.inventory < item.quantity) {
+    await ctx.db.patch(order._id, {
+      paymentStatus: "failed",
+      status: order.status,
+      updatedAt: Date.now(),
+    });
+    return { success: false, reason: "insufficient_stock" };
+  }
+  if (item.variationId) {
+    const variation = await ctx.db.get(item.variationId);
+    if (variation && variation.inventory < item.quantity) {
+      await ctx.db.patch(order._id, {
+        paymentStatus: "failed",
+        status: order.status,
+        updatedAt: Date.now(),
+      });
+      return { success: false, reason: "insufficient_stock" };
     }
+  }
+}
 
-    if (order.appliedDiscountCode) {
-      const discount = await ctx.db
-        .query("discounts")
-        .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
-        .first();
-      if (
-        discount &&
-        discount.usageLimit !== undefined &&
-        discount.usedCount >= discount.usageLimit
-      ) {
-        await ctx.db.patch(order._id, {
-          paymentStatus: "failed",
-          status: order.status,
-          updatedAt: Date.now(),
-        });
-        return { success: false, reason: "discount_limit_reached" };
-      }
-    }
+if (order.appliedDiscountCode) {
+  const discount = await ctx.db
+    .query("discounts")
+    .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
+    .first();
+  if (discount && discount.usageLimit !== undefined && discount.usedCount >= discount.usageLimit) {
+    await ctx.db.patch(order._id, {
+      paymentStatus: "failed",
+      status: order.status,
+      updatedAt: Date.now(),
+    });
+    return { success: false, reason: "discount_limit_reached" };
+  }
+}
 
-    for (const item of order.items) {
-      const product = await ctx.db.get(item.productId);
-      if (product && product.trackInventory) {
-        await ctx.db.patch(product._id, {
-          inventory: product.inventory - item.quantity,
-        });
-      }
-      if (item.variationId) {
-        const variation = await ctx.db.get(item.variationId);
-        if (variation) {
-          await ctx.db.patch(variation._id, {
-            inventory: variation.inventory - item.quantity,
-          });
-        }
-      }
+for (const item of order.items) {
+  const product = await ctx.db.get(item.productId);
+  if (product && product.trackInventory) {
+    await ctx.db.patch(product._id, {
+      inventory: product.inventory - item.quantity,
+    });
+  }
+  if (item.variationId) {
+    const variation = await ctx.db.get(item.variationId);
+    if (variation) {
+      await ctx.db.patch(variation._id, {
+        inventory: variation.inventory - item.quantity,
+      });
     }
+  }
+}
 
-    if (order.appliedDiscountCode) {
-      const discount = await ctx.db
-        .query("discounts")
-        .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
-        .first();
-      if (discount) {
-        await ctx.db.patch(discount._id, {
-          usedCount: discount.usedCount + 1,
-        });
-      }
-    }
+if (order.appliedDiscountCode) {
+  const discount = await ctx.db
+    .query("discounts")
+    .withIndex("by_code", (q) => q.eq("code", order.appliedDiscountCode!))
+    .first();
+  if (discount) {
+    await ctx.db.patch(discount._id, {
+      usedCount: discount.usedCount + 1,
+    });
+  }
+}
 ```
 
 Note this function already patches `paymentStatus`/`status`/`paidAt` optimistically at the top (lines 377-383) before this block runs; the re-check above corrects that by overwriting `paymentStatus` back to `"failed"` if either re-validation fails, and returns early before the email-scheduling code at the bottom (lines 418-442) so no order-confirmation email goes out for an order that just failed its re-check.
@@ -1295,11 +1278,13 @@ git commit -m "fix: re-validate stock and discount usage at payment confirmation
 ## Task 4: Security headers + server-side upload validation (Security #1, #2 High)
 
 **Files:**
+
 - Modify: `next.config.ts`
 - Modify: `convex/images.ts`
 - Test: `convex/images.test.ts`
 
 **Interfaces:**
+
 - Produces: every response now carries CSP/HSTS/X-Frame-Options/nosniff/Referrer-Policy headers. `convex/images.ts` gains an internal validation step: after a client POSTs to the generated upload URL, callers must call a new `validateUpload` mutation before the storage id is considered usable elsewhere; components that show uploaded images already call `getImageUrl`, which now returns `null` for anything that fails validation instead of silently serving it.
 
 ### Step 1: Add security headers (verified by direct inspection + a runtime check, not a unit test — `next.config.ts` headers can't run under Vitest)
@@ -1434,7 +1419,7 @@ export const validateUploadMetadata = internalMutation({
 
 function validateMetadata(
   contentType: string,
-  size: number
+  size: number,
 ): { valid: true } | { valid: false; reason: string } {
   if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
     return { valid: false, reason: `Unsupported content type: ${contentType}` };
@@ -1468,16 +1453,16 @@ export const validateUpload = mutation({
 });
 
 export const getImageUrl = query({
-    args: { storageId: v.string() },
-    handler: async (ctx, args) => {
-        try {
-            const url = await ctx.storage.getUrl(args.storageId);
-            return url;
-        } catch (error) {
-            console.error("Failed to get image URL:", error);
-            return null;
-        }
-    },
+  args: { storageId: v.string() },
+  handler: async (ctx, args) => {
+    try {
+      const url = await ctx.storage.getUrl(args.storageId);
+      return url;
+    } catch (error) {
+      console.error("Failed to get image URL:", error);
+      return null;
+    }
+  },
 });
 ```
 
@@ -1507,6 +1492,7 @@ git commit -m "fix: add security headers + server-side upload validation (Securi
 ## Task 5: Rate limiting + order-confirmation email sanitization (Security #3/#4, Backend #7)
 
 **Files:**
+
 - Create: `convex/rateLimit.ts`
 - Modify: `convex/schema.ts` (add `rateLimits` table)
 - Modify: `convex/leads.ts` (`createLead`)
@@ -1517,6 +1503,7 @@ git commit -m "fix: add security headers + server-side upload validation (Securi
 - Test: `convex/email.test.ts`
 
 **Interfaces:**
+
 - Produces: `checkRateLimit(ctx, key, { max, windowMs })` — a reusable sliding-window limiter backed by the new `rateLimits` table. Throws `Error("Too many requests. Please try again in a moment.")` when exceeded. `sendOrderConfirmation` now HTML-escapes every interpolated string before templating.
 
 ### Step 1: Add the `rateLimits` table
@@ -1560,7 +1547,7 @@ test("checkRateLimit throws once the max is exceeded within the window", async (
       await checkRateLimit(ctx, "test:key-b", { max: 2, windowMs: 60_000 });
       await checkRateLimit(ctx, "test:key-b", { max: 2, windowMs: 60_000 });
       await checkRateLimit(ctx, "test:key-b", { max: 2, windowMs: 60_000 });
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 
@@ -1600,7 +1587,7 @@ const DEFAULT_WINDOW_MS = 60_000;
 export async function checkRateLimit(
   ctx: MutationCtx,
   key: string,
-  opts: { max: number; windowMs?: number }
+  opts: { max: number; windowMs?: number },
 ): Promise<void> {
   const windowMs = opts.windowMs ?? DEFAULT_WINDOW_MS;
   const now = Date.now();
@@ -1646,27 +1633,27 @@ In `convex/cards.ts`, add the import (`import { checkRateLimit } from "./rateLim
 
 ```typescript
 export const incrementTapCount = mutation({
-    args: { cardId: v.id("cards") },
-    handler: async (ctx, args) => {
-        await checkRateLimit(ctx, `tap:${args.cardId}`, { max: 20, windowMs: 60_000 });
-        const card = await ctx.db.get(args.cardId);
-        if (card) {
-            await ctx.db.patch(args.cardId, {
-                tapCount: card.tapCount + 1,
-            });
-        }
-    },
+  args: { cardId: v.id("cards") },
+  handler: async (ctx, args) => {
+    await checkRateLimit(ctx, `tap:${args.cardId}`, { max: 20, windowMs: 60_000 });
+    const card = await ctx.db.get(args.cardId);
+    if (card) {
+      await ctx.db.patch(args.cardId, {
+        tapCount: card.tapCount + 1,
+      });
+    }
+  },
 });
 ```
 
 In `convex/checkout.ts`, add the import (`import { checkRateLimit } from "./rateLimit";`) and call it inside `createOrder`'s handler, right after `const userId = authedUser?._id;` (line 150), keyed on whichever identity is available:
 
 ```typescript
-    const userId = authedUser?._id;
-    await checkRateLimit(ctx, `order:${userId ?? args.guestId ?? "anon"}`, {
-      max: 5,
-      windowMs: 60_000,
-    });
+const userId = authedUser?._id;
+await checkRateLimit(ctx, `order:${userId ?? args.guestId ?? "anon"}`, {
+  max: 5,
+  windowMs: 60_000,
+});
 ```
 
 ### Step 7: Write a regression test proving the limit fires on `createLead`
@@ -1688,7 +1675,7 @@ test("createLead throttles more than 5 leads per owner within a minute", async (
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   for (let i = 0; i < 5; i++) {
@@ -1704,7 +1691,7 @@ test("createLead throttles more than 5 leads per owner within a minute", async (
       ownerId,
       inquirerName: "Visitor 6",
       inquirerContact: "visitor6@test.dev",
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 ```
@@ -1724,7 +1711,7 @@ import { escapeHtml } from "./email";
 
 test("escapeHtml neutralizes angle brackets and quotes", () => {
   expect(escapeHtml('<a href="evil">click</a>')).toBe(
-    "&lt;a href=&quot;evil&quot;&gt;click&lt;/a&gt;"
+    "&lt;a href=&quot;evil&quot;&gt;click&lt;/a&gt;",
   );
 });
 
@@ -1746,12 +1733,12 @@ In `convex/email.ts`, add near the top (after the imports, before `export const 
 // HTML-escape untrusted strings before interpolating them into an email
 // template — Resend does not auto-escape (Security audit #4).
 export function escapeHtml(input: string): string {
-    return input
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 ```
 
@@ -1805,6 +1792,7 @@ git commit -m "fix: rate-limit public mutations, sanitize order-confirmation ema
 ## Task 6: Cart authorization fix + missing indexes (Payments #5 Medium, Backend #5/#6 Medium)
 
 **Files:**
+
 - Modify: `convex/schema.ts` (add indexes on `orders`, `subscriptionInvoices`, `users`)
 - Modify: `convex/shop.ts:155-493` (`getCart`, `addToCart`, `updateCartItem`, `removeFromCart`, `clearCart`)
 - Modify: `convex/checkout.ts:360-365` (query by index instead of filter)
@@ -1812,6 +1800,7 @@ git commit -m "fix: rate-limit public mutations, sanitize order-confirmation ema
 - Test: `convex/shop.test.ts` (append)
 
 **Interfaces:**
+
 - Produces: every cart mutation that receives `clerkId` now verifies it against `ctx.auth` (same pattern `mergeGuestCart` already uses) before resolving `userId` — a caller can no longer pass an arbitrary victim's `clerkId` to read or mutate their cart. `orders.paymentIntentId` and `subscriptionInvoices.paymentIntentId` are now indexed; the two webhook-fallback lookups use `withIndex` instead of `.filter()`.
 
 ### Step 1: Write the failing test for cart authorization
@@ -1839,9 +1828,9 @@ test("getCart rejects a clerkId that does not match the authenticated caller", a
   });
   const asAttacker = t.withIdentity({ subject: "attacker_clerk_id" });
 
-  await expect(
-    asAttacker.query(api.shop.getCart, { clerkId: victimClerkId })
-  ).rejects.toThrow(/unauthorized/i);
+  await expect(asAttacker.query(api.shop.getCart, { clerkId: victimClerkId })).rejects.toThrow(
+    /unauthorized/i,
+  );
 });
 
 test("addToCart rejects a clerkId that does not match the authenticated caller", async () => {
@@ -1864,7 +1853,7 @@ test("addToCart rejects a clerkId that does not match the authenticated caller",
       clerkId: victimClerkId,
       productId,
       quantity: 1,
-    })
+    }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -1894,24 +1883,24 @@ In `convex/shop.ts`, add the import at the top: `import { requireUserMatching } 
 Each of `getCart`, `addToCart`, `updateCartItem`, `removeFromCart`, `clearCart` currently starts its userId resolution with the same pattern:
 
 ```typescript
-    let userId;
-    if (args.clerkId) {
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
-        .first();
-      userId = user?._id;
-    }
+let userId;
+if (args.clerkId) {
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId!))
+    .first();
+  userId = user?._id;
+}
 ```
 
 Replace **every one of the five occurrences** (in `getCart` line ~163-171, `addToCart` line ~228-235, `updateCartItem` line ~339-346, `removeFromCart` line ~411-418, `clearCart` line ~460-467) with:
 
 ```typescript
-    let userId;
-    if (args.clerkId) {
-      const user = await requireUserMatching(ctx, args.clerkId);
-      userId = user._id;
-    }
+let userId;
+if (args.clerkId) {
+  const user = await requireUserMatching(ctx, args.clerkId);
+  userId = user._id;
+}
 ```
 
 This is a mechanical, identical replacement in all five places — `requireUserMatching` already throws `"Unauthorized: identity mismatch"` when the claimed `clerkId` doesn't match `ctx.auth`, and throws `"Unauthorized: authentication required"` if there's no session at all, which correctly still allows the guest path (`args.clerkId` is `undefined` for guest calls, so the `if (args.clerkId)` branch is skipped entirely and `userId` stays `undefined`, falling through to the existing `args.guestId` branch below it — unchanged in this task).
@@ -1983,49 +1972,45 @@ Run `npx convex codegen` after saving.
 In `convex/checkout.ts`, `internalConfirmOrderPayment` (lines 360-365), replace:
 
 ```typescript
-    if (!order && args.paymentIntentId) {
-      order = await ctx.db
-        .query("orders")
-        .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
-        .first();
-    }
+if (!order && args.paymentIntentId) {
+  order = await ctx.db
+    .query("orders")
+    .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
+    .first();
+}
 ```
 
 with:
 
 ```typescript
-    if (!order && args.paymentIntentId) {
-      order = await ctx.db
-        .query("orders")
-        .withIndex("by_paymentIntentId", (q) =>
-          q.eq("paymentIntentId", args.paymentIntentId)
-        )
-        .first();
-    }
+if (!order && args.paymentIntentId) {
+  order = await ctx.db
+    .query("orders")
+    .withIndex("by_paymentIntentId", (q) => q.eq("paymentIntentId", args.paymentIntentId))
+    .first();
+}
 ```
 
 In `convex/billing.ts`, `internalActivateInvoice` (lines 302-307), replace:
 
 ```typescript
-    if (!invoice && args.paymentIntentId) {
-      invoice = await ctx.db
-        .query("subscriptionInvoices")
-        .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
-        .first();
-    }
+if (!invoice && args.paymentIntentId) {
+  invoice = await ctx.db
+    .query("subscriptionInvoices")
+    .filter((q) => q.eq(q.field("paymentIntentId"), args.paymentIntentId))
+    .first();
+}
 ```
 
 with:
 
 ```typescript
-    if (!invoice && args.paymentIntentId) {
-      invoice = await ctx.db
-        .query("subscriptionInvoices")
-        .withIndex("by_paymentIntentId", (q) =>
-          q.eq("paymentIntentId", args.paymentIntentId)
-        )
-        .first();
-    }
+if (!invoice && args.paymentIntentId) {
+  invoice = await ctx.db
+    .query("subscriptionInvoices")
+    .withIndex("by_paymentIntentId", (q) => q.eq("paymentIntentId", args.paymentIntentId))
+    .first();
+}
 ```
 
 **Note:** `convex/teams.ts`'s full-table `users` scans (Backend #6) are not touched in this task — adding the `by_teamId` index here is a prerequisite, but rewriting `teams.ts`'s query call sites to use it is deferred to the architecture follow-up (see the end of this plan) since it touches team-membership logic this plan hasn't otherwise scoped.
@@ -2047,6 +2032,7 @@ git commit -m "fix: verify clerkId against ctx.auth in cart mutations, index pay
 ## Task 7: Builder — stop leaking hidden-block data, wire section order through to public templates (Frontend #1 Critical)
 
 **Files:**
+
 - Modify: `app/dashboard/builder/page.tsx` (`handleSave`, around line 639-712)
 - Modify: `types/profile.ts` (`ProfileData`)
 - Modify: `app/p/[id]/page.tsx` (`PublicProfileContent`)
@@ -2055,6 +2041,7 @@ git commit -m "fix: verify clerkId against ctx.auth in cart mutations, index pay
 - Test: `types/profile.ts` gains a new pure helper this task also tests
 
 **Interfaces:**
+
 - Produces: `ProfileData.componentOrder: string[]` — the list of enabled section ids in display order, already computed today by `handleSave` (line 702) and stored in `layoutConfig.componentOrder`, now actually read on the public page. A new pure helper `filterAgentInfoByEnabledBlocks(agentInfo, enabledBlockIds)` in `lib/profileSections.ts` strips optional section data (`certification`, `education`, `techStack`, `experience`, `testimonials`, `gallery`) that belongs to a disabled block before it's ever saved.
 
 This is the one task in this plan where the exact JSX inside `Editorial.tsx` / `Kinetic.tsx` / `Architectural.tsx` isn't reproduced here — those files are large (several hundred lines each) and each already contains the section markup; the fix reorders/gates existing markup, it does not invent new markup. Read each file's current section-rendering block (the audit located them at `Editorial.tsx:56-69`, `Kinetic.tsx:58-74`, and the equivalent block in `Architectural.tsx`) before editing.
@@ -2133,7 +2120,7 @@ const BLOCK_TO_AGENT_FIELDS: Record<string, (keyof ProfileInfo)[]> = {
  */
 export function filterAgentInfoByEnabledBlocks(
   agentInfo: ProfileInfo,
-  enabledBlockIds: string[]
+  enabledBlockIds: string[],
 ): ProfileInfo {
   const enabled = new Set(enabledBlockIds);
   const result: ProfileInfo = { ...agentInfo };
@@ -2160,10 +2147,10 @@ In `app/dashboard/builder/page.tsx`, import it at the top: `import { filterAgent
 In `handleSave` (starting line 635), the `cleanAgentInfo` object (lines 639-659) is built directly from `agentInfo` state, then used at line 692 (`agentInfo: cleanAgentInfo,`). After building `cleanAgentInfo` (after line 659's closing `};`) and before it's used, compute the enabled block ids the same way `componentOrder` already does at line 702, and pass `cleanAgentInfo` through the filter:
 
 ```typescript
-            const enabledBlockIds = getBlocksForProfileType(profileType, blocks)
-                .filter(b => b.isEnabled)
-                .map(b => b.id);
-            const filteredAgentInfo = filterAgentInfoByEnabledBlocks(cleanAgentInfo, enabledBlockIds);
+const enabledBlockIds = getBlocksForProfileType(profileType, blocks)
+  .filter((b) => b.isEnabled)
+  .map((b) => b.id);
+const filteredAgentInfo = filterAgentInfoByEnabledBlocks(cleanAgentInfo, enabledBlockIds);
 ```
 
 Then change the `createProfile` call (line 692) from `agentInfo: cleanAgentInfo,` to `agentInfo: filteredAgentInfo,`.
@@ -2179,27 +2166,27 @@ In `types/profile.ts`, add the field to the `ProfileData` interface (after line 
 In `app/p/[id]/page.tsx`, the `data: ProfileData` object built at lines 62-81 currently has no `componentOrder` field. Add it:
 
 ```typescript
-    const data: ProfileData = {
-        ownerId: profile.ownerId,
-        name: profile.name,
-        profileType: (profile.profileType || "individual") as ProfileType,
-        agent: agentInfo,
-        properties: [],
-        projects: [],
-        products: profile.products,
-        services: profile.services,
-        propertyListings: (profile as any).propertyListings,
-        inlineProjects: (profile as any).inlineProjects,
-        componentOrder: layoutConfig.componentOrder,
-        theme: {
-            primaryColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.primary,
-            backgroundColor: layoutConfig.colorPalette.background,
-            textColor: layoutConfig.colorPalette.text,
-            secondaryColor: (layoutConfig.colorPalette as any).secondary,
-            accentColor: profile.teamBranding?.accentColor || (layoutConfig.colorPalette as any).accent,
-        },
-        digitalCard: (profile as any).digitalCard,
-    };
+const data: ProfileData = {
+  ownerId: profile.ownerId,
+  name: profile.name,
+  profileType: (profile.profileType || "individual") as ProfileType,
+  agent: agentInfo,
+  properties: [],
+  projects: [],
+  products: profile.products,
+  services: profile.services,
+  propertyListings: (profile as any).propertyListings,
+  inlineProjects: (profile as any).inlineProjects,
+  componentOrder: layoutConfig.componentOrder,
+  theme: {
+    primaryColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.primary,
+    backgroundColor: layoutConfig.colorPalette.background,
+    textColor: layoutConfig.colorPalette.text,
+    secondaryColor: (layoutConfig.colorPalette as any).secondary,
+    accentColor: profile.teamBranding?.accentColor || (layoutConfig.colorPalette as any).accent,
+  },
+  digitalCard: (profile as any).digitalCard,
+};
 ```
 
 (Only the new `componentOrder: layoutConfig.componentOrder,` line is added; everything else in this object is unchanged.)
@@ -2255,12 +2242,14 @@ git commit -m "fix: builder reorder and hide/show now affect the published profi
 ## Task 8: Image pipeline fixes (Frontend #2 High, #3/#4/#5/#6 Medium)
 
 **Files:**
+
 - Modify: `lib/image-compression.ts`
 - Modify: `components/ui/image-uploader.tsx`
 - Modify: `components/profile-builder/AccessCard.tsx`
 - Test: `lib/image-compression.test.ts`
 
 **Interfaces:**
+
 - Produces: `compressImage` preserves aspect ratio when clamping to `minWidthOrHeight`. `loadImage` revokes its object URL on both success and failure. `ImageUploader` revokes its preview object URL on unmount. `AccessCard`'s QR value is computed client-side only (no SSR/CSR mismatch) and its avatar renders through `ProfileImage` so Convex storage ids resolve correctly.
 
 ### Step 1: Write the failing test for aspect-ratio preservation
@@ -2306,7 +2295,11 @@ test("clamping to minWidthOrHeight preserves aspect ratio instead of stretching"
   vi.spyOn(globalThis, "Image").mockImplementation(() => img as unknown as HTMLImageElement);
 
   // canvas + toBlob are also not implemented in jsdom — stub the minimum.
-  const fakeCtx = { imageSmoothingEnabled: true, imageSmoothingQuality: "high", drawImage: vi.fn() };
+  const fakeCtx = {
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: "high",
+    drawImage: vi.fn(),
+  };
   const fakeCanvas = {
     width: 0,
     height: 0,
@@ -2337,61 +2330,61 @@ Expected: FAIL — current code clamps `width`/`height` independently (`width = 
 In `lib/image-compression.ts`, replace lines 67-75:
 
 ```typescript
-  if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
-    const scale = maxWidthOrHeight / Math.max(width, height);
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-  }
+if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+  const scale = maxWidthOrHeight / Math.max(width, height);
+  width = Math.round(width * scale);
+  height = Math.round(height * scale);
+}
 
-  // Ensure we don't go below minimum dimensions
-  width = Math.max(width, minWidthOrHeight);
-  height = Math.max(height, minWidthOrHeight);
+// Ensure we don't go below minimum dimensions
+width = Math.max(width, minWidthOrHeight);
+height = Math.max(height, minWidthOrHeight);
 ```
 
 with:
 
 ```typescript
-  if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
-    const scale = maxWidthOrHeight / Math.max(width, height);
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-  }
+if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+  const scale = maxWidthOrHeight / Math.max(width, height);
+  width = Math.round(width * scale);
+  height = Math.round(height * scale);
+}
 
-  // Ensure we don't go below minimum dimensions WITHOUT distorting the
-  // aspect ratio: scale both dimensions by whichever axis needs the bigger
-  // boost to clear minWidthOrHeight, not each axis independently.
-  if (width < minWidthOrHeight || height < minWidthOrHeight) {
-    const upscale = Math.max(minWidthOrHeight / width, minWidthOrHeight / height);
-    width = Math.round(width * upscale);
-    height = Math.round(height * upscale);
-  }
+// Ensure we don't go below minimum dimensions WITHOUT distorting the
+// aspect ratio: scale both dimensions by whichever axis needs the bigger
+// boost to clear minWidthOrHeight, not each axis independently.
+if (width < minWidthOrHeight || height < minWidthOrHeight) {
+  const upscale = Math.max(minWidthOrHeight / width, minWidthOrHeight / height);
+  width = Math.round(width * upscale);
+  height = Math.round(height * upscale);
+}
 ```
 
 Apply the identical fix to the second occurrence of the same pattern inside the compression retry loop (originally lines 108-116):
 
 ```typescript
-      const scale = 0.8;
-      width = Math.round(width * scale);
-      height = Math.round(height * scale);
-      
-      // Ensure minimum dimensions
-      width = Math.max(width, minWidthOrHeight);
-      height = Math.max(height, minWidthOrHeight);
+const scale = 0.8;
+width = Math.round(width * scale);
+height = Math.round(height * scale);
+
+// Ensure minimum dimensions
+width = Math.max(width, minWidthOrHeight);
+height = Math.max(height, minWidthOrHeight);
 ```
 
 becomes:
 
 ```typescript
-      const scale = 0.8;
-      width = Math.round(width * scale);
-      height = Math.round(height * scale);
+const scale = 0.8;
+width = Math.round(width * scale);
+height = Math.round(height * scale);
 
-      // Same ratio-preserving clamp as the initial resize above.
-      if (width < minWidthOrHeight || height < minWidthOrHeight) {
-        const upscale = Math.max(minWidthOrHeight / width, minWidthOrHeight / height);
-        width = Math.round(width * upscale);
-        height = Math.round(height * upscale);
-      }
+// Same ratio-preserving clamp as the initial resize above.
+if (width < minWidthOrHeight || height < minWidthOrHeight) {
+  const upscale = Math.max(minWidthOrHeight / width, minWidthOrHeight / height);
+  width = Math.round(width * upscale);
+  height = Math.round(height * upscale);
+}
 ```
 
 ### Step 4: Run test to verify it passes
@@ -2434,20 +2427,20 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 }
 ```
 
-No new test for this step — it's covered by inspection in task review since jsdom's `URL.revokeObjectURL` is a no-op mock and asserting it was *called* would just test the mock, not real leak behavior; the existing aspect-ratio test above already exercises this code path without erroring.
+No new test for this step — it's covered by inspection in task review since jsdom's `URL.revokeObjectURL` is a no-op mock and asserting it was _called_ would just test the mock, not real leak behavior; the existing aspect-ratio test above already exercises this code path without erroring.
 
 ### Step 6: Fix the `ImageUploader` unmount leak
 
 In `components/ui/image-uploader.tsx`, the `useEffect` import is already present (line 3: `import { useState, useRef, useEffect } from "react";`) but unused — this confirms a cleanup effect was intended. Add it right after the existing state declarations (after line 26's `const generateUploadUrl = useMutation(api.images.generateUploadUrl);`):
 
 ```typescript
-    useEffect(() => {
-        return () => {
-            if (localPreviewUrl) {
-                URL.revokeObjectURL(localPreviewUrl);
-            }
-        };
-    }, [localPreviewUrl]);
+useEffect(() => {
+  return () => {
+    if (localPreviewUrl) {
+      URL.revokeObjectURL(localPreviewUrl);
+    }
+  };
+}, [localPreviewUrl]);
 ```
 
 ### Step 7: Fix `AccessCard`'s hydration mismatch and broken avatar
@@ -2468,18 +2461,16 @@ import { ProfileImage } from "@/components/templates/ProfileImage";
 Replace the render-time `window` read (lines 15-17):
 
 ```typescript
-    const profileUrl = typeof window !== "undefined" 
-        ? `${window.location.origin}/p/${profileId}`
-        : "";
+const profileUrl = typeof window !== "undefined" ? `${window.location.origin}/p/${profileId}` : "";
 ```
 
 with a mount-gated version that matches the pattern already used correctly in `components/ui/digital-business-card.tsx`:
 
 ```typescript
-    const [profileUrl, setProfileUrl] = useState("");
-    useEffect(() => {
-        setProfileUrl(`${window.location.origin}/p/${profileId}`);
-    }, [profileId]);
+const [profileUrl, setProfileUrl] = useState("");
+useEffect(() => {
+  setProfileUrl(`${window.location.origin}/p/${profileId}`);
+}, [profileId]);
 ```
 
 Replace the raw `<img>` avatar rendering (lines 67-81):
@@ -2489,9 +2480,9 @@ Replace the raw `<img>` avatar rendering (lines 67-81):
                 <div className="flex-shrink-0">
                     {agent.avatarUrl ? (
                         <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/10 bg-zinc-900 shadow-xl">
-                            <img 
-                                src={agent.avatarUrl} 
-                                alt={agent.fullName} 
+                            <img
+                                src={agent.avatarUrl}
+                                alt={agent.fullName}
                                 className="w-full h-full object-cover"
                             />
                         </div>
@@ -2547,10 +2538,12 @@ git commit -m "fix: preserve aspect ratio in compression, fix object-URL leaks, 
 ## Task 9: Builder unsaved-changes guard (Frontend #7 Low)
 
 **Files:**
+
 - Modify: `app/dashboard/builder/page.tsx`
 - Test: `lib/hasUnsavedChanges.test.ts` (pure logic only; the `beforeunload`/route-intercept wiring is verified manually, browser navigation APIs aren't unit-testable)
 
 **Interfaces:**
+
 - Produces: a `window.confirm`-gated intercept on the back button (line 839-844) and a `beforeunload` listener, both driven by a single `isDirty` boolean the implementer derives from comparing current form state against the last-saved/last-loaded snapshot.
 
 ### Step 1: Write the failing test for the pure dirty-check helper
@@ -2611,22 +2604,49 @@ In `app/dashboard/builder/page.tsx`, import the helper (`import { hasUnsavedChan
 Add a snapshot ref right after the `hasPrefilled` state declaration (after line 466's `const [hasPrefilled, setHasPrefilled] = useState(false);`):
 
 ```typescript
-    const savedSnapshotRef = useRef<string | null>(null);
+const savedSnapshotRef = useRef<string | null>(null);
 ```
 
 At the end of the prefill `useEffect` (right before `setHasPrefilled(true);` in both branches, lines 537 and 555), capture the baseline snapshot once prefill completes. Since the snapshot needs to reflect the full editable state (agentInfo, blocks, colors, digitalCard, etc.) and this task must not restructure that state into one object, take the snapshot from the same fields `handleSave` already serializes — call it right after both `setHasPrefilled(true);` lines by extracting a small helper used in both places:
 
 ```typescript
-    const captureSnapshot = useCallback(() => {
-        savedSnapshotRef.current = JSON.stringify({
-            agentInfo, additionalPhones, additionalEmails, digitalCard,
-            blocks, selectedTemplate, customColors, certification, education,
-            techStack, experience, testimonials, gallery, products,
-            propertyListings, inlineProjects,
-        });
-    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, blocks,
-        selectedTemplate, customColors, certification, education, techStack,
-        experience, testimonials, gallery, products, propertyListings, inlineProjects]);
+const captureSnapshot = useCallback(() => {
+  savedSnapshotRef.current = JSON.stringify({
+    agentInfo,
+    additionalPhones,
+    additionalEmails,
+    digitalCard,
+    blocks,
+    selectedTemplate,
+    customColors,
+    certification,
+    education,
+    techStack,
+    experience,
+    testimonials,
+    gallery,
+    products,
+    propertyListings,
+    inlineProjects,
+  });
+}, [
+  agentInfo,
+  additionalPhones,
+  additionalEmails,
+  digitalCard,
+  blocks,
+  selectedTemplate,
+  customColors,
+  certification,
+  education,
+  techStack,
+  experience,
+  testimonials,
+  gallery,
+  products,
+  propertyListings,
+  inlineProjects,
+]);
 ```
 
 Place this `useCallback` definition after all the referenced state declarations (i.e., after line 425, before the `handleCardThemeChange` function at line 427).
@@ -2634,48 +2654,75 @@ Place this `useCallback` definition after all the referenced state declarations 
 Call `captureSnapshot()` in place of both `setHasPrefilled(true);` lines' neighbors — change:
 
 ```typescript
-                setHasPrefilled(true);
+setHasPrefilled(true);
 ```
 
 (both occurrences, lines 537 and 555) to:
 
 ```typescript
-                setHasPrefilled(true);
-                captureSnapshot();
+setHasPrefilled(true);
+captureSnapshot();
 ```
 
-And call it again at the end of a successful save — in `handleSave`, right after `router.push(\`/p/${profileId}\`);` (line 713), add `captureSnapshot();` before the `router.push` call so a save immediately clears dirty state even if the router push is slow:
+And call it again at the end of a successful save — in `handleSave`, right after `router.push(\`/p/${profileId}\`);`(line 713), add`captureSnapshot();`before the`router.push` call so a save immediately clears dirty state even if the router push is slow:
 
 ```typescript
-            captureSnapshot();
-            router.push(`/p/${profileId}`);
+captureSnapshot();
+router.push(`/p/${profileId}`);
 ```
 
 Add the dirty check and both guards right after the `captureSnapshot` `useCallback` definition:
 
 ```typescript
-    const isDirty = useCallback(() => {
-        if (savedSnapshotRef.current === null) return false;
-        const current = JSON.stringify({
-            agentInfo, additionalPhones, additionalEmails, digitalCard,
-            blocks, selectedTemplate, customColors, certification, education,
-            techStack, experience, testimonials, gallery, products,
-            propertyListings, inlineProjects,
-        });
-        return hasUnsavedChanges(savedSnapshotRef.current, current);
-    }, [agentInfo, additionalPhones, additionalEmails, digitalCard, blocks,
-        selectedTemplate, customColors, certification, education, techStack,
-        experience, testimonials, gallery, products, propertyListings, inlineProjects]);
+const isDirty = useCallback(() => {
+  if (savedSnapshotRef.current === null) return false;
+  const current = JSON.stringify({
+    agentInfo,
+    additionalPhones,
+    additionalEmails,
+    digitalCard,
+    blocks,
+    selectedTemplate,
+    customColors,
+    certification,
+    education,
+    techStack,
+    experience,
+    testimonials,
+    gallery,
+    products,
+    propertyListings,
+    inlineProjects,
+  });
+  return hasUnsavedChanges(savedSnapshotRef.current, current);
+}, [
+  agentInfo,
+  additionalPhones,
+  additionalEmails,
+  digitalCard,
+  blocks,
+  selectedTemplate,
+  customColors,
+  certification,
+  education,
+  techStack,
+  experience,
+  testimonials,
+  gallery,
+  products,
+  propertyListings,
+  inlineProjects,
+]);
 
-    useEffect(() => {
-        const handler = (e: BeforeUnloadEvent) => {
-            if (isDirty()) {
-                e.preventDefault();
-            }
-        };
-        window.addEventListener("beforeunload", handler);
-        return () => window.removeEventListener("beforeunload", handler);
-    }, [isDirty]);
+useEffect(() => {
+  const handler = (e: BeforeUnloadEvent) => {
+    if (isDirty()) {
+      e.preventDefault();
+    }
+  };
+  window.addEventListener("beforeunload", handler);
+  return () => window.removeEventListener("beforeunload", handler);
+}, [isDirty]);
 ```
 
 Finally, change the back button's `onClick` (line 840, `onClick={() => router.back()}`) to:
@@ -2710,11 +2757,13 @@ git commit -m "fix: warn on unsaved changes before leaving the profile builder (
 ## Task 10: Public profile image performance (UI/UX P0)
 
 **Files:**
+
 - Modify: `convex/profiles.ts` (`getProfile`)
 - Modify: `components/templates/ProfileImage.tsx`
 - Test: `convex/profiles.test.ts`
 
 **Interfaces:**
+
 - Produces: `getProfile` now resolves every storage-id image referenced in the profile (avatar + gallery) to a real URL server-side, in one query, exposed as a new `resolvedImages: Record<string, string>` map alongside the existing profile fields. `ProfileImage` consults this map first (no client-side `useQuery` round-trip per image) and falls back to its current per-image query only for images not present in the map (e.g. a src passed from a context that doesn't have `resolvedImages`, keeping the component backward-compatible). It renders via `next/image` instead of a raw `<img>`.
 
 ### Step 1: Write the failing test for server-side batch resolution
@@ -2820,68 +2869,67 @@ In `convex/profiles.ts`, replace the `getProfile` handler (lines 181-216):
 
 ```typescript
 export const getProfile = query({
-    args: { profileId: v.id("profiles") },
-    handler: async (ctx, args) => {
-        const profile = await ctx.db.get(args.profileId);
-        if (!profile) return null;
+  args: { profileId: v.id("profiles") },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db.get(args.profileId);
+    if (!profile) return null;
 
-        // Compute the owner's effective plan server-side and expose ONLY a
-        // cosmetic boolean (showBranding) plus optional team branding — never
-        // leak the owner's plan/expiry internals to the public.
-        const owner = await ctx.db.get(profile.ownerId);
-        let showBranding = true;
-        let teamBranding: {
-            companyName?: string;
-            logoUrl?: string;
-            accentColor?: string;
-        } | null = null;
+    // Compute the owner's effective plan server-side and expose ONLY a
+    // cosmetic boolean (showBranding) plus optional team branding — never
+    // leak the owner's plan/expiry internals to the public.
+    const owner = await ctx.db.get(profile.ownerId);
+    let showBranding = true;
+    let teamBranding: {
+      companyName?: string;
+      logoUrl?: string;
+      accentColor?: string;
+    } | null = null;
 
-        if (owner) {
-            const { plan, limits } = planContext(owner);
-            showBranding = limits.showBranding;
-            // Business members inherit shared team branding on their profile.
-            if (plan === "business" && owner.teamId) {
-                const team = await ctx.db.get(owner.teamId);
-                if (team) {
-                    teamBranding = {
-                        companyName: team.companyName,
-                        logoUrl: team.logoUrl,
-                        accentColor: team.accentColor,
-                    };
-                }
-            }
+    if (owner) {
+      const { plan, limits } = planContext(owner);
+      showBranding = limits.showBranding;
+      // Business members inherit shared team branding on their profile.
+      if (plan === "business" && owner.teamId) {
+        const team = await ctx.db.get(owner.teamId);
+        if (team) {
+          teamBranding = {
+            companyName: team.companyName,
+            logoUrl: team.logoUrl,
+            accentColor: team.accentColor,
+          };
         }
+      }
+    }
 
-        // Batch-resolve every Convex-storage-id image referenced by this
-        // profile in one pass, instead of leaving each <ProfileImage> to fire
-        // its own useQuery round-trip on the client (UI/UX audit P0 — this
-        // was the single biggest contributor to slow first paint on the
-        // public profile page).
-        const candidateIds = [
-            profile.agentInfo.avatarUrl,
-            ...(profile.agentInfo.gallery ?? []),
-        ].filter((id): id is string => {
-            if (!id) return false;
-            return !id.startsWith("http") && !id.startsWith("data:") && !id.startsWith("blob:");
-        });
-        const uniqueIds = Array.from(new Set(candidateIds));
-        const resolvedEntries = await Promise.all(
-            uniqueIds.map(async (id) => {
-                try {
-                    const url = await ctx.storage.getUrl(id);
-                    return url ? ([id, url] as const) : null;
-                } catch {
-                    return null;
-                }
-            })
-        );
-        const resolvedImages: Record<string, string> = {};
-        for (const entry of resolvedEntries) {
-            if (entry) resolvedImages[entry[0]] = entry[1];
+    // Batch-resolve every Convex-storage-id image referenced by this
+    // profile in one pass, instead of leaving each <ProfileImage> to fire
+    // its own useQuery round-trip on the client (UI/UX audit P0 — this
+    // was the single biggest contributor to slow first paint on the
+    // public profile page).
+    const candidateIds = [profile.agentInfo.avatarUrl, ...(profile.agentInfo.gallery ?? [])].filter(
+      (id): id is string => {
+        if (!id) return false;
+        return !id.startsWith("http") && !id.startsWith("data:") && !id.startsWith("blob:");
+      },
+    );
+    const uniqueIds = Array.from(new Set(candidateIds));
+    const resolvedEntries = await Promise.all(
+      uniqueIds.map(async (id) => {
+        try {
+          const url = await ctx.storage.getUrl(id);
+          return url ? ([id, url] as const) : null;
+        } catch {
+          return null;
         }
+      }),
+    );
+    const resolvedImages: Record<string, string> = {};
+    for (const entry of resolvedEntries) {
+      if (entry) resolvedImages[entry[0]] = entry[1];
+    }
 
-        return { ...profile, showBranding, teamBranding, resolvedImages };
-    },
+    return { ...profile, showBranding, teamBranding, resolvedImages };
+  },
 });
 ```
 

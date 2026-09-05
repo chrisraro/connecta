@@ -36,10 +36,7 @@ const INK = "#030609"; // matches the dark-theme --background (app default theme
 
 async function renderIconPng(size) {
   const density = BASE_DENSITY * (size / SVG_NATIVE_SIZE);
-  return sharp(Buffer.from(iconSvg), { density })
-    .resize(size, size)
-    .png()
-    .toBuffer();
+  return sharp(Buffer.from(iconSvg), { density }).resize(size, size).png().toBuffer();
 }
 
 /**
@@ -160,10 +157,7 @@ async function main() {
     .resize(180, 180)
     .png()
     .toBuffer();
-  const appleFlattened = await sharp(appleBase)
-    .flatten({ background: PAPER })
-    .png()
-    .toBuffer();
+  const appleFlattened = await sharp(appleBase).flatten({ background: PAPER }).png().toBuffer();
   const applePath = path.join(root, "public/apple-touch-icon.png");
   writeFileSync(applePath, appleFlattened);
   outputs.push([applePath, "180x180"]);

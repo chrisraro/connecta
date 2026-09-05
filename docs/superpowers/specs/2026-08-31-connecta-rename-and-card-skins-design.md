@@ -11,16 +11,16 @@
 Three migrations are now in flight at once. They are separate projects with separate
 risks, and this document covers the two new ones.
 
-| # | Project | State |
-|---|---|---|
-| 1 | SigmaTap → **Connecta** rename (code half) | This document, ships first |
-| 2 | Convex + Clerk → **Supabase** | Decided separately, 13 decisions, not started |
-| 3 | Four **card skins** | This document, ships last |
+| #   | Project                                    | State                                         |
+| --- | ------------------------------------------ | --------------------------------------------- |
+| 1   | SigmaTap → **Connecta** rename (code half) | This document, ships first                    |
+| 2   | Convex + Clerk → **Supabase**              | Decided separately, 13 decisions, not started |
+| 3   | Four **card skins**                        | This document, ships last                     |
 
 ### Sequencing, and why
 
 **Rename first.** `lib/brand.ts` is a single source of truth with a guard test
-enforcing it, so the rename is cheap *today* and expensive after the backend
+enforcing it, so the rename is cheap _today_ and expensive after the backend
 migration rewrites 5,240 lines of server code and 229 client call sites. Renaming
 before those exist means the new code is born as Connecta.
 
@@ -169,12 +169,12 @@ host aliases, or the only end-to-end proof of the tap path stops resolving.
 Four skins, designed in Figma against the existing brand palette. The brand red
 survives the rename unchanged.
 
-| Skin | Intent |
-|---|---|
-| `charcoal` | Default assigned at signup |
-| `scarlet` | Prominent brand-forward front |
-| `crimson` | Brand identity with a minimalist split |
-| `gradient` | Subtle, sophisticated |
+| Skin       | Intent                                 |
+| ---------- | -------------------------------------- |
+| `charcoal` | Default assigned at signup             |
+| `scarlet`  | Prominent brand-forward front          |
+| `crimson`  | Brand identity with a minimalist split |
+| `gradient` | Subtle, sophisticated                  |
 
 ### B1. Representation
 
@@ -189,7 +189,7 @@ gradient stops and treatment, consumed by both the on-screen card and the print 
 `light|dark|glass|carbon`, and `positions{header,qr,bio,contacts}` with
 `{x,y,width,scale}` drag-editing. It collapses to `{ skin }`.
 
-Rationale: the product's promise is *look professional the instant someone taps*.
+Rationale: the product's promise is _look professional the instant someone taps_.
 Arbitrary colours and free-dragged elements let users produce cards that fail that
 promise. Four art-directed skins guarantee the outcome.
 
@@ -219,8 +219,8 @@ your screen card is Charcoal presents two objects that should feel like one.
 
 **Front carries the printed skin. Back is generic — QR and wordmark only.**
 
-Contact details are **not** printed. The product's pitch is *your details change, your
-card doesn't*; printing a phone number rebuilds the paper business card it replaces, and
+Contact details are **not** printed. The product's pitch is _your details change, your
+card doesn't_; printing a phone number rebuilds the paper business card it replaces, and
 makes a card wrong the day someone changes jobs. The QR resolves to a live profile that
 updates forever — that is the personalisation.
 
@@ -266,9 +266,9 @@ third.
   returns as a leaf with no traversable children over MCP, so vectors and font metadata
   cannot be pulled programmatically. Export `connecta-mark.svg`, or supply a reachable
   node id.
-- **The Figma file goes stale when A3 lands.** It is titled *"SigmaTap — Design
-  System - Data Model - ERD"*, its Brand frame reads *"SigmaTap identity — the sigma
-  struck into a seal disc"*, and its swatches are annotated as mirroring
+- **The Figma file goes stale when A3 lands.** It is titled _"SigmaTap — Design
+  System - Data Model - ERD"_, its Brand frame reads _"SigmaTap identity — the sigma
+  struck into a seal disc"_, and its swatches are annotated as mirroring
   `app/globals.css`. Renaming tokens without updating it leaves two drifting sources of
   truth.
 - **Whether the pattern band appears in-app** (A2) is unresolved and decides whether it

@@ -17,13 +17,21 @@ export function ProjectsSection({
   resolvedImages?: ProfileData["resolvedImages"];
 }) {
   return (
-    <SectionShell theme={theme} index={index} heading="Recent Work" bleed={theme.composition.imagery === "bleed"}>
+    <SectionShell
+      theme={theme}
+      index={index}
+      heading="Recent Work"
+      bleed={theme.composition.imagery === "bleed"}
+    >
       <div className={projectListClass(theme)}>
         {projects.slice(0, 3).map((project, i) => (
           <div
             key={i}
             className={projectCardClass(theme)}
-            style={{ backgroundColor: theme.colors.surface, boxShadow: theme.composition.imagery === "inset" ? "var(--e-raised)" : undefined }}
+            style={{
+              backgroundColor: theme.colors.surface,
+              boxShadow: theme.composition.imagery === "inset" ? "var(--e-raised)" : undefined,
+            }}
           >
             {project.images && project.images[0] && (
               <div className="relative aspect-video">
@@ -43,7 +51,9 @@ export function ProjectsSection({
                 {project.title}
               </h3>
               {project.description && (
-                <p className="text-sm leading-relaxed mb-4" style={{ color: theme.colors.inkSoft }}>{project.description}</p>
+                <p className="text-sm leading-relaxed mb-4" style={{ color: theme.colors.inkSoft }}>
+                  {project.description}
+                </p>
               )}
               {project.externalUrl && (
                 <a

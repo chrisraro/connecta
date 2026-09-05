@@ -24,7 +24,7 @@ function isBusiness(user: Doc<"users">): boolean {
 // the whole users table.
 async function loadTeamMembers(
   ctx: QueryCtx | MutationCtx,
-  team: Doc<"teams">
+  team: Doc<"teams">,
 ): Promise<Doc<"users">[]> {
   const members = await ctx.db
     .query("users")
@@ -38,10 +38,7 @@ async function loadTeamMembers(
 }
 
 // Load the owner's team, asserting the caller owns it and is on business plan.
-async function requireOwnedTeam(
-  ctx: MutationCtx,
-  user: Doc<"users">
-): Promise<Doc<"teams">> {
+async function requireOwnedTeam(ctx: MutationCtx, user: Doc<"users">): Promise<Doc<"teams">> {
   if (!isBusiness(user)) {
     throw new Error("Team features require the Business plan");
   }
@@ -92,13 +89,12 @@ export const getMyTeam = query({
     const isOwner = team.ownerId === user._id;
 
     const teamMembers = await loadTeamMembers(ctx, team);
-    const members = teamMembers
-      .map((u) => ({
-        userId: u._id,
-        name: u.name ?? null,
-        email: u.email,
-        role: u._id === team!.ownerId ? ("owner" as const) : ("member" as const),
-      }));
+    const members = teamMembers.map((u) => ({
+      userId: u._id,
+      name: u.name ?? null,
+      email: u.email,
+      role: u._id === team!.ownerId ? ("owner" as const) : ("member" as const),
+    }));
 
     const invites = await ctx.db
       .query("teamInvites")
@@ -160,9 +156,7 @@ export const inviteMember = mutation({
     }
 
     // Already a member?
-    const existingUser = allUsers.find(
-      (u) => u.email.toLowerCase() === email
-    );
+    const existingUser = allUsers.find((u) => u.email.toLowerCase() === email);
     if (existingUser && existingUser.teamId === team._id) {
       throw new Error("That person is already on your team");
     }
@@ -171,9 +165,7 @@ export const inviteMember = mutation({
     }
 
     // Already invited (pending)?
-    const dupe = invites.find(
-      (i) => i.email.toLowerCase() === email && i.status === "pending"
-    );
+    const dupe = invites.find((i) => i.email.toLowerCase() === email && i.status === "pending");
     if (dupe) {
       throw new Error("That email already has a pending invite");
     }
@@ -273,7 +265,7 @@ export const updateTeamBranding = mutation({
  */
 export async function acceptInvitesForCurrentUser(
   ctx: MutationCtx,
-  user: Doc<"users">
+  user: Doc<"users">,
 ): Promise<void> {
   if (user.teamId) return; // already on a team
   const email = user.email.toLowerCase();

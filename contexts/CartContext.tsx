@@ -22,9 +22,20 @@ interface CartContextType {
   itemCount: number;
   subtotal: number;
   isLoading: boolean;
-  addItem: (productId: Id<"products">, variationId: Id<"productVariations"> | undefined, quantity: number) => Promise<void>;
-  removeItem: (productId: Id<"products">, variationId: Id<"productVariations"> | undefined) => Promise<void>;
-  updateQuantity: (productId: Id<"products">, variationId: Id<"productVariations"> | undefined, quantity: number) => Promise<void>;
+  addItem: (
+    productId: Id<"products">,
+    variationId: Id<"productVariations"> | undefined,
+    quantity: number,
+  ) => Promise<void>;
+  removeItem: (
+    productId: Id<"products">,
+    variationId: Id<"productVariations"> | undefined,
+  ) => Promise<void>;
+  updateQuantity: (
+    productId: Id<"products">,
+    variationId: Id<"productVariations"> | undefined,
+    quantity: number,
+  ) => Promise<void>;
   clearCart: () => Promise<void>;
 }
 
@@ -37,7 +48,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 // which would otherwise scatter unrelated per-browser ids across the app.
 export function getOrCreateGuestId(): string {
   if (typeof window === "undefined") return "";
-  
+
   let guestId = localStorage.getItem(GUEST_CART_ID_KEY);
   if (!guestId) {
     guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -49,17 +60,13 @@ export function getOrCreateGuestId(): string {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
   const [isClientLoaded, setIsClientLoaded] = useState(false);
-  
+
   const guestId = isClientLoaded ? getOrCreateGuestId() : "";
-  
+
   // Fetch cart from Convex
   const cart = useQuery(
     api.shop.getCart,
-    user?.id 
-      ? { clerkId: user.id }
-      : guestId 
-        ? { guestId }
-        : "skip"
+    user?.id ? { clerkId: user.id } : guestId ? { guestId } : "skip",
   );
 
   const addToCart = useMutation(api.shop.addToCart);
@@ -80,66 +87,72 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       mergeGuestCart({
         clerkId: user.id,
         guestId,
-      }).catch(err => {
+      }).catch((err) => {
         console.error("Failed to merge guest cart:", err);
       });
     }
   }, [isLoaded, user, guestId, mergeGuestCart]);
 
-  const addItem = useCallback(async (
-    productId: Id<"products">,
-    variationId: Id<"productVariations"> | undefined,
-    quantity: number
-  ) => {
-    try {
-      await addToCart({
-        clerkId: user?.id,
-        guestId: user?.id ? undefined : guestId,
-        productId,
-        variationId,
-        quantity,
-      });
-    } catch (error) {
-      console.error("Failed to add item to cart:", error);
-      throw error;
-    }
-  }, [user, guestId, addToCart]);
+  const addItem = useCallback(
+    async (
+      productId: Id<"products">,
+      variationId: Id<"productVariations"> | undefined,
+      quantity: number,
+    ) => {
+      try {
+        await addToCart({
+          clerkId: user?.id,
+          guestId: user?.id ? undefined : guestId,
+          productId,
+          variationId,
+          quantity,
+        });
+      } catch (error) {
+        console.error("Failed to add item to cart:", error);
+        throw error;
+      }
+    },
+    [user, guestId, addToCart],
+  );
 
-  const removeItem = useCallback(async (
-    productId: Id<"products">,
-    variationId: Id<"productVariations"> | undefined
-  ) => {
-    try {
-      await removeFromCartMutation({
-        clerkId: user?.id,
-        guestId: user?.id ? undefined : guestId,
-        productId,
-        variationId,
-      });
-    } catch (error) {
-      console.error("Failed to remove item from cart:", error);
-      throw error;
-    }
-  }, [user, guestId, removeFromCartMutation]);
+  const removeItem = useCallback(
+    async (productId: Id<"products">, variationId: Id<"productVariations"> | undefined) => {
+      try {
+        await removeFromCartMutation({
+          clerkId: user?.id,
+          guestId: user?.id ? undefined : guestId,
+          productId,
+          variationId,
+        });
+      } catch (error) {
+        console.error("Failed to remove item from cart:", error);
+        throw error;
+      }
+    },
+    [user, guestId, removeFromCartMutation],
+  );
 
-  const updateQuantity = useCallback(async (
-    productId: Id<"products">,
-    variationId: Id<"productVariations"> | undefined,
-    quantity: number
-  ) => {
-    try {
-      await updateCartItem({
-        clerkId: user?.id,
-        guestId: user?.id ? undefined : guestId,
-        productId,
-        variationId,
-        quantity,
-      });
-    } catch (error) {
-      console.error("Failed to update cart item:", error);
-      throw error;
-    }
-  }, [user, guestId, updateCartItem]);
+  const updateQuantity = useCallback(
+    async (
+      productId: Id<"products">,
+      variationId: Id<"productVariations"> | undefined,
+      quantity: number,
+    ) => {
+      try {
+        await updateCartItem({
+          clerkId: user?.id,
+          guestId: user?.id ? undefined : guestId,
+          productId,
+          variationId,
+          quantity,
+        });
+      } catch (error) {
+        console.error("Failed to update cart item:", error);
+        throw error;
+      }
+    },
+    [user, guestId, updateCartItem],
+  );
 
   const clearCart = useCallback(async () => {
     try {

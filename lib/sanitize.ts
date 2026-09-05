@@ -1,11 +1,11 @@
-import sanitizeHtmlLib from 'sanitize-html';
+import sanitizeHtmlLib from "sanitize-html";
 
 /**
  * Input Sanitization Utility
- * 
+ *
  * Prevents XSS attacks by sanitizing user-generated content
  * before storage and after retrieval.
- * 
+ *
  * Uses sanitize-html which works in both browser and Node.js environments.
  */
 
@@ -16,15 +16,32 @@ import sanitizeHtmlLib from 'sanitize-html';
 export function sanitizeHTML(input: string): string {
   return sanitizeHtmlLib(input, {
     allowedTags: [
-      'b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre'
+      "b",
+      "i",
+      "em",
+      "strong",
+      "a",
+      "p",
+      "br",
+      "ul",
+      "ol",
+      "li",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "blockquote",
+      "code",
+      "pre",
     ],
     allowedAttributes: {
-      'a': ['href', 'title', 'target', 'rel'],
+      a: ["href", "title", "target", "rel"],
     },
-    allowedSchemes: ['http', 'https', 'mailto'],
+    allowedSchemes: ["http", "https", "mailto"],
     allowedSchemesByTag: {},
-    allowedSchemesAppliedToAttributes: ['href', 'src'],
+    allowedSchemesAppliedToAttributes: ["href", "src"],
     allowProtocolRelative: false,
   });
 }
@@ -54,13 +71,13 @@ export function sanitizeURL(input: string): string {
   // Only allow http/https protocols
   try {
     const url = new URL(sanitized);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return '';
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return "";
     }
     return url.toString();
   } catch {
     // Invalid URL
-    return '';
+    return "";
   }
 }
 
@@ -70,7 +87,7 @@ export function sanitizeURL(input: string): string {
  */
 export function sanitizeObject<T extends Record<string, unknown>>(
   obj: T,
-  rules: { [K in keyof T]?: 'html' | 'text' | 'url' }
+  rules: { [K in keyof T]?: "html" | "text" | "url" },
 ): T {
   const sanitized = { ...obj };
 
@@ -78,15 +95,15 @@ export function sanitizeObject<T extends Record<string, unknown>>(
     const rule = rules[key];
     const value = obj[key];
 
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       switch (rule) {
-        case 'html':
+        case "html":
           sanitized[key] = sanitizeHTML(value) as T[Extract<keyof T, string>];
           break;
-        case 'text':
+        case "text":
           sanitized[key] = sanitizePlainText(value) as T[Extract<keyof T, string>];
           break;
-        case 'url':
+        case "url":
           sanitized[key] = sanitizeURL(value) as T[Extract<keyof T, string>];
           break;
       }
@@ -102,7 +119,7 @@ export function sanitizeObject<T extends Record<string, unknown>>(
  */
 export function sanitizeArray<T extends Record<string, unknown>>(
   items: T[],
-  rules: { [K in keyof T]?: 'html' | 'text' | 'url' }
+  rules: { [K in keyof T]?: "html" | "text" | "url" },
 ): T[] {
-  return items.map(item => sanitizeObject(item, rules));
+  return items.map((item) => sanitizeObject(item, rules));
 }

@@ -5,7 +5,7 @@ import { requireUserMatching, requireAdmin } from "./authz";
 
 /**
  * Audit Logging Utility
- * 
+ *
  * Provides centralized audit logging for all critical mutations.
  * Tracks who did what, when, and what changed.
  */
@@ -21,7 +21,7 @@ export async function logAudit(
     changes?: unknown;
     ipAddress?: string;
     userAgent?: string;
-  }
+  },
 ): Promise<Id<"auditLogs">> {
   return await ctx.db.insert("auditLogs", {
     userId: args.userId,
@@ -52,7 +52,7 @@ export const getMyAuditLogs = query({
 
 // Query to get audit logs for a specific resource (admin only)
 export const getResourceAuditLogs = query({
-  args: { 
+  args: {
     clerkId: v.string(),
     resourceType: v.string(),
     resourceId: v.string(),
@@ -64,8 +64,8 @@ export const getResourceAuditLogs = query({
 
     return await ctx.db
       .query("auditLogs")
-      .withIndex("by_resource", (q) => 
-        q.eq("resourceType", args.resourceType).eq("resourceId", args.resourceId)
+      .withIndex("by_resource", (q) =>
+        q.eq("resourceType", args.resourceType).eq("resourceId", args.resourceId),
       )
       .order("desc")
       .take(50);

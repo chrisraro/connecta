@@ -17,9 +17,7 @@ async function getCsp(): Promise<string> {
   }
   const headerGroups = await nextConfig.headers();
   const rootGroup = headerGroups.find((group) => group.source === "/:path*");
-  const cspHeader = rootGroup?.headers.find(
-    (header) => header.key === "Content-Security-Policy"
-  );
+  const cspHeader = rootGroup?.headers.find((header) => header.key === "Content-Security-Policy");
   if (!cspHeader) {
     throw new Error("no Content-Security-Policy header found in next.config.ts headers()");
   }

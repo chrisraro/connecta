@@ -13,8 +13,8 @@
      exactly Task 1's bug class, surviving here in the shell instead of the
      templates). --font-body/--font-tpl-editorial are set on <html> by
      `allFontVariables` in app/layout.tsx. */
-  --font-sans: var(--font-body), 'Arial', sans-serif;
-  --font-serif: var(--font-tpl-editorial), 'Times New Roman', Times, serif;
+  --font-sans: var(--font-body), "Arial", sans-serif;
+  --font-serif: var(--font-tpl-editorial), "Times New Roman", Times, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -109,7 +109,7 @@
   --connecta-ink-soft: oklch(0.46 0.014 40);
   --connecta-paper: oklch(0.985 0.003 60);
   --connecta-surface: oklch(0.96 0.005 55);
-  --connecta-line: oklch(0.90 0.008 50);
+  --connecta-line: oklch(0.9 0.008 50);
 }
 
 .dark {
@@ -175,7 +175,8 @@
      `hidden`, never establishes a scroll container at all — so it blocks
      horizontal scroll without ever being able to break sticky, on `html`
      or `body`. */
-  html, body {
+  html,
+  body {
     overflow-x: clip;
   }
   * {
@@ -393,21 +394,21 @@
 
   /* ── Feature card lift + border glow on hover ───────────────────────── */
   .card-glow {
-    transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 300ms ease, border-color 300ms ease;
+    transition:
+      transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 300ms ease,
+      border-color 300ms ease;
   }
   @media (prefers-reduced-motion: no-preference) {
     .card-glow:hover {
       transform: translateY(-4px);
-      box-shadow: 0 18px 40px -18px
-        color-mix(in oklch, var(--chart-5) 55%, transparent);
+      box-shadow: 0 18px 40px -18px color-mix(in oklch, var(--chart-5) 55%, transparent);
       border-color: color-mix(in oklch, var(--chart-5) 40%, var(--border));
     }
   }
   /* Softer glow in light mode */
   .card-glow:hover {
-    box-shadow: 0 16px 36px -20px
-      color-mix(in oklch, var(--chart-5) 30%, transparent);
+    box-shadow: 0 16px 36px -20px color-mix(in oklch, var(--chart-5) 30%, transparent);
     border-color: color-mix(in oklch, var(--chart-5) 30%, var(--border));
   }
 
@@ -456,16 +457,8 @@
       transparent 1px
     );
     background-size: 22px 22px;
-    -webkit-mask-image: radial-gradient(
-      ellipse 80% 60% at 50% 0%,
-      black,
-      transparent 75%
-    );
-    mask-image: radial-gradient(
-      ellipse 80% 60% at 50% 0%,
-      black,
-      transparent 75%
-    );
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent 75%);
   }
 
   /* ── Gradient divider hairline ──────────────────────────────────────── */

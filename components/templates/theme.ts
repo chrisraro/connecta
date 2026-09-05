@@ -144,12 +144,8 @@ const MATERIAL_LUMINANCE_SHIFT = 0.3;
  * light `surface` under a user-chosen dark background would otherwise
  * silently break readability even though `background`/`ink` look fine.
  */
-export function resolveTheme(
-  templateId: string,
-  palette: UserPalette | undefined
-): TemplateTheme {
-  const base =
-    TEMPLATE_THEMES[(templateId as TemplateId)] ?? TEMPLATE_THEMES.editorial;
+export function resolveTheme(templateId: string, palette: UserPalette | undefined): TemplateTheme {
+  const base = TEMPLATE_THEMES[templateId as TemplateId] ?? TEMPLATE_THEMES.editorial;
   if (!palette) return base;
 
   const background = palette.backgroundColor || base.colors.background;

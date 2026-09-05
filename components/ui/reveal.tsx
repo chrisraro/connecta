@@ -40,9 +40,7 @@ export function Reveal({
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    const reduce = window.matchMedia?.(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (reduce || typeof IntersectionObserver === "undefined") {
       // No enhancement: leave content fully visible.
       return;
@@ -63,7 +61,7 @@ export function Reveal({
           }
         });
       },
-      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
     );
 
     observer.observe(el);

@@ -66,16 +66,16 @@ frontend copy exists at `lib/plans.ts` "to keep the two files in sync" per
 the header comment at `convex/plans.ts:4-6` — not independently verified
 byte-for-byte in this task, but it is documented as required to match).
 
-| | Free | Pro | Business |
-|---|---|---|---|
-| Price | ₱0 | ₱299.00/mo (29900 centavos) | ₱999.00/mo (99900 centavos) |
-| Max profiles | 1 | unlimited (`null`) | unlimited (`null`) |
-| Max active cards | 1 | unlimited (`null`) | unlimited (`null`) |
-| Allowed templates | `["editorial", "architectural"]` only (`FREE_TEMPLATE_IDS`, `convex/plans.ts:46`) | all (`null`) | all (`null`) |
-| Lead view cap | 100 | unlimited (`null`) | unlimited (`null`) |
-| "Powered by SigmaTap" branding | shown | removed | removed |
-| Lead CSV export | no | yes | yes |
-| Team workspace | no | no | yes, 5 seats (`teamSeats: 5`) |
+|                                | Free                                                                              | Pro                         | Business                      |
+| ------------------------------ | --------------------------------------------------------------------------------- | --------------------------- | ----------------------------- |
+| Price                          | ₱0                                                                                | ₱299.00/mo (29900 centavos) | ₱999.00/mo (99900 centavos)   |
+| Max profiles                   | 1                                                                                 | unlimited (`null`)          | unlimited (`null`)            |
+| Max active cards               | 1                                                                                 | unlimited (`null`)          | unlimited (`null`)            |
+| Allowed templates              | `["editorial", "architectural"]` only (`FREE_TEMPLATE_IDS`, `convex/plans.ts:46`) | all (`null`)                | all (`null`)                  |
+| Lead view cap                  | 100                                                                               | unlimited (`null`)          | unlimited (`null`)            |
+| "Powered by SigmaTap" branding | shown                                                                             | removed                     | removed                       |
+| Lead CSV export                | no                                                                                | yes                         | yes                           |
+| Team workspace                 | no                                                                                | no                          | yes, 5 seats (`teamSeats: 5`) |
 
 The premium "kinetic" (neon) template is gated to paid plans — the free tier
 is limited to the two "basic" templates by design (comment at
@@ -101,6 +101,7 @@ hiding features outright (`.superpowers/sdd/progress.md:66`).
 routes). Grouped by area:
 
 **Public / marketing**
+
 - `/` — landing page (`app/page.tsx`)
 - `/shop`, `/shop/product/[slug]`, `/shop/cart`, `/shop/checkout`,
   `/shop/order/[orderNumber]` — storefront
@@ -111,20 +112,23 @@ routes). Grouped by area:
 - `/marketing-preview/[templateId]` — template preview for marketing use
 
 **Auth**
+
 - `/auth`, `/auth/callback` (Clerk-hosted flow entry + post-login redirect)
 - `/sign-in`, `/sign-up` (Clerk catch-all routes)
 
 **Dashboard (consumer)**
+
 - `/dashboard`, `/dashboard/onboarding`, `/dashboard/builder`,
   `/dashboard/profiles`, `/dashboard/cards`, `/dashboard/leads`,
   `/dashboard/billing`, `/dashboard/team`, `/dashboard/settings`,
   `/dashboard/auth-check`
 
 **Admin**
+
 - `/admin`, `/admin/factory` (NFC card registration/writing),
   `/admin/analytics`, `/admin/audit`, `/admin/settings`, `/admin/users`,
   `/admin/shop/{products,products/new,products/edit/[id],categories,
-  discounts,inventory,orders}`
+discounts,inventory,orders}`
 
 The Convex backend (`convex/*.ts` — 25 function modules, excluding `schema.ts`; 26 files in total) mirrors
 this: `cards.ts` (NFC lifecycle), `profiles.ts`, `leads.ts`, `billing.ts`,
@@ -164,7 +168,7 @@ production-audit wave — see `07-ROADMAP.md`.
   `export const PAYMENTS_ENABLED = false;` — hard-disabled in code, not a
   config toggle. The checkout and Pro-upgrade flows render a payment
   placeholder dialog instead of charging (`components/billing/
-  PaymentPlaceholderDialog.tsx`). No payment gateway is contractually
+PaymentPlaceholderDialog.tsx`). No payment gateway is contractually
   committed; PayRex is the code's working assumption
   (`convex/payrex.ts` exists and is wired for it) but "the team has NOT
   committed to PayRex (or any gateway); no keys exist and none are coming

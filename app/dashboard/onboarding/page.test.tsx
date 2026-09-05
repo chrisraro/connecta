@@ -30,154 +30,155 @@ import userEvent from "@testing-library/user-event";
 
 // vi.mock factories are hoisted above every import/const in this file, so
 // anything they close over must itself be created inside vi.hoisted().
-const { API, push, replace, updateOnboarding, getOnboardingState, resetOnboardingState } = vi.hoisted(() => {
+const { API, push, replace, updateOnboarding, getOnboardingState, resetOnboardingState } =
+  vi.hoisted(() => {
     const API = {
-        users: {
-            getOnboardingStatus: "users.getOnboardingStatus",
-            updateOnboarding: "users.updateOnboarding",
-        },
-        profiles: {
-            getMyProfiles: "profiles.getMyProfiles",
-        },
-        cards: {
-            claimCardByUuid: "cards.claimCardByUuid",
-            linkProfile: "cards.linkProfile",
-        },
-        // The wizard's photo step mounts <ImageUploader>, which calls
-        // useMutation/useAction against these directly — needed so that
-        // component doesn't crash on `api.images` being undefined.
-        images: {
-            generateUploadUrl: "images.generateUploadUrl",
-            validateUpload: "images.validateUpload",
-        },
+      users: {
+        getOnboardingStatus: "users.getOnboardingStatus",
+        updateOnboarding: "users.updateOnboarding",
+      },
+      profiles: {
+        getMyProfiles: "profiles.getMyProfiles",
+      },
+      cards: {
+        claimCardByUuid: "cards.claimCardByUuid",
+        linkProfile: "cards.linkProfile",
+      },
+      // The wizard's photo step mounts <ImageUploader>, which calls
+      // useMutation/useAction against these directly — needed so that
+      // component doesn't crash on `api.images` being undefined.
+      images: {
+        generateUploadUrl: "images.generateUploadUrl",
+        validateUpload: "images.validateUpload",
+      },
     };
 
     let onboardingState: { completed: boolean; data?: Record<string, unknown> } = {
-        completed: false,
-        data: undefined,
+      completed: false,
+      data: undefined,
     };
 
     const updateOnboarding = vi.fn(async (args: { markCompleted: boolean }) => {
-        if (args.markCompleted) {
-            onboardingState = { completed: true, data: { ...args } };
-        }
-        return { profileId: "profile_new" };
+      if (args.markCompleted) {
+        onboardingState = { completed: true, data: { ...args } };
+      }
+      return { profileId: "profile_new" };
     });
 
     return {
-        API,
-        push: vi.fn(),
-        replace: vi.fn(),
-        updateOnboarding,
-        getOnboardingState: () => onboardingState,
-        resetOnboardingState: () => {
-            onboardingState = { completed: false, data: undefined };
-        },
+      API,
+      push: vi.fn(),
+      replace: vi.fn(),
+      updateOnboarding,
+      getOnboardingState: () => onboardingState,
+      resetOnboardingState: () => {
+        onboardingState = { completed: false, data: undefined };
+      },
     };
-});
+  });
 
 vi.mock("@/convex/_generated/api", () => ({ api: API }));
 
 vi.mock("@clerk/nextjs", () => ({
-    useUser: () => ({
-        isLoaded: true,
-        user: {
-            id: "user_test",
-            fullName: "Test User",
-            imageUrl: "",
-            primaryEmailAddress: { emailAddress: "test@example.com" },
-        },
-    }),
+  useUser: () => ({
+    isLoaded: true,
+    user: {
+      id: "user_test",
+      fullName: "Test User",
+      imageUrl: "",
+      primaryEmailAddress: { emailAddress: "test@example.com" },
+    },
+  }),
 }));
 
 vi.mock("next/navigation", () => ({
-    useRouter: () => ({ push, replace }),
-    useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push, replace }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("sonner", () => ({
-    toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock("convex/react", () => ({
-    useQuery: (ref: unknown) => {
-        if (ref === API.users.getOnboardingStatus) return getOnboardingState();
-        if (ref === API.profiles.getMyProfiles) return [];
-        return undefined;
-    },
-    useMutation: (ref: unknown) => {
-        if (ref === API.users.updateOnboarding) return updateOnboarding;
-        return vi.fn();
-    },
-    useAction: () => vi.fn(),
+  useQuery: (ref: unknown) => {
+    if (ref === API.users.getOnboardingStatus) return getOnboardingState();
+    if (ref === API.profiles.getMyProfiles) return [];
+    return undefined;
+  },
+  useMutation: (ref: unknown) => {
+    if (ref === API.users.updateOnboarding) return updateOnboarding;
+    return vi.fn();
+  },
+  useAction: () => vi.fn(),
 }));
 
 import OnboardingPage from "./page";
 
 async function goToLastStep(user: ReturnType<typeof userEvent.setup>) {
-    // welcome -> type -> identity -> contact -> work -> photo (5 "Next"s).
-    // No field validation gates advancing, so this reaches the last step
-    // without filling in any form data.
-    for (let i = 0; i < 5; i++) {
-        await user.click(screen.getByRole("button", { name: "Next →" }));
-    }
+  // welcome -> type -> identity -> contact -> work -> photo (5 "Next"s).
+  // No field validation gates advancing, so this reaches the last step
+  // without filling in any form data.
+  for (let i = 0; i < 5; i++) {
+    await user.click(screen.getByRole("button", { name: "Next →" }));
+  }
 }
 
 describe("onboarding wizard completion (Task 21)", () => {
-    beforeEach(() => {
-        resetOnboardingState();
-        updateOnboarding.mockClear();
-        push.mockClear();
-        replace.mockClear();
-    });
+  beforeEach(() => {
+    resetOnboardingState();
+    updateOnboarding.mockClear();
+    push.mockClear();
+    replace.mockClear();
+  });
 
-    test("every Next click before the last step saves progress WITHOUT completing onboarding", async () => {
-        const user = userEvent.setup();
-        render(<OnboardingPage />);
+  test("every Next click before the last step saves progress WITHOUT completing onboarding", async () => {
+    const user = userEvent.setup();
+    render(<OnboardingPage />);
 
-        await goToLastStep(user);
+    await goToLastStep(user);
 
-        expect(updateOnboarding.mock.calls.length).toBeGreaterThan(0);
-        for (const call of updateOnboarding.mock.calls) {
-            expect(call[0]).toMatchObject({ markCompleted: false });
-        }
-    });
+    expect(updateOnboarding.mock.calls.length).toBeGreaterThan(0);
+    for (const call of updateOnboarding.mock.calls) {
+      expect(call[0]).toMatchObject({ markCompleted: false });
+    }
+  });
 
-    test("the final step's button is labelled Finish, and clicking it — not a later click — is what completes onboarding", async () => {
-        const user = userEvent.setup();
-        render(<OnboardingPage />);
+  test("the final step's button is labelled Finish, and clicking it — not a later click — is what completes onboarding", async () => {
+    const user = userEvent.setup();
+    render(<OnboardingPage />);
 
-        await goToLastStep(user);
+    await goToLastStep(user);
 
-        const finishButton = screen.getByRole("button", { name: "Finish →" });
-        await user.click(finishButton);
+    const finishButton = screen.getByRole("button", { name: "Finish →" });
+    await user.click(finishButton);
 
-        expect(updateOnboarding).toHaveBeenLastCalledWith(
-            expect.objectContaining({ markCompleted: true })
-        );
+    expect(updateOnboarding).toHaveBeenLastCalledWith(
+      expect.objectContaining({ markCompleted: true }),
+    );
 
-        // No further click was needed to persist the work: the mutation
-        // above already completed onboarding and created the profile. The
-        // reactive onboarding query (mocked to mirror Convex) now reports
-        // completed=true, so the wizard's own post-completion confirmation
-        // takes over in place of the wizard steps — proving a closed tab
-        // right here would NOT lose any work.
-        expect(
-            await screen.findByRole("heading", { name: /profile setup complete/i })
-        ).toBeInTheDocument();
-        expect(push).not.toHaveBeenCalled();
-    });
+    // No further click was needed to persist the work: the mutation
+    // above already completed onboarding and created the profile. The
+    // reactive onboarding query (mocked to mirror Convex) now reports
+    // completed=true, so the wizard's own post-completion confirmation
+    // takes over in place of the wizard steps — proving a closed tab
+    // right here would NOT lose any work.
+    expect(
+      await screen.findByRole("heading", { name: /profile setup complete/i }),
+    ).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+  });
 
-    test("the post-completion confirmation routes to the profile Finish just created, not a doomed bare-create form", async () => {
-        const user = userEvent.setup();
-        render(<OnboardingPage />);
+  test("the post-completion confirmation routes to the profile Finish just created, not a doomed bare-create form", async () => {
+    const user = userEvent.setup();
+    render(<OnboardingPage />);
 
-        await goToLastStep(user);
-        await user.click(screen.getByRole("button", { name: "Finish →" }));
+    await goToLastStep(user);
+    await user.click(screen.getByRole("button", { name: "Finish →" }));
 
-        await screen.findByRole("heading", { name: /profile setup complete/i });
-        await user.click(screen.getByRole("button", { name: /go to profile builder/i }));
+    await screen.findByRole("heading", { name: /profile setup complete/i });
+    await user.click(screen.getByRole("button", { name: /go to profile builder/i }));
 
-        expect(push).toHaveBeenCalledWith("/dashboard/builder?id=profile_new");
-    });
+    expect(push).toHaveBeenCalledWith("/dashboard/builder?id=profile_new");
+  });
 });

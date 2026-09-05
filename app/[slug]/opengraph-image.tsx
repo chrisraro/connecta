@@ -21,9 +21,9 @@ export const size = ogImageSize;
 export const contentType = ogImageContentType;
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = await params;
-    const profile = isReservedSlug(slug)
-        ? null
-        : await fetchQuery(api.profiles.getProfileBySlug, { slug }).catch(() => null);
-    return renderProfileOgImage(profile);
+  const { slug } = await params;
+  const profile = isReservedSlug(slug)
+    ? null
+    : await fetchQuery(api.profiles.getProfileBySlug, { slug }).catch(() => null);
+  return renderProfileOgImage(profile);
 }

@@ -91,9 +91,7 @@ export default function OrderDetailsPage() {
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Order Details</h1>
-        <p className="text-muted-foreground mt-1">
-          Order #{order.orderNumber}
-        </p>
+        <p className="text-muted-foreground mt-1">Order #{order.orderNumber}</p>
       </div>
 
       {justPaid && order.paymentStatus !== "paid" && (
@@ -102,8 +100,8 @@ export default function OrderDetailsPage() {
           <div>
             <p className="font-medium">Confirming payment...</p>
             <p className="text-sm text-muted-foreground">
-              We&apos;ve received your payment and are confirming it. This page
-              will update automatically once it&apos;s done.
+              We&apos;ve received your payment and are confirming it. This page will update
+              automatically once it&apos;s done.
             </p>
           </div>
         </div>
@@ -132,9 +130,7 @@ export default function OrderDetailsPage() {
                 Placed on {formatDate(order.createdAt)}
               </p>
             </div>
-            <Badge className={getStatusColor(order.status)}>
-              {order.paymentStatus}
-            </Badge>
+            <Badge className={getStatusColor(order.status)}>{order.paymentStatus}</Badge>
           </div>
         </CardContent>
       </Card>
@@ -146,7 +142,10 @@ export default function OrderDetailsPage() {
         <CardContent>
           <div className="space-y-4">
             {order.items.map((item, index) => (
-              <div key={index} className="flex justify-between items-center py-3 border-b border-border last:border-0">
+              <div
+                key={index}
+                className="flex justify-between items-center py-3 border-b border-border last:border-0"
+              >
                 <div>
                   <p className="font-medium">{item.productName}</p>
                   {item.variationName && (
@@ -173,10 +172,13 @@ export default function OrderDetailsPage() {
               <p className="font-medium">{order.shippingAddress.fullName}</p>
               <p className="text-sm text-muted-foreground">{order.shippingAddress.addressLine1}</p>
               {order.shippingAddress.addressLine2 && (
-                <p className="text-sm text-muted-foreground">{order.shippingAddress.addressLine2}</p>
+                <p className="text-sm text-muted-foreground">
+                  {order.shippingAddress.addressLine2}
+                </p>
               )}
               <p className="text-sm text-muted-foreground">
-                {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+                {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
+                {order.shippingAddress.postalCode}
               </p>
               <p className="text-sm text-muted-foreground">{order.shippingAddress.country}</p>
               <p className="text-sm text-muted-foreground">{order.shippingAddress.phone}</p>

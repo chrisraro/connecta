@@ -63,11 +63,9 @@ export interface BuildHealthReportDeps {
  * work), but they do surface as `status: "degraded"` in the body so the
  * misconfiguration is visible in the same response instead of silent.
  */
-export async function buildHealthReport(
-  deps: BuildHealthReportDeps
-): Promise<HealthReport> {
+export async function buildHealthReport(deps: BuildHealthReportDeps): Promise<HealthReport> {
   const env = Object.fromEntries(
-    REQUIRED_WEB_ENV_VARS.map((key) => [key, Boolean(deps.env[key]?.trim())])
+    REQUIRED_WEB_ENV_VARS.map((key) => [key, Boolean(deps.env[key]?.trim())]),
   ) as WebEnvPresence;
 
   const { reachable, payments } = await deps.queryConvex();

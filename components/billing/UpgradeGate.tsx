@@ -55,7 +55,7 @@ function GetProCta({
       aria-label={ariaLabel}
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90",
-        className
+        className,
       )}
     >
       <Lock className="h-3.5 w-3.5" aria-hidden="true" />
@@ -80,11 +80,7 @@ export function UpgradeGate({
 
   if (effectiveVariant === "inline") {
     return (
-      <GetProCta
-        label={ctaLabel}
-        ariaLabel={`${reason} — ${ctaLabel}`}
-        className={className}
-      />
+      <GetProCta label={ctaLabel} ariaLabel={`${reason} — ${ctaLabel}`} className={className} />
     );
   }
 
@@ -93,7 +89,7 @@ export function UpgradeGate({
       <div
         className={cn(
           "flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4",
-          className
+          className,
         )}
       >
         <p className="flex items-center gap-2 text-sm font-medium text-foreground">

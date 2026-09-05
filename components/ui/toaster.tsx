@@ -11,25 +11,25 @@ import { Toaster as SonnerToaster, type ToasterProps } from "sonner";
  * foreground CSS variables) instead of sonner's own default look.
  */
 export function Toaster(props: ToasterProps) {
-    const { theme } = useTheme();
+  const { theme } = useTheme();
 
-    return (
-        <SonnerToaster
-            theme={theme === "dark" ? "dark" : theme === "light" ? "light" : "system"}
-            position="top-center"
-            richColors
-            closeButton
-            toastOptions={{
-                style: {
-                    background: "var(--card)",
-                    color: "var(--card-foreground)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--r-md)",
-                    boxShadow: "var(--e-overlay)",
-                },
-                className: "font-sans",
-            }}
-            {...props}
-        />
-    );
+  return (
+    <SonnerToaster
+      theme={theme === "dark" ? "dark" : theme === "light" ? "light" : "system"}
+      position="top-center"
+      richColors
+      closeButton
+      toastOptions={{
+        style: {
+          background: "var(--card)",
+          color: "var(--card-foreground)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--r-md)",
+          boxShadow: "var(--e-overlay)",
+        },
+        className: "font-sans",
+      }}
+      {...props}
+    />
+  );
 }

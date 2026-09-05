@@ -13,6 +13,7 @@ and a README claiming Next.js 15 on a Next 16 codebase. A doc that lies is
 worse than no doc, because it gets trusted.
 
 For EVERY factual claim:
+
 - Derive it from source. Read the file. Do not reconstruct from memory, and
   do not copy from other docs (they may themselves be stale).
 - Cite `file:line` for anything a reader might doubt or need to change.
@@ -21,6 +22,7 @@ For EVERY factual claim:
 - Use "as of commit <sha>" framing for anything time-sensitive.
 
 Other constraints:
+
 - Never print secret VALUES. Env vars by NAME only. Several are unset — say
   which, because that is load-bearing for onboarding.
 - Do NOT modify application code, schema, or config. Write only under
@@ -79,6 +81,7 @@ Files: `docs/handoff/02-TECH-STACK.md`, `docs/handoff/03-DATABASE-SCHEMA.md`,
 `02-TECH-STACK.md`: exact versions from `package.json` (Next, React, Convex,
 Clerk, Tailwind, vitest, sonner...). What each piece owns, plus the
 non-obvious things a newcomer will trip over:
+
 - Convex functions live at ROOT `/convex` and deploy separately via
   `npx convex dev --once` — NOT with the Vercel build. Testing a browser
   change before pushing Convex means testing stale code; this cost a false
@@ -92,7 +95,7 @@ non-obvious things a newcomer will trip over:
   structured `data`.
 - Convex mutations are atomic: a rate-limit write followed by a throw in the
   same mutation rolls back together.
-Include the test/lint/build/deploy commands that actually work.
+  Include the test/lint/build/deploy commands that actually work.
 
 `03-DATABASE-SCHEMA.md`: every table in `convex/schema.ts` — fields, types,
 optionality, indexes, and what each is FOR. Flag the known-dead fields the
@@ -113,6 +116,7 @@ Files: `docs/handoff/05-USER-FLOWS.md`, `docs/handoff/figma/user-flows.svg`,
 `docs/handoff/figma/sitemap.svg`
 
 Trace each flow through the code; present as Mermaid + prose:
+
 1. Signup/signin (Clerk) → `/auth/callback` → `PostLoginRedirect` → the
    admin vs consumer split.
 2. Onboarding wizard → first profile creation → builder.
@@ -148,6 +152,7 @@ say so.
 triple and how theming works; the typography scale and the font-per-template
 mechanism; spacing; the `--r-*` radii and `--e-*` elevation tokens; the
 component inventory; and the hard-won layout rules this codebase enforces:
+
 - flex children need `min-w-0`, and `truncate`/`line-clamp` are inert
   without it;
 - capped Convex queries need `.order()` or they freeze on the oldest rows;

@@ -49,87 +49,89 @@ export function renderProfileOgImage(profile: OgProfile) {
       textColor: palette.text,
       secondaryColor: palette.secondary,
       accentColor: palette.accent,
-    }
+    },
   );
-  const { fullName, title, company } = profile?.agentInfo ?? { fullName: CONNECTA.name, title: CONNECTA.tagline, company: "" };
+  const { fullName, title, company } = profile?.agentInfo ?? {
+    fullName: CONNECTA.name,
+    title: CONNECTA.tagline,
+    company: "",
+  };
 
   return new ImageResponse(
-    (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        backgroundColor: theme.colors.background,
+        padding: "80px",
+        fontFamily: SYSTEM_SANS,
+      }}
+    >
       <div
         style={{
-          width: "100%",
-          height: "100%",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
-          backgroundColor: theme.colors.background,
-          padding: "80px",
-          fontFamily: SYSTEM_SANS,
+          maxWidth: "980px",
         }}
       >
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            maxWidth: "980px",
+            fontSize: 30,
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: theme.colors.accent,
+            marginBottom: "28px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              fontSize: 30,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: theme.colors.accent,
-              marginBottom: "28px",
-            }}
-          >
-            {CONNECTA.name}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 76,
-              fontWeight: 700,
-              lineHeight: 1.08,
-              color: theme.colors.ink,
-            }}
-          >
-            {fullName}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 38,
-              marginTop: "24px",
-              color: theme.colors.inkSoft,
-            }}
-          >
-            {[title, company].filter(Boolean).join(" · ")}
-          </div>
+          {CONNECTA.name}
         </div>
-
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            borderTop: `2px solid ${theme.colors.line}`,
-            paddingTop: "32px",
+            fontSize: 76,
+            fontWeight: 700,
+            lineHeight: 1.08,
+            color: theme.colors.ink,
           }}
         >
-          <div style={{ display: "flex", fontSize: 26, color: theme.colors.inkSoft }}>
-            {CONNECTA.tagline}
-          </div>
-          <div style={{ display: "flex", fontSize: 26, fontWeight: 600, color: theme.colors.accent }}>
-            {CONNECTA.domain}
-          </div>
+          {fullName}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            fontSize: 38,
+            marginTop: "24px",
+            color: theme.colors.inkSoft,
+          }}
+        >
+          {[title, company].filter(Boolean).join(" · ")}
         </div>
       </div>
-    ),
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderTop: `2px solid ${theme.colors.line}`,
+          paddingTop: "32px",
+        }}
+      >
+        <div style={{ display: "flex", fontSize: 26, color: theme.colors.inkSoft }}>
+          {CONNECTA.tagline}
+        </div>
+        <div style={{ display: "flex", fontSize: 26, fontWeight: 600, color: theme.colors.accent }}>
+          {CONNECTA.domain}
+        </div>
+      </div>
+    </div>,
     {
       ...ogImageSize,
-    }
+    },
   );
 }

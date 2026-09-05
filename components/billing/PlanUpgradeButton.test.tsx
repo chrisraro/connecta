@@ -7,16 +7,12 @@ describe("PlanUpgradeButton", () => {
   test("paymentsEnabled=true calls onUpgrade directly and never shows the placeholder dialog", async () => {
     const user = userEvent.setup();
     const onUpgrade = vi.fn();
-    render(
-      <PlanUpgradeButton label="Upgrade to Pro" paymentsEnabled onUpgrade={onUpgrade} />
-    );
+    render(<PlanUpgradeButton label="Upgrade to Pro" paymentsEnabled onUpgrade={onUpgrade} />);
 
     await user.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     expect(onUpgrade).toHaveBeenCalledTimes(1);
-    expect(
-      screen.queryByText(/finalizing our payment provider/i)
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/finalizing our payment provider/i)).not.toBeInTheDocument();
   });
 
   // The core requirement this component exists for: the billing page must
@@ -27,18 +23,16 @@ describe("PlanUpgradeButton", () => {
     const user = userEvent.setup();
     const onUpgrade = vi.fn();
     render(
-      <PlanUpgradeButton label="Upgrade to Pro" paymentsEnabled={false} onUpgrade={onUpgrade} />
+      <PlanUpgradeButton label="Upgrade to Pro" paymentsEnabled={false} onUpgrade={onUpgrade} />,
     );
 
     await user.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
 
     expect(onUpgrade).not.toHaveBeenCalled();
-    expect(
-      await screen.findByText(/finalizing our payment provider/i)
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/finalizing our payment provider/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /support/i })).toHaveAttribute(
       "href",
-      expect.stringContaining("mailto:")
+      expect.stringContaining("mailto:"),
     );
   });
 
@@ -46,12 +40,7 @@ describe("PlanUpgradeButton", () => {
     const user = userEvent.setup();
     const onUpgrade = vi.fn();
     render(
-      <PlanUpgradeButton
-        label="Upgrade to Pro"
-        paymentsEnabled
-        onUpgrade={onUpgrade}
-        disabled
-      />
+      <PlanUpgradeButton label="Upgrade to Pro" paymentsEnabled onUpgrade={onUpgrade} disabled />,
     );
 
     await user.click(screen.getByRole("button", { name: "Upgrade to Pro" }));

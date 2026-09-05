@@ -77,11 +77,21 @@ export function ProfileRenderer({
       {
         hasContent: true,
         numbered: false,
-        render: () => <HeroSection agent={agent} theme={theme} resolvedImages={resolvedImages} headingLevel={headingLevel} />,
+        render: () => (
+          <HeroSection
+            agent={agent}
+            theme={theme}
+            resolvedImages={resolvedImages}
+            headingLevel={headingLevel}
+          />
+        ),
       },
     ],
     About: [
-      { hasContent: !!agent.about, render: (i) => <AboutSection agent={agent} theme={theme} index={i} /> },
+      {
+        hasContent: !!agent.about,
+        render: (i) => <AboutSection agent={agent} theme={theme} index={i} />,
+      },
     ],
     Certification: [
       {
@@ -97,28 +107,36 @@ export function ProfileRenderer({
       {
         hasContent: !!agent.education?.length,
         render: (i) =>
-          agent.education?.length ? <EducationSection education={agent.education} theme={theme} index={i} /> : null,
+          agent.education?.length ? (
+            <EducationSection education={agent.education} theme={theme} index={i} />
+          ) : null,
       },
     ],
     TechStack: [
       {
         hasContent: !!agent.techStack?.length,
         render: (i) =>
-          agent.techStack?.length ? <TechStackSection techStack={agent.techStack} theme={theme} index={i} /> : null,
+          agent.techStack?.length ? (
+            <TechStackSection techStack={agent.techStack} theme={theme} index={i} />
+          ) : null,
       },
     ],
     Services: [
       {
         hasContent: !!agent.services?.length,
         render: (i) =>
-          agent.services?.length ? <ServicesSection services={agent.services} theme={theme} index={i} /> : null,
+          agent.services?.length ? (
+            <ServicesSection services={agent.services} theme={theme} index={i} />
+          ) : null,
       },
     ],
     Experience: [
       {
         hasContent: !!agent.experience?.length,
         render: (i) =>
-          agent.experience?.length ? <ExperienceSection experience={agent.experience} theme={theme} index={i} /> : null,
+          agent.experience?.length ? (
+            <ExperienceSection experience={agent.experience} theme={theme} index={i} />
+          ) : null,
       },
     ],
     Projects: [
@@ -133,14 +151,20 @@ export function ProfileRenderer({
         hasContent: !!projects?.length,
         render: (i) =>
           projects?.length ? (
-            <ProjectsSection projects={projects} theme={theme} index={i} resolvedImages={resolvedImages} />
+            <ProjectsSection
+              projects={projects}
+              theme={theme}
+              index={i}
+              resolvedImages={resolvedImages}
+            />
           ) : null,
       },
     ],
     Products: [
       {
         hasContent: !!products?.length,
-        render: (i) => (products?.length ? <ProductsSection products={products} theme={theme} index={i} /> : null),
+        render: (i) =>
+          products?.length ? <ProductsSection products={products} theme={theme} index={i} /> : null,
       },
     ],
     Properties: [
@@ -166,26 +190,43 @@ export function ProfileRenderer({
         hasContent: !!agent.gallery?.length,
         render: (i) =>
           agent.gallery?.length ? (
-            <GallerySection gallery={agent.gallery} theme={theme} index={i} resolvedImages={resolvedImages} />
+            <GallerySection
+              gallery={agent.gallery}
+              theme={theme}
+              index={i}
+              resolvedImages={resolvedImages}
+            />
           ) : null,
       },
     ],
-    Contact: [{ hasContent: true, render: (i) => <ContactSection theme={theme} index={i} ownerId={ownerId} /> }],
+    Contact: [
+      {
+        hasContent: true,
+        render: (i) => <ContactSection theme={theme} index={i} ownerId={ownerId} />,
+      },
+    ],
   };
 
   // Legacy profiles saved before componentOrder existed fall back to today's
   // hardcoded order (the Object.keys insertion order above).
-  const order = componentOrder && componentOrder.length > 0 ? componentOrder : Object.keys(slotsById);
+  const order =
+    componentOrder && componentOrder.length > 0 ? componentOrder : Object.keys(slotsById);
 
   // Flatten componentOrder into individual slots (Projects -> 2), each
   // tagged with its position among same-id siblings so it can be matched
   // back up after resolveSectionSlots filters/numbers them.
   const flatSlots = order.flatMap((id) =>
-    (slotsById[id] ?? []).map((slot, slotIndex) => ({ id, slotIndex, ...slot }))
+    (slotsById[id] ?? []).map((slot, slotIndex) => ({ id, slotIndex, ...slot })),
   );
-  const renderByKey = new Map(flatSlots.map((slot) => [`${slot.id}:${slot.slotIndex}`, slot.render]));
+  const renderByKey = new Map(
+    flatSlots.map((slot) => [`${slot.id}:${slot.slotIndex}`, slot.render]),
+  );
   const resolvedSlots = resolveSectionSlots(
-    flatSlots.map(({ id, hasContent, numbered }): SectionSlotSpec => ({ id, hasContent, numbered }))
+    flatSlots.map(({ id, hasContent, numbered }): SectionSlotSpec => ({
+      id,
+      hasContent,
+      numbered,
+    })),
   );
 
   return (
@@ -198,7 +239,9 @@ export function ProfileRenderer({
       }}
     >
       {resolvedSlots.map(({ id, slotIndex, index }) => (
-        <Fragment key={`${id}-${slotIndex}`}>{renderByKey.get(`${id}:${slotIndex}`)?.(index)}</Fragment>
+        <Fragment key={`${id}-${slotIndex}`}>
+          {renderByKey.get(`${id}:${slotIndex}`)?.(index)}
+        </Fragment>
       ))}
       {showSaveContact && <SaveContactButton agent={agent} theme={theme} />}
     </div>

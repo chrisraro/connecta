@@ -22,8 +22,7 @@ export default function NotFound() {
         We couldn&apos;t find that page
       </h1>
       <p className="mt-3 max-w-md text-muted-foreground">
-        The link may be broken, or the page may have moved. Let&apos;s get you
-        back on track.
+        The link may be broken, or the page may have moved. Let&apos;s get you back on track.
       </p>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">

@@ -78,9 +78,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Link href="/shop">
-                <Button className="cta-sheen rounded-xl font-semibold">
-                  Get your card
-                </Button>
+                <Button className="cta-sheen rounded-xl font-semibold">Get your card</Button>
               </Link>
             </SignedOut>
           </div>
@@ -99,7 +97,10 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Copy */}
           <div className="text-center lg:text-left">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary word-rise sm:text-sm" style={{ animationDelay: "60ms" }}>
+            <span
+              className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary word-rise sm:text-sm"
+              style={{ animationDelay: "60ms" }}
+            >
               <SmartphoneNfc className="h-4 w-4" aria-hidden="true" />
               NFC + QR digital business cards
             </span>
@@ -120,11 +121,17 @@ export default function LandingPage() {
                 reinvented.
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground word-rise lg:mx-0" style={{ animationDelay: "460ms" }}>
-              Tap a premium NFC card on any phone to share a stunning profile and
-              capture leads instantly. No app required for the people you meet.
+            <p
+              className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground word-rise lg:mx-0"
+              style={{ animationDelay: "460ms" }}
+            >
+              Tap a premium NFC card on any phone to share a stunning profile and capture leads
+              instantly. No app required for the people you meet.
             </p>
-            <div className="mt-9 flex flex-col gap-3 word-rise sm:flex-row sm:justify-center lg:justify-start" style={{ animationDelay: "540ms" }}>
+            <div
+              className="mt-9 flex flex-col gap-3 word-rise sm:flex-row sm:justify-center lg:justify-start"
+              style={{ animationDelay: "540ms" }}
+            >
               <Link href="/shop" className="w-full sm:w-auto">
                 <Button
                   size="lg"
@@ -157,7 +164,10 @@ export default function LandingPage() {
                 </Link>
               </SignedIn>
             </div>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground word-rise lg:justify-start" style={{ animationDelay: "620ms" }}>
+            <div
+              className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground word-rise lg:justify-start"
+              style={{ animationDelay: "620ms" }}
+            >
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden="true" />
                 Free plan available
@@ -183,7 +193,10 @@ export default function LandingPage() {
         id="how-it-works"
         className="relative scroll-mt-24 border-t border-border px-4 py-20 sm:px-6 sm:py-28"
       >
-        <div className="dot-pattern pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
+        <div
+          className="dot-pattern pointer-events-none absolute inset-0 -z-10"
+          aria-hidden="true"
+        />
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <SectionHeading
@@ -198,7 +211,10 @@ export default function LandingPage() {
 
       {/* ─── Features grid ───────────────────────────────────────────── */}
       <section className="relative bg-muted/30 px-4 py-20 sm:px-6 sm:py-28">
-        <div className="dot-pattern pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
+        <div
+          className="dot-pattern pointer-events-none absolute inset-0 -z-10"
+          aria-hidden="true"
+        />
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <SectionHeading
@@ -209,12 +225,36 @@ export default function LandingPage() {
           </Reveal>
           <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: SmartphoneNfc, title: "NFC cards", desc: "Premium tap-to-share cards that work on any modern phone, no app needed." },
-              { icon: MessageSquare, title: "Lead CRM", desc: "Capture inquiries on your profile and follow up from a simple, organized inbox." },
-              { icon: LayoutTemplate, title: "Profile templates", desc: "Distinct, designer-made templates that match your brand in a few clicks." },
-              { icon: BarChart3, title: "Analytics", desc: "See your total taps and engagement so you know what's working." },
-              { icon: Contact, title: "vCard download", desc: "Visitors save your details to their phone contacts with a single tap." },
-              { icon: QrCode, title: "QR sharing", desc: "Every profile comes with a QR code for posters, slides, and screens." },
+              {
+                icon: SmartphoneNfc,
+                title: "NFC cards",
+                desc: "Premium tap-to-share cards that work on any modern phone, no app needed.",
+              },
+              {
+                icon: MessageSquare,
+                title: "Lead CRM",
+                desc: "Capture inquiries on your profile and follow up from a simple, organized inbox.",
+              },
+              {
+                icon: LayoutTemplate,
+                title: "Profile templates",
+                desc: "Distinct, designer-made templates that match your brand in a few clicks.",
+              },
+              {
+                icon: BarChart3,
+                title: "Analytics",
+                desc: "See your total taps and engagement so you know what's working.",
+              },
+              {
+                icon: Contact,
+                title: "vCard download",
+                desc: "Visitors save your details to their phone contacts with a single tap.",
+              },
+              {
+                icon: QrCode,
+                title: "QR sharing",
+                desc: "Every profile comes with a QR code for posters, slides, and screens.",
+              },
             ].map((f, i) => (
               <Reveal key={f.title} delay={(i % 3) * 90}>
                 <FeatureCard icon={f.icon} title={f.title} desc={f.desc} />
@@ -245,7 +285,10 @@ export default function LandingPage() {
         id="pricing"
         className="relative scroll-mt-24 border-t border-border bg-muted/30 px-4 py-20 sm:px-6 sm:py-28"
       >
-        <div className="dot-pattern pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
+        <div
+          className="dot-pattern pointer-events-none absolute inset-0 -z-10"
+          aria-hidden="true"
+        />
         <div className="mx-auto max-w-7xl">
           <Reveal>
             <SectionHeading
@@ -261,7 +304,13 @@ export default function LandingPage() {
                 price="₱0"
                 cadence="forever"
                 desc="Everything you need to get your first card live."
-                features={["1 digital profile", "1 active NFC card", "2 basic templates", "Up to 100 leads", "NFC + QR sharing"]}
+                features={[
+                  "1 digital profile",
+                  "1 active NFC card",
+                  "2 basic templates",
+                  "Up to 100 leads",
+                  "NFC + QR sharing",
+                ]}
                 cta={{ label: "Get started free", href: "/auth" }}
               />
             </Reveal>
@@ -272,7 +321,13 @@ export default function LandingPage() {
                 cadence="/ month"
                 highlight
                 desc="For professionals who network seriously."
-                features={["Unlimited profiles & cards", "All premium templates", "Branding removed", "Lead CSV export", "Full analytics"]}
+                features={[
+                  "Unlimited profiles & cards",
+                  "All premium templates",
+                  "Branding removed",
+                  "Lead CSV export",
+                  "Full analytics",
+                ]}
                 cta={{ label: "Upgrade to Pro", href: "/dashboard/billing" }}
               />
             </Reveal>
@@ -282,15 +337,24 @@ export default function LandingPage() {
                 price="₱999"
                 cadence="/ month"
                 desc="For teams sharing one brand."
-                features={["Everything in Pro", "Team workspace (5 seats)", "Shared team branding", "Team lead pool", "White-label profiles"]}
+                features={[
+                  "Everything in Pro",
+                  "Team workspace (5 seats)",
+                  "Shared team branding",
+                  "Team lead pool",
+                  "White-label profiles",
+                ]}
                 cta={{ label: "Go Business", href: "/dashboard/billing" }}
               />
             </Reveal>
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Plans are prepaid 30-day periods, billed securely via PayRex (GCash,
-            Maya, Card, QR Ph). NFC cards are available in the{" "}
-            <Link href="/shop" className="font-medium text-primary underline-offset-4 hover:underline">
+            Plans are prepaid 30-day periods, billed securely via PayRex (GCash, Maya, Card, QR Ph).
+            NFC cards are available in the{" "}
+            <Link
+              href="/shop"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
               shop
             </Link>
             .
@@ -314,8 +378,7 @@ export default function LandingPage() {
               Ready to make a lasting impression?
             </h2>
             <p className="relative z-10 mx-auto mt-5 max-w-xl text-neutral-400">
-              Get your {CONNECTA.name} card and turn every introduction into an
-              opportunity.
+              Get your {CONNECTA.name} card and turn every introduction into an opportunity.
             </p>
             <div className="relative z-10 mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <Link href="/shop" className="w-full sm:w-auto">
@@ -348,7 +411,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Link href="/" className="flex min-h-11 items-center gap-2 text-lg font-bold tracking-tight">
+              <Link
+                href="/"
+                className="flex min-h-11 items-center gap-2 text-lg font-bold tracking-tight"
+              >
                 <ConnectaMark className="h-5 w-5 text-primary" />
                 <span>{CONNECTA.name}</span>
               </Link>
@@ -403,27 +469,38 @@ function SectionHeading({
 }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
-      <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-        {eyebrow}
-      </p>
+      <p className="text-sm font-semibold uppercase tracking-widest text-primary">{eyebrow}</p>
       <h2
         className="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
         style={{ fontFamily: "var(--font-display)" }}
       >
         {title}
       </h2>
-      {subtitle && (
-        <p className="mt-4 text-base text-muted-foreground sm:text-lg">{subtitle}</p>
-      )}
+      {subtitle && <p className="mt-4 text-base text-muted-foreground sm:text-lg">{subtitle}</p>}
     </div>
   );
 }
 
 function Steps() {
   const steps = [
-    { step: "01", icon: Hand, title: "Tap", desc: `Hold your ${CONNECTA.name} NFC card to any smartphone — or let them scan your QR code.` },
-    { step: "02", icon: UserRound, title: "Profile", desc: "Your branded profile opens instantly with your photo, links, and call-to-actions." },
-    { step: "03", icon: Inbox, title: "Lead captured", desc: "They save your contact or send a message — and it lands straight in your lead inbox." },
+    {
+      step: "01",
+      icon: Hand,
+      title: "Tap",
+      desc: `Hold your ${CONNECTA.name} NFC card to any smartphone — or let them scan your QR code.`,
+    },
+    {
+      step: "02",
+      icon: UserRound,
+      title: "Profile",
+      desc: "Your branded profile opens instantly with your photo, links, and call-to-actions.",
+    },
+    {
+      step: "03",
+      icon: Inbox,
+      title: "Lead captured",
+      desc: "They save your contact or send a message — and it lands straight in your lead inbox.",
+    },
   ];
   return (
     <div className="relative mt-14">
@@ -465,9 +542,7 @@ function StepCard({
           genuinely ordered 3-step sequence so the numbers stay, just at a
           contrast that actually clears the card (~12.9:1 ground-truth
           after this change). */}
-      <span className="text-sm font-black tracking-widest text-foreground/70">
-        {step}
-      </span>
+      <span className="text-sm font-black tracking-widest text-foreground/70">{step}</span>
       <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <Icon className="h-7 w-7" aria-hidden="true" strokeWidth={2.25} />
       </div>
@@ -594,13 +669,7 @@ function PricingCard({
   );
 }
 
-function FooterCol({
-  title,
-  links,
-}: {
-  title: string;
-  links: { label: string; href: string }[];
-}) {
+function FooterCol({ title, links }: { title: string; links: { label: string; href: string }[] }) {
   return (
     <div>
       <h3 className="text-sm font-semibold tracking-tight">{title}</h3>

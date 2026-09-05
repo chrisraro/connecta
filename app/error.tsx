@@ -31,23 +31,16 @@ export default function Error({
         <span>{CONNECTA.name}</span>
       </div>
 
-      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-        Something went wrong
-      </h1>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Something went wrong</h1>
       <p className="mt-3 max-w-md text-muted-foreground">
         An unexpected error occurred. You can try again, or head back to safety.
       </p>
       {error?.digest && (
-        <p className="mt-2 font-mono text-xs text-muted-foreground/70">
-          Ref: {error.digest}
-        </p>
+        <p className="mt-2 font-mono text-xs text-muted-foreground/70">Ref: {error.digest}</p>
       )}
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Button
-          onClick={() => reset()}
-          className="h-12 rounded-2xl px-7 font-semibold"
-        >
+        <Button onClick={() => reset()} className="h-12 rounded-2xl px-7 font-semibold">
           <RotateCw className="mr-2 h-4 w-4" aria-hidden="true" />
           Try again
         </Button>

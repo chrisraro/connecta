@@ -28,7 +28,7 @@ export const PAYMENTS_ENABLED = false;
  */
 export function showPaymentReceivedBanner(
   paid: boolean,
-  paymentsEnabled: boolean = PAYMENTS_ENABLED
+  paymentsEnabled: boolean = PAYMENTS_ENABLED,
 ): boolean {
   return paid && paymentsEnabled;
 }

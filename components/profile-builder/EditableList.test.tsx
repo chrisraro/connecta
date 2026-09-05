@@ -18,7 +18,7 @@ describe("EditableList", () => {
         fields={FIELDS}
         onChange={() => {}}
         itemLabel="job"
-      />
+      />,
     );
     // The value must live in a real form control the user can focus and type into.
     const input = screen.getByDisplayValue("Developer");
@@ -39,7 +39,7 @@ describe("EditableList", () => {
         fields={FIELDS}
         onChange={onChange}
         itemLabel="job"
-      />
+      />,
     );
 
     await user.type(screen.getByDisplayValue("Developer"), "!");
@@ -65,7 +65,7 @@ describe("EditableList", () => {
         fields={FIELDS}
         onChange={onChange}
         itemLabel="job"
-      />
+      />,
     );
 
     await user.click(screen.getAllByRole("button", { name: /remove job 1/i })[0]);
@@ -80,7 +80,7 @@ describe("EditableList", () => {
         fields={FIELDS}
         onChange={() => {}}
         itemLabel="job"
-      />
+      />,
     );
     const btn = screen.getByRole("button", { name: /remove job 1/i });
     expect(btn).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("EditableList", () => {
         onChange={() => {}}
         itemLabel="job"
         emptyHint="No jobs yet."
-      />
+      />,
     );
     expect(screen.getByText("No jobs yet.")).toBeInTheDocument();
   });

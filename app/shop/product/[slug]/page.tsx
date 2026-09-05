@@ -7,7 +7,16 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight, Truck, Shield, Loader2 } from "lucide-react";
+import {
+  ShoppingCart,
+  Minus,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Truck,
+  Shield,
+  Loader2,
+} from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
@@ -18,10 +27,18 @@ import { toUserMessage } from "@/lib/errors";
 const formatPrice = formatPHP;
 
 // Helper component to resolve and display product images
-function ProductImage({ storageId, alt, className }: { storageId: string; alt: string; className?: string }) {
+function ProductImage({
+  storageId,
+  alt,
+  className,
+}: {
+  storageId: string;
+  alt: string;
+  className?: string;
+}) {
   const imageUrl = useQuery(
     api.images.getImageUrl,
-    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip",
   );
 
   const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
@@ -51,7 +68,9 @@ export default function ProductPage() {
   const slug = params.slug as string;
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariation, setSelectedVariation] = useState<Id<"productVariations"> | undefined>(undefined);
+  const [selectedVariation, setSelectedVariation] = useState<Id<"productVariations"> | undefined>(
+    undefined,
+  );
   const { addItem, isLoading } = useCart();
 
   const product = useQuery(api.shop.getProduct, { slug });
@@ -79,21 +98,22 @@ export default function ProductPage() {
   }
 
   const currentPrice = selectedVariation
-    ? product.variations.find(v => v._id === selectedVariation)?.price || product.basePrice
+    ? product.variations.find((v) => v._id === selectedVariation)?.price || product.basePrice
     : product.basePrice;
 
   const currentInventory = selectedVariation
-    ? product.variations.find(v => v._id === selectedVariation)?.inventory || 0
+    ? product.variations.find((v) => v._id === selectedVariation)?.inventory || 0
     : product.inventory;
 
   const isInStock = !product.trackInventory || currentInventory > 0;
-  const isLowStock = product.trackInventory && currentInventory <= product.lowStockThreshold && currentInventory > 0;
+  const isLowStock =
+    product.trackInventory && currentInventory <= product.lowStockThreshold && currentInventory > 0;
 
   const handleAddToCart = async () => {
     try {
       await addItem(product._id, selectedVariation, quantity);
       // Redirect to checkout immediately after adding to cart
-      router.push('/shop/checkout');
+      router.push("/shop/checkout");
     } catch (error) {
       // Task 19 follow-up (Task 18 review, Medium): this used to only
       // console.error — a failed add-to-cart (stale stock, network error,
@@ -126,7 +146,7 @@ export default function ProductPage() {
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
-                
+
                 {product.images.length > 1 && (
                   <>
                     <button
@@ -184,7 +204,7 @@ export default function ProductPage() {
           {/* Title & Price */}
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">{product.name}</h1>
-            
+
             <div className="flex items-center gap-3">
               <span className="text-2xl sm:text-3xl font-bold text-primary">
                 {formatPrice(currentPrice)}
@@ -223,9 +243,7 @@ export default function ProductPage() {
           {product.description && (
             <div>
               <h3 className="font-semibold mb-2">Description</h3>
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {product.description}
-              </p>
+              <p className="text-muted-foreground whitespace-pre-wrap">{product.description}</p>
             </div>
           )}
 
@@ -300,7 +318,7 @@ export default function ProductPage() {
               <ShoppingCart className="w-5 h-5 mr-2" />
               {isInStock ? "Add to Cart & Checkout" : "Out of Stock"}
             </Button>
-            
+
             <p className="text-xs text-muted-foreground text-center">
               You&apos;ll be redirected to checkout after adding to cart
             </p>

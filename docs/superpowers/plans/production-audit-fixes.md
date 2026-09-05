@@ -44,6 +44,7 @@ for unsold inventory and hijack it.
 **Files:** `convex/http.ts`, `convex/checkout.ts`, new/extended tests in `convex/checkout.test.ts` (+ a small http handler test if feasible)
 
 Three payment-integrity defects:
+
 - http.ts:136-166 runs mutations, discards results, always returns 200. A
   failed `internalConfirmOrderPayment` = money captured, order never marked
   paid, PayRex never retries (it saw 200), nobody alerted.
@@ -77,7 +78,7 @@ them). What remains in Task 3:
 
 1. `convex/checkout.ts` internalConfirmOrderPayment: `console.error` (event
    context, no PII) when the mutation returns `{success:false,
-   reason:"order_not_found"}` — the reviewer-elevated observability gap.
+reason:"order_not_found"}` — the reviewer-elevated observability gap.
    Keep returning 200 (permanent mismatch; retries add nothing).
 2. Delete the dead early-return at checkout.ts:391-393 subsumed by
    TERMINAL_PAYMENT_STATUSES.
@@ -192,14 +193,15 @@ Only `inventory` (and `lost`) cards may be deleted.
 **Files:** new `app/api/health/route.ts`, `convex/health.ts` (query), tests
 
 A GET /api/health route (public, no auth, no secrets) returning JSON:
+
 - `convex`: can the app reach Convex (call a trivial public query)?
 - `env`: booleans for presence of each required NEXT_PUBLIC_* on the web side.
 - `payments`: a Convex query reporting boolean presence (NOT values) of
   PAYREX_SECRET_KEY / PAYREX_WEBHOOK_SECRET / RESEND_API_KEY in the Convex
   environment, so a misconfigured payments path is visible before a customer
   hits it.
-Cache-Control: no-store. Test the Convex query with convex-test; the route
-handler with a unit test if the harness allows, else document manual curl.
+  Cache-Control: no-store. Test the Convex query with convex-test; the route
+  handler with a unit test if the harness allows, else document manual curl.
 
 ## Not in scope (recorded for the final review + user actions)
 
@@ -252,6 +254,7 @@ ROOT CAUSE (code-read + Chromium Web NFC internals): the error is Chromium
 appending Android's underlying TagLostException message — literally `null` —
 to "Failed to write due to an IO error: ". The tag lost coupling mid-write.
 The handler in factory/page.tsx makes this common and unrecoverable:
+
 - `onreading` has NO re-entrancy guard — Chrome re-fires it on every tag
   re-couple, so a wobbling card spawns CONCURRENT `ndef.write()` calls that
   race each other on the serialized NFC stack.
@@ -281,7 +284,6 @@ The handler in factory/page.tsx makes this common and unrecoverable:
      already registered — its activation code is in the inventory list
      below."), stop scanning, no retry loop into the same tag.
 3. Gates green; commit `fix(nfc):` explaining the TagLostException mechanism.
-
 
 ## Task 11 — Pro-feature gating UX + payment-gateway placeholder paywall
 
@@ -330,6 +332,7 @@ first profile via a direct insert (no slug, bypassing createProfile), then
 routes to /dashboard/builder WITHOUT ?id= — builder enters create mode, the
 free plan's maxProfiles:1 is already consumed, so the user's FIRST save
 always fails with the upgrade error. Fix:
+
 1. Onboarding's profile creation goes through the same code path as
    createProfile (slug assigned, digitalCard seeded). TDD via convex-test:
    onboarding-created profile has a slug and identical shape to a
@@ -353,6 +356,7 @@ always fails with the upgrade error. Fix:
 THE worst defect in the product: every new user's first Save fails.
 
 Evidence (audit-journey Blockers 1, 2, 9; audit-dataflow items 6):
+
 - Onboarding "Finish" auto-creates the first profile via a DIRECT db.insert,
   bypassing `createProfile` — so it gets NO slug (public link stuck at
   `/p/<convexId>`) and no `digitalCard`.
@@ -387,6 +391,7 @@ Evidence (audit-journey Blockers 1, 2, 9; audit-dataflow items 6):
 **Files:** `app/dashboard/builder/page.tsx` (save-time filtering + default layout), `convex/profiles.ts`, tests
 
 Blocker 3 + Major 6 + dataflow items 1:
+
 - Services typed during onboarding are PERMANENTLY deleted the first time the
   user saves in the builder: the individual profile type's default layout
   omits the Services block, and save-time filtering strips data for any
@@ -439,7 +444,7 @@ full inventory table is in `.superpowers/sdd/audit-journey.md` — work from it.
    theme-aware styling matching the design tokens already in use.
 2. `lib/errors.ts`: a tested `toUserMessage(err): string` that unwraps Convex
    transport noise (`[CONVEX M(...)] [Request ID: ...] Server Error Uncaught
-   Error: <msg> at ...`), prefers `ConvexError.data.message`/`.code` when
+Error: <msg> at ...`), prefers `ConvexError.data.message`/`.code` when
    present, and falls back to a friendly generic — NEVER shows a stack trace
    or the literal "Server Error". Unit-test against the real observed shapes
    (samples are in the audit and in lib/nfc.test.ts).

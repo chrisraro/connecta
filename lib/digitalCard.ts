@@ -16,12 +16,12 @@ import { DigitalCardConfig } from "../types/profile";
  * instead of maintaining two copies that can drift apart again.
  */
 export const DEFAULT_DIGITAL_CARD: DigitalCardConfig = {
-    backgroundColor: "#1e1e1e",
-    textColor: "#ffffff",
-    layout: "split",
-    showQrCode: true,
-    theme: "dark",
-    cardBackgroundType: "solid",
-    cardGradientStart: "#000000",
-    cardGradientEnd: "#333333",
+  backgroundColor: "#1e1e1e",
+  textColor: "#ffffff",
+  layout: "split",
+  showQrCode: true,
+  theme: "dark",
+  cardBackgroundType: "solid",
+  cardGradientStart: "#000000",
+  cardGradientEnd: "#333333",
 };

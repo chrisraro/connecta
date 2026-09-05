@@ -36,7 +36,7 @@ function formatPrice(priceInCents: number): string {
 function ProductImage({ storageId, alt }: { storageId: string; alt: string }) {
   const imageUrl = useQuery(
     api.images.getImageUrl,
-    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip",
   );
 
   const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
@@ -114,9 +114,7 @@ export default function AdminProductsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your product catalog
-          </p>
+          <p className="text-muted-foreground mt-1">Manage your product catalog</p>
         </div>
         <Link href="/admin/shop/products/new">
           <Button>
@@ -147,7 +145,10 @@ export default function AdminProductsPage() {
             <SelectItem value="draft">Draft</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={categoryId || "all"} onValueChange={(val) => setCategoryId(val === "all" ? undefined : val)}>
+        <Select
+          value={categoryId || "all"}
+          onValueChange={(val) => setCategoryId(val === "all" ? undefined : val)}
+        >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
@@ -185,7 +186,7 @@ export default function AdminProductsPage() {
               </TableRow>
             ) : (
               products.map((product) => {
-                const category = categories?.find(c => c._id === product.categoryId);
+                const category = categories?.find((c) => c._id === product.categoryId);
                 const imageUrl = product.images[product.primaryImageIndex] || product.images[0];
 
                 return (
@@ -194,10 +195,7 @@ export default function AdminProductsPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-muted rounded overflow-hidden flex-shrink-0">
                           {imageUrl ? (
-                            <ProductImage
-                              storageId={imageUrl}
-                              alt={product.name}
-                            />
+                            <ProductImage storageId={imageUrl} alt={product.name} />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
                               No Image

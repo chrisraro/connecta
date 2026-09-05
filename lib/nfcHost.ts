@@ -22,25 +22,23 @@
  * visible to the operator before it's burned into a tag — see the
  * `nfcHost`-adjacent UI in app/admin/factory/page.tsx.
  */
-export function resolveNfcHost(
-    env: Record<string, string | undefined>
-): string | null {
-    const raw = env.NEXT_PUBLIC_APP_URL;
-    if (typeof raw !== "string") return null;
+export function resolveNfcHost(env: Record<string, string | undefined>): string | null {
+  const raw = env.NEXT_PUBLIC_APP_URL;
+  if (typeof raw !== "string") return null;
 
-    const trimmed = raw.trim();
-    if (trimmed === "") return null;
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
 
-    const withoutTrailingSlashes = trimmed.replace(/\/+$/, "");
+  const withoutTrailingSlashes = trimmed.replace(/\/+$/, "");
 
-    let parsed: URL;
-    try {
-        parsed = new URL(withoutTrailingSlashes);
-    } catch {
-        return null;
-    }
+  let parsed: URL;
+  try {
+    parsed = new URL(withoutTrailingSlashes);
+  } catch {
+    return null;
+  }
 
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
 
-    return withoutTrailingSlashes;
+  return withoutTrailingSlashes;
 }

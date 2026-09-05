@@ -1,5 +1,12 @@
 import { v, ConvexError } from "convex/values";
-import { mutation, query, action, internalMutation, QueryCtx, MutationCtx } from "./_generated/server";
+import {
+  mutation,
+  query,
+  action,
+  internalMutation,
+  QueryCtx,
+  MutationCtx,
+} from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { requireUserMatching } from "./authz";
@@ -7,32 +14,32 @@ import { planContext } from "./billing";
 import { checkRateLimit } from "./rateLimit";
 
 async function getUser(ctx: QueryCtx, clerkId: string) {
-    return await ctx.db
-        .query("users")
-        .withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId))
-        .unique();
+  return await ctx.db
+    .query("users")
+    .withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId))
+    .unique();
 }
 
 // Throws if activating one more card would exceed the user's plan limit on
 // active cards. Free = 1 active card; paid plans = unlimited.
 async function assertCanActivateCard(ctx: MutationCtx, user: Doc<"users">) {
-    const { limits } = planContext(user);
-    if (limits.maxActiveCards === null) return;
-    const owned = await ctx.db
-        .query("cards")
-        .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
-        .collect();
-    const activeCount = owned.filter((c) => c.status === "active").length;
-    if (activeCount >= limits.maxActiveCards) {
-        // ConvexError so the message survives production's redaction of
-        // plain Error text (see lib/errors.ts#toUserMessage) and the
-        // billing UI's "Get Pro" CTA can key off data.code === "PLAN_LIMIT"
-        // (see lib/plans.ts#isPlanLimitError) instead of message-sniffing.
-        throw new ConvexError({
-            code: "PLAN_LIMIT",
-            message: "Upgrade to Pro to activate more than one card.",
-        });
-    }
+  const { limits } = planContext(user);
+  if (limits.maxActiveCards === null) return;
+  const owned = await ctx.db
+    .query("cards")
+    .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
+    .collect();
+  const activeCount = owned.filter((c) => c.status === "active").length;
+  if (activeCount >= limits.maxActiveCards) {
+    // ConvexError so the message survives production's redaction of
+    // plain Error text (see lib/errors.ts#toUserMessage) and the
+    // billing UI's "Get Pro" CTA can key off data.code === "PLAN_LIMIT"
+    // (see lib/plans.ts#isPlanLimitError) instead of message-sniffing.
+    throw new ConvexError({
+      code: "PLAN_LIMIT",
+      message: "Upgrade to Pro to activate more than one card.",
+    });
+  }
 }
 
 // Internal: check-and-record one activation attempt for the authenticated
@@ -50,67 +57,67 @@ async function assertCanActivateCard(ctx: MutationCtx, user: Doc<"users">) {
 // rate-limit write back along with everything else, so the counter would
 // never advance past 1 no matter how many times an attacker retried.)
 export const recordActivationAttempt = internalMutation({
-    args: { clerkId: v.string() },
-    handler: async (ctx, args) => {
-        const user = await requireUserMatching(ctx, args.clerkId);
-        await checkRateLimit(ctx, `activate:${user._id}`, { max: 5, windowMs: 60_000 });
-    },
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await requireUserMatching(ctx, args.clerkId);
+    await checkRateLimit(ctx, `activate:${user._id}`, { max: 5, windowMs: 60_000 });
+  },
 });
 
 // Internal: the actual activation logic, unchanged from before other than
 // living in its own mutation. Called from the `activateCard` action after
 // the rate-limit gate above passes.
 export const performActivateCard = internalMutation({
-    args: {
-        clerkId: v.string(),
-        activationCode: v.string(),
-    },
-    handler: async (ctx, args) => {
-        const user = await requireUserMatching(ctx, args.clerkId);
+  args: {
+    clerkId: v.string(),
+    activationCode: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireUserMatching(ctx, args.clerkId);
 
-        // Codes are stored uppercase (generated from an uppercase alphabet),
-        // and users transcribe them by hand — normalize before the
-        // exact-match index lookup. The raw-input fallback covers legacy
-        // codes from the old client-side generator, which contain lowercase
-        // hex segments and would be destroyed by uppercasing.
-        const normalized = args.activationCode.trim().toUpperCase();
-        let card = await ctx.db
-            .query("cards")
-            .withIndex("by_activationCode", (q) => q.eq("activationCode", normalized))
-            .first();
-        if (!card) {
-            card = await ctx.db
-                .query("cards")
-                .withIndex("by_activationCode", (q) => q.eq("activationCode", args.activationCode.trim()))
-                .first();
-        }
+    // Codes are stored uppercase (generated from an uppercase alphabet),
+    // and users transcribe them by hand — normalize before the
+    // exact-match index lookup. The raw-input fallback covers legacy
+    // codes from the old client-side generator, which contain lowercase
+    // hex segments and would be destroyed by uppercasing.
+    const normalized = args.activationCode.trim().toUpperCase();
+    let card = await ctx.db
+      .query("cards")
+      .withIndex("by_activationCode", (q) => q.eq("activationCode", normalized))
+      .first();
+    if (!card) {
+      card = await ctx.db
+        .query("cards")
+        .withIndex("by_activationCode", (q) => q.eq("activationCode", args.activationCode.trim()))
+        .first();
+    }
 
-        // ConvexError, not plain Error, for the same reason as
-        // `assertCanActivateCard` three lines below (and rateLimit.ts): a
-        // plain Error's message is redacted to the literal "Server Error" on
-        // a real production Convex deployment, silently losing this specific
-        // message right when a customer needs it (lib/errors.ts#toUserMessage,
-        // called from app/dashboard/cards/page.tsx's handleActivate/
-        // handleScanResult).
-        if (!card) {
-            throw new ConvexError({ code: "INVALID_CODE", message: "Invalid activation code" });
-        }
-        if (card.status !== "inventory") {
-            throw new ConvexError({
-                code: "ALREADY_ACTIVATED",
-                message: "Card already activated or reported lost",
-            });
-        }
+    // ConvexError, not plain Error, for the same reason as
+    // `assertCanActivateCard` three lines below (and rateLimit.ts): a
+    // plain Error's message is redacted to the literal "Server Error" on
+    // a real production Convex deployment, silently losing this specific
+    // message right when a customer needs it (lib/errors.ts#toUserMessage,
+    // called from app/dashboard/cards/page.tsx's handleActivate/
+    // handleScanResult).
+    if (!card) {
+      throw new ConvexError({ code: "INVALID_CODE", message: "Invalid activation code" });
+    }
+    if (card.status !== "inventory") {
+      throw new ConvexError({
+        code: "ALREADY_ACTIVATED",
+        message: "Card already activated or reported lost",
+      });
+    }
 
-        await assertCanActivateCard(ctx, user);
+    await assertCanActivateCard(ctx, user);
 
-        await ctx.db.patch(card._id, {
-            ownerId: user._id,
-            status: "active",
-        });
+    await ctx.db.patch(card._id, {
+      ownerId: user._id,
+      status: "active",
+    });
 
-        return card._id;
-    },
+    return card._id;
+  },
 });
 
 // Public entry point. An action rather than a mutation: see
@@ -120,39 +127,39 @@ export const performActivateCard = internalMutation({
 // convention (a function that resolves on success, rejects on error) is
 // otherwise identical.
 export const activateCard = action({
-    args: {
-        clerkId: v.string(),
-        activationCode: v.string(),
-    },
-    handler: async (ctx, args): Promise<Id<"cards">> => {
-        await ctx.runMutation(internal.cards.recordActivationAttempt, { clerkId: args.clerkId });
-        return await ctx.runMutation(internal.cards.performActivateCard, args);
-    },
+  args: {
+    clerkId: v.string(),
+    activationCode: v.string(),
+  },
+  handler: async (ctx, args): Promise<Id<"cards">> => {
+    await ctx.runMutation(internal.cards.recordActivationAttempt, { clerkId: args.clerkId });
+    return await ctx.runMutation(internal.cards.performActivateCard, args);
+  },
 });
 
 export const linkProfile = mutation({
-    args: {
-        clerkId: v.string(),
-        cardId: v.id("cards"),
-        profileId: v.optional(v.id("profiles")),
-    },
-    handler: async (ctx, args) => {
-        const user = await requireUserMatching(ctx, args.clerkId);
+  args: {
+    clerkId: v.string(),
+    cardId: v.id("cards"),
+    profileId: v.optional(v.id("profiles")),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireUserMatching(ctx, args.clerkId);
 
-        const card = await ctx.db.get(args.cardId);
-        // ConvexError here too — see the comment on performActivateCard's
-        // throws above; this rejection surfaces through the same
-        // toUserMessage-consuming handleLinkProfile in
-        // app/dashboard/cards/page.tsx.
-        if (!card) throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
-        if (card.ownerId !== user._id) {
-            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized" });
-        }
+    const card = await ctx.db.get(args.cardId);
+    // ConvexError here too — see the comment on performActivateCard's
+    // throws above; this rejection surfaces through the same
+    // toUserMessage-consuming handleLinkProfile in
+    // app/dashboard/cards/page.tsx.
+    if (!card) throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
+    if (card.ownerId !== user._id) {
+      throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized" });
+    }
 
-        await ctx.db.patch(args.cardId, {
-            linkedProfileId: args.profileId,
-        });
-    },
+    await ctx.db.patch(args.cardId, {
+      linkedProfileId: args.profileId,
+    });
+  },
 });
 
 // Public, unauthenticated lookup — anyone who scans a card's QR (or
@@ -161,34 +168,34 @@ export const linkProfile = mutation({
 // `activationCode` (the manual-claim secret) or `ownerId` (custodial admin
 // id from factory registration, nobody's business either).
 export const getCardByUuid = query({
-    args: { uuid: v.string() },
-    handler: async (ctx, args) => {
-        const normalized = decodeURIComponent(args.uuid).trim().toLowerCase();
-        const card = await ctx.db
-            .query("cards")
-            .withIndex("by_uuid", (q) => q.eq("uuid", normalized))
-            .first();
-        if (!card) return null;
-        return {
-            _id: card._id,
-            uuid: card.uuid,
-            status: card.status,
-            linkedProfileId: card.linkedProfileId,
-        };
-    },
+  args: { uuid: v.string() },
+  handler: async (ctx, args) => {
+    const normalized = decodeURIComponent(args.uuid).trim().toLowerCase();
+    const card = await ctx.db
+      .query("cards")
+      .withIndex("by_uuid", (q) => q.eq("uuid", normalized))
+      .first();
+    if (!card) return null;
+    return {
+      _id: card._id,
+      uuid: card.uuid,
+      status: card.status,
+      linkedProfileId: card.linkedProfileId,
+    };
+  },
 });
 
 export const incrementTapCount = mutation({
-    args: { cardId: v.id("cards") },
-    handler: async (ctx, args) => {
-        await checkRateLimit(ctx, `tap:${args.cardId}`, { max: 20, windowMs: 60_000 });
-        const card = await ctx.db.get(args.cardId);
-        if (card) {
-            await ctx.db.patch(args.cardId, {
-                tapCount: card.tapCount + 1,
-            });
-        }
-    },
+  args: { cardId: v.id("cards") },
+  handler: async (ctx, args) => {
+    await checkRateLimit(ctx, `tap:${args.cardId}`, { max: 20, windowMs: 60_000 });
+    const card = await ctx.db.get(args.cardId);
+    if (card) {
+      await ctx.db.patch(args.cardId, {
+        tapCount: card.tapCount + 1,
+      });
+    }
+  },
 });
 
 // Internal: check-and-record one claim attempt for the authenticated
@@ -201,105 +208,111 @@ export const incrementTapCount = mutation({
 // the moment it returns, so it survives a later "card not found" throw in
 // the same client-facing call instead of being rolled back with it.
 export const recordClaimAttempt = internalMutation({
-    args: { clerkId: v.string() },
-    handler: async (ctx, args) => {
-        const identity = await ctx.auth.getUserIdentity();
-        // ConvexError, not plain Error — see the comment on performActivateCard's
-        // throws above; reachable via the same claimCardByUuid action that
-        // handleScanResult/onboarding surface through toUserMessage.
-        if (!identity) {
-            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: authentication required" });
-        }
-        if (identity.subject !== args.clerkId) {
-            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: identity mismatch" });
-        }
-        await checkRateLimit(ctx, `claim:${identity.subject}`, { max: 5, windowMs: 60_000 });
-    },
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    // ConvexError, not plain Error — see the comment on performActivateCard's
+    // throws above; reachable via the same claimCardByUuid action that
+    // handleScanResult/onboarding surface through toUserMessage.
+    if (!identity) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "Unauthorized: authentication required",
+      });
+    }
+    if (identity.subject !== args.clerkId) {
+      throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: identity mismatch" });
+    }
+    await checkRateLimit(ctx, `claim:${identity.subject}`, { max: 5, windowMs: 60_000 });
+  },
 });
 
 // Internal: the actual claim logic, unchanged from before other than living
 // in its own mutation. Called from the `claimCardByUuid` action after the
 // rate-limit gate above passes.
 export const performClaimCardByUuid = internalMutation({
-    args: {
-        clerkId: v.string(),
-        uuid: v.string(),
-    },
-    handler: async (ctx, args) => {
-        // SECURITY: enforce that the claimed clerkId belongs to the authenticated
-        // caller before creating/claiming anything in their name.
-        const identity = await ctx.auth.getUserIdentity();
-        // ConvexError, not plain Error — same reasoning as recordClaimAttempt
-        // above and performActivateCard's throws further up this file.
-        if (!identity) {
-            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: authentication required" });
-        }
-        if (identity.subject !== args.clerkId) {
-            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: identity mismatch" });
-        }
+  args: {
+    clerkId: v.string(),
+    uuid: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // SECURITY: enforce that the claimed clerkId belongs to the authenticated
+    // caller before creating/claiming anything in their name.
+    const identity = await ctx.auth.getUserIdentity();
+    // ConvexError, not plain Error — same reasoning as recordClaimAttempt
+    // above and performActivateCard's throws further up this file.
+    if (!identity) {
+      throw new ConvexError({
+        code: "UNAUTHORIZED",
+        message: "Unauthorized: authentication required",
+      });
+    }
+    if (identity.subject !== args.clerkId) {
+      throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized: identity mismatch" });
+    }
 
-        // Get or create user
-        let user = await getUser(ctx, args.clerkId);
+    // Get or create user
+    let user = await getUser(ctx, args.clerkId);
 
-        if (!user) {
-            // User doesn't exist in Convex yet - create them.
-            // This happens when user just signed up via Clerk.
-            const newUserId = await ctx.db.insert("users", {
-                clerkId: args.clerkId,
-                email: "", // Will be updated during onboarding
-                role: "agent",
-                subscriptionStatus: "active",
-                plan: "free",
-                onboardingCompleted: false,
-            });
+    if (!user) {
+      // User doesn't exist in Convex yet - create them.
+      // This happens when user just signed up via Clerk.
+      const newUserId = await ctx.db.insert("users", {
+        clerkId: args.clerkId,
+        email: "", // Will be updated during onboarding
+        role: "agent",
+        subscriptionStatus: "active",
+        plan: "free",
+        onboardingCompleted: false,
+      });
 
-            user = await ctx.db.get(newUserId);
-            if (!user) {
-                throw new ConvexError({ code: "USER_CREATE_FAILED", message: "Failed to create user" });
-            }
-        }
+      user = await ctx.db.get(newUserId);
+      if (!user) {
+        throw new ConvexError({ code: "USER_CREATE_FAILED", message: "Failed to create user" });
+      }
+    }
 
-        const normalizedUuid = decodeURIComponent(args.uuid).trim().toLowerCase();
-        const card = await ctx.db
-            .query("cards")
-            .withIndex("by_uuid", (q) => q.eq("uuid", normalizedUuid))
-            .first();
+    const normalizedUuid = decodeURIComponent(args.uuid).trim().toLowerCase();
+    const card = await ctx.db
+      .query("cards")
+      .withIndex("by_uuid", (q) => q.eq("uuid", normalizedUuid))
+      .first();
 
-        if (!card) {
-            throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
-        }
+    if (!card) {
+      throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
+    }
 
-        // If card already belongs to this user and is active, return it (idempotent)
-        if (card.ownerId === user._id && card.status === "active") {
-            return card._id;
-        }
+    // If card already belongs to this user and is active, return it (idempotent)
+    if (card.ownerId === user._id && card.status === "active") {
+      return card._id;
+    }
 
-        // `status` is the source of truth for claimability, NOT ownerId.
-        // Factory registration stamps ownerId with the registering admin as
-        // a custodian (the schema requires an owner), so an ownerId check
-        // here rejected every card the factory ever produced — the QR
-        // activation path was broken for all real stock. A card that is
-        // still "inventory" is unowned in the product sense, whoever's id
-        // it carries; a card that is NOT inventory belongs to whoever
-        // activated it and must not be re-claimable.
-        if (card.status !== "inventory") {
-            throw new ConvexError({
-                code: "NOT_AVAILABLE",
-                message: "Card is not available for claiming",
-            });
-        }
+    // `status` is the source of truth for claimability, NOT ownerId.
+    // Factory registration stamps ownerId with the registering admin as
+    // a custodian (the schema requires an owner), so an ownerId check
+    // here rejected every card the factory ever produced — the QR
+    // activation path was broken for all real stock. A card that is
+    // still "inventory" is unowned in the product sense, whoever's id
+    // it carries; a card that is NOT inventory belongs to whoever
+    // activated it and must not be re-claimable.
+    if (card.status !== "inventory") {
+      throw new ConvexError({
+        code: "NOT_AVAILABLE",
+        message: "Card is not available for claiming",
+      });
+    }
 
-        // Plan gating: free plan may only have one active card.
-        await assertCanActivateCard(ctx, user);
+    // Plan gating: free plan may only have one active card.
+    await assertCanActivateCard(ctx, user);
 
-        // Claim the card: assign ownership and activate
-        await ctx.db.patch(card._id, {
-            ownerId: user._id,
-            status: "active",
-        });
+    // Claim the card: assign ownership and activate
+    await ctx.db.patch(card._id, {
+      ownerId: user._id,
+      status: "active",
+    });
 
-        return card._id;
-    },
+    return card._id;
+  },
 });
 
 // Public entry point. An action rather than a mutation — see
@@ -307,39 +320,38 @@ export const performClaimCardByUuid = internalMutation({
 // `useMutation`; the calling convention (resolves on success, rejects on
 // error) is otherwise identical.
 export const claimCardByUuid = action({
-    args: {
-        clerkId: v.string(),
-        uuid: v.string(),
-    },
-    handler: async (ctx, args): Promise<Id<"cards">> => {
-        await ctx.runMutation(internal.cards.recordClaimAttempt, { clerkId: args.clerkId });
-        return await ctx.runMutation(internal.cards.performClaimCardByUuid, args);
-    },
+  args: {
+    clerkId: v.string(),
+    uuid: v.string(),
+  },
+  handler: async (ctx, args): Promise<Id<"cards">> => {
+    await ctx.runMutation(internal.cards.recordClaimAttempt, { clerkId: args.clerkId });
+    return await ctx.runMutation(internal.cards.performClaimCardByUuid, args);
+  },
 });
 
 export const unclaimCard = mutation({
-    args: {
-        clerkId: v.string(),
-        cardId: v.id("cards"),
-    },
-    handler: async (ctx, args) => {
-        const user = await requireUserMatching(ctx, args.clerkId);
+  args: {
+    clerkId: v.string(),
+    cardId: v.id("cards"),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireUserMatching(ctx, args.clerkId);
 
-        const card = await ctx.db.get(args.cardId);
-        // ConvexError here too — reachable through handleUnclaimCard in
-        // app/dashboard/cards/page.tsx, which already reads via toUserMessage.
-        if (!card) throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
-        if (card.ownerId !== user._id) {
-            throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized" });
-        }
+    const card = await ctx.db.get(args.cardId);
+    // ConvexError here too — reachable through handleUnclaimCard in
+    // app/dashboard/cards/page.tsx, which already reads via toUserMessage.
+    if (!card) throw new ConvexError({ code: "CARD_NOT_FOUND", message: "Card not found" });
+    if (card.ownerId !== user._id) {
+      throw new ConvexError({ code: "UNAUTHORIZED", message: "Unauthorized" });
+    }
 
-        await ctx.db.patch(args.cardId, {
-            status: "inventory",
-            linkedProfileId: undefined,
-            tapCount: 0,
-        });
+    await ctx.db.patch(args.cardId, {
+      status: "inventory",
+      linkedProfileId: undefined,
+      tapCount: 0,
+    });
 
-        return { success: true };
-    },
+    return { success: true };
+  },
 });
-

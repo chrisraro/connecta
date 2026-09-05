@@ -16,7 +16,9 @@ export interface OfflineLead {
 /**
  * Save lead to localStorage when offline
  */
-export function saveOfflineLead(lead: Omit<OfflineLead, "id" | "timestamp" | "synced">): OfflineLead {
+export function saveOfflineLead(
+  lead: Omit<OfflineLead, "id" | "timestamp" | "synced">,
+): OfflineLead {
   const offlineLead: OfflineLead = {
     ...lead,
     id: `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -50,9 +52,7 @@ export function getOfflineLeads(): OfflineLead[] {
  */
 export function markLeadSynced(leadId: string): void {
   const leads = getOfflineLeads();
-  const updated = leads.map(lead => 
-    lead.id === leadId ? { ...lead, synced: true } : lead
-  );
+  const updated = leads.map((lead) => (lead.id === leadId ? { ...lead, synced: true } : lead));
   localStorage.setItem(OFFLINE_LEADS_KEY, JSON.stringify(updated));
 }
 
@@ -61,7 +61,7 @@ export function markLeadSynced(leadId: string): void {
  */
 export function clearSyncedLeads(): void {
   const leads = getOfflineLeads();
-  const unsynced = leads.filter(lead => !lead.synced);
+  const unsynced = leads.filter((lead) => !lead.synced);
   localStorage.setItem(OFFLINE_LEADS_KEY, JSON.stringify(unsynced));
 }
 
@@ -70,7 +70,7 @@ export function clearSyncedLeads(): void {
  */
 export function getUnsyncedCount(): number {
   const leads = getOfflineLeads();
-  return leads.filter(lead => !lead.synced).length;
+  return leads.filter((lead) => !lead.synced).length;
 }
 
 /**
@@ -118,9 +118,9 @@ export async function syncOfflineLeads(
     message?: string;
     visitorId?: string;
   }) => Promise<unknown>,
-  ownerId: Id<"users">
+  ownerId: Id<"users">,
 ): Promise<{ synced: number; failed: number; failures: string[] }> {
-  const leads = getOfflineLeads().filter(lead => !lead.synced);
+  const leads = getOfflineLeads().filter((lead) => !lead.synced);
 
   if (leads.length === 0) {
     return { synced: 0, failed: 0, failures: [] };

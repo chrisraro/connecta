@@ -7,10 +7,7 @@ import { parseQrPayload } from "./QrClaimScanner";
  * cover the current host plus a local dev origin.
  */
 test("parses /t/ URLs regardless of host", () => {
-  for (const host of [
-    "https://connecta.vercel.app",
-    "http://localhost:3000",
-  ]) {
+  for (const host of ["https://connecta.vercel.app", "http://localhost:3000"]) {
     expect(parseQrPayload(`${host}/t/04:a3:5b:12`)).toEqual({
       kind: "uuid",
       uuid: "04:a3:5b:12",

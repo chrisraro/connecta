@@ -19,7 +19,7 @@ test("checkRateLimit throws once the max is exceeded within the window", async (
       await checkRateLimit(ctx, "test:key-b", { max: 2, windowMs: 60_000 });
       await checkRateLimit(ctx, "test:key-b", { max: 2, windowMs: 60_000 });
       await checkRateLimit(ctx, "test:key-b", { max: 2, windowMs: 60_000 });
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 

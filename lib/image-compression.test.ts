@@ -48,7 +48,11 @@ test("clamping to minWidthOrHeight preserves aspect ratio instead of stretching"
   } as unknown as typeof Image);
 
   // canvas + toBlob are also not implemented in jsdom — stub the minimum.
-  const fakeCtx = { imageSmoothingEnabled: true, imageSmoothingQuality: "high", drawImage: vi.fn() };
+  const fakeCtx = {
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: "high",
+    drawImage: vi.fn(),
+  };
   const fakeCanvas = {
     width: 0,
     height: 0,

@@ -31,7 +31,7 @@ async function seedCard(
   t: ReturnType<typeof convexTest>,
   ownerId: Id<"users">,
   status: "inventory" | "active" | "lost",
-  uuid: string
+  uuid: string,
 ) {
   return await t.run(async (ctx) =>
     ctx.db.insert("cards", {
@@ -41,7 +41,7 @@ async function seedCard(
       status,
       linkedProfileId: undefined,
       tapCount: 0,
-    })
+    }),
   );
 }
 
@@ -58,7 +58,7 @@ test("setupFirstAdmin rejects an unauthenticated caller", async () => {
   });
 
   await expect(
-    t.mutation(api.admin.setupFirstAdmin, { clerkId: "victim_clerk_id" })
+    t.mutation(api.admin.setupFirstAdmin, { clerkId: "victim_clerk_id" }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -76,7 +76,7 @@ test("setupFirstAdmin rejects a caller impersonating another clerkId", async () 
   const asAttacker = t.withIdentity({ subject: "attacker_clerk_id" });
 
   await expect(
-    asAttacker.mutation(api.admin.setupFirstAdmin, { clerkId: "victim_clerk_id" })
+    asAttacker.mutation(api.admin.setupFirstAdmin, { clerkId: "victim_clerk_id" }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -189,7 +189,7 @@ test("getAllUsers reports accurate per-user card/order counts and admin role for
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
   await seedCard(t, plainUserId, "inventory", "plain-card-1");
   await seedCard(t, plainUserId, "active", "plain-card-2");
@@ -310,7 +310,7 @@ test("getAllUsers matches the by_user index's earliest-grant tie-break when a us
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
   await t.run(async (ctx) => {
     await ctx.db.insert("admins", {
@@ -387,7 +387,7 @@ test("getCards caps the returned list at ADMIN_CARDS_LIST_CAP and keeps the newe
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   const CAP = 500;

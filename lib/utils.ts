@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function resolveImageUrl(path: string | undefined | null) {
@@ -20,11 +20,7 @@ function relativeLuminance(rgb: { r: number; g: number; b: number }): number {
     const s = c / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   };
-  return (
-    0.2126 * toLinear(rgb.r) +
-    0.7152 * toLinear(rgb.g) +
-    0.0722 * toLinear(rgb.b)
-  );
+  return 0.2126 * toLinear(rgb.r) + 0.7152 * toLinear(rgb.g) + 0.0722 * toLinear(rgb.b);
 }
 
 // WCAG 2.1 contrast ratio between two relative luminances.
@@ -56,7 +52,7 @@ function contrastRatio(l1: number, l2: number): number {
  */
 export function readableTextColor(
   color: string | undefined | null,
-  options?: { light?: string; dark?: string }
+  options?: { light?: string; dark?: string },
 ): string {
   const light = options?.light ?? "#ffffff";
   const dark = options?.dark ?? "#0a0a0a";
@@ -76,7 +72,7 @@ export function readableTextColor(
 }
 
 function parseColorToRgb(
-  color: string | undefined | null
+  color: string | undefined | null,
 ): { r: number; g: number; b: number } | null {
   if (!color) return null;
   let c = color.trim().toLowerCase();

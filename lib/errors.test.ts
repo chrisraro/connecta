@@ -100,8 +100,7 @@ test("finding 1: an empty inner detail followed by a stack frame never leaks the
   // needed as a delimiter, so the lazy capture group swallowed the stack
   // frame itself, producing the raw stack line "at foo (../convex/x.ts:1:1)"
   // as the "user-safe" message.
-  const raw =
-    "[CONVEX M(x:y)] Server Error\nUncaught Error: \n  at foo (../convex/x.ts:1:1)";
+  const raw = "[CONVEX M(x:y)] Server Error\nUncaught Error: \n  at foo (../convex/x.ts:1:1)";
   const message = toUserMessage(new Error(raw));
   expect(message).not.toMatch(/at foo/);
   expect(message).not.toMatch(/convex\/x\.ts/);
@@ -142,9 +141,7 @@ test("finding 4: a real diagnostic message that merely ends in 'Server Error' ke
   const raw =
     "[CONVEX A(payrex:createCheckoutSession)] [Request ID: xyz] Server Error\nUncaught Error: PayRex checkout session creation failed (500): Internal Server Error\n  at handler (../convex/payrex.ts:120:11)";
   const message = toUserMessage(new Error(raw));
-  expect(message).toBe(
-    "PayRex checkout session creation failed (500): Internal Server Error"
-  );
+  expect(message).toBe("PayRex checkout session creation failed (500): Internal Server Error");
 });
 
 test("finding 5: a very long message is truncated with an ellipsis instead of rendering as a wall of text", () => {
@@ -159,9 +156,7 @@ test("finding 5: a very long message is truncated with an ellipsis instead of re
 test("does not genericize legitimate text that merely contains the substring 'Called by client'", () => {
   // Un-anchored, the "Called by client" defense-in-depth check would
   // false-positive on ordinary prose, not just the real envelope trailer.
-  const message = toUserMessage(
-    new Error("The order was Called by client twice.")
-  );
+  const message = toUserMessage(new Error("The order was Called by client twice."));
   expect(message).toBe("The order was Called by client twice.");
 });
 

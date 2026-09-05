@@ -16,7 +16,11 @@ export function PropertyListingsSection({
     <SectionShell theme={theme} index={index} heading="Properties">
       <div className="space-y-4">
         {propertyListings.map((property, i) => (
-          <div key={i} className="rounded-[var(--r-lg)] p-5" style={{ backgroundColor: theme.colors.surface, boxShadow: "var(--e-raised)" }}>
+          <div
+            key={i}
+            className="rounded-[var(--r-lg)] p-5"
+            style={{ backgroundColor: theme.colors.surface, boxShadow: "var(--e-raised)" }}
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3
@@ -26,16 +30,29 @@ export function PropertyListingsSection({
                   {property.title}
                 </h3>
                 {property.location && (
-                  <p className="text-xs flex items-center gap-1 mt-1" style={{ color: theme.colors.inkSoft }}>
+                  <p
+                    className="text-xs flex items-center gap-1 mt-1"
+                    style={{ color: theme.colors.inkSoft }}
+                  >
                     <MapPin className="w-3 h-3" /> {property.location}
                   </p>
                 )}
                 {property.description && (
-                  <p className="text-sm mt-2 leading-relaxed" style={{ color: theme.colors.inkSoft }}>{property.description}</p>
+                  <p
+                    className="text-sm mt-2 leading-relaxed"
+                    style={{ color: theme.colors.inkSoft }}
+                  >
+                    {property.description}
+                  </p>
                 )}
               </div>
               {property.price && (
-                <span className="text-lg font-medium ml-4 shrink-0" style={{ color: theme.colors.accent }}>{property.price}</span>
+                <span
+                  className="text-lg font-medium ml-4 shrink-0"
+                  style={{ color: theme.colors.accent }}
+                >
+                  {property.price}
+                </span>
               )}
             </div>
             <div className="flex items-center gap-3 mt-3">

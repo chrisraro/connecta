@@ -12,19 +12,23 @@ export default defineSchema({
     planExpiresAt: v.optional(v.number()),
     teamId: v.optional(v.id("teams")),
     onboardingCompleted: v.optional(v.boolean()),
-    onboardingData: v.optional(v.object({
-      profileCategory: v.optional(v.union(v.literal("individual"), v.literal("company"), v.literal("business"))),
-      email: v.optional(v.string()),
-      fullName: v.string(),
-      title: v.string(),
-      company: v.optional(v.string()),
-      phone: v.string(),
-      website: v.optional(v.string()),
-      about: v.optional(v.string()),
-      avatarUrl: v.optional(v.string()),
-      services: v.array(v.string()),
-      socialLinks: v.optional(v.array(v.object({ platform: v.string(), url: v.string() }))),
-    })),
+    onboardingData: v.optional(
+      v.object({
+        profileCategory: v.optional(
+          v.union(v.literal("individual"), v.literal("company"), v.literal("business")),
+        ),
+        email: v.optional(v.string()),
+        fullName: v.string(),
+        title: v.string(),
+        company: v.optional(v.string()),
+        phone: v.string(),
+        website: v.optional(v.string()),
+        about: v.optional(v.string()),
+        avatarUrl: v.optional(v.string()),
+        services: v.array(v.string()),
+        socialLinks: v.optional(v.array(v.object({ platform: v.string(), url: v.string() }))),
+      }),
+    ),
     /**
      * DEPRECATED ORPHAN DATA — do not read, do not write.
      *
@@ -37,7 +41,8 @@ export default defineSchema({
      * delete this field.
      */
     credits: v.optional(v.number()),
-  }).index("by_clerkId", ["clerkId"])
+  })
+    .index("by_clerkId", ["clerkId"])
     .index("by_teamId", ["teamId"]),
 
   cards: defineTable({
@@ -47,7 +52,8 @@ export default defineSchema({
     status: v.union(v.literal("inventory"), v.literal("active"), v.literal("lost")),
     linkedProfileId: v.optional(v.id("profiles")),
     tapCount: v.number(),
-  }).index("by_uuid", ["uuid"])
+  })
+    .index("by_uuid", ["uuid"])
     .index("by_owner", ["ownerId"])
     .index("by_activationCode", ["activationCode"]),
 
@@ -55,7 +61,9 @@ export default defineSchema({
     ownerId: v.id("users"),
     name: v.string(),
     slug: v.optional(v.string()),
-    profileType: v.optional(v.union(v.literal("individual"), v.literal("company"), v.literal("business"))),
+    profileType: v.optional(
+      v.union(v.literal("individual"), v.literal("company"), v.literal("business")),
+    ),
     agentInfo: v.object({
       fullName: v.string(),
       title: v.string(),
@@ -70,48 +78,103 @@ export default defineSchema({
       avatarUrl: v.optional(v.string()),
       socialLinks: v.array(v.object({ platform: v.string(), url: v.string() })),
       services: v.optional(v.array(v.string())),
-      certification: v.optional(v.object({
-        title: v.string(),
-        description: v.string(),
-      })),
-      education: v.optional(v.array(v.object({
-        degree: v.string(),
-        school: v.string(),
-        year: v.optional(v.string()),
-      }))),
-      techStack: v.optional(v.array(v.object({
-        category: v.string(),
-        skills: v.array(v.string()),
-      }))),
-      experience: v.optional(v.array(v.object({
-        title: v.string(),
-        company: v.string(),
-        period: v.string(),
-        description: v.optional(v.string()),
-      }))),
-      testimonials: v.optional(v.array(v.object({
-        quote: v.string(),
-        author: v.string(),
-        role: v.optional(v.string()),
-      }))),
+      certification: v.optional(
+        v.object({
+          title: v.string(),
+          description: v.string(),
+        }),
+      ),
+      education: v.optional(
+        v.array(
+          v.object({
+            degree: v.string(),
+            school: v.string(),
+            year: v.optional(v.string()),
+          }),
+        ),
+      ),
+      techStack: v.optional(
+        v.array(
+          v.object({
+            category: v.string(),
+            skills: v.array(v.string()),
+          }),
+        ),
+      ),
+      experience: v.optional(
+        v.array(
+          v.object({
+            title: v.string(),
+            company: v.string(),
+            period: v.string(),
+            description: v.optional(v.string()),
+          }),
+        ),
+      ),
+      testimonials: v.optional(
+        v.array(
+          v.object({
+            quote: v.string(),
+            author: v.string(),
+            role: v.optional(v.string()),
+          }),
+        ),
+      ),
       gallery: v.optional(v.array(v.string())),
     }),
-    digitalCard: v.optional(v.object({
-      backgroundColor: v.string(),
-      textColor: v.string(),
-      layout: v.union(v.literal("classic"), v.literal("split"), v.literal("centered")),
-      showQrCode: v.boolean(),
-      theme: v.union(v.literal("light"), v.literal("dark"), v.literal("glass"), v.literal("carbon")),
-      cardBackgroundType: v.union(v.literal("solid"), v.literal("gradient")),
-      cardGradientStart: v.optional(v.string()),
-      cardGradientEnd: v.optional(v.string()),
-      positions: v.optional(v.object({
-        header: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
-        qr: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
-        bio: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
-        contacts: v.optional(v.object({ x: v.number(), y: v.number(), width: v.optional(v.number()), scale: v.optional(v.number()) })),
-      })),
-    })),
+    digitalCard: v.optional(
+      v.object({
+        backgroundColor: v.string(),
+        textColor: v.string(),
+        layout: v.union(v.literal("classic"), v.literal("split"), v.literal("centered")),
+        showQrCode: v.boolean(),
+        theme: v.union(
+          v.literal("light"),
+          v.literal("dark"),
+          v.literal("glass"),
+          v.literal("carbon"),
+        ),
+        cardBackgroundType: v.union(v.literal("solid"), v.literal("gradient")),
+        cardGradientStart: v.optional(v.string()),
+        cardGradientEnd: v.optional(v.string()),
+        positions: v.optional(
+          v.object({
+            header: v.optional(
+              v.object({
+                x: v.number(),
+                y: v.number(),
+                width: v.optional(v.number()),
+                scale: v.optional(v.number()),
+              }),
+            ),
+            qr: v.optional(
+              v.object({
+                x: v.number(),
+                y: v.number(),
+                width: v.optional(v.number()),
+                scale: v.optional(v.number()),
+              }),
+            ),
+            bio: v.optional(
+              v.object({
+                x: v.number(),
+                y: v.number(),
+                width: v.optional(v.number()),
+                scale: v.optional(v.number()),
+              }),
+            ),
+            contacts: v.optional(
+              v.object({
+                x: v.number(),
+                y: v.number(),
+                width: v.optional(v.number()),
+                scale: v.optional(v.number()),
+              }),
+            ),
+          }),
+        ),
+      }),
+    ),
     layoutConfig: v.object({
       themeId: v.string(),
       colorPalette: v.object({
@@ -126,37 +189,54 @@ export default defineSchema({
     }),
     featuredProperties: v.array(v.id("properties")),
     featuredProjects: v.optional(v.array(v.string())),
-    products: v.optional(v.array(v.object({
-      title: v.string(),
-      description: v.string(),
-      price: v.optional(v.number()),
-      image: v.optional(v.string()),
-      link: v.optional(v.string()),
-    }))),
-    services: v.optional(v.array(v.object({
-      title: v.string(),
-      description: v.string(),
-      price: v.optional(v.number()),
-      image: v.optional(v.string()),
-    }))),
-    propertyListings: v.optional(v.array(v.object({
-      title: v.string(),
-      description: v.optional(v.string()),
-      price: v.optional(v.string()),
-      location: v.optional(v.string()),
-      image: v.optional(v.string()),
-      status: v.optional(v.string()),
-      link: v.optional(v.string()),
-    }))),
-    inlineProjects: v.optional(v.array(v.object({
-      title: v.string(),
-      description: v.optional(v.string()),
-      category: v.optional(v.string()),
-      image: v.optional(v.string()),
-      link: v.optional(v.string()),
-    }))),
+    products: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          description: v.string(),
+          price: v.optional(v.number()),
+          image: v.optional(v.string()),
+          link: v.optional(v.string()),
+        }),
+      ),
+    ),
+    services: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          description: v.string(),
+          price: v.optional(v.number()),
+          image: v.optional(v.string()),
+        }),
+      ),
+    ),
+    propertyListings: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          description: v.optional(v.string()),
+          price: v.optional(v.string()),
+          location: v.optional(v.string()),
+          image: v.optional(v.string()),
+          status: v.optional(v.string()),
+          link: v.optional(v.string()),
+        }),
+      ),
+    ),
+    inlineProjects: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          description: v.optional(v.string()),
+          category: v.optional(v.string()),
+          image: v.optional(v.string()),
+          link: v.optional(v.string()),
+        }),
+      ),
+    ),
     showStorefront: v.optional(v.boolean()),
-  }).index("by_owner", ["ownerId"])
+  })
+    .index("by_owner", ["ownerId"])
     .index("by_slug", ["slug"]),
 
   properties: defineTable({
@@ -170,7 +250,7 @@ export default defineSchema({
       v.literal("house-lot"),
       v.literal("townhouse"),
       v.literal("condo"),
-      v.literal("commercial")
+      v.literal("commercial"),
     ),
     images: v.array(v.string()),
     floorArea: v.optional(v.number()),
@@ -197,7 +277,7 @@ export default defineSchema({
       v.literal("development"),
       v.literal("ui-ux"),
       v.literal("real-estate"),
-      v.literal("other")
+      v.literal("other"),
     ),
     tags: v.array(v.string()),
     images: v.array(v.string()),
@@ -228,7 +308,9 @@ export default defineSchema({
     link: v.optional(v.string()),
     data: v.optional(v.any()),
     createdAt: v.number(),
-  }).index("by_user", ["userId"]).index("by_user_read", ["userId", "read"]),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_read", ["userId", "read"]),
 
   auditLogs: defineTable({
     userId: v.id("users"),
@@ -239,7 +321,8 @@ export default defineSchema({
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
     timestamp: v.number(),
-  }).index("by_user", ["userId"])
+  })
+    .index("by_user", ["userId"])
     .index("by_resource", ["resourceType", "resourceId"])
     .index("by_timestamp", ["timestamp"]),
 
@@ -250,7 +333,8 @@ export default defineSchema({
     grantedAt: v.number(),
     revokedAt: v.optional(v.number()),
     reason: v.optional(v.string()),
-  }).index("by_user", ["userId"])
+  })
+    .index("by_user", ["userId"])
     .index("by_active", ["revokedAt"]),
 
   productCategories: defineTable({
@@ -261,7 +345,8 @@ export default defineSchema({
     image: v.optional(v.string()),
     isActive: v.boolean(),
     sortOrder: v.number(),
-  }).index("by_slug", ["slug"])
+  })
+    .index("by_slug", ["slug"])
     .index("by_active", ["isActive"])
     .index("by_parent", ["parentId"]),
 
@@ -284,15 +369,18 @@ export default defineSchema({
     images: v.array(v.string()),
     primaryImageIndex: v.number(),
     weight: v.optional(v.number()),
-    dimensions: v.optional(v.object({
-      length: v.number(),
-      width: v.number(),
-      height: v.number(),
-      unit: v.union(v.literal("cm"), v.literal("in")),
-    })),
+    dimensions: v.optional(
+      v.object({
+        length: v.number(),
+        width: v.number(),
+        height: v.number(),
+        unit: v.union(v.literal("cm"), v.literal("in")),
+      }),
+    ),
     shippingRequired: v.boolean(),
     metadata: v.optional(v.any()),
-  }).index("by_slug", ["slug"])
+  })
+    .index("by_slug", ["slug"])
     .index("by_category", ["categoryId"])
     .index("by_published", ["isPublished"])
     .index("by_sku", ["sku"]),
@@ -303,26 +391,32 @@ export default defineSchema({
     sku: v.string(),
     price: v.number(),
     inventory: v.number(),
-    options: v.array(v.object({
-      optionName: v.string(),
-      optionValue: v.string(),
-    })),
+    options: v.array(
+      v.object({
+        optionName: v.string(),
+        optionValue: v.string(),
+      }),
+    ),
     image: v.optional(v.string()),
-  }).index("by_product", ["productId"])
+  })
+    .index("by_product", ["productId"])
     .index("by_sku", ["sku"]),
 
   carts: defineTable({
     userId: v.optional(v.id("users")),
     guestId: v.optional(v.string()),
-    items: v.array(v.object({
-      productId: v.id("products"),
-      variationId: v.optional(v.id("productVariations")),
-      quantity: v.number(),
-      priceAtAdd: v.number(),
-    })),
+    items: v.array(
+      v.object({
+        productId: v.id("products"),
+        variationId: v.optional(v.id("productVariations")),
+        quantity: v.number(),
+        priceAtAdd: v.number(),
+      }),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_user", ["userId"])
+  })
+    .index("by_user", ["userId"])
     .index("by_guest", ["guestId"]),
 
   orders: defineTable({
@@ -345,17 +439,19 @@ export default defineSchema({
       v.literal("shipped"),
       v.literal("delivered"),
       v.literal("cancelled"),
-      v.literal("refunded")
+      v.literal("refunded"),
     ),
-    items: v.array(v.object({
-      productId: v.id("products"),
-      productName: v.string(),
-      variationId: v.optional(v.id("productVariations")),
-      variationName: v.optional(v.string()),
-      quantity: v.number(),
-      unitPrice: v.number(),
-      total: v.number(),
-    })),
+    items: v.array(
+      v.object({
+        productId: v.id("products"),
+        productName: v.string(),
+        variationId: v.optional(v.id("productVariations")),
+        variationName: v.optional(v.string()),
+        quantity: v.number(),
+        unitPrice: v.number(),
+        total: v.number(),
+      }),
+    ),
     subtotal: v.number(),
     tax: v.number(),
     shipping: v.number(),
@@ -364,7 +460,12 @@ export default defineSchema({
     total: v.number(),
     currency: v.string(),
     paymentProvider: v.union(v.literal("payrex"), v.literal("stripe"), v.literal("paypal")),
-    paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed"), v.literal("refunded")),
+    paymentStatus: v.union(
+      v.literal("pending"),
+      v.literal("paid"),
+      v.literal("failed"),
+      v.literal("refunded"),
+    ),
     paymentIntentId: v.optional(v.string()),
     payrexCheckoutId: v.optional(v.string()),
     paidAt: v.optional(v.number()),
@@ -378,19 +479,22 @@ export default defineSchema({
       country: v.string(),
       phone: v.string(),
     }),
-    billingAddress: v.optional(v.object({
-      fullName: v.string(),
-      addressLine1: v.string(),
-      addressLine2: v.optional(v.string()),
-      city: v.string(),
-      state: v.optional(v.string()),
-      postalCode: v.string(),
-      country: v.string(),
-    })),
+    billingAddress: v.optional(
+      v.object({
+        fullName: v.string(),
+        addressLine1: v.string(),
+        addressLine2: v.optional(v.string()),
+        city: v.string(),
+        state: v.optional(v.string()),
+        postalCode: v.string(),
+        country: v.string(),
+      }),
+    ),
     notes: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_orderNumber", ["orderNumber"])
+  })
+    .index("by_orderNumber", ["orderNumber"])
     .index("by_user", ["userId"])
     .index("by_status", ["status"])
     .index("by_paymentStatus", ["paymentStatus"])
@@ -409,7 +513,8 @@ export default defineSchema({
     validUntil: v.optional(v.number()),
     isActive: v.boolean(),
     applicableProducts: v.optional(v.array(v.id("products"))),
-  }).index("by_code", ["code"])
+  })
+    .index("by_code", ["code"])
     .index("by_active", ["isActive"]),
 
   settings: defineTable({
@@ -441,13 +546,10 @@ export default defineSchema({
     teamId: v.id("teams"),
     email: v.string(),
     invitedBy: v.id("users"),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("accepted"),
-      v.literal("revoked")
-    ),
+    status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("revoked")),
     createdAt: v.number(),
-  }).index("by_team", ["teamId"])
+  })
+    .index("by_team", ["teamId"])
     .index("by_email", ["email"]),
 
   subscriptionInvoices: defineTable({
@@ -457,15 +559,12 @@ export default defineSchema({
     periodDays: v.number(),
     payrexCheckoutId: v.optional(v.string()),
     paymentIntentId: v.optional(v.string()),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("paid"),
-      v.literal("expired")
-    ),
+    status: v.union(v.literal("pending"), v.literal("paid"), v.literal("expired")),
     periodStart: v.optional(v.number()),
     periodEnd: v.optional(v.number()),
     createdAt: v.number(),
-  }).index("by_user", ["userId"])
+  })
+    .index("by_user", ["userId"])
     .index("by_checkoutId", ["payrexCheckoutId"])
     .index("by_status", ["status"])
     .index("by_paymentIntentId", ["paymentIntentId"]),

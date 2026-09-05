@@ -19,12 +19,12 @@ test("profilePath falls back to /p/<id> when slug is an empty string", () => {
 
 test("profileUrl joins an origin with the resolved path", () => {
   expect(profileUrl("https://connecta.example", { slug: "jane-doe", _id: "xyz" })).toBe(
-    "https://connecta.example/jane-doe"
+    "https://connecta.example/jane-doe",
   );
 });
 
 test("profileUrl strips a trailing slash from the origin before joining", () => {
   expect(profileUrl("https://connecta.example/", { slug: undefined, _id: "xyz" })).toBe(
-    "https://connecta.example/p/xyz"
+    "https://connecta.example/p/xyz",
   );
 });

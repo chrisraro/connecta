@@ -117,12 +117,12 @@ describe("syncOfflineLeads", () => {
     expect(first.synced).toBe(0);
     expect(first.failed).toBe(1);
     // Still queued locally — not lost.
-    expect(getOfflineLeads().filter(l => !l.synced)).toHaveLength(1);
+    expect(getOfflineLeads().filter((l) => !l.synced)).toHaveLength(1);
 
     const second = await syncOfflineLeads(createLeadFn, ownerId);
     expect(second.synced).toBe(1);
     expect(second.failed).toBe(0);
-    expect(getOfflineLeads().filter(l => !l.synced)).toHaveLength(0);
+    expect(getOfflineLeads().filter((l) => !l.synced)).toHaveLength(0);
   });
 
   test("passes the same visitorId used for the browser's rate-limit bucket on every call in the batch", async () => {

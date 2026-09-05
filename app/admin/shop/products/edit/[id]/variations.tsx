@@ -16,12 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Plus, Trash2, Pencil, X } from "lucide-react";
 import { formatPHP } from "@/lib/payment";
 
@@ -97,9 +92,7 @@ export function ProductVariationsManager({
       alert("Name and SKU are required");
       return;
     }
-    const cleanOptions = form.options.filter(
-      (o) => o.optionName.trim() && o.optionValue.trim()
-    );
+    const cleanOptions = form.options.filter((o) => o.optionName.trim() && o.optionValue.trim());
     setSaving(true);
     try {
       if (editingId) {
@@ -236,9 +229,7 @@ export function ProductVariationsManager({
                   type="number"
                   min="0"
                   value={form.inventory}
-                  onChange={(e) =>
-                    setForm({ ...form, inventory: parseInt(e.target.value) || 0 })
-                  }
+                  onChange={(e) => setForm({ ...form, inventory: parseInt(e.target.value) || 0 })}
                 />
               </div>
             </div>
@@ -249,9 +240,7 @@ export function ProductVariationsManager({
                 step="0.01"
                 min="0"
                 value={form.pricePesos}
-                onChange={(e) =>
-                  setForm({ ...form, pricePesos: parseFloat(e.target.value) || 0 })
-                }
+                onChange={(e) => setForm({ ...form, pricePesos: parseFloat(e.target.value) || 0 })}
               />
             </div>
 
@@ -292,7 +281,9 @@ export function ProductVariationsManager({
               </Button>
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
+                  </>
                 ) : editingId ? (
                   "Save Changes"
                 ) : (

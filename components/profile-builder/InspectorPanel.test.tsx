@@ -13,7 +13,7 @@ describe("InspectorPanel", () => {
     const { container } = render(
       <InspectorPanel isOpen={false} title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -22,7 +22,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     const panel = screen.getByRole("dialog");
     // The old SectionEditor used `fixed inset-0`, which is exactly what hid the
@@ -34,7 +34,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     expect(screen.getByRole("dialog", { name: "Experience" })).toBeInTheDocument();
   });
@@ -45,7 +45,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={onClose}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     await user.click(screen.getByRole("button", { name: /close/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -57,7 +57,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={onClose}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -67,7 +67,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={() => {}}>
         <p>the editor body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     expect(screen.getByText("the editor body")).toBeInTheDocument();
   });
@@ -76,17 +76,17 @@ describe("InspectorPanel", () => {
     const { rerender } = render(
       <InspectorPanel isOpen={false} title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
 
     rerender(
       <InspectorPanel isOpen title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith(
-      expect.objectContaining({ block: "nearest" })
+      expect.objectContaining({ block: "nearest" }),
     );
   });
 
@@ -97,12 +97,12 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
 
     expect(matchMedia).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)");
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith(
-      expect.objectContaining({ behavior: "auto" })
+      expect.objectContaining({ behavior: "auto" }),
     );
 
     vi.unstubAllGlobals();

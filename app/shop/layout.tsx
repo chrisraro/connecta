@@ -9,11 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { CONNECTA } from "@/lib/brand";
 
-export default function ShopLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ShopLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { itemCount } = useCart();
 
@@ -51,7 +47,10 @@ export default function ShopLayout({
           <div className="flex items-center justify-between h-16">
             {/* Logo & Navigation */}
             <div className="flex items-center gap-6">
-              <Link href="/" className="flex min-h-11 items-center gap-2 font-bold text-xl tracking-tight">
+              <Link
+                href="/"
+                className="flex min-h-11 items-center gap-2 font-bold text-xl tracking-tight"
+              >
                 {CONNECTA.name}
               </Link>
 
@@ -74,12 +73,24 @@ export default function ShopLayout({
             {/* Account + Cart */}
             <div className="flex items-center gap-1">
               <ThemeToggle />
-              <Button variant="ghost" size="icon" className="size-11" aria-label="Your account" asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-11"
+                aria-label="Your account"
+                asChild
+              >
                 <Link href="/dashboard">
                   <User className="w-5 h-5" aria-hidden="true" />
                 </Link>
               </Button>
-              <Button variant="ghost" size="icon" className="relative size-11" aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`} asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative size-11"
+                aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+                asChild
+              >
                 <Link href="/shop/cart">
                   <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                   {itemCount > 0 && (
@@ -101,11 +112,18 @@ export default function ShopLayout({
             <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
               {breadcrumbs.map((crumb, index) => (
                 <div key={crumb.href} className="flex items-center gap-2">
-                  {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
+                  {index > 0 && (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                  )}
                   {index === breadcrumbs.length - 1 ? (
-                    <span className="text-foreground font-medium" aria-current="page">{crumb.label}</span>
+                    <span className="text-foreground font-medium" aria-current="page">
+                      {crumb.label}
+                    </span>
                   ) : (
-                    <Link href={crumb.href} className="inline-flex min-h-11 min-w-11 items-center text-muted-foreground hover:text-foreground transition-colors">
+                    <Link
+                      href={crumb.href}
+                      className="inline-flex min-h-11 min-w-11 items-center text-muted-foreground hover:text-foreground transition-colors"
+                    >
                       {crumb.label}
                     </Link>
                   )}
@@ -120,17 +138,19 @@ export default function ShopLayout({
       <div className="border-b border-border bg-card/40">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground sm:px-6 lg:px-8">
           <span>GCash, Maya, Card &amp; QR Ph accepted</span>
-          <span aria-hidden="true" className="hidden sm:inline">&bull;</span>
+          <span aria-hidden="true" className="hidden sm:inline">
+            &bull;
+          </span>
           <span>Ships nationwide PH</span>
-          <span aria-hidden="true" className="hidden sm:inline">&bull;</span>
+          <span aria-hidden="true" className="hidden sm:inline">
+            &bull;
+          </span>
           <span>Secure checkout via PayRex</span>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</main>
 
       {/* Footer */}
       <footer className="border-t border-border mt-16">
@@ -145,10 +165,16 @@ export default function ShopLayout({
             <div>
               <h3 className="font-bold mb-2">Shop</h3>
               <div className="-my-1">
-                <Link href="/shop" className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  href="/shop"
+                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
                   All Products
                 </Link>
-                <Link href="/shop/cart" className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  href="/shop/cart"
+                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
                   Shopping Cart
                 </Link>
               </div>
@@ -156,10 +182,16 @@ export default function ShopLayout({
             <div>
               <h3 className="font-bold mb-2">Support</h3>
               <div className="-my-1">
-                <Link href="/" className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  href="/"
+                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
                   Contact Us
                 </Link>
-                <Link href="/" className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  href="/"
+                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
                   Shipping Info
                 </Link>
               </div>

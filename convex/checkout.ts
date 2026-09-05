@@ -1,11 +1,5 @@
 import { v } from "convex/values";
-import {
-  query,
-  action,
-  internalMutation,
-  internalQuery,
-  QueryCtx,
-} from "./_generated/server";
+import { query, action, internalMutation, internalQuery, QueryCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { getAuthedUser, isActiveAdmin } from "./authz";
@@ -17,11 +11,7 @@ import { checkRateLimit } from "./rateLimit";
  * Shared between the public `validateDiscount` query and `createOrder` so the
  * server stays the single source of truth. Throws on invalid/expired codes.
  */
-async function resolveDiscount(
-  ctx: QueryCtx,
-  code: string,
-  subtotal: number
-): Promise<number> {
+async function resolveDiscount(ctx: QueryCtx, code: string, subtotal: number): Promise<number> {
   const discount = await ctx.db
     .query("discounts")
     .withIndex("by_code", (q) => q.eq("code", code))
@@ -41,9 +31,7 @@ async function resolveDiscount(
   }
 
   if (discount.minOrderValue && subtotal < discount.minOrderValue) {
-    throw new Error(
-      `Minimum order value is PHP ${(discount.minOrderValue / 100).toFixed(2)}`
-    );
+    throw new Error(`Minimum order value is PHP ${(discount.minOrderValue / 100).toFixed(2)}`);
   }
 
   let discountAmount: number;
@@ -228,15 +216,17 @@ const createOrderArgs = {
     country: v.string(),
     phone: v.string(),
   }),
-  billingAddress: v.optional(v.object({
-    fullName: v.string(),
-    addressLine1: v.string(),
-    addressLine2: v.optional(v.string()),
-    city: v.string(),
-    state: v.optional(v.string()),
-    postalCode: v.string(),
-    country: v.string(),
-  })),
+  billingAddress: v.optional(
+    v.object({
+      fullName: v.string(),
+      addressLine1: v.string(),
+      addressLine2: v.optional(v.string()),
+      city: v.string(),
+      state: v.optional(v.string()),
+      postalCode: v.string(),
+      country: v.string(),
+    }),
+  ),
   paymentProvider: v.literal("payrex"),
   discountCode: v.optional(v.string()),
   notes: v.optional(v.string()),
@@ -317,10 +307,7 @@ export const performCreateOrder = internalMutation({
       throw new Error("Cart is empty");
     }
 
-    const cartSubtotal = cart.items.reduce(
-      (sum, item) => sum + item.priceAtAdd * item.quantity,
-      0
-    );
+    const cartSubtotal = cart.items.reduce((sum, item) => sum + item.priceAtAdd * item.quantity, 0);
 
     let discountAmount = 0;
     if (args.discountCode) {
@@ -370,7 +357,7 @@ export const performCreateOrder = internalMutation({
           unitPrice,
           total,
         };
-      })
+      }),
     );
 
     const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0);
@@ -438,7 +425,7 @@ export const createOrder = action({
   args: createOrderArgs,
   handler: async (
     ctx,
-    args
+    args,
   ): Promise<{
     orderId: Id<"orders">;
     orderNumber: string;
@@ -582,28 +569,20 @@ export const internalConfirmOrderPayment = internalMutation({
   args: {
     orderNumber: v.optional(v.string()),
     paymentIntentId: v.optional(v.string()),
-    paymentStatus: v.union(
-      v.literal("paid"),
-      v.literal("failed"),
-      v.literal("refunded")
-    ),
+    paymentStatus: v.union(v.literal("paid"), v.literal("failed"), v.literal("refunded")),
   },
   handler: async (ctx, args) => {
     let order: Doc<"orders"> | null = null;
     if (args.orderNumber) {
       order = await ctx.db
         .query("orders")
-        .withIndex("by_orderNumber", (q) =>
-          q.eq("orderNumber", args.orderNumber!)
-        )
+        .withIndex("by_orderNumber", (q) => q.eq("orderNumber", args.orderNumber!))
         .first();
     }
     if (!order && args.paymentIntentId) {
       order = await ctx.db
         .query("orders")
-        .withIndex("by_paymentIntentId", (q) =>
-          q.eq("paymentIntentId", args.paymentIntentId)
-        )
+        .withIndex("by_paymentIntentId", (q) => q.eq("paymentIntentId", args.paymentIntentId))
         .first();
     }
 
@@ -688,8 +667,7 @@ export const internalConfirmOrderPayment = internalMutation({
       const discountNow = Date.now();
       if (
         discount &&
-        ((discount.usageLimit !== undefined &&
-          discount.usedCount >= discount.usageLimit) ||
+        ((discount.usageLimit !== undefined && discount.usedCount >= discount.usageLimit) ||
           discount.isActive === false ||
           discountNow < discount.validFrom ||
           (discount.validUntil && discountNow > discount.validUntil))

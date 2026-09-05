@@ -39,9 +39,7 @@ export type PlanPricing = { pro: number; business: number };
 
 // Read effective plan pricing (centavos), merging stored overrides with the
 // defaults from convex/plans.ts. Admin-editable via updatePlanPricing.
-export async function readPlanPricing(
-  ctx: QueryCtx | MutationCtx
-): Promise<PlanPricing> {
+export async function readPlanPricing(ctx: QueryCtx | MutationCtx): Promise<PlanPricing> {
   const row = await ctx.db
     .query("settings")
     .withIndex("by_key", (q) => q.eq("key", PLAN_PRICING_KEY))
@@ -51,10 +49,7 @@ export async function readPlanPricing(
   }
   const stored = row.value as Partial<PlanPricing>;
   return {
-    pro:
-      typeof stored.pro === "number" && stored.pro >= 0
-        ? stored.pro
-        : DEFAULT_PLAN_PRICING.pro,
+    pro: typeof stored.pro === "number" && stored.pro >= 0 ? stored.pro : DEFAULT_PLAN_PRICING.pro,
     business:
       typeof stored.business === "number" && stored.business >= 0
         ? stored.business
@@ -181,12 +176,7 @@ export const findOrCreatePendingInvoice = internalMutation({
     const existing = await ctx.db
       .query("subscriptionInvoices")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("plan"), args.plan),
-          q.eq(q.field("status"), "pending")
-        )
-      )
+      .filter((q) => q.and(q.eq(q.field("plan"), args.plan), q.eq(q.field("status"), "pending")))
       .first();
     if (existing) {
       return existing._id;
@@ -236,19 +226,20 @@ export const createUpgradeCheckout = action({
     const me = await ctx.runQuery(internal.billing.getMeForCheckout, {});
     if (!me) throw new Error("Unauthorized: sign in to upgrade");
 
-    const { user, pricing } = await ctx.runQuery(
-      internal.billing.getInvoiceContext,
-      { userId: me.userId, plan: args.plan }
-    );
+    const { user, pricing } = await ctx.runQuery(internal.billing.getInvoiceContext, {
+      userId: me.userId,
+      plan: args.plan,
+    });
     if (!user) throw new Error("User not found");
 
     const amount = args.plan === "pro" ? pricing.pro : pricing.business;
     const planName = PLAN_LIMITS[args.plan].name;
 
-    const invoiceId = await ctx.runMutation(
-      internal.billing.findOrCreatePendingInvoice,
-      { userId: me.userId, plan: args.plan, amountCentavos: amount }
-    );
+    const invoiceId = await ctx.runMutation(internal.billing.findOrCreatePendingInvoice, {
+      userId: me.userId,
+      plan: args.plan,
+      amountCentavos: amount,
+    });
 
     const pairs: Array<[string, string]> = [
       ["currency", "PHP"],
@@ -279,9 +270,7 @@ export const createUpgradeCheckout = action({
     });
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(
-        `PayRex checkout session creation failed (${res.status}): ${errText}`
-      );
+      throw new Error(`PayRex checkout session creation failed (${res.status}): ${errText}`);
     }
     const session = (await res.json()) as {
       id: string;
@@ -332,17 +321,13 @@ export const internalActivateInvoice = internalMutation({
     if (!invoice && args.payrexCheckoutId) {
       invoice = await ctx.db
         .query("subscriptionInvoices")
-        .withIndex("by_checkoutId", (q) =>
-          q.eq("payrexCheckoutId", args.payrexCheckoutId)
-        )
+        .withIndex("by_checkoutId", (q) => q.eq("payrexCheckoutId", args.payrexCheckoutId))
         .first();
     }
     if (!invoice && args.paymentIntentId) {
       invoice = await ctx.db
         .query("subscriptionInvoices")
-        .withIndex("by_paymentIntentId", (q) =>
-          q.eq("paymentIntentId", args.paymentIntentId)
-        )
+        .withIndex("by_paymentIntentId", (q) => q.eq("paymentIntentId", args.paymentIntentId))
         .first();
     }
     if (!invoice) {

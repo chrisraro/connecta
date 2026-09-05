@@ -39,7 +39,7 @@ test("generateUploadUrl rejects an unauthenticated caller", async () => {
   await seedNonAdminUser(t);
 
   await expect(
-    t.mutation(api.images.generateUploadUrl, { clerkId: "user_clerk" })
+    t.mutation(api.images.generateUploadUrl, { clerkId: "user_clerk" }),
   ).rejects.toThrow();
 });
 
@@ -49,7 +49,7 @@ test("generateUploadUrl rejects a caller whose clerkId doesn't match their token
   const asUser = t.withIdentity({ subject: "user_clerk" });
 
   await expect(
-    asUser.mutation(api.images.generateUploadUrl, { clerkId: "someone_else" })
+    asUser.mutation(api.images.generateUploadUrl, { clerkId: "someone_else" }),
   ).rejects.toThrow();
 });
 
@@ -153,11 +153,11 @@ test("validateUpload rejects an unauthenticated caller", async () => {
   const t = convexTest(schema);
   await seedNonAdminUser(t);
   const storageId = await t.run(async (ctx) =>
-    ctx.storage.store(new Blob(["fake-image-bytes"], { type: "image/jpeg" }))
+    ctx.storage.store(new Blob(["fake-image-bytes"], { type: "image/jpeg" })),
   );
 
   await expect(
-    t.action(api.images.validateUpload, { storageId, clerkId: "user_clerk" })
+    t.action(api.images.validateUpload, { storageId, clerkId: "user_clerk" }),
   ).rejects.toThrow();
 });
 
@@ -166,11 +166,11 @@ test("validateUpload rejects a caller whose clerkId doesn't match their token", 
   await seedNonAdminUser(t);
   const asUser = t.withIdentity({ subject: "user_clerk" });
   const storageId = await t.run(async (ctx) =>
-    ctx.storage.store(new Blob(["fake-image-bytes"], { type: "image/jpeg" }))
+    ctx.storage.store(new Blob(["fake-image-bytes"], { type: "image/jpeg" })),
   );
 
   await expect(
-    asUser.action(api.images.validateUpload, { storageId, clerkId: "someone_else" })
+    asUser.action(api.images.validateUpload, { storageId, clerkId: "someone_else" }),
   ).rejects.toThrow();
 });
 
@@ -183,7 +183,7 @@ test("validateUpload succeeds for a non-admin authenticated user validating thei
   await seedNonAdminUser(t);
   const asUser = t.withIdentity({ subject: "user_clerk" });
   const storageId = await t.run(async (ctx) =>
-    ctx.storage.store(new Blob(["fake-image-bytes"], { type: "image/jpeg" }))
+    ctx.storage.store(new Blob(["fake-image-bytes"], { type: "image/jpeg" })),
   );
 
   const result = await asUser.action(api.images.validateUpload, {
@@ -200,11 +200,11 @@ test("validateUpload rejects and deletes a file over the size limit", async () =
   const asUser = t.withIdentity({ subject: "user_clerk" });
   const oversized = new Uint8Array(6 * 1024 * 1024);
   const storageId = await t.run(async (ctx) =>
-    ctx.storage.store(new Blob([oversized], { type: "image/png" }))
+    ctx.storage.store(new Blob([oversized], { type: "image/png" })),
   );
 
   await expect(
-    asUser.action(api.images.validateUpload, { storageId, clerkId: "user_clerk" })
+    asUser.action(api.images.validateUpload, { storageId, clerkId: "user_clerk" }),
   ).rejects.toThrow(/size/i);
 
   // The oversized blob must not be left sitting in storage after rejection.
@@ -217,11 +217,11 @@ test("validateUpload rejects and deletes a disallowed content type", async () =>
   await seedNonAdminUser(t);
   const asUser = t.withIdentity({ subject: "user_clerk" });
   const storageId = await t.run(async (ctx) =>
-    ctx.storage.store(new Blob(["<svg></svg>"], { type: "image/svg+xml" }))
+    ctx.storage.store(new Blob(["<svg></svg>"], { type: "image/svg+xml" })),
   );
 
   await expect(
-    asUser.action(api.images.validateUpload, { storageId, clerkId: "user_clerk" })
+    asUser.action(api.images.validateUpload, { storageId, clerkId: "user_clerk" }),
   ).rejects.toThrow(/type/i);
 
   const stillThere = await t.run(async (ctx) => ctx.storage.get(storageId));
@@ -233,7 +233,7 @@ test("validateUpload accepts a small jpeg and leaves it in storage", async () =>
   await seedNonAdminUser(t);
   const asUser = t.withIdentity({ subject: "user_clerk" });
   const storageId = await t.run(async (ctx) =>
-    ctx.storage.store(new Blob(["small-jpeg-bytes"], { type: "image/jpeg" }))
+    ctx.storage.store(new Blob(["small-jpeg-bytes"], { type: "image/jpeg" })),
   );
 
   const result = await asUser.action(api.images.validateUpload, {
@@ -257,6 +257,6 @@ test("validateUpload rejects a storageId that doesn't exist in storage", async (
   });
 
   await expect(
-    asUser.action(api.images.validateUpload, { storageId, clerkId: "user_clerk" })
+    asUser.action(api.images.validateUpload, { storageId, clerkId: "user_clerk" }),
   ).rejects.toThrow(/not found/i);
 });

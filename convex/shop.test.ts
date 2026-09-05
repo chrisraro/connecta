@@ -51,7 +51,7 @@ test("getProducts excludes unpublished products (pre-existing by_published index
       images: [],
       primaryImageIndex: 0,
       shippingRequired: true,
-    })
+    }),
   );
   // Boundary: unpublished — must be excluded.
   await t.run(async (ctx) =>
@@ -69,7 +69,7 @@ test("getProducts excludes unpublished products (pre-existing by_published index
       images: [],
       primaryImageIndex: 0,
       shippingRequired: true,
-    })
+    }),
   );
 
   const result = await t.query(api.shop.getProducts, {});
@@ -131,7 +131,7 @@ test("addToCart rejects zero or negative quantity", async () => {
       guestId: "guest-1",
       productId,
       quantity: 0,
-    })
+    }),
   ).rejects.toThrow(/quantity/i);
 
   await expect(
@@ -139,7 +139,7 @@ test("addToCart rejects zero or negative quantity", async () => {
       guestId: "guest-1",
       productId,
       quantity: -3,
-    })
+    }),
   ).rejects.toThrow(/quantity/i);
 });
 
@@ -166,7 +166,7 @@ test("updateCartItem rejects a negative quantity (zero still means remove)", asy
       guestId: "guest-1",
       productId,
       quantity: -1,
-    })
+    }),
   ).rejects.toThrow(/quantity/i);
 });
 
@@ -190,9 +190,9 @@ test("getCart rejects a clerkId that does not match the authenticated caller", a
   });
   const asAttacker = t.withIdentity({ subject: "attacker_clerk_id" });
 
-  await expect(
-    asAttacker.query(api.shop.getCart, { clerkId: victimClerkId })
-  ).rejects.toThrow(/unauthorized/i);
+  await expect(asAttacker.query(api.shop.getCart, { clerkId: victimClerkId })).rejects.toThrow(
+    /unauthorized/i,
+  );
 });
 
 test("addToCart rejects a clerkId that does not match the authenticated caller", async () => {
@@ -215,7 +215,7 @@ test("addToCart rejects a clerkId that does not match the authenticated caller",
       clerkId: victimClerkId,
       productId,
       quantity: 1,
-    })
+    }),
   ).rejects.toThrow(/unauthorized/i);
 });
 

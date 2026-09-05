@@ -11,19 +11,19 @@ This file records exactly what has been migrated, what is deliberately frozen, a
 
 ## Done automatically
 
-| Surface | State |
-|---|---|
-| All user-facing copy | SigmaTap |
-| `lib/brand.ts` | `SIGMATAP` constant (was `HERALD`), `buildSigmaTap()` (was `buildHerald()`) |
-| Tagline | "Every tap counts." (was "Announced properly.", tied to the herald metaphor) |
-| `package.json` name | `sigmatap` (build banner reads `sigmatap@0.1.0`) |
-| README, `DEVELOPMENT_SETUP.md`, `PRODUCT.md`, `PRODUCTION_UPGRADE_NOTES.md` | rebranded |
-| `marketing/README.md`, `marketing/brand/brand-sheet.html`, `marketing/*.mjs` demo scripts | rebranded |
-| Brand mark | `components/brand/SigmaTapMark.tsx` (was `HeraldMark.tsx`) — a solid Greek sigma, deliberately with **no radiating NFC arcs** (see the design-rationale comment in `public/brand/sigmatap-mark.svg` for why that variant was rejected) |
-| Brand SVGs | `public/brand/sigmatap-mark.svg`, `public/brand/sigmatap-icon.svg` (the old `herald-*.svg` files are deleted) |
-| Raster assets | `app/favicon.ico`, `public/icon-192.png`, `public/icon-512.png`, `public/apple-touch-icon.png`, `public/og-fallback.png` — all regenerated from the new seal SVG via `scripts/generate-brand-assets.mjs` |
-| `public/manifest.json`, `app/layout.tsx` metadata | SigmaTap name/icons |
-| CSS identity tokens in `app/globals.css` | `--sigmatap-seal` / `-hover` / `-ink` / `-ink-soft` / `-paper` / `-surface` / `-line` (renamed from `--herald-*`; values unchanged) |
+| Surface                                                                                   | State                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| All user-facing copy                                                                      | SigmaTap                                                                                                                                                                                                                               |
+| `lib/brand.ts`                                                                            | `SIGMATAP` constant (was `HERALD`), `buildSigmaTap()` (was `buildHerald()`)                                                                                                                                                            |
+| Tagline                                                                                   | "Every tap counts." (was "Announced properly.", tied to the herald metaphor)                                                                                                                                                           |
+| `package.json` name                                                                       | `sigmatap` (build banner reads `sigmatap@0.1.0`)                                                                                                                                                                                       |
+| README, `DEVELOPMENT_SETUP.md`, `PRODUCT.md`, `PRODUCTION_UPGRADE_NOTES.md`               | rebranded                                                                                                                                                                                                                              |
+| `marketing/README.md`, `marketing/brand/brand-sheet.html`, `marketing/*.mjs` demo scripts | rebranded                                                                                                                                                                                                                              |
+| Brand mark                                                                                | `components/brand/SigmaTapMark.tsx` (was `HeraldMark.tsx`) — a solid Greek sigma, deliberately with **no radiating NFC arcs** (see the design-rationale comment in `public/brand/sigmatap-mark.svg` for why that variant was rejected) |
+| Brand SVGs                                                                                | `public/brand/sigmatap-mark.svg`, `public/brand/sigmatap-icon.svg` (the old `herald-*.svg` files are deleted)                                                                                                                          |
+| Raster assets                                                                             | `app/favicon.ico`, `public/icon-192.png`, `public/icon-512.png`, `public/apple-touch-icon.png`, `public/og-fallback.png` — all regenerated from the new seal SVG via `scripts/generate-brand-assets.mjs`                               |
+| `public/manifest.json`, `app/layout.tsx` metadata                                         | SigmaTap name/icons                                                                                                                                                                                                                    |
+| CSS identity tokens in `app/globals.css`                                                  | `--sigmatap-seal` / `-hover` / `-ink` / `-ink-soft` / `-paper` / `-surface` / `-line` (renamed from `--herald-*`; values unchanged)                                                                                                    |
 
 A guard test (`lib/brand.test.ts`) scans `.ts/.tsx/.css/.md/.json` for **any** of the three retired brand names (`tapfolio`, `herald`, `sigmatap`) and fails the build if any of them reappears. Its allowlist is empty — both literal freezes that used to justify entries there have been lifted; see below. A second test fails the build the day a new hardcoded `Connecta` string literal (case-sensitive, word-bounded: `\bConnecta\b`) appears in `app/**`, `components/**`, `convex/**`, or `lib/**` instead of going through the `CONNECTA` constant — the same mechanism that made each rename a one-line edit in `lib/brand.ts` instead of a repo-wide sweep.
 
@@ -68,8 +68,8 @@ Safe sequence:
 1. **Buy and attach a real custom domain first** (a `.ph` domain is planned but **not purchased yet** — `lib/brand.ts` does not hardcode one; it derives `CONNECTA.domain` from `NEXT_PUBLIC_APP_URL`, falling back to the honestly-inert `connecta.example` when unset). Cards should never have pointed at a `.vercel.app` URL — that was the original mistake.
 2. Add it as a Vercel domain and make it primary.
 3. **Keep `tapfolio-beta.vercel.app` alive permanently** as a redirect to the new domain. Do not delete it, do not rename the project out from under it, do not let it lapse. It is now legacy infrastructure serving physical hardware.
-4. Only then update `NEXT_PUBLIC_APP_URL` on Vercel to the new domain and redeploy, so *newly written* cards use it. There is no separate `PRODUCTION_DOMAIN` constant to update any more — the NFC host is derived from `NEXT_PUBLIC_APP_URL` at read time via `resolveNfcHost()` (`lib/nfcHost.ts`); see "Previously frozen literals" above. Old cards keep working via the redirect.
-5. Renaming the Vercel *project label* itself is cosmetic and safe **only after** a custom domain is primary.
+4. Only then update `NEXT_PUBLIC_APP_URL` on Vercel to the new domain and redeploy, so _newly written_ cards use it. There is no separate `PRODUCTION_DOMAIN` constant to update any more — the NFC host is derived from `NEXT_PUBLIC_APP_URL` at read time via `resolveNfcHost()` (`lib/nfcHost.ts`); see "Previously frozen literals" above. Old cards keep working via the redirect.
+5. Renaming the Vercel _project label_ itself is cosmetic and safe **only after** a custom domain is primary.
 
 Also update on Vercel: `NEXT_PUBLIC_APP_URL` (this drives `metadataBase`, OG image URLs, the NFC host, and `CONNECTA.supportEmail` — see `lib/brand.ts`).
 
@@ -113,7 +113,6 @@ The working directory is still `…/TapFolio/Tapfolio`. Renaming it is safe — 
 
 No domain is registered for this product yet — it currently runs on a `*.vercel.app` deployment. `lib/brand.ts` derives `CONNECTA.domain` and `CONNECTA.supportEmail` from `NEXT_PUBLIC_APP_URL` / `SUPPORT_EMAIL` rather than hardcoding a domain, so nothing breaks and no unowned domain is presented as live in customer-facing output (order-confirmation emails, OG image footers) before one is registered. When a real domain (`.ph` or otherwise) is purchased: set `NEXT_PUBLIC_APP_URL` to it, verify it as a Resend sending domain (or transactional email stays in sandbox mode and reaches nobody — see the `TODO(ops)` comment in `convex/email.ts`), and follow the Vercel sequence above before pointing new NFC cards at it.
 
-
 ---
 
 ## Third rename: Herald → SigmaTap (completed)
@@ -121,11 +120,11 @@ No domain is registered for this product yet — it currently runs on a `*.verce
 Unlike the first two passes, this one moved the actual infrastructure rather
 than only the strings.
 
-| Thing | Before | After |
-|---|---|---|
-| GitHub repo | `chrisraro/herald` | `chrisraro/sigmatap` |
-| Vercel project | `herald` | `sigmatap` |
-| Production URL | `herald-ph.vercel.app` | `sigmatap.vercel.app` |
+| Thing                 | Before                 | After                                         |
+| --------------------- | ---------------------- | --------------------------------------------- |
+| GitHub repo           | `chrisraro/herald`     | `chrisraro/sigmatap`                          |
+| Vercel project        | `herald`               | `sigmatap`                                    |
+| Production URL        | `herald-ph.vercel.app` | `sigmatap.vercel.app`                         |
 | `NEXT_PUBLIC_APP_URL` | `herald-ph.vercel.app` | `sigmatap.vercel.app` (Vercel **and** Convex) |
 
 ### Domain aliases — do not remove these
@@ -146,7 +145,7 @@ would point every shipped card at a dead URL.
 
 That reasoning expired without anyone noticing. By this rename the host was
 returning **404** and was not even an alias on the Vercel project — so the
-"safe" frozen value *was* the dead URL it existed to prevent, and every tag
+"safe" frozen value _was_ the dead URL it existed to prevent, and every tag
 written in that window pointed nowhere. The guard was faithfully protecting
 the rot.
 

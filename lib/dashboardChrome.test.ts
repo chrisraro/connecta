@@ -15,25 +15,25 @@ import { isFullScreenDashboardRoute } from "./dashboardChrome";
 // just visually hide) MobileBottomNav/DashboardFabs.
 
 test("suppresses the fixed mobile chrome on the onboarding route", () => {
-    expect(isFullScreenDashboardRoute("/dashboard/onboarding")).toBe(true);
+  expect(isFullScreenDashboardRoute("/dashboard/onboarding")).toBe(true);
 });
 
 test("keeps the fixed mobile chrome on every other dashboard route", () => {
-    expect(isFullScreenDashboardRoute("/dashboard")).toBe(false);
-    expect(isFullScreenDashboardRoute("/dashboard/profiles")).toBe(false);
-    expect(isFullScreenDashboardRoute("/dashboard/builder")).toBe(false);
-    expect(isFullScreenDashboardRoute("/dashboard/leads")).toBe(false);
-    expect(isFullScreenDashboardRoute("/dashboard/cards")).toBe(false);
-    expect(isFullScreenDashboardRoute("/dashboard/settings")).toBe(false);
+  expect(isFullScreenDashboardRoute("/dashboard")).toBe(false);
+  expect(isFullScreenDashboardRoute("/dashboard/profiles")).toBe(false);
+  expect(isFullScreenDashboardRoute("/dashboard/builder")).toBe(false);
+  expect(isFullScreenDashboardRoute("/dashboard/leads")).toBe(false);
+  expect(isFullScreenDashboardRoute("/dashboard/cards")).toBe(false);
+  expect(isFullScreenDashboardRoute("/dashboard/settings")).toBe(false);
 });
 
 test("does not false-positive on a route that merely starts with the same prefix", () => {
-    // Defends the exact-match choice: a hypothetical future
-    // /dashboard/onboarding-help route must not silently lose its nav too.
-    expect(isFullScreenDashboardRoute("/dashboard/onboarding-help")).toBe(false);
+  // Defends the exact-match choice: a hypothetical future
+  // /dashboard/onboarding-help route must not silently lose its nav too.
+  expect(isFullScreenDashboardRoute("/dashboard/onboarding-help")).toBe(false);
 });
 
 test("is false for a null/undefined pathname (usePathname before mount)", () => {
-    expect(isFullScreenDashboardRoute(null)).toBe(false);
-    expect(isFullScreenDashboardRoute(undefined)).toBe(false);
+  expect(isFullScreenDashboardRoute(null)).toBe(false);
+  expect(isFullScreenDashboardRoute(undefined)).toBe(false);
 });

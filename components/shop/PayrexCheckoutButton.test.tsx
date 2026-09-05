@@ -12,15 +12,13 @@ describe("PayrexCheckoutButton", () => {
         paymentsEnabled
         onCheckout={onCheckout}
         totalLabel="Pay ₱500.00 with PayRex"
-      />
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: /Pay ₱500.00 with PayRex/ }));
 
     expect(onCheckout).toHaveBeenCalledTimes(1);
-    expect(
-      screen.queryByText(/finalizing our payment provider/i)
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/finalizing our payment provider/i)).not.toBeInTheDocument();
   });
 
   // The core requirement this component exists for: the shop checkout must
@@ -37,18 +35,16 @@ describe("PayrexCheckoutButton", () => {
         paymentsEnabled={false}
         onCheckout={onCheckout}
         totalLabel="Pay ₱500.00 with PayRex"
-      />
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: /Pay ₱500.00 with PayRex/ }));
 
     expect(onCheckout).not.toHaveBeenCalled();
-    expect(
-      await screen.findByText(/finalizing our payment provider/i)
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/finalizing our payment provider/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /support/i })).toHaveAttribute(
       "href",
-      expect.stringContaining("mailto:")
+      expect.stringContaining("mailto:"),
     );
   });
 
@@ -61,7 +57,7 @@ describe("PayrexCheckoutButton", () => {
         onCheckout={onCheckout}
         totalLabel="Pay ₱500.00 with PayRex"
         disabled
-      />
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: /Pay ₱500.00 with PayRex/ }));
@@ -76,7 +72,7 @@ describe("PayrexCheckoutButton", () => {
         totalLabel="Pay ₱500.00 with PayRex"
         busyLabel="Redirecting to PayRex..."
         busy
-      />
+      />,
     );
 
     expect(screen.getByRole("button", { name: /Redirecting to PayRex/ })).toBeDisabled();

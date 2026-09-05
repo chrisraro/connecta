@@ -4,13 +4,23 @@ import { SectionShell } from "./SectionShell";
 
 type TechStack = NonNullable<ProfileInfo["techStack"]>;
 
-export function TechStackSection({ techStack, theme, index }: { techStack: TechStack; theme: TemplateTheme; index: number }) {
+export function TechStackSection({
+  techStack,
+  theme,
+  index,
+}: {
+  techStack: TechStack;
+  theme: TemplateTheme;
+  index: number;
+}) {
   return (
     <SectionShell theme={theme} index={index} heading="Tech Stack" surface>
       <div className="space-y-6">
         {techStack.map((stack, i) => (
           <div key={i}>
-            <h3 className="text-xs font-semibold mb-3" style={{ color: theme.colors.inkSoft }}>{stack.category}</h3>
+            <h3 className="text-xs font-semibold mb-3" style={{ color: theme.colors.inkSoft }}>
+              {stack.category}
+            </h3>
             <div className="flex flex-wrap gap-2">
               {stack.skills.map((skill, j) => (
                 <span

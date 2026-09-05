@@ -61,7 +61,7 @@ function launchOptions() {
     return { executablePath: PINNED_CHROMIUM };
   }
   console.warn(
-    `  (pinned Chromium not found at ${PINNED_CHROMIUM} — falling back to Playwright's default managed browser)`
+    `  (pinned Chromium not found at ${PINNED_CHROMIUM} — falling back to Playwright's default managed browser)`,
   );
   return {};
 }
@@ -104,9 +104,7 @@ async function clerkApi(secretKey, method, endpoint, body) {
   });
   const json = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new Error(
-      `Clerk API ${method} ${endpoint} -> ${res.status}: ${JSON.stringify(json)}`
-    );
+    throw new Error(`Clerk API ${method} ${endpoint} -> ${res.status}: ${JSON.stringify(json)}`);
   }
   return json;
 }
@@ -170,7 +168,7 @@ async function main() {
         const filePath = path.join(OUT_DIR, "hero.png");
         await hero.screenshot({ path: filePath });
         return describePng(filePath);
-      })
+      }),
     );
     await page.close();
   }
@@ -190,7 +188,7 @@ async function main() {
         const filePath = path.join(OUT_DIR, `profile-${templateId}.png`);
         await page.screenshot({ path: filePath, fullPage: true });
         return describePng(filePath);
-      })
+      }),
     );
     await page.close();
   }
@@ -198,9 +196,7 @@ async function main() {
   // ── 3. Dashboard + profile builder with inspector open (authenticated) ─
   const secretKey = env.CLERK_SECRET_KEY;
   if (!secretKey) {
-    console.log(
-      "- Dashboard / builder captures ... SKIPPED (no CLERK_SECRET_KEY in .env.local)"
-    );
+    console.log("- Dashboard / builder captures ... SKIPPED (no CLERK_SECRET_KEY in .env.local)");
   } else {
     let ticket;
     try {
@@ -227,38 +223,44 @@ async function main() {
         // dashboard/builder captures show real-looking content rather than
         // an empty new-profile shell. Same persona as the landing hero and
         // the /marketing-preview templates (components/marketing/demoProfile.ts).
-        results.push(await capture("Profile builder with inspector open (builder-inspector.png)", async () => {
-          await page.goto(BASE_URL + "/dashboard/builder", { waitUntil: "networkidle" });
-          // Exact match: the template-selector cards ("Editorial", ...) are
-          // also unlabeled <button>s whose accessible name would otherwise
-          // substring-match "Edit".
-          await page.getByRole("button", { name: "Edit", exact: true }).first().click();
-          const dialog = page.getByRole("dialog");
-          await dialog.getByPlaceholder("John Doe").fill("Nicole Bautista");
-          await dialog.getByPlaceholder("Software Engineer").fill("Interior Designer & Creative Director");
-          await dialog.getByPlaceholder("Company Name").fill("Nicole Bautista Design Co.");
-          await dialog.getByPlaceholder("+1 234 567 890").fill("+63 917 555 0142");
-          await dialog.getByPlaceholder("john@example.com").fill("hello@nicolebautistadesign.ph");
-          await page.waitForTimeout(200);
-          const filePath = path.join(OUT_DIR, "builder-inspector.png");
-          await page.screenshot({ path: filePath, fullPage: true });
+        results.push(
+          await capture("Profile builder with inspector open (builder-inspector.png)", async () => {
+            await page.goto(BASE_URL + "/dashboard/builder", { waitUntil: "networkidle" });
+            // Exact match: the template-selector cards ("Editorial", ...) are
+            // also unlabeled <button>s whose accessible name would otherwise
+            // substring-match "Edit".
+            await page.getByRole("button", { name: "Edit", exact: true }).first().click();
+            const dialog = page.getByRole("dialog");
+            await dialog.getByPlaceholder("John Doe").fill("Nicole Bautista");
+            await dialog
+              .getByPlaceholder("Software Engineer")
+              .fill("Interior Designer & Creative Director");
+            await dialog.getByPlaceholder("Company Name").fill("Nicole Bautista Design Co.");
+            await dialog.getByPlaceholder("+1 234 567 890").fill("+63 917 555 0142");
+            await dialog.getByPlaceholder("john@example.com").fill("hello@nicolebautistadesign.ph");
+            await page.waitForTimeout(200);
+            const filePath = path.join(OUT_DIR, "builder-inspector.png");
+            await page.screenshot({ path: filePath, fullPage: true });
 
-          // Persist so the dashboard capture right after shows a non-empty
-          // account instead of the zero-profiles empty state. Exact match:
-          // the live "Digital Card Preview" also renders its own "Save
-          // Contact" button, which otherwise substring-matches "Save".
-          await page.getByRole("button", { name: "Save", exact: true }).click();
-          await page.waitForTimeout(800);
-          return describePng(filePath);
-        }));
+            // Persist so the dashboard capture right after shows a non-empty
+            // account instead of the zero-profiles empty state. Exact match:
+            // the live "Digital Card Preview" also renders its own "Save
+            // Contact" button, which otherwise substring-matches "Save".
+            await page.getByRole("button", { name: "Save", exact: true }).click();
+            await page.waitForTimeout(800);
+            return describePng(filePath);
+          }),
+        );
 
-        results.push(await capture("Dashboard (dashboard.png)", async () => {
-          await page.goto(BASE_URL + "/dashboard", { waitUntil: "networkidle" });
-          await page.waitForTimeout(500);
-          const filePath = path.join(OUT_DIR, "dashboard.png");
-          await page.screenshot({ path: filePath, fullPage: true });
-          return describePng(filePath);
-        }));
+        results.push(
+          await capture("Dashboard (dashboard.png)", async () => {
+            await page.goto(BASE_URL + "/dashboard", { waitUntil: "networkidle" });
+            await page.waitForTimeout(500);
+            const filePath = path.join(OUT_DIR, "dashboard.png");
+            await page.screenshot({ path: filePath, fullPage: true });
+            return describePng(filePath);
+          }),
+        );
       }
 
       await page.close();

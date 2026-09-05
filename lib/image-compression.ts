@@ -1,30 +1,30 @@
 /**
  * Image Compression Utility
- * 
+ *
  * Compresses images client-side using Canvas API to meet 1MB file size limit
  * while maintaining visual quality. Uses intelligent quality reduction and
  * dimension scaling.
  */
 
 export interface CompressionOptions {
-  maxSizeMB?: number;        // Target max size in MB (default: 1)
+  maxSizeMB?: number; // Target max size in MB (default: 1)
   maxWidthOrHeight?: number; // Max dimension in px (default: 1920)
-  quality?: number;          // Initial JPEG quality 0-1 (default: 0.9)
+  quality?: number; // Initial JPEG quality 0-1 (default: 0.9)
   minWidthOrHeight?: number; // Min dimension to prevent over-scaling (default: 800)
 }
 
 export interface CompressionResult {
-  blob: Blob;                // Compressed image blob
-  originalSize: number;      // Original size in bytes
-  compressedSize: number;    // Compressed size in bytes
-  compressionRatio: number;  // Percentage reduction
-  width: number;             // Final width
-  height: number;            // Final height
+  blob: Blob; // Compressed image blob
+  originalSize: number; // Original size in bytes
+  compressedSize: number; // Compressed size in bytes
+  compressionRatio: number; // Percentage reduction
+  width: number; // Final width
+  height: number; // Final height
 }
 
 /**
  * Compress an image file to meet size requirements
- * 
+ *
  * Strategy:
  * 1. First try quality reduction only (preserves dimensions)
  * 2. If still too large, scale down dimensions progressively
@@ -32,14 +32,9 @@ export interface CompressionResult {
  */
 export async function compressImage(
   file: File,
-  options: CompressionOptions = {}
+  options: CompressionOptions = {},
 ): Promise<CompressionResult> {
-  const {
-    maxSizeMB = 1,
-    maxWidthOrHeight = 1920,
-    quality = 0.9,
-    minWidthOrHeight = 800,
-  } = options;
+  const { maxSizeMB = 1, maxWidthOrHeight = 1920, quality = 0.9, minWidthOrHeight = 800 } = options;
 
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
   const originalSize = file.size;
@@ -76,18 +71,18 @@ export async function compressImage(
   }
 
   // Create canvas
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
 
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (!ctx) {
-    throw new Error('Failed to get canvas context');
+    throw new Error("Failed to get canvas context");
   }
 
   // Draw image with high quality
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, 0, 0, width, height);
 
   // Compress with progressive quality reduction
@@ -97,7 +92,7 @@ export async function compressImage(
   const maxAttempts = 10;
 
   while (attempts < maxAttempts) {
-    compressedBlob = await canvasToBlob(canvas, 'image/jpeg', currentQuality);
+    compressedBlob = await canvasToBlob(canvas, "image/jpeg", currentQuality);
 
     if (compressedBlob.size <= maxSizeBytes) {
       break; // Target size achieved
@@ -130,13 +125,13 @@ export async function compressImage(
   }
 
   if (!compressedBlob) {
-    throw new Error('Failed to compress image');
+    throw new Error("Failed to compress image");
   }
 
   const compressedSize = compressedBlob.size;
   const compressionRatio = ((originalSize - compressedSize) / originalSize) * 100;
 
-  console.log('Image compression complete:', {
+  console.log("Image compression complete:", {
     original: `${(originalSize / 1024).toFixed(2)} KB`,
     compressed: `${(compressedSize / 1024).toFixed(2)} KB`,
     reduction: `${compressionRatio.toFixed(1)}%`,
@@ -176,22 +171,18 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 /**
  * Convert canvas to blob
  */
-function canvasToBlob(
-  canvas: HTMLCanvasElement,
-  type: string,
-  quality: number
-): Promise<Blob> {
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (blob) {
           resolve(blob);
         } else {
-          reject(new Error('Failed to create blob from canvas'));
+          reject(new Error("Failed to create blob from canvas"));
         }
       },
       type,
-      quality
+      quality,
     );
   });
 }

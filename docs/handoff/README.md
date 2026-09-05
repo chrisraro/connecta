@@ -25,21 +25,21 @@ in `lib/payments.ts:18`) pending a gateway decision — see `07-ROADMAP.md`.
 
 ## The seven docs
 
-| Doc | Answers |
-|---|---|
-| [`01-PRD.md`](./01-PRD.md) | What SigmaTap is, who it serves (the `profileType` personas), the plan tiers and exactly what each gates, the core value loop, and explicit non-goals |
-| [`02-TECH-STACK.md`](./02-TECH-STACK.md) | Exact dependency versions, what each package owns, the commands that work, and five "traps that cost real time on this codebase" (Convex deploys separately from Vercel, the Clerk JWT template, prod pointing at a dev Convex deployment, `Error` vs `ConvexError` redaction, mutation atomicity) |
-| [`03-DATABASE-SCHEMA.md`](./03-DATABASE-SCHEMA.md) | Every field/type/index in all 20 tables of `convex/schema.ts`, plus which fields are confirmed **dead** (don't build on them) and the frozen legacy `localStorage` key literals in `lib/storage-keys.ts` |
-| [`04-ERD.md`](./04-ERD.md) | A Mermaid `erDiagram` of all 20 tables and their real (and dead) foreign-key relationships |
-| [`05-USER-FLOWS.md`](./05-USER-FLOWS.md) | Six core flows traced through actual code (signup/admin split, onboarding, builder save, NFC card lifecycle, lead capture + offline queue, shop checkout) plus a sitemap of all 39 routes |
-| [`06-DESIGN-SYSTEM.md`](./06-DESIGN-SYSTEM.md) | The colour system (oklch, light/dark/system theming), typography (6 font families, per-template mechanism), spacing, the `--r-*`/`--e-*` scales, the component inventory, and three hard-won layout rules previously-shipped bugs taught this codebase |
-| [`07-ROADMAP.md`](./07-ROADMAP.md) | Honest current state: what shipped in the 21-task production-audit wave, what's explicitly deferred (the payment gateway), carried-but-unfixed findings, and outstanding actions only a human/dashboard can do |
+| Doc                                                | Answers                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`01-PRD.md`](./01-PRD.md)                         | What SigmaTap is, who it serves (the `profileType` personas), the plan tiers and exactly what each gates, the core value loop, and explicit non-goals                                                                                                                                              |
+| [`02-TECH-STACK.md`](./02-TECH-STACK.md)           | Exact dependency versions, what each package owns, the commands that work, and five "traps that cost real time on this codebase" (Convex deploys separately from Vercel, the Clerk JWT template, prod pointing at a dev Convex deployment, `Error` vs `ConvexError` redaction, mutation atomicity) |
+| [`03-DATABASE-SCHEMA.md`](./03-DATABASE-SCHEMA.md) | Every field/type/index in all 20 tables of `convex/schema.ts`, plus which fields are confirmed **dead** (don't build on them) and the frozen legacy `localStorage` key literals in `lib/storage-keys.ts`                                                                                           |
+| [`04-ERD.md`](./04-ERD.md)                         | A Mermaid `erDiagram` of all 20 tables and their real (and dead) foreign-key relationships                                                                                                                                                                                                         |
+| [`05-USER-FLOWS.md`](./05-USER-FLOWS.md)           | Six core flows traced through actual code (signup/admin split, onboarding, builder save, NFC card lifecycle, lead capture + offline queue, shop checkout) plus a sitemap of all 39 routes                                                                                                          |
+| [`06-DESIGN-SYSTEM.md`](./06-DESIGN-SYSTEM.md)     | The colour system (oklch, light/dark/system theming), typography (6 font families, per-template mechanism), spacing, the `--r-*`/`--e-*` scales, the component inventory, and three hard-won layout rules previously-shipped bugs taught this codebase                                             |
+| [`07-ROADMAP.md`](./07-ROADMAP.md)                 | Honest current state: what shipped in the 21-task production-audit wave, what's explicitly deferred (the payment gateway), carried-but-unfixed findings, and outstanding actions only a human/dashboard can do                                                                                     |
 
 The design artifacts also exist as **live Figma files**:
 
-| What | Link |
-|---|---|
-| Diagrams — ERD + 3 user flows (FigJam) | https://www.figma.com/board/CEvkzFpxmc8WELLBQMH2ZN |
+| What                                                   | Link                                                |
+| ------------------------------------------------------ | --------------------------------------------------- |
+| Diagrams — ERD + 3 user flows (FigJam)                 | https://www.figma.com/board/CEvkzFpxmc8WELLBQMH2ZN  |
 | Design system — 113 variables, 17 styles, 5 components | https://www.figma.com/design/jIGbCViAJZt2FFye1KkF7C |
 
 The offline exports under `docs/handoff/figma/` remain the version-controlled
@@ -178,11 +178,11 @@ it. Adding error tracking is an open item in `07-ROADMAP.md`.
 **No automated access provisioning.** Three dashboards gate real work, and access is granted by
 hand by the project owner:
 
-| Dashboard | Needed for |
-| --- | --- |
-| Convex | env vars, live data, function logs, deploy keys |
-| Clerk | the `convex` JWT template, session settings, user records |
-| Vercel | env vars, deployments, domains, firewall rules |
+| Dashboard | Needed for                                                |
+| --------- | --------------------------------------------------------- |
+| Convex    | env vars, live data, function logs, deploy keys           |
+| Clerk     | the `convex` JWT template, session settings, user records |
+| Vercel    | env vars, deployments, domains, firewall rules            |
 
 Several documented steps (creating the Clerk JWT template, setting Convex env vars, the WAF rule
 for `/api/health`) can ONLY be done in those dashboards — there is no API or CLI path. If you have

@@ -102,10 +102,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
  * UI-only; convex/profiles.ts's `createProfile` is the actual source of
  * truth and re-enforces the same rule server-side on save.
  */
-export function isTemplateLocked(
-  templateId: string,
-  allowedTemplateIds: string[] | null
-): boolean {
+export function isTemplateLocked(templateId: string, allowedTemplateIds: string[] | null): boolean {
   return allowedTemplateIds !== null && !allowedTemplateIds.includes(templateId);
 }
 

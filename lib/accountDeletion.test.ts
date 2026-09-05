@@ -41,7 +41,7 @@ describe("decideDeletionOutcome", () => {
 
     expect(outcome.showWarningToast).toBe(true);
     expect(outcome.toastMessage).toBe(
-      "Your data was deleted. Identity removal is pending configuration — contact support if this persists."
+      "Your data was deleted. Identity removal is pending configuration — contact support if this persists.",
     );
     // Must be long enough to actually read, not a 1-second flash before
     // signOut() navigates the tab away.
@@ -57,7 +57,7 @@ describe("decideDeletionOutcome", () => {
 
     expect(outcome.showWarningToast).toBe(true);
     expect(outcome.toastMessage).toBe(
-      "Your data was deleted, but identity removal failed. Contact support."
+      "Your data was deleted, but identity removal failed. Contact support.",
     );
     expect(outcome.redirectDelayMs).toBe(DEGRADED_REDIRECT_DELAY_MS);
   });

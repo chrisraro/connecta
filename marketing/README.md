@@ -32,7 +32,7 @@ product's previous identity pending a redesign of Connecta's own
 lettermark. Drawn as a single SVG path in `currentColor` so it inherits
 from any surface and never needs a recolour pass.
 
-**The brand icon.** The app icon is the same sigma struck *into* a disc —
+**The brand icon.** The app icon is the same sigma struck _into_ a disc —
 the disc and the monogram are subpaths of one `fill-rule="evenodd"` path, so
 the knockout is real transparency rather than a shape sitting on top of a
 circle. Also placeholder artwork, inherited unchanged pending the same
@@ -45,32 +45,32 @@ computed sRGB output of the OKLCH tokens in `app/globals.css` (read live via
 a headless-browser canvas conversion — OKLCH doesn't have one canonical hex,
 so these are what actually renders).
 
-| Name | Hex | Token |
-|---|---|---|
-| Brand | `#8d2c27` | `--connecta-brand` |
-| Brand — hover | `#7f1817` | `--connecta-brand-hover` |
-| Ink | `#201916` | `--connecta-ink` |
-| Ink — soft | `#5f5652` | `--connecta-ink-soft` |
-| Paper | `#fcfaf8` | `--connecta-paper` |
-| Surface | `#f5f1ef` | `--connecta-surface` |
-| Line | `#e3ddd9` | `--connecta-line` |
+| Name               | Hex       | Token                    |
+| ------------------ | --------- | ------------------------ |
+| Brand              | `#8d2c27` | `--connecta-brand`       |
+| Brand — hover      | `#7f1817` | `--connecta-brand-hover` |
+| Ink                | `#201916` | `--connecta-ink`         |
+| Ink — soft         | `#5f5652` | `--connecta-ink-soft`    |
+| Paper              | `#fcfaf8` | `--connecta-paper`       |
+| Surface            | `#f5f1ef` | `--connecta-surface`     |
+| Line               | `#e3ddd9` | `--connecta-line`        |
 | Background — light | `#fbfaf7` | `--background` (`:root`) |
 | Foreground — light | `#100d09` | `--foreground` (`:root`) |
-| Background — dark | `#030609` | `--background` (`.dark`) |
-| Foreground — dark | `#f0f6fa` | `--foreground` (`.dark`) |
+| Background — dark  | `#030609` | `--background` (`.dark`) |
+| Foreground — dark  | `#f0f6fa` | `--foreground` (`.dark`) |
 
 **Type stack.** Fraunces (display) + Geist (body) carry the app shell. Each
 of the three profile templates loads its own display face instead, so
 templates read as typographically distinct rather than "one design, three
 colour schemes":
 
-| Role | Face | Where |
-|---|---|---|
-| Display | Fraunces | Marketing headlines, hero copy |
-| Body / UI | Geist | App shell, dashboard, forms (serif banned here) |
-| Template — Editorial | Newsreader | Writers, consultants, photographers |
-| Template — Kinetic | Space Grotesk | Developers, studios |
-| Template — Architectural | Manrope | Executives, firms |
+| Role                     | Face          | Where                                           |
+| ------------------------ | ------------- | ----------------------------------------------- |
+| Display                  | Fraunces      | Marketing headlines, hero copy                  |
+| Body / UI                | Geist         | App shell, dashboard, forms (serif banned here) |
+| Template — Editorial     | Newsreader    | Writers, consultants, photographers             |
+| Template — Kinetic       | Space Grotesk | Developers, studios                             |
+| Template — Architectural | Manrope       | Executives, firms                               |
 
 **Radius / elevation.** Exactly three radii and two elevations, everywhere —
 `--r-sm` (6px), `--r-md` (12px), `--r-lg` (20px) or `rounded-full`; `--e-raised`
@@ -127,7 +127,7 @@ re-run any time — and captures:
    open** (`builder-inspector.png`) — these require a signed-in session. The
    script mints one via the Clerk Backend API (`CLERK_SECRET_KEY` from
    `.env.local`) against a dedicated, idempotent demo user
-   (`connecta-marketing-demo@connecta.example`) and a Clerk *sign-in token*,
+   (`connecta-marketing-demo@connecta.example`) and a Clerk _sign-in token_,
    the same ticket-based approach Clerk's own testing tools use — no real
    customer account is ever touched. If `CLERK_SECRET_KEY` isn't available
    the script skips these two captures and still produces the rest.

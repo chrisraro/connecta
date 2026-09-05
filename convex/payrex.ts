@@ -23,11 +23,7 @@ interface PayrexCheckoutSession {
 // Encode a flat list of [key, value] pairs as application/x-www-form-urlencoded.
 // Keys already include PayRex bracket syntax (e.g. line_items[][name]).
 function encodeForm(pairs: Array<[string, string]>): string {
-  return pairs
-    .map(
-      ([k, val]) => `${encodeURIComponent(k)}=${encodeURIComponent(val)}`
-    )
-    .join("&");
+  return pairs.map(([k, val]) => `${encodeURIComponent(k)}=${encodeURIComponent(val)}`).join("&");
 }
 
 export const createCheckoutSession = action({
@@ -65,7 +61,7 @@ export const createCheckoutSession = action({
         orderNumber: args.orderNumber,
         clerkSubject: identity?.subject,
         guestOrderToken: args.guestOrderToken,
-      }
+      },
     );
     if (!order) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Order not found" });
@@ -133,8 +129,7 @@ export const createCheckoutSession = action({
     const body = encodeForm(pairs);
 
     // HTTP Basic auth: username = secret key, empty password.
-    const authHeader =
-      "Basic " + btoa(`${secretKey}:`);
+    const authHeader = "Basic " + btoa(`${secretKey}:`);
 
     const res = await fetch(`${PAYREX_BASE_URL}/checkout_sessions`, {
       method: "POST",
@@ -147,9 +142,7 @@ export const createCheckoutSession = action({
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(
-        `PayRex checkout session creation failed (${res.status}): ${errText}`
-      );
+      throw new Error(`PayRex checkout session creation failed (${res.status}): ${errText}`);
     }
 
     const session = (await res.json()) as PayrexCheckoutSession;

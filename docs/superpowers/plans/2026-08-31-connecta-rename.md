@@ -15,7 +15,7 @@
 - Fallback domain is exactly `connecta.example` (RFC 2606 reserved TLD, must never resolve).
 - Brand hue tokens are `--connecta-brand` / `--connecta-brand-hover`; the other five keep their nouns (`ink`, `ink-soft`, `paper`, `surface`, `line`). **No token is named `seal`** — that encoded a visual form that is being replaced.
 - No new font dependency. The wordmark is live text in Fraunces, already loaded in `lib/fonts.ts` as `--font-display`.
-- Token *values* do not change in this project. Only names.
+- Token _values_ do not change in this project. Only names.
 - `LEAD_VISITOR_ID_KEY` in `lib/storage-keys.ts` is already brand-free and must not be touched.
 - Infrastructure (Vercel project, domain, `PRODUCTION_DOMAIN`, Convex/Clerk dashboard labels) is **out of scope** — spec section A7, blocked on a domain purchase.
 - Run tests with `npm test`. Single file: `npx vitest run <path>`.
@@ -26,34 +26,36 @@
 
 Spec section A5 claims zero allowlist entries follow automatically from A4. Two things it did not account for, both handled in Task 7:
 
-1. **`README.md` carries a rename-history paragraph** naming both retired brands (lines 10–13). `README.md` is at the repo root and *is* scanned. `docs/` is already in `SKIP_DIRS`, so the fix is to **move the history paragraph into `docs/rename-runbook.md`**, which is not scanned. Rewriting history out of existence would violate this project's convention of keeping rename history accurate.
+1. **`README.md` carries a rename-history paragraph** naming both retired brands (lines 10–13). `README.md` is at the repo root and _is_ scanned. `docs/` is already in `SKIP_DIRS`, so the fix is to **move the history paragraph into `docs/rename-runbook.md`**, which is not scanned. Rewriting history out of existence would violate this project's convention of keeping rename history accurate.
 2. **`NEW_BRAND_STRING_EXCEPTIONS` needs comment rewording, not just retargeting.** Three files carry doc comments that say the brand name as a bare word. `/\bConnecta\b/` will match `Connecta's monogram` just as `/\bSigmaTap\b/` matched `SigmaTap's monogram`. Reword those comments to refer to "the product" rather than adding new allowlist entries.
 
 ---
 
 ## File Structure
 
-| File | Responsibility | Task |
-|---|---|---|
-| `lib/brand.ts` | Brand constant + colour utilities. Single source of truth for the name. | 1 |
-| `lib/brand.test.ts` | Unit tests for the constant, plus the two repo-wide guards. | 1, 7 |
-| `lib/storage-keys.ts` | localStorage key literals. | 2 |
-| `components/dashboard/QrClaimScanner.test.ts` | Host-generation fixtures for the QR parser. | 3 |
-| `app/globals.css` | Brand hue tokens. | 4 |
-| `components/brand/ConnectaMark.tsx` | Inline SVG delivery of the mark. | 5 |
-| `public/brand/connecta-mark.svg`, `connecta-icon.svg` | Source of truth for the mark geometry. | 5 |
-| `scripts/generate-brand-assets.mjs` | Regenerates raster icons from the icon SVG. | 5 |
-| Remaining 50+ files | Copy, metadata, manifests, docs. | 6 |
+| File                                                  | Responsibility                                                          | Task |
+| ----------------------------------------------------- | ----------------------------------------------------------------------- | ---- |
+| `lib/brand.ts`                                        | Brand constant + colour utilities. Single source of truth for the name. | 1    |
+| `lib/brand.test.ts`                                   | Unit tests for the constant, plus the two repo-wide guards.             | 1, 7 |
+| `lib/storage-keys.ts`                                 | localStorage key literals.                                              | 2    |
+| `components/dashboard/QrClaimScanner.test.ts`         | Host-generation fixtures for the QR parser.                             | 3    |
+| `app/globals.css`                                     | Brand hue tokens.                                                       | 4    |
+| `components/brand/ConnectaMark.tsx`                   | Inline SVG delivery of the mark.                                        | 5    |
+| `public/brand/connecta-mark.svg`, `connecta-icon.svg` | Source of truth for the mark geometry.                                  | 5    |
+| `scripts/generate-brand-assets.mjs`                   | Regenerates raster icons from the icon SVG.                             | 5    |
+| Remaining 50+ files                                   | Copy, metadata, manifests, docs.                                        | 6    |
 
 ---
 
 ### Task 1: Brand constant
 
 **Files:**
+
 - Modify: `lib/brand.ts`
 - Test: `lib/brand.test.ts:29-66` (the constant/builder tests only — the guards are Task 7)
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `CONNECTA: { name: string; tagline: string; domain: string; supportEmail: string }` and `buildConnecta(env: Record<string, string | undefined>)`. Every later task and ~40 call sites import `CONNECTA`.
 
@@ -80,26 +82,26 @@ test("buildConnecta falls back to connecta.example when NEXT_PUBLIC_APP_URL is u
 
 test("buildConnecta derives the domain from NEXT_PUBLIC_APP_URL when set", () => {
   expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).domain).toBe(
-    "app.example.com"
+    "app.example.com",
   );
 });
 
 test("buildConnecta derives the domain from a NEXT_PUBLIC_APP_URL that has no protocol", () => {
-  expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "app.example.com/" }).domain).toBe(
-    "app.example.com"
-  );
+  expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "app.example.com/" }).domain).toBe("app.example.com");
 });
 
 test("buildConnecta defaults supportEmail to support@<domain>", () => {
   expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).supportEmail).toBe(
-    "support@app.example.com"
+    "support@app.example.com",
   );
 });
 
 test("buildConnecta lets SUPPORT_EMAIL override the support inbox independently of the domain", () => {
   expect(
-    buildConnecta({ NEXT_PUBLIC_APP_URL: "https://app.example.com", SUPPORT_EMAIL: "help@realcompany.com" })
-      .supportEmail
+    buildConnecta({
+      NEXT_PUBLIC_APP_URL: "https://app.example.com",
+      SUPPORT_EMAIL: "help@realcompany.com",
+    }).supportEmail,
   ).toBe("help@realcompany.com");
 });
 ```
@@ -166,10 +168,12 @@ git commit -m "refactor: rename the brand constant to CONNECTA"
 ### Task 2: Unfreeze the localStorage keys
 
 **Files:**
+
 - Modify: `lib/storage-keys.ts`
 - Modify: `contexts/CartContext.tsx:41,44`, `app/shop/cart/page.tsx:172,174`, `app/shop/checkout/page.tsx:34,39,196`
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: `GUEST_CART_ID_KEY`, `DISCOUNT_CODE_KEY`, `OFFLINE_LEADS_KEY` — constant names unchanged, **values** changed.
 
@@ -224,9 +228,11 @@ git commit -m "refactor: rename guest-checkout storage keys to the connecta pref
 ### Task 3: Drop the retired-host fixtures
 
 **Files:**
+
 - Modify: `components/dashboard/QrClaimScanner.test.ts:3-25`
 
 **Interfaces:**
+
 - Consumes: `parseQrPayload` from `./QrClaimScanner` (unchanged).
 - Produces: nothing.
 
@@ -241,10 +247,7 @@ git commit -m "refactor: rename guest-checkout storage keys to the connecta pref
  * cover the current host plus a local dev origin.
  */
 test("parses /t/ URLs regardless of host", () => {
-  for (const host of [
-    "https://connecta.vercel.app",
-    "http://localhost:3000",
-  ]) {
+  for (const host of ["https://connecta.vercel.app", "http://localhost:3000"]) {
     expect(parseQrPayload(`${host}/t/04:a3:5b:12`)).toEqual({
       kind: "uuid",
       uuid: "04:a3:5b:12",
@@ -272,9 +275,11 @@ git commit -m "test: drop retired-host fixtures from the QR parser test"
 ### Task 4: Rename the brand tokens
 
 **Files:**
+
 - Modify: `app/globals.css:103-112` (declarations only — see below)
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: CSS custom properties `--connecta-brand`, `--connecta-brand-hover`, `--connecta-ink`, `--connecta-ink-soft`, `--connecta-paper`, `--connecta-surface`, `--connecta-line`.
 
@@ -287,16 +292,16 @@ They are **kept rather than deleted** because Project B (card skins) needs a bra
 In `app/globals.css`, replace lines 103–112. The comment must not say the product name as a bare word — Task 7's guard would flag it.
 
 ```css
-  /* Brand identity — the lettermark struck into a disc. Committed color
+/* Brand identity — the lettermark struck into a disc. Committed color
      strategy: one saturated brand color carrying real surface area, warm
      neutrals tinted toward its own hue rather than toward generic warmth. */
-  --connecta-brand: oklch(0.44 0.132 27);
-  --connecta-brand-hover: oklch(0.39 0.138 27);
-  --connecta-ink: oklch(0.22 0.012 40);
-  --connecta-ink-soft: oklch(0.46 0.014 40);
-  --connecta-paper: oklch(0.985 0.003 60);
-  --connecta-surface: oklch(0.96 0.005 55);
-  --connecta-line: oklch(0.90 0.008 50);
+--connecta-brand: oklch(0.44 0.132 27);
+--connecta-brand-hover: oklch(0.39 0.138 27);
+--connecta-ink: oklch(0.22 0.012 40);
+--connecta-ink-soft: oklch(0.46 0.014 40);
+--connecta-paper: oklch(0.985 0.003 60);
+--connecta-surface: oklch(0.96 0.005 55);
+--connecta-line: oklch(0.9 0.008 50);
 ```
 
 Also reword the enforced-scales comment found earlier in the file:
@@ -333,6 +338,7 @@ git commit -m "refactor: rename brand tokens to the connecta prefix"
 > **BLOCKED** until `connecta-mark.svg` and `connecta-icon.svg` are exported from Figma. Every other task can proceed without this one. Do not hand-author the geometry — a high-contrast serif C is not cleanly hand-authorable, unlike the sigma zigzag it replaces.
 
 **Files:**
+
 - Create: `public/brand/connecta-mark.svg`, `public/brand/connecta-icon.svg`
 - Create: `components/brand/ConnectaMark.tsx`
 - Delete: `components/brand/SigmaTapMark.tsx`, `public/brand/sigmatap-mark.svg`, `public/brand/sigmatap-icon.svg`, `marketing/brand/sigmatap-mark.svg`, `marketing/brand/sigmatap-icon.svg`
@@ -340,6 +346,7 @@ git commit -m "refactor: rename brand tokens to the connecta prefix"
 - Modify: every importer of `SigmaTapMark`
 
 **Interfaces:**
+
 - Consumes: `CONNECTA` from Task 1 (for the `title` prop's default usage in callers).
 - Produces: `ConnectaMark({ className?: string; title?: string })` — a `<svg>` with `fill="currentColor"`, `role="img"` and `aria-label` when `title` is given, `aria-hidden="true"` when it is not.
 
@@ -435,10 +442,12 @@ git commit -m "feat: replace the sigma monogram with the Connecta lettermark"
 ### Task 6: Copy, metadata and docs sweep
 
 **Files:**
+
 - Modify: `package.json` (`name`), `public/manifest.json`, `app/layout.tsx` metadata, `README.md`, `DEVELOPMENT_SETUP.md`, `PRODUCT.md`, `PRODUCTION_UPGRADE_NOTES.md`, `marketing/README.md`, `marketing/brand/brand-sheet.html`, `marketing/*.mjs`, and the remaining app/component/convex files
 - Rename: `.superpowers/sdd/sigmatap-rename.md` → `.superpowers/sdd/connecta-rename.md`
 
 **Interfaces:**
+
 - Consumes: `CONNECTA` from Task 1.
 - Produces: nothing.
 
@@ -486,9 +495,11 @@ git commit -m "refactor: sweep remaining SigmaTap copy, metadata and docs to Con
 ### Task 7: Tighten the guards to zero exceptions
 
 **Files:**
+
 - Modify: `lib/brand.test.ts` — `STALE_BRAND` at line 94, `INFRA_EXCEPTIONS` at line 116, the `--sigmatap-seal` mention in the comment at line 180, `CURRENT_BRAND_WORD` at line 185, `NEW_BRAND_STRING_EXCEPTIONS` at line 192 (file is 225 lines)
 
 **Interfaces:**
+
 - Consumes: everything from Tasks 1–6.
 - Produces: the acceptance gate for this project.
 
@@ -503,12 +514,8 @@ The fragments exist so this file does not match its own check. Keep that trick f
 // times (Tapfolio -> Herald -> SigmaTap -> Connecta) and none should
 // resurface. Built from fragments so this file does not match its own check.
 const STALE_BRAND = new RegExp(
-  [
-    ["tap", "folio"].join(""),
-    ["her", "ald"].join(""),
-    ["sigma", "tap"].join(""),
-  ].join("|"),
-  "i"
+  [["tap", "folio"].join(""), ["her", "ald"].join(""), ["sigma", "tap"].join("")].join("|"),
+  "i",
 );
 ```
 

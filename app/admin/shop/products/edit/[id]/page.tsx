@@ -30,20 +30,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [productId, setProductId] = useState<string>("");
 
   useEffect(() => {
-    params.then(p => setProductId(p.id));
+    params.then((p) => setProductId(p.id));
   }, [params]);
 
   const categories = useQuery(
     api.adminShop.getCategories,
-    user?.id ? { clerkId: user.id } : "skip"
+    user?.id ? { clerkId: user.id } : "skip",
   );
 
   const allProducts = useQuery(
     api.adminShop.getProducts,
-    user?.id && productId ? { clerkId: user.id } : "skip"
+    user?.id && productId ? { clerkId: user.id } : "skip",
   );
 
-  const product = allProducts?.find(p => p._id === productId);
+  const product = allProducts?.find((p) => p._id === productId);
 
   const updateProduct = useMutation(api.adminShop.updateProduct);
 
@@ -160,9 +160,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         name: formData.name,
         slug: formData.slug,
         description: formData.description || undefined,
-        categoryId: formData.categoryId ? (formData.categoryId as Id<"productCategories">) : undefined,
+        categoryId: formData.categoryId
+          ? (formData.categoryId as Id<"productCategories">)
+          : undefined,
         basePrice: Math.round(formData.basePrice * 100),
-        compareAtPrice: formData.compareAtPrice > 0 ? Math.round(formData.compareAtPrice * 100) : undefined,
+        compareAtPrice:
+          formData.compareAtPrice > 0 ? Math.round(formData.compareAtPrice * 100) : undefined,
         costPrice: formData.costPrice > 0 ? Math.round(formData.costPrice * 100) : undefined,
         sku: formData.sku,
         barcode: formData.barcode || undefined,
@@ -175,12 +178,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         images: formData.images,
         primaryImageIndex: 0,
         weight: formData.weight > 0 ? formData.weight : undefined,
-        dimensions: formData.dimensions.length > 0 ? {
-          length: formData.dimensions.length,
-          width: formData.dimensions.width,
-          height: formData.dimensions.height,
-          unit: formData.dimensions.unit,
-        } : undefined,
+        dimensions:
+          formData.dimensions.length > 0
+            ? {
+                length: formData.dimensions.length,
+                width: formData.dimensions.width,
+                height: formData.dimensions.height,
+                unit: formData.dimensions.unit,
+              }
+            : undefined,
         shippingRequired: formData.shippingRequired,
       });
 
@@ -213,9 +219,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         </Link>
         <div>
           <h1 className="text-3xl font-bold">Edit Product</h1>
-          <p className="text-muted-foreground mt-1">
-            Update product details
-          </p>
+          <p className="text-muted-foreground mt-1">Update product details</p>
         </div>
       </div>
 
@@ -330,9 +334,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground">
-                  Original price before sale
-                </p>
+                <p className="text-xs text-muted-foreground">Original price before sale</p>
               </div>
 
               <div className="space-y-2">
@@ -346,9 +348,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })
                   }
                 />
-                <p className="text-xs text-muted-foreground">
-                  Your cost for profit tracking
-                </p>
+                <p className="text-xs text-muted-foreground">Your cost for profit tracking</p>
               </div>
             </CardContent>
           </Card>
@@ -493,9 +493,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={formData.isPublished}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, isPublished: checked })
-                  }
+                  onCheckedChange={(checked) => setFormData({ ...formData, isPublished: checked })}
                 />
                 <Label>Published</Label>
               </div>
@@ -503,9 +501,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={formData.isFeatured}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, isFeatured: checked })
-                  }
+                  onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
                 />
                 <Label>Featured</Label>
               </div>
@@ -533,10 +529,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       </form>
 
       {user?.id && productId && (
-        <ProductVariationsManager
-          clerkId={user.id}
-          productId={productId as Id<"products">}
-        />
+        <ProductVariationsManager clerkId={user.id} productId={productId as Id<"products">} />
       )}
     </div>
   );

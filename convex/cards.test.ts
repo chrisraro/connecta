@@ -156,14 +156,14 @@ test("claimCardByUuid still rejects a card actively owned by someone else", asyn
       activationCode: "TAKEN1",
       status: "active",
       tapCount: 0,
-    })
+    }),
   );
 
   await expect(
     asUser.action(api.cards.claimCardByUuid, {
       clerkId: "user_clerk",
       uuid: "taken-card",
-    })
+    }),
   ).rejects.toThrow(/not available/i);
 });
 
@@ -209,7 +209,7 @@ test("getCardByUuid returns only the public projection, never activationCode or 
         heroStyle: "default",
       },
       featuredProperties: [],
-    })
+    }),
   );
   await t.run(async (ctx) =>
     ctx.db.insert("cards", {
@@ -219,7 +219,7 @@ test("getCardByUuid returns only the public projection, never activationCode or 
       status: "active",
       linkedProfileId: profileId,
       tapCount: 0,
-    })
+    }),
   );
 
   const card = await t.query(api.cards.getCardByUuid, { uuid: "public-lookup-card" });
@@ -258,7 +258,7 @@ test("activateCard still matches pre-fix legacy codes stored with lowercase segm
       activationCode: legacy,
       status: "inventory",
       tapCount: 0,
-    })
+    }),
   );
 
   const cardId = await asUser.action(api.cards.activateCard, {
@@ -286,7 +286,7 @@ test("activateCard rejects a free-plan user's second card with a ConvexError car
       activationCode: "FIRST1",
       status: "inventory",
       tapCount: 0,
-    })
+    }),
   );
   await t.run(async (ctx) =>
     ctx.db.insert("cards", {
@@ -295,7 +295,7 @@ test("activateCard rejects a free-plan user's second card with a ConvexError car
       activationCode: "SECND2",
       status: "inventory",
       tapCount: 0,
-    })
+    }),
   );
 
   await asUser.action(api.cards.activateCard, {
@@ -342,7 +342,7 @@ test("activateCard rate-limits repeated wrong-code attempts by the same user", a
       asUser.action(api.cards.activateCard, {
         clerkId: "user_clerk",
         activationCode: "WRONG1",
-      })
+      }),
     ).rejects.toThrow(/invalid activation code/i);
   }
 
@@ -350,7 +350,7 @@ test("activateCard rate-limits repeated wrong-code attempts by the same user", a
     asUser.action(api.cards.activateCard, {
       clerkId: "user_clerk",
       activationCode: "WRONG1",
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 
@@ -364,7 +364,7 @@ test("claimCardByUuid rate-limits repeated claim attempts by the same user", asy
       asUser.action(api.cards.claimCardByUuid, {
         clerkId: "user_clerk",
         uuid: "no-such-card",
-      })
+      }),
     ).rejects.toThrow(/card not found/i);
   }
 
@@ -372,7 +372,7 @@ test("claimCardByUuid rate-limits repeated claim attempts by the same user", asy
     asUser.action(api.cards.claimCardByUuid, {
       clerkId: "user_clerk",
       uuid: "no-such-card",
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 

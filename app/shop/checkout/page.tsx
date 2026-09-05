@@ -43,7 +43,7 @@ function CheckoutItemImage({ storageId, alt }: { storageId: string; alt: string 
   const [error, setError] = useState(false);
   const imageUrl = useQuery(
     api.images.getImageUrl,
-    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip",
   );
 
   const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
@@ -127,8 +127,7 @@ export default function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [discountCode, subtotal]);
 
-  const discountAmount =
-    discountResult && discountResult.valid ? discountResult.discountAmount : 0;
+  const discountAmount = discountResult && discountResult.valid ? discountResult.discountAmount : 0;
 
   const freeShippingThreshold = settings?.freeShippingThresholdCentavos ?? 250000;
   const shippingFlatRate = settings?.shippingFlatRateCentavos ?? 50000;
@@ -232,19 +231,27 @@ export default function CheckoutPage() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className={`flex items-center gap-2 ${step >= 1 ? "text-primary" : "text-muted-foreground"}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-            step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted"
-          }`}>
+        <div
+          className={`flex items-center gap-2 ${step >= 1 ? "text-primary" : "text-muted-foreground"}`}
+        >
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+              step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted"
+            }`}
+          >
             1
           </div>
           <span className="hidden sm:inline">Shipping</span>
         </div>
         <div className="flex-1 h-0.5 bg-muted" />
-        <div className={`flex items-center gap-2 ${step >= 2 ? "text-primary" : "text-muted-foreground"}`}>
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-            step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted"
-          }`}>
+        <div
+          className={`flex items-center gap-2 ${step >= 2 ? "text-primary" : "text-muted-foreground"}`}
+        >
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+              step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted"
+            }`}
+          >
             2
           </div>
           <span className="hidden sm:inline">Payment</span>
@@ -277,7 +284,9 @@ export default function CheckoutPage() {
                   <Input
                     id="fullName"
                     value={shippingAddress.fullName}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, fullName: e.target.value })}
+                    onChange={(e) =>
+                      setShippingAddress({ ...shippingAddress, fullName: e.target.value })
+                    }
                     placeholder="John Doe"
                   />
                 </div>
@@ -287,7 +296,9 @@ export default function CheckoutPage() {
                   <Input
                     id="address1"
                     value={shippingAddress.addressLine1}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, addressLine1: e.target.value })}
+                    onChange={(e) =>
+                      setShippingAddress({ ...shippingAddress, addressLine1: e.target.value })
+                    }
                     placeholder="123 Main St"
                   />
                 </div>
@@ -297,7 +308,9 @@ export default function CheckoutPage() {
                   <Input
                     id="address2"
                     value={shippingAddress.addressLine2}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, addressLine2: e.target.value })}
+                    onChange={(e) =>
+                      setShippingAddress({ ...shippingAddress, addressLine2: e.target.value })
+                    }
                     placeholder="Apt, Suite, etc. (optional)"
                   />
                 </div>
@@ -308,7 +321,9 @@ export default function CheckoutPage() {
                     <Input
                       id="city"
                       value={shippingAddress.city}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+                      onChange={(e) =>
+                        setShippingAddress({ ...shippingAddress, city: e.target.value })
+                      }
                       placeholder="New York"
                     />
                   </div>
@@ -317,7 +332,9 @@ export default function CheckoutPage() {
                     <Input
                       id="state"
                       value={shippingAddress.state}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                      onChange={(e) =>
+                        setShippingAddress({ ...shippingAddress, state: e.target.value })
+                      }
                       placeholder="NY"
                     />
                   </div>
@@ -326,7 +343,9 @@ export default function CheckoutPage() {
                     <Input
                       id="postalCode"
                       value={shippingAddress.postalCode}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, postalCode: e.target.value })}
+                      onChange={(e) =>
+                        setShippingAddress({ ...shippingAddress, postalCode: e.target.value })
+                      }
                       placeholder="10001"
                     />
                   </div>
@@ -337,7 +356,9 @@ export default function CheckoutPage() {
                   <Input
                     id="country"
                     value={shippingAddress.country}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, country: e.target.value })}
+                    onChange={(e) =>
+                      setShippingAddress({ ...shippingAddress, country: e.target.value })
+                    }
                     placeholder="United States"
                   />
                 </div>
@@ -348,7 +369,9 @@ export default function CheckoutPage() {
                     id="phone"
                     type="tel"
                     value={shippingAddress.phone}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
+                    onChange={(e) =>
+                      setShippingAddress({ ...shippingAddress, phone: e.target.value })
+                    }
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -370,37 +393,49 @@ export default function CheckoutPage() {
                       <Label>Full Name *</Label>
                       <Input
                         value={billingAddress.fullName}
-                        onChange={(e) => setBillingAddress({ ...billingAddress, fullName: e.target.value })}
+                        onChange={(e) =>
+                          setBillingAddress({ ...billingAddress, fullName: e.target.value })
+                        }
                       />
                     </div>
                     <div className="space-y-2">
                       <Label>Address *</Label>
                       <Input
                         value={billingAddress.addressLine1}
-                        onChange={(e) => setBillingAddress({ ...billingAddress, addressLine1: e.target.value })}
+                        onChange={(e) =>
+                          setBillingAddress({ ...billingAddress, addressLine1: e.target.value })
+                        }
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <Input
                         placeholder="City"
                         value={billingAddress.city}
-                        onChange={(e) => setBillingAddress({ ...billingAddress, city: e.target.value })}
+                        onChange={(e) =>
+                          setBillingAddress({ ...billingAddress, city: e.target.value })
+                        }
                       />
                       <Input
                         placeholder="State"
                         value={billingAddress.state}
-                        onChange={(e) => setBillingAddress({ ...billingAddress, state: e.target.value })}
+                        onChange={(e) =>
+                          setBillingAddress({ ...billingAddress, state: e.target.value })
+                        }
                       />
                       <Input
                         placeholder="Postal Code"
                         value={billingAddress.postalCode}
-                        onChange={(e) => setBillingAddress({ ...billingAddress, postalCode: e.target.value })}
+                        onChange={(e) =>
+                          setBillingAddress({ ...billingAddress, postalCode: e.target.value })
+                        }
                       />
                     </div>
                     <Input
                       placeholder="Country"
                       value={billingAddress.country}
-                      onChange={(e) => setBillingAddress({ ...billingAddress, country: e.target.value })}
+                      onChange={(e) =>
+                        setBillingAddress({ ...billingAddress, country: e.target.value })
+                      }
                     />
                   </div>
                 )}
@@ -437,9 +472,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Accepted payment methods
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">Accepted payment methods</p>
                   <div className="flex flex-wrap gap-2">
                     {["GCash", "Maya", "Card", "QR Ph"].map((m) => (
                       <span
@@ -453,11 +486,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="flex gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setStep(1)}
-                    disabled={isProcessing}
-                  >
+                  <Button variant="outline" onClick={() => setStep(1)} disabled={isProcessing}>
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
@@ -502,13 +531,9 @@ export default function CheckoutPage() {
                         <p className="text-sm font-medium truncate">
                           {item.product?.name || "Product"}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          Qty: {item.quantity}
-                        </p>
+                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                       </div>
-                      <p className="text-sm font-medium">
-                        {formatPrice(item.lineTotal || 0)}
-                      </p>
+                      <p className="text-sm font-medium">{formatPrice(item.lineTotal || 0)}</p>
                     </div>
                   );
                 })}

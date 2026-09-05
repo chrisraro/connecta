@@ -13,7 +13,7 @@ import { resolveOnboardingPrefill } from "../lib/onboardingPrefill";
 async function seedUserWithCredits(
   t: ReturnType<typeof convexTest>,
   clerkId: string,
-  credits: number
+  credits: number,
 ) {
   return await t.run(async (ctx) =>
     ctx.db.insert("users", {
@@ -23,7 +23,7 @@ async function seedUserWithCredits(
       subscriptionStatus: "active",
       plan: "free",
       credits,
-    })
+    }),
   );
 }
 
@@ -37,7 +37,7 @@ test("internalStripLegacyCredits removes the deprecated field and is a no-op on 
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   const first = await t.mutation(internal.users.internalStripLegacyCredits, {});
@@ -68,7 +68,7 @@ test("internalStripLegacyCredits preserves every other user field", async () => 
       planExpiresAt: 1893456000000,
       onboardingCompleted: true,
       credits: 42,
-    })
+    }),
   );
 
   await t.mutation(internal.users.internalStripLegacyCredits, {});
@@ -93,11 +93,13 @@ test("internalStripLegacyCredits pages through every user via its cursor", async
   let stripped = 0;
   let pages = 0;
   for (;;) {
-    const run: { stripped: number; isDone: boolean; cursor: string | null } =
-      await t.mutation(internal.users.internalStripLegacyCredits, {
+    const run: { stripped: number; isDone: boolean; cursor: string | null } = await t.mutation(
+      internal.users.internalStripLegacyCredits,
+      {
         cursor,
         batchSize: 3,
-      });
+      },
+    );
     stripped += run.stripped;
     pages++;
     if (run.isDone) break;
@@ -123,10 +125,7 @@ test("internalStripLegacyCredits pages through every user via its cursor", async
  * second, untouched user, so cross-account leakage is provable rather than
  * assumed.
  */
-async function seedFullAccount(
-  t: ReturnType<typeof convexTest>,
-  clerkId: string
-) {
+async function seedFullAccount(t: ReturnType<typeof convexTest>, clerkId: string) {
   return await t.run(async (ctx) => {
     const userId = await ctx.db.insert("users", {
       email: `${clerkId}@test.dev`,
@@ -325,9 +324,7 @@ test("deleteMyAccount cannot delete another user's account or data", async () =>
   // And a follow-up call cannot reach the victim by any means — there is no
   // id argument to pass, so the only way to delete the victim is to
   // authenticate as the victim.
-  await expect(
-    t.action(api.users.deleteMyAccount, {})
-  ).rejects.toThrow(/unauthorized/i);
+  await expect(t.action(api.users.deleteMyAccount, {})).rejects.toThrow(/unauthorized/i);
 });
 
 /**
@@ -346,8 +343,11 @@ test("updateOnboarding's first-completion profile gets a real slug, not the blan
   const asUser = t.withIdentity({ subject: "onboard_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "onboard@test.dev", clerkId: "onboard_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "onboard@test.dev",
+      clerkId: "onboard_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -373,8 +373,11 @@ test("updateOnboarding's first-completion profile gets a seeded digitalCard, mat
   const asUser = t.withIdentity({ subject: "onboard_card_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "onboard_card@test.dev", clerkId: "onboard_card_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "onboard_card@test.dev",
+      clerkId: "onboard_card_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -410,8 +413,11 @@ test("updateOnboarding's individual-type default componentOrder includes Service
   const asUser = t.withIdentity({ subject: "onboard_services_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "onboard_services@test.dev", clerkId: "onboard_services_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "onboard_services@test.dev",
+      clerkId: "onboard_services_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -437,8 +443,11 @@ test("updateOnboarding's individual-type default componentOrder omits Services w
   const asUser = t.withIdentity({ subject: "onboard_noservices_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "onboard_noservices@test.dev", clerkId: "onboard_noservices_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "onboard_noservices@test.dev",
+      clerkId: "onboard_noservices_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -456,7 +465,12 @@ test("updateOnboarding's individual-type default componentOrder omits Services w
   const profile = await t.run(async (ctx) => ctx.db.get(result.profileId!));
   expect(profile?.layoutConfig.componentOrder).not.toContain("Services");
   expect(profile?.layoutConfig.componentOrder).toEqual([
-    "Hero", "About", "Experience", "Education", "Projects", "Contact",
+    "Hero",
+    "About",
+    "Experience",
+    "Education",
+    "Projects",
+    "Contact",
   ]);
 });
 
@@ -465,8 +479,11 @@ test("updateOnboarding does not consume a second profile slot when the builder l
   const asUser = t.withIdentity({ subject: "chain_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "chain@test.dev", clerkId: "chain_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "chain@test.dev",
+      clerkId: "chain_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -494,8 +511,13 @@ test("updateOnboarding does not consume a second profile slot when the builder l
       name: "Chain Person's Profile",
       profileType: "individual",
       agentInfo: {
-        fullName: "Chain Person", title: "Freelancer", company: "",
-        phone: "0917", email: "chain@test.dev", services: [], socialLinks: [],
+        fullName: "Chain Person",
+        title: "Freelancer",
+        company: "",
+        phone: "0917",
+        email: "chain@test.dev",
+        services: [],
+        socialLinks: [],
       },
       layoutConfig: {
         themeId: "editorial",
@@ -504,12 +526,10 @@ test("updateOnboarding does not consume a second profile slot when the builder l
         heroStyle: "default",
       },
       featuredProperties: [],
-    })
+    }),
   ).resolves.not.toThrow();
 
-  const allProfiles = await t.run(async (ctx) =>
-    ctx.db.query("profiles").collect()
-  );
+  const allProfiles = await t.run(async (ctx) => ctx.db.query("profiles").collect());
   expect(allProfiles.length).toBe(1);
 });
 
@@ -530,8 +550,11 @@ test("updateOnboarding in edit mode patches the existing profile instead of leav
   const asUser = t.withIdentity({ subject: "edit_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "edit@test.dev", clerkId: "edit_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "edit@test.dev",
+      clerkId: "edit_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -575,8 +598,11 @@ test("updateOnboarding in edit mode preserves agentInfo fields the wizard never 
   const asUser = t.withIdentity({ subject: "edit_preserve_user" });
   await t.run(async (ctx) => {
     await ctx.db.insert("users", {
-      email: "edit_preserve@test.dev", clerkId: "edit_preserve_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "edit_preserve@test.dev",
+      clerkId: "edit_preserve_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
     });
   });
 
@@ -652,17 +678,23 @@ test("updateOnboarding in edit mode: a live agentInfo value absent from onboardi
   const asUser = t.withIdentity({ subject: "survive_user" });
   const userId = await t.run(async (ctx) =>
     ctx.db.insert("users", {
-      email: "survive@test.dev", clerkId: "survive_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "survive@test.dev",
+      clerkId: "survive_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
       onboardingCompleted: true,
       // Stale onboardingData — missing website/about/avatarUrl because the
       // user set those later via the Profile Builder, which never writes
       // onboardingData.
       onboardingData: {
-        fullName: "Survive Person", title: "Old Title", company: "Acme",
-        phone: "0917000003", services: [],
+        fullName: "Survive Person",
+        title: "Old Title",
+        company: "Acme",
+        phone: "0917000003",
+        services: [],
       },
-    })
+    }),
   );
 
   const profileId = await t.run(async (ctx) =>
@@ -671,11 +703,15 @@ test("updateOnboarding in edit mode: a live agentInfo value absent from onboardi
       name: "Survive Person's Profile",
       profileType: "individual",
       agentInfo: {
-        fullName: "Survive Person", title: "Old Title", company: "Acme",
-        phone: "0917000003", email: "survive@test.dev", services: [],
+        fullName: "Survive Person",
+        title: "Old Title",
+        company: "Acme",
+        phone: "0917000003",
+        email: "survive@test.dev",
+        services: [],
         socialLinks: [],
         website: "https://real-site.example", // LIVE-only value
-        about: "Live about text",              // LIVE-only value
+        about: "Live about text", // LIVE-only value
       },
       layoutConfig: {
         themeId: "editorial",
@@ -684,7 +720,7 @@ test("updateOnboarding in edit mode: a live agentInfo value absent from onboardi
         heroStyle: "default",
       },
       featuredProperties: [],
-    })
+    }),
   );
 
   const profileDoc = await t.run(async (ctx) => ctx.db.get(profileId));
@@ -741,10 +777,13 @@ test("updateOnboarding in edit mode: a field the user deliberately clears actual
   const asUser = t.withIdentity({ subject: "clear_user" });
   const userId = await t.run(async (ctx) =>
     ctx.db.insert("users", {
-      email: "clear@test.dev", clerkId: "clear_user", role: "agent",
-      subscriptionStatus: "active", plan: "free",
+      email: "clear@test.dev",
+      clerkId: "clear_user",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
       onboardingCompleted: true,
-    })
+    }),
   );
 
   const profileId = await t.run(async (ctx) =>
@@ -753,8 +792,12 @@ test("updateOnboarding in edit mode: a field the user deliberately clears actual
       name: "Clear Person's Profile",
       profileType: "individual",
       agentInfo: {
-        fullName: "Clear Person", title: "Designer", company: "Acme",
-        phone: "0917000004", email: "clear@test.dev", services: [],
+        fullName: "Clear Person",
+        title: "Designer",
+        company: "Acme",
+        phone: "0917000004",
+        email: "clear@test.dev",
+        services: [],
         socialLinks: [],
         website: "https://to-be-cleared.example",
       },
@@ -765,7 +808,7 @@ test("updateOnboarding in edit mode: a field the user deliberately clears actual
         heroStyle: "default",
       },
       featuredProperties: [],
-    })
+    }),
   );
 
   // User opens edit mode, clears the website field, resends everything
@@ -789,9 +832,7 @@ test("updateOnboarding in edit mode: a field the user deliberately clears actual
 
 test("deleteMyAccount rejects an unauthenticated caller", async () => {
   const t = convexTest(schema);
-  await expect(
-    t.action(api.users.deleteMyAccount, {})
-  ).rejects.toThrow(/unauthorized/i);
+  await expect(t.action(api.users.deleteMyAccount, {})).rejects.toThrow(/unauthorized/i);
 });
 
 test("deleteMyAccount returns physical cards to inventory instead of deleting them", async () => {
@@ -823,16 +864,14 @@ test("deleteMyAccount retains auditLogs, including a new entry for the deletion 
     ctx.db
       .query("auditLogs")
       .withIndex("by_user", (q) => q.eq("userId", seed.userId))
-      .collect()
+      .collect(),
   );
 
   // The pre-existing log survives...
   expect(logs.some((l) => l._id === seed.priorAuditLogId)).toBe(true);
   // ...and a new "delete" entry for the account itself was added, not
   // skipped, even though its own subject is about to be removed.
-  const deletionLog = logs.find(
-    (l) => l.action === "delete" && l.resourceType === "user"
-  );
+  const deletionLog = logs.find((l) => l.action === "delete" && l.resourceType === "user");
   expect(deletionLog).toBeDefined();
   expect(deletionLog?.resourceId).toBe(String(seed.userId));
 });
@@ -857,8 +896,7 @@ test("deleteMyAccount calls Clerk's Backend API DELETE /v1/users/{id} with the s
   const asUser = t.withIdentity({ subject: "clerk_delete_user" });
 
   const fetchMock = vi.fn(
-    async (_url: string, _init?: RequestInit) =>
-      new Response(null, { status: 200 })
+    async (_url: string, _init?: RequestInit) => new Response(null, { status: 200 }),
   );
   vi.stubGlobal("fetch", fetchMock);
 
@@ -868,9 +906,7 @@ test("deleteMyAccount calls Clerk's Backend API DELETE /v1/users/{id} with the s
   const [url, init] = fetchMock.mock.calls[0];
   expect(url).toBe("https://api.clerk.com/v1/users/clerk_delete_user");
   expect(init?.method).toBe("DELETE");
-  expect((init?.headers as Record<string, string>)?.Authorization).toBe(
-    "Bearer sk_test_abc123"
-  );
+  expect((init?.headers as Record<string, string>)?.Authorization).toBe("Bearer sk_test_abc123");
 
   expect(result.success).toBe(true);
   expect(result.identityDeletion.status).toBe("deleted");
@@ -916,9 +952,7 @@ test("deleteMyAccount reports identity deletion as failed (not silent success) w
   const seed = await seedFullAccount(t, "clerk_fail_user");
   const asUser = t.withIdentity({ subject: "clerk_fail_user" });
 
-  const fetchMock = vi.fn(
-    async () => new Response("server error", { status: 500 })
-  );
+  const fetchMock = vi.fn(async () => new Response("server error", { status: 500 }));
   vi.stubGlobal("fetch", fetchMock);
   const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
@@ -976,9 +1010,7 @@ test("deleteMyAccount treats a 404 from Clerk (identity already gone) as a compl
   await seedFullAccount(t, "already_gone_user");
   const asUser = t.withIdentity({ subject: "already_gone_user" });
 
-  const fetchMock = vi.fn(
-    async () => new Response("not found", { status: 404 })
-  );
+  const fetchMock = vi.fn(async () => new Response("not found", { status: 404 }));
   vi.stubGlobal("fetch", fetchMock);
 
   const result = await asUser.action(api.users.deleteMyAccount, {});

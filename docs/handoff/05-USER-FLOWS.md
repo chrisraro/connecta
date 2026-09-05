@@ -10,6 +10,7 @@ something from source, it is marked `UNVERIFIED:`.
 
 Companion diagrams for Figma (drag-and-drop import — see
 `docs/handoff/figma/README.md`):
+
 - `docs/handoff/figma/user-flows.svg` — all six flows below, one diagram.
 - `docs/handoff/figma/sitemap.svg` — all 39 routes grouped by area.
 
@@ -19,15 +20,15 @@ Source of truth: `lib/plans.ts:36-105` (`PLAN_LIMITS`). Three plans —
 `free`, `pro`, `business` — all defined in one record so nothing here is
 guessed:
 
-| Limit | Free | Pro | Business |
-|---|---|---|---|
-| `maxProfiles` | 1 | unlimited | unlimited |
-| `maxActiveCards` | 1 | unlimited | unlimited |
-| `allowedTemplateIds` | `["editorial", "architectural"]` only (`FREE_TEMPLATE_IDS`, `lib/plans.ts:31`) | all | all |
-| `leadViewCap` | 100 (older leads still captured, just not viewable) | unlimited | unlimited |
-| `showBranding` | true | false | false |
-| `canExportLeads` | false | true | true |
-| `hasTeam` | false | false | true (5 seats) |
+| Limit                | Free                                                                           | Pro       | Business       |
+| -------------------- | ------------------------------------------------------------------------------ | --------- | -------------- |
+| `maxProfiles`        | 1                                                                              | unlimited | unlimited      |
+| `maxActiveCards`     | 1                                                                              | unlimited | unlimited      |
+| `allowedTemplateIds` | `["editorial", "architectural"]` only (`FREE_TEMPLATE_IDS`, `lib/plans.ts:31`) | all       | all            |
+| `leadViewCap`        | 100 (older leads still captured, just not viewable)                            | unlimited | unlimited      |
+| `showBranding`       | true                                                                           | false     | false          |
+| `canExportLeads`     | false                                                                          | true      | true           |
+| `hasTeam`            | false                                                                          | false     | true (5 seats) |
 
 These four numbers — profile count, active-card count, template id, lead
 view cap — are the ones that actually change flow behavior below; each is
@@ -53,7 +54,7 @@ flowchart TD
   arrived from a card tap, `card_uuid` is appended to that redirect URL —
   the comment at lines 37-42 spells out why this is load-bearing: dropping
   it here silently breaks the entire QR activation chain, because
-  `forceRedirectUrl` only fires on a *completed* Clerk auth flow and is the
+  `forceRedirectUrl` only fires on a _completed_ Clerk auth flow and is the
   only place the uuid survives the hop.
 - `/auth/callback` is a one-line wrapper around `PostLoginRedirect`
   (`app/(auth)/auth/callback/page.tsx:8-10`).
@@ -125,7 +126,7 @@ flowchart TD
   (`app/dashboard/onboarding/page.tsx:277-290`), non-blocking on failure.
 - **Plan gating in this flow:** none directly — `updateOnboarding` never
   checks `maxProfiles`. The check happens one step later, the first time
-  the user tries to *save* a second profile from the builder (Flow 3).
+  the user tries to _save_ a second profile from the builder (Flow 3).
 
 ## 3. Profile builder edit → save → public profile render
 
@@ -160,11 +161,11 @@ flowchart TD
     2. Profile-count gating — **only when creating** (`!args.id`):
        existing profile count must be below `limits.maxProfiles`
        (`convex/profiles.ts:312-323`).
-    Both throw `ConvexError({ code: "PLAN_LIMIT", ... })` rather than a
-    plain `Error`, specifically so the message survives production's
-    redaction of plain-Error text (see `lib/errors.ts`) and the client can
-    detect it via `isPlanLimitError` (`lib/plans.ts:121`) to show a "Get
-    Pro" action on the toast (`app/dashboard/builder/page.tsx:992-996`).
+       Both throw `ConvexError({ code: "PLAN_LIMIT", ... })` rather than a
+       plain `Error`, specifically so the message survives production's
+       redaction of plain-Error text (see `lib/errors.ts`) and the client can
+       detect it via `isPlanLimitError` (`lib/plans.ts:121`) to show a "Get
+       Pro" action on the toast (`app/dashboard/builder/page.tsx:992-996`).
   - On success, the client navigates to `profilePath({ _id, slug })`
     (`lib/profileUrl.ts:19-21`) — `/<slug>` when the profile has one, else
     the stable `/p/<id>` fallback.
@@ -240,7 +241,7 @@ flowchart TD
   visitor never actually runs Clerk's sign-up flow when routed through
   `/auth`, so `forceRedirectUrl` (the only place `card_uuid` survives)
   never fires and the uuid would be silently dropped. So: if `card.status
-  === "inventory"` and the visitor `isSignedIn`, the page calls
+=== "inventory"` and the visitor `isSignedIn`, the page calls
   `claimCardByUuid` directly, right there, and redirects to
   `/dashboard/cards?claimed=1`. If signed out, it instead redirects to
   `/auth?mode=signup&card_uuid=...`, which starts the chain traced in Flow
@@ -252,7 +253,7 @@ flowchart TD
   `profilePath` (`app/t/[uuid]/page.tsx:90-104`, `convex/cards.ts:181-192`
   for `incrementTapCount`).
 - **Claiming logic** (`convex/cards.ts:223-303`,
-  `performClaimCardByUuid`): claimability is judged on `card.status`, *not*
+  `performClaimCardByUuid`): claimability is judged on `card.status`, _not_
   `ownerId` — factory registration stamps `ownerId` with the registering
   admin as a mandatory-but-custodial owner (schema requires one), so an
   ownerId-based gate would have rejected every factory-produced card. A
@@ -276,12 +277,12 @@ flowchart TD
   (`convex/cards.ts:133-156`), called either automatically at the end of
   onboarding (Flow 2) or manually from `/dashboard/cards`
   (`handleLinkProfile`, `app/dashboard/cards/page.tsx:155-167`).
-- **Plan gating in this flow:** free plan allows only 1 *active* card
+- **Plan gating in this flow:** free plan allows only 1 _active_ card
   (`maxActiveCards: 1`). `assertCanActivateCard`
   (`convex/cards.ts:16-36`) is called from both the claim path
   (`performClaimCardByUuid`, line 293) and the manual-code path
   (`performActivateCard`, line 105) and throws `ConvexError({ code:
-  "PLAN_LIMIT", ... })` once the free-plan cap is hit. `/t/[uuid]`'s error
+"PLAN_LIMIT", ... })` once the free-plan cap is hit. `/t/[uuid]`'s error
   screen renders the `UpgradeGate` "Get Pro" banner instead of a dead-end
   when this specific error is caught (`app/t/[uuid]/page.tsx:114-119`,
   keyed via `isPlanLimitError`).
@@ -309,7 +310,7 @@ flowchart TD
   request fails, it just shows an inline error and lets the visitor retry
   manually (lines 56-58, `setErrorMessage("Failed to send message...")`).
   **Important distinction:** the offline queue described below is a
-  *separate* feature, only in the dashboard's "capture a lead in person"
+  _separate_ feature, only in the dashboard's "capture a lead in person"
   flow — the public contact form never touches `lib/offline-leads.ts`.
 - `createLead` is a Convex **action** (`convex/leads.ts:162-171`), not a
   mutation, wrapping two internal mutations for the same atomicity reason
@@ -324,7 +325,7 @@ flowchart TD
   since `visitorId` is client-supplied and trivially rotatable.
 - **Leads are never lost regardless of plan** — the comment at
   `convex/leads.ts:118-119` is explicit: the Free plan's `leadViewCap`
-  (100) only limits how many are *viewable* in `getLeads`
+  (100) only limits how many are _viewable_ in `getLeads`
   (`convex/leads.ts:173-210`), returning `lockedCount` for the rest so the
   UI can show an upgrade prompt without discarding data.
 - On successful insert, `performCreateLead` also writes a `notifications`
@@ -389,8 +390,8 @@ and `convex/billing.ts:230-231`.
   neither `createOrder` nor `createCheckoutSession` ever runs, the cart
   stays intact, and no unpayable pending order is created (this guarantee
   is spelled out in the doc comment at lines 1-27 of that file). The
-  dialog's copy: *"We're finalizing our payment provider — online checkout
-  isn't live yet. Your cart is saved..."* The same component/gate pattern
+  dialog's copy: _"We're finalizing our payment provider — online checkout
+  isn't live yet. Your cart is saved..."_ The same component/gate pattern
   is reused by `components/billing/PlanUpgradeButton.tsx` for the
   dashboard's "Upgrade to Pro" billing surface — both payment entry points
   in the app terminate in this placeholder today.

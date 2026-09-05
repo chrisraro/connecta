@@ -13,17 +13,24 @@ describe("resolveOnboardingPrefill — edit mode", () => {
     const result = resolveOnboardingPrefill({
       isEditMode: true,
       onboardingData: {
-        fullName: "Stale Name", title: "Stale Title", company: "Stale Co",
-        phone: "0917000000", services: [],
+        fullName: "Stale Name",
+        title: "Stale Title",
+        company: "Stale Co",
+        phone: "0917000000",
+        services: [],
         // website/about/avatarUrl intentionally absent — stale.
       },
       profiles: [
         {
           profileType: "business",
           agentInfo: {
-            fullName: "Live Name", title: "Live Title", company: "Live Co",
-            phone: "0917111111", website: "https://real-site.example",
-            about: "Live about text", avatarUrl: "https://cdn.example/live.png",
+            fullName: "Live Name",
+            title: "Live Title",
+            company: "Live Co",
+            phone: "0917111111",
+            website: "https://real-site.example",
+            about: "Live about text",
+            avatarUrl: "https://cdn.example/live.png",
             services: ["Logo Design"],
           },
         },
@@ -82,7 +89,10 @@ describe("resolveOnboardingPrefill — edit mode", () => {
         {
           profileType: "individual",
           agentInfo: {
-            fullName: "", title: "Title", company: "Co", phone: "0917",
+            fullName: "",
+            title: "Title",
+            company: "Co",
+            phone: "0917",
             services: [],
           },
         },
@@ -100,9 +110,13 @@ describe("resolveOnboardingPrefill — first-run (create mode), unchanged behavi
       isEditMode: false,
       onboardingData: {
         profileCategory: "company",
-        fullName: "Saved Name", title: "Saved Title", company: "Saved Co",
-        phone: "0917222222", website: "https://saved.example",
-        about: "Saved about", avatarUrl: "https://cdn.example/saved.png",
+        fullName: "Saved Name",
+        title: "Saved Title",
+        company: "Saved Co",
+        phone: "0917222222",
+        website: "https://saved.example",
+        about: "Saved about",
+        avatarUrl: "https://cdn.example/saved.png",
         services: ["Web Design"],
       },
       profiles: [],

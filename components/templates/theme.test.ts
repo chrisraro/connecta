@@ -11,7 +11,7 @@ test("every template's default body text clears WCAG AA on its own background", 
     const t = TEMPLATE_THEMES[id];
     expect(
       meetsAA(t.colors.ink, t.colors.background),
-      `${id}: ink ${t.colors.ink} on bg ${t.colors.background}`
+      `${id}: ink ${t.colors.ink} on bg ${t.colors.background}`,
     ).toBe(true);
   }
 });
@@ -21,7 +21,7 @@ test("every template's muted text clears WCAG AA — no opacity-suffix muting", 
     const t = TEMPLATE_THEMES[id];
     expect(
       meetsAA(t.colors.inkSoft, t.colors.background),
-      `${id}: inkSoft ${t.colors.inkSoft} on bg ${t.colors.background}`
+      `${id}: inkSoft ${t.colors.inkSoft} on bg ${t.colors.background}`,
     ).toBe(true);
   }
 });

@@ -9,8 +9,5 @@ import { NextResponse } from "next/server";
  * only to return HTTP 410 Gone for any lingering PayPal webhook traffic.
  */
 export async function POST() {
-  return NextResponse.json(
-    { error: "Gone: PayPal has been replaced by PayRex." },
-    { status: 410 }
-  );
+  return NextResponse.json({ error: "Gone: PayPal has been replaced by PayRex." }, { status: 410 });
 }

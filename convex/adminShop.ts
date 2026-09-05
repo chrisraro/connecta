@@ -153,12 +153,14 @@ export const createProduct = mutation({
     images: v.array(v.string()),
     primaryImageIndex: v.number(),
     weight: v.optional(v.number()),
-    dimensions: v.optional(v.object({
-      length: v.number(),
-      width: v.number(),
-      height: v.number(),
-      unit: v.union(v.literal("cm"), v.literal("in")),
-    })),
+    dimensions: v.optional(
+      v.object({
+        length: v.number(),
+        width: v.number(),
+        height: v.number(),
+        unit: v.union(v.literal("cm"), v.literal("in")),
+      }),
+    ),
     shippingRequired: v.boolean(),
     metadata: v.optional(v.any()),
   },
@@ -203,12 +205,14 @@ export const updateProduct = mutation({
     images: v.optional(v.array(v.string())),
     primaryImageIndex: v.optional(v.number()),
     weight: v.optional(v.number()),
-    dimensions: v.optional(v.object({
-      length: v.number(),
-      width: v.number(),
-      height: v.number(),
-      unit: v.union(v.literal("cm"), v.literal("in")),
-    })),
+    dimensions: v.optional(
+      v.object({
+        length: v.number(),
+        width: v.number(),
+        height: v.number(),
+        unit: v.union(v.literal("cm"), v.literal("in")),
+      }),
+    ),
     shippingRequired: v.optional(v.boolean()),
     metadata: v.optional(v.any()),
   },
@@ -277,21 +281,21 @@ export const getProducts = query({
     let products = await ctx.db.query("products").collect();
 
     if (args.categoryId) {
-      products = products.filter(p => p.categoryId === args.categoryId);
+      products = products.filter((p) => p.categoryId === args.categoryId);
     }
 
     if (args.search) {
       const searchLower = args.search.toLowerCase();
-      products = products.filter(p =>
-        p.name.toLowerCase().includes(searchLower) ||
-        p.sku.toLowerCase().includes(searchLower)
+      products = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchLower) || p.sku.toLowerCase().includes(searchLower),
       );
     }
 
     if (args.status === "published") {
-      products = products.filter(p => p.isPublished);
+      products = products.filter((p) => p.isPublished);
     } else if (args.status === "draft") {
-      products = products.filter(p => !p.isPublished);
+      products = products.filter((p) => !p.isPublished);
     }
 
     return products;
@@ -323,10 +327,12 @@ export const createVariation = mutation({
     sku: v.string(),
     price: v.number(),
     inventory: v.number(),
-    options: v.array(v.object({
-      optionName: v.string(),
-      optionValue: v.string(),
-    })),
+    options: v.array(
+      v.object({
+        optionName: v.string(),
+        optionValue: v.string(),
+      }),
+    ),
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -356,10 +362,14 @@ export const updateVariation = mutation({
     sku: v.optional(v.string()),
     price: v.optional(v.number()),
     inventory: v.optional(v.number()),
-    options: v.optional(v.array(v.object({
-      optionName: v.string(),
-      optionValue: v.string(),
-    }))),
+    options: v.optional(
+      v.array(
+        v.object({
+          optionName: v.string(),
+          optionValue: v.string(),
+        }),
+      ),
+    ),
     image: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -454,7 +464,9 @@ export const getOrders = query({
     } else if (args.paymentStatus) {
       orders = await ctx.db
         .query("orders")
-        .withIndex("by_paymentStatus", (q) => q.eq("paymentStatus", args.paymentStatus as Doc<"orders">["paymentStatus"]))
+        .withIndex("by_paymentStatus", (q) =>
+          q.eq("paymentStatus", args.paymentStatus as Doc<"orders">["paymentStatus"]),
+        )
         .collect();
     } else if (args.dateFrom !== undefined || args.dateTo !== undefined) {
       orders = await ctx.db
@@ -474,16 +486,16 @@ export const getOrders = query({
     }
 
     if (args.status) {
-      orders = orders.filter(o => o.status === args.status);
+      orders = orders.filter((o) => o.status === args.status);
     }
     if (args.paymentStatus) {
-      orders = orders.filter(o => o.paymentStatus === args.paymentStatus);
+      orders = orders.filter((o) => o.paymentStatus === args.paymentStatus);
     }
     if (args.dateFrom) {
-      orders = orders.filter(o => o.createdAt >= args.dateFrom!);
+      orders = orders.filter((o) => o.createdAt >= args.dateFrom!);
     }
     if (args.dateTo) {
-      orders = orders.filter(o => o.createdAt <= args.dateTo!);
+      orders = orders.filter((o) => o.createdAt <= args.dateTo!);
     }
 
     orders.sort((a, b) => b.createdAt - a.createdAt);
@@ -515,7 +527,7 @@ export const updateOrderStatus = mutation({
       v.literal("shipped"),
       v.literal("delivered"),
       v.literal("cancelled"),
-      v.literal("refunded")
+      v.literal("refunded"),
     ),
     notes: v.optional(v.string()),
   },
@@ -572,7 +584,13 @@ export const updateOrderStatus = mutation({
 // Helper: restore inventory for every line item of an order (product + variation).
 async function restoreOrderInventory(
   ctx: MutationCtx,
-  order: { items: Array<{ productId: Id<"products">; variationId?: Id<"productVariations">; quantity: number }> }
+  order: {
+    items: Array<{
+      productId: Id<"products">;
+      variationId?: Id<"productVariations">;
+      quantity: number;
+    }>;
+  },
 ): Promise<void> {
   for (const item of order.items) {
     const product = await ctx.db.get(item.productId);
@@ -647,9 +665,7 @@ export const getLowStockProducts = query({
 
     const products = await ctx.db.query("products").collect();
 
-    const lowStock = products.filter(p =>
-      p.trackInventory && p.inventory <= p.lowStockThreshold
-    );
+    const lowStock = products.filter((p) => p.trackInventory && p.inventory <= p.lowStockThreshold);
 
     return lowStock;
   },
@@ -673,17 +689,20 @@ export const getSalesStats = query({
       .collect();
 
     if (args.dateFrom) {
-      orders = orders.filter(o => o.createdAt >= args.dateFrom!);
+      orders = orders.filter((o) => o.createdAt >= args.dateFrom!);
     }
     if (args.dateTo) {
-      orders = orders.filter(o => o.createdAt <= args.dateTo!);
+      orders = orders.filter((o) => o.createdAt <= args.dateTo!);
     }
 
     const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
     const totalOrders = orders.length;
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-    const productSales: Record<string, { productId: string, productName: string, quantity: number, revenue: number }> = {};
+    const productSales: Record<
+      string,
+      { productId: string; productName: string; quantity: number; revenue: number }
+    > = {};
 
     for (const order of orders) {
       for (const item of order.items) {
@@ -847,8 +866,7 @@ export const getShopAnalytics = query({
 
     const totalRevenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
     const paidOrderCount = paidOrders.length;
-    const averageOrderValue =
-      paidOrderCount > 0 ? Math.round(totalRevenue / paidOrderCount) : 0;
+    const averageOrderValue = paidOrderCount > 0 ? Math.round(totalRevenue / paidOrderCount) : 0;
 
     const statusCounts: Record<string, number> = {
       pending: 0,

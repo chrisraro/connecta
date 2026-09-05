@@ -25,74 +25,74 @@ import { shouldRedirectAdminToConsole, shouldRedirectAdminOnFirstLanding } from 
 // a session-storage flag that prevents re-triggering.
 
 describe("shouldRedirectAdminToConsole", () => {
-    test("redirects from the bare dashboard root", () => {
-        expect(shouldRedirectAdminToConsole("/dashboard")).toBe(true);
-    });
+  test("redirects from the bare dashboard root", () => {
+    expect(shouldRedirectAdminToConsole("/dashboard")).toBe(true);
+  });
 
-    test("does not redirect from any dashboard sub-route", () => {
-        expect(shouldRedirectAdminToConsole("/dashboard/onboarding")).toBe(false);
-        expect(shouldRedirectAdminToConsole("/dashboard/builder")).toBe(false);
-        expect(shouldRedirectAdminToConsole("/dashboard/profiles")).toBe(false);
-        expect(shouldRedirectAdminToConsole("/dashboard/cards")).toBe(false);
-        expect(shouldRedirectAdminToConsole("/dashboard/leads")).toBe(false);
-        expect(shouldRedirectAdminToConsole("/dashboard/settings")).toBe(false);
-        expect(shouldRedirectAdminToConsole("/dashboard/billing")).toBe(false);
-    });
+  test("does not redirect from any dashboard sub-route", () => {
+    expect(shouldRedirectAdminToConsole("/dashboard/onboarding")).toBe(false);
+    expect(shouldRedirectAdminToConsole("/dashboard/builder")).toBe(false);
+    expect(shouldRedirectAdminToConsole("/dashboard/profiles")).toBe(false);
+    expect(shouldRedirectAdminToConsole("/dashboard/cards")).toBe(false);
+    expect(shouldRedirectAdminToConsole("/dashboard/leads")).toBe(false);
+    expect(shouldRedirectAdminToConsole("/dashboard/settings")).toBe(false);
+    expect(shouldRedirectAdminToConsole("/dashboard/billing")).toBe(false);
+  });
 
-    test("does not false-positive on a route that merely starts with the same prefix", () => {
-        expect(shouldRedirectAdminToConsole("/dashboard-help")).toBe(false);
-    });
+  test("does not false-positive on a route that merely starts with the same prefix", () => {
+    expect(shouldRedirectAdminToConsole("/dashboard-help")).toBe(false);
+  });
 
-    test("is false for a null/undefined pathname (usePathname before mount)", () => {
-        expect(shouldRedirectAdminToConsole(null)).toBe(false);
-        expect(shouldRedirectAdminToConsole(undefined)).toBe(false);
-    });
+  test("is false for a null/undefined pathname (usePathname before mount)", () => {
+    expect(shouldRedirectAdminToConsole(null)).toBe(false);
+    expect(shouldRedirectAdminToConsole(undefined)).toBe(false);
+  });
 });
 
 describe("shouldRedirectAdminOnFirstLanding", () => {
-    beforeEach(() => {
-        // Reset sessionStorage before each test
-        if (typeof sessionStorage !== "undefined") {
-            sessionStorage.clear();
-        }
-    });
+  beforeEach(() => {
+    // Reset sessionStorage before each test
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.clear();
+    }
+  });
 
-    test("redirects when landing on /dashboard for the first time (flag not set)", () => {
-        expect(shouldRedirectAdminOnFirstLanding("/dashboard")).toBe(true);
-    });
+  test("redirects when landing on /dashboard for the first time (flag not set)", () => {
+    expect(shouldRedirectAdminOnFirstLanding("/dashboard")).toBe(true);
+  });
 
-    test("does not redirect when landing on /dashboard a second time (flag already set)", () => {
-        // First call sets the flag
-        expect(shouldRedirectAdminOnFirstLanding("/dashboard")).toBe(true);
-        // Second call sees flag is set, returns false
-        expect(shouldRedirectAdminOnFirstLanding("/dashboard")).toBe(false);
-    });
+  test("does not redirect when landing on /dashboard a second time (flag already set)", () => {
+    // First call sets the flag
+    expect(shouldRedirectAdminOnFirstLanding("/dashboard")).toBe(true);
+    // Second call sees flag is set, returns false
+    expect(shouldRedirectAdminOnFirstLanding("/dashboard")).toBe(false);
+  });
 
-    test("does not redirect from any dashboard sub-route, even on first visit", () => {
-        expect(shouldRedirectAdminOnFirstLanding("/dashboard/profiles")).toBe(false);
-        expect(shouldRedirectAdminOnFirstLanding("/dashboard/builder")).toBe(false);
-        expect(shouldRedirectAdminOnFirstLanding("/dashboard/leads")).toBe(false);
-    });
+  test("does not redirect from any dashboard sub-route, even on first visit", () => {
+    expect(shouldRedirectAdminOnFirstLanding("/dashboard/profiles")).toBe(false);
+    expect(shouldRedirectAdminOnFirstLanding("/dashboard/builder")).toBe(false);
+    expect(shouldRedirectAdminOnFirstLanding("/dashboard/leads")).toBe(false);
+  });
 
-    test("is false for null/undefined pathname", () => {
-        expect(shouldRedirectAdminOnFirstLanding(null)).toBe(false);
-        expect(shouldRedirectAdminOnFirstLanding(undefined)).toBe(false);
-    });
+  test("is false for null/undefined pathname", () => {
+    expect(shouldRedirectAdminOnFirstLanding(null)).toBe(false);
+    expect(shouldRedirectAdminOnFirstLanding(undefined)).toBe(false);
+  });
 
-    test("allows navigation back to /dashboard after initial redirect (simulating admin clicking Back to user app)", () => {
-        // Simulate initial landing on /dashboard (this would trigger redirect to /admin)
-        const shouldRedirectFirstTime = shouldRedirectAdminOnFirstLanding("/dashboard");
-        expect(shouldRedirectFirstTime).toBe(true);
+  test("allows navigation back to /dashboard after initial redirect (simulating admin clicking Back to user app)", () => {
+    // Simulate initial landing on /dashboard (this would trigger redirect to /admin)
+    const shouldRedirectFirstTime = shouldRedirectAdminOnFirstLanding("/dashboard");
+    expect(shouldRedirectFirstTime).toBe(true);
 
-        // Simulate admin navigating to a consumer sub-route (flag stays set)
-        const shouldRedirectFromProfiles = shouldRedirectAdminOnFirstLanding("/dashboard/profiles");
-        expect(shouldRedirectFromProfiles).toBe(false);
+    // Simulate admin navigating to a consumer sub-route (flag stays set)
+    const shouldRedirectFromProfiles = shouldRedirectAdminOnFirstLanding("/dashboard/profiles");
+    expect(shouldRedirectFromProfiles).toBe(false);
 
-        // Simulate admin clicking "Back to user app" (returns to /dashboard but flag is already set)
-        const shouldRedirectSecondTime = shouldRedirectAdminOnFirstLanding("/dashboard");
-        expect(shouldRedirectSecondTime).toBe(false);
-        // Now admin stays on consumer /dashboard instead of bouncing back
-    });
+    // Simulate admin clicking "Back to user app" (returns to /dashboard but flag is already set)
+    const shouldRedirectSecondTime = shouldRedirectAdminOnFirstLanding("/dashboard");
+    expect(shouldRedirectSecondTime).toBe(false);
+    // Now admin stays on consumer /dashboard instead of bouncing back
+  });
 });
 
 /**

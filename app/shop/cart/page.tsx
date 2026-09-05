@@ -25,7 +25,7 @@ const DISCOUNT_REVALIDATE_DEBOUNCE_MS = 600;
 function CartItemImage({ storageId, alt }: { storageId: string; alt: string }) {
   const imageUrl = useQuery(
     api.images.getImageUrl,
-    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip",
   );
 
   const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
@@ -38,19 +38,12 @@ function CartItemImage({ storageId, alt }: { storageId: string; alt: string }) {
     );
   }
 
-  return (
-    <Image
-      src={displayUrl}
-      alt={alt}
-      fill
-      sizes="96px"
-      className="object-cover"
-    />
-  );
+  return <Image src={displayUrl} alt={alt} fill sizes="96px" className="object-cover" />;
 }
 
 export default function CartPage() {
-  const { items, itemCount, subtotal, isLoading, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, itemCount, subtotal, isLoading, updateQuantity, removeItem, clearCart } =
+    useCart();
   const [discountCode, setDiscountCode] = useState("");
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
 
@@ -65,7 +58,7 @@ export default function CartPage() {
   const handleUpdateQuantity = async (
     productId: Parameters<typeof updateQuantity>[0],
     variationId: Parameters<typeof updateQuantity>[1],
-    quantity: number
+    quantity: number,
   ) => {
     try {
       await updateQuantity(productId, variationId, quantity);
@@ -76,7 +69,7 @@ export default function CartPage() {
 
   const handleRemoveItem = async (
     productId: Parameters<typeof removeItem>[0],
-    variationId: Parameters<typeof removeItem>[1]
+    variationId: Parameters<typeof removeItem>[1],
   ) => {
     try {
       await removeItem(productId, variationId);
@@ -146,10 +139,8 @@ export default function CartPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedCode, subtotal]);
 
-  const discountAmount =
-    discountResult && discountResult.valid ? discountResult.discountAmount : 0;
-  const discountError =
-    discountResult && !discountResult.valid ? discountResult.error : null;
+  const discountAmount = discountResult && discountResult.valid ? discountResult.discountAmount : 0;
+  const discountError = discountResult && !discountResult.valid ? discountResult.error : null;
 
   const freeShippingThreshold = settings?.freeShippingThresholdCentavos ?? 250000;
   const shippingFlatRate = settings?.shippingFlatRateCentavos ?? 50000;
@@ -251,9 +242,7 @@ export default function CartPage() {
                       </Link>
 
                       {variation && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {variation.name}
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">{variation.name}</p>
                       )}
 
                       <p className="text-sm text-muted-foreground mt-1">
@@ -267,7 +256,13 @@ export default function CartPage() {
                             size="icon"
                             aria-label="Decrease quantity"
                             className="size-11 touch-manipulation"
-                            onClick={() => handleUpdateQuantity(item.productId, item.variationId, item.quantity - 1)}
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.productId,
+                                item.variationId,
+                                item.quantity - 1,
+                              )
+                            }
                             disabled={item.quantity <= 1}
                           >
                             <Minus className="w-3 h-3" />
@@ -278,7 +273,13 @@ export default function CartPage() {
                             size="icon"
                             aria-label="Increase quantity"
                             className="size-11 touch-manipulation"
-                            onClick={() => handleUpdateQuantity(item.productId, item.variationId, item.quantity + 1)}
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.productId,
+                                item.variationId,
+                                item.quantity + 1,
+                              )
+                            }
                           >
                             <Plus className="w-3 h-3" />
                           </Button>
@@ -333,9 +334,7 @@ export default function CartPage() {
 
               {tax > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    Tax ({taxRatePercent}%)
-                  </span>
+                  <span className="text-muted-foreground">Tax ({taxRatePercent}%)</span>
                   <span className="font-medium">{formatPrice(tax)}</span>
                 </div>
               )}
@@ -357,9 +356,7 @@ export default function CartPage() {
                       Apply
                     </Button>
                   </div>
-                  {discountError && (
-                    <p className="text-xs text-destructive">{discountError}</p>
-                  )}
+                  {discountError && <p className="text-xs text-destructive">{discountError}</p>}
                   {discountAmount > 0 && (
                     <p className="text-xs text-green-600">Discount applied!</p>
                   )}
@@ -373,7 +370,8 @@ export default function CartPage() {
                 </div>
                 {shipping > 0 && discountedSubtotal < freeShippingThreshold && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Add {formatPrice(freeShippingThreshold - discountedSubtotal)} more for free shipping!
+                    Add {formatPrice(freeShippingThreshold - discountedSubtotal)} more for free
+                    shipping!
                   </p>
                 )}
               </div>

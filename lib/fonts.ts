@@ -1,11 +1,4 @@
-import {
-  Fraunces,
-  Geist,
-  Geist_Mono,
-  Manrope,
-  Space_Grotesk,
-  Newsreader,
-} from "next/font/google";
+import { Fraunces, Geist, Geist_Mono, Manrope, Space_Grotesk, Newsreader } from "next/font/google";
 
 /** The product's own display face — high-contrast variable serif with real character. */
 export const displayFont = Fraunces({

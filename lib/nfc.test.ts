@@ -15,14 +15,18 @@ function domException(name: string, message: string): Error {
 // --- classifyNfcWriteError -------------------------------------------------
 
 test("classifies NotReadableError as tag-lost with a hold-still, retry message", () => {
-  const result = classifyNfcWriteError(domException("NotReadableError", "Failed to write due to an IO error: null"));
+  const result = classifyNfcWriteError(
+    domException("NotReadableError", "Failed to write due to an IO error: null"),
+  );
   expect(result.kind).toBe("tag-lost");
   expect(result.userMessage).toMatch(/hold the card still/i);
   expect(result.userMessage).toMatch(/retry/i);
 });
 
 test("classifies NotReadableError's raw 'IO error: null' text without ever surfacing the literal null", () => {
-  const result = classifyNfcWriteError(domException("NotReadableError", "Failed to write due to an IO error: null"));
+  const result = classifyNfcWriteError(
+    domException("NotReadableError", "Failed to write due to an IO error: null"),
+  );
   expect(result.userMessage).not.toMatch(/\bnull\b/);
 });
 
@@ -32,7 +36,9 @@ test("classifies NetworkError as tag-lost", () => {
 });
 
 test("classifies an error whose message contains 'IO error' as tag-lost even with an unrelated name", () => {
-  const result = classifyNfcWriteError(domException("UnknownError", "Failed to write due to an IO error: null"));
+  const result = classifyNfcWriteError(
+    domException("UnknownError", "Failed to write due to an IO error: null"),
+  );
   expect(result.kind).toBe("tag-lost");
   expect(result.userMessage).not.toMatch(/\bnull\b/);
 });
@@ -50,7 +56,7 @@ test("classifies NotAllowedError as permission even when its message also contai
   // whose message happens to mention "IO error" must still classify as
   // permission, not tag-lost.
   const result = classifyNfcWriteError(
-    domException("NotAllowedError", "Failed to write due to an IO error: null")
+    domException("NotAllowedError", "Failed to write due to an IO error: null"),
   );
   expect(result.kind).toBe("permission");
 });

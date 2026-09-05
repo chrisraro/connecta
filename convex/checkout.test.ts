@@ -71,7 +71,7 @@ test("createOrder's rate limit still accumulates across repeated failing attempt
         guestId,
         shippingAddress: VALID_SHIPPING_ADDRESS,
         paymentProvider: "payrex",
-      })
+      }),
     ).rejects.toThrow(/cart is empty/i);
   }
 
@@ -81,7 +81,7 @@ test("createOrder's rate limit still accumulates across repeated failing attempt
       guestId,
       shippingAddress: VALID_SHIPPING_ADDRESS,
       paymentProvider: "payrex",
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 
@@ -112,7 +112,7 @@ test("validateDiscount is rate-limited against repeated code guesses", async () 
       code: "GUESS_OVER_LIMIT",
       subtotal: 10000,
       visitorId: "discount_probe",
-    })
+    }),
   ).rejects.toThrow(/too many requests/i);
 });
 
@@ -131,7 +131,7 @@ test("getOrderByNumber rejects a caller who does not own the order", async () =>
   const asStranger = t.withIdentity({ subject: "stranger_clerk_id" });
 
   await expect(
-    asStranger.query(api.checkout.getOrderByNumber, { orderNumber: "TF-2026-TESTORD" })
+    asStranger.query(api.checkout.getOrderByNumber, { orderNumber: "TF-2026-TESTORD" }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -140,7 +140,7 @@ test("getOrderByNumber rejects an unauthenticated caller", async () => {
   await seedOrder(t, "owner_clerk_id");
 
   await expect(
-    t.query(api.checkout.getOrderByNumber, { orderNumber: "TF-2026-TESTORD" })
+    t.query(api.checkout.getOrderByNumber, { orderNumber: "TF-2026-TESTORD" }),
   ).rejects.toThrow(/unauthorized/i);
 });
 
@@ -206,7 +206,7 @@ async function seedPendingOrder(
   t: ReturnType<typeof convexTest>,
   productId: Id<"products">,
   quantity: number,
-  orderNumber: string
+  orderNumber: string,
 ) {
   return await t.run(async (ctx) => {
     return await ctx.db.insert("orders", {
@@ -287,12 +287,12 @@ test("internalConfirmOrderPayment is a no-op when a duplicate paid webhook arriv
     ctx.db
       .query("discounts")
       .withIndex("by_code", (q) => q.eq("code", "REFUNDCODE"))
-      .first()
+      .first(),
   );
   expect(discount?.usedCount).toBe(1); // not re-incremented
 
   const scheduled = await t.run(async (ctx) =>
-    ctx.db.system.query("_scheduled_functions").collect()
+    ctx.db.system.query("_scheduled_functions").collect(),
   );
   expect(scheduled.length).toBe(0); // no duplicate order-confirmation email scheduled
 });
@@ -321,7 +321,7 @@ test("internalConfirmOrderPayment fails the second of two concurrent orders that
     ctx.db
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", orderNumberB))
-      .first()
+      .first(),
   );
   expect(orderB?.paymentStatus).toBe("failed");
 });
@@ -387,7 +387,7 @@ test("internalConfirmOrderPayment stops a discount from being redeemed past its 
     ctx.db
       .query("discounts")
       .withIndex("by_code", (q) => q.eq("code", "ONECODE"))
-      .first()
+      .first(),
   );
   expect(discount?.usedCount).toBe(1);
 
@@ -395,7 +395,7 @@ test("internalConfirmOrderPayment stops a discount from being redeemed past its 
     ctx.db
       .query("orders")
       .withIndex("by_orderNumber", (q) => q.eq("orderNumber", orderNumberB))
-      .first()
+      .first(),
   );
   expect(orderB?.paymentStatus).toBe("failed");
 });

@@ -35,9 +35,7 @@ export const DEFAULT_SHOP_SETTINGS: ShopSettings = {
 
 // Internal helper usable from other Convex functions (e.g. checkout.createOrder)
 // to read the effective shop settings, merging stored overrides with defaults.
-export async function readShopSettings(
-  ctx: QueryCtx | MutationCtx
-): Promise<ShopSettings> {
+export async function readShopSettings(ctx: QueryCtx | MutationCtx): Promise<ShopSettings> {
   const row = await ctx.db
     .query("settings")
     .withIndex("by_key", (q) => q.eq("key", SHOP_SETTINGS_KEY))
@@ -69,7 +67,7 @@ export async function readShopSettings(
 // Centralized so checkout (server) and the storefront agree exactly.
 export function computeTotals(
   settings: ShopSettings,
-  subtotalCentavos: number
+  subtotalCentavos: number,
 ): { tax: number; shipping: number } {
   const tax = Math.round(subtotalCentavos * (settings.taxRatePercent / 100));
   const shipping =

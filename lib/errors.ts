@@ -134,7 +134,10 @@ function capLength(message: string): string {
   // land inside a surrogate pair (e.g. an emoji) and cut it in half,
   // producing a lone, invalid surrogate in the output.
   const codePoints = Array.from(message);
-  return `${codePoints.slice(0, MAX_MESSAGE_LENGTH - 3).join("").trimEnd()}...`;
+  return `${codePoints
+    .slice(0, MAX_MESSAGE_LENGTH - 3)
+    .join("")
+    .trimEnd()}...`;
 }
 
 /**

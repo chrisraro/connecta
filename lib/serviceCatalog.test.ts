@@ -42,10 +42,7 @@ test("returns an empty catalog when there are no service tags", () => {
 // declared in the schema (full removal needs a compat/backfill plan outside
 // this task's scope) but the builder simply stops touching it.
 test("the builder's Save no longer hardcodes the dead top-level services field", () => {
-  const src = readFileSync(
-    join(process.cwd(), "app", "dashboard", "builder", "page.tsx"),
-    "utf8"
-  );
+  const src = readFileSync(join(process.cwd(), "app", "dashboard", "builder", "page.tsx"), "utf8");
 
   const saveIdx = src.indexOf("const handleSave");
   expect(saveIdx, "handleSave not found").toBeGreaterThan(-1);
@@ -56,6 +53,6 @@ test("the builder's Save no longer hardcodes the dead top-level services field",
 
   expect(
     createProfileCall,
-    "handleSave must not send a hardcoded `services: []` — see lib/serviceCatalog.ts for the authoritative source"
+    "handleSave must not send a hardcoded `services: []` — see lib/serviceCatalog.ts for the authoritative source",
   ).not.toMatch(/\bservices:\s*\[\]/);
 });

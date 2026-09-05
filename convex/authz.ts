@@ -18,9 +18,7 @@ import { Doc, Id } from "./_generated/dataModel";
  */
 
 // Returns the authenticated user document, or throws if not signed in / not synced.
-export async function requireUser(
-  ctx: QueryCtx | MutationCtx
-): Promise<Doc<"users">> {
+export async function requireUser(ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new Error("Unauthorized: authentication required");
@@ -42,7 +40,7 @@ export async function requireUser(
 // real token subject. Use at call sites that still accept a clerkId argument.
 export async function requireUserMatching(
   ctx: QueryCtx | MutationCtx,
-  claimedClerkId: string
+  claimedClerkId: string,
 ): Promise<Doc<"users">> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
@@ -56,9 +54,7 @@ export async function requireUserMatching(
 
 // Returns the authenticated user, or null if not signed in (does not throw).
 // Useful for queries that should silently return empty rather than error.
-export async function getAuthedUser(
-  ctx: QueryCtx | MutationCtx
-): Promise<Doc<"users"> | null> {
+export async function getAuthedUser(ctx: QueryCtx | MutationCtx): Promise<Doc<"users"> | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
 
@@ -71,7 +67,7 @@ export async function getAuthedUser(
 // True if the given user currently holds an active (non-revoked) admin grant.
 export async function isActiveAdmin(
   ctx: QueryCtx | MutationCtx,
-  userId: Id<"users">
+  userId: Id<"users">,
 ): Promise<boolean> {
   const admin = await ctx.db
     .query("admins")
@@ -82,9 +78,7 @@ export async function isActiveAdmin(
 
 // Requires the AUTHENTICATED caller to be an active admin. Returns the user doc.
 // This ignores any client-passed identity and always trusts ctx.auth.
-export async function requireAdmin(
-  ctx: QueryCtx | MutationCtx
-): Promise<Doc<"users">> {
+export async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> {
   const user = await requireUser(ctx);
   const admin = await isActiveAdmin(ctx, user._id);
   if (!admin) {

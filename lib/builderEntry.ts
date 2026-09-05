@@ -18,16 +18,16 @@
  * yet, or still under the plan's limit.
  */
 export function resolveBuilderEntryRedirect(
-    editingId: string | null,
-    profiles: readonly { _id: string; _creationTime: number }[] | undefined,
-    maxProfiles: number | null
+  editingId: string | null,
+  profiles: readonly { _id: string; _creationTime: number }[] | undefined,
+  maxProfiles: number | null,
 ): string | null {
-    if (editingId) return null;
-    if (!profiles || profiles.length === 0) return null;
-    if (maxProfiles === null) return null;
-    if (profiles.length < maxProfiles) return null;
+  if (editingId) return null;
+  if (!profiles || profiles.length === 0) return null;
+  if (maxProfiles === null) return null;
+  if (profiles.length < maxProfiles) return null;
 
-    return newestProfileId(profiles);
+  return newestProfileId(profiles);
 }
 
 /**
@@ -45,12 +45,10 @@ export function resolveBuilderEntryRedirect(
  * clicked. All three call sites now go through this one function.
  */
 export function newestProfileId(
-    profiles: readonly { _id: string; _creationTime: number }[]
+  profiles: readonly { _id: string; _creationTime: number }[],
 ): string | null {
-    if (profiles.length === 0) return null;
-    return profiles.reduce((latest, p) =>
-        p._creationTime > latest._creationTime ? p : latest
-    )._id;
+  if (profiles.length === 0) return null;
+  return profiles.reduce((latest, p) => (p._creationTime > latest._creationTime ? p : latest))._id;
 }
 
 /**
@@ -78,11 +76,11 @@ export function newestProfileId(
  * run" decision, not just the branch condition.
  */
 export function shouldPrefillCreateForm(
-    editingId: string | null,
-    entryRedirectId: string | null | undefined,
-    hasPrefilled: boolean,
-    hasOnboardingData: boolean
+  editingId: string | null,
+  entryRedirectId: string | null | undefined,
+  hasPrefilled: boolean,
+  hasOnboardingData: boolean,
 ): boolean {
-    if (hasPrefilled) return false;
-    return !editingId && entryRedirectId === null && hasOnboardingData;
+  if (hasPrefilled) return false;
+  return !editingId && entryRedirectId === null && hasOnboardingData;
 }

@@ -59,12 +59,7 @@ export function PayrexCheckoutButton({
 
   return (
     <>
-      <Button
-        size="lg"
-        onClick={handleClick}
-        disabled={disabled || busy}
-        className={className}
-      >
+      <Button size="lg" onClick={handleClick} disabled={disabled || busy} className={className}>
         {busy ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />

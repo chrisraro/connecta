@@ -4,9 +4,9 @@
 this folder are kept as the offline, version-controlled source of truth — but
 you almost certainly want the links first.
 
-| What | Link |
-|---|---|
-| Diagrams (FigJam) | https://www.figma.com/board/CEvkzFpxmc8WELLBQMH2ZN |
+| What                         | Link                                                |
+| ---------------------------- | --------------------------------------------------- |
+| Diagrams (FigJam)            | https://www.figma.com/board/CEvkzFpxmc8WELLBQMH2ZN  |
 | Design system (Figma Design) | https://www.figma.com/design/jIGbCViAJZt2FFye1KkF7C |
 
 ### What is in the FigJam board
@@ -39,8 +39,8 @@ this folder's `tokens.json`.
   Dev Mode code syntax (`var(--background)`, `TEMPLATE_THEMES.editorial.colors.ink`).
 - **17 styles** — 15 text styles (font size and family bound to variables) and
   2 effect styles for `--e-raised` / `--e-overlay`.
-- **Foundations page** — 89 colour swatches whose fills are *bound to the
-  variables*, so the board cannot drift from the tokens; the type ramp in all
+- **Foundations page** — 89 colour swatches whose fills are _bound to the
+  variables_, so the board cannot drift from the tokens; the type ramp in all
   six real families; radius and elevation samples.
 - **Components page** — `Button` (24 variants), `Button Icon` (24),
   `Badge` (4), `Input` (5 states), `Card`. Fills, strokes and radii are
@@ -52,7 +52,7 @@ These are Figma **Starter plan** limits, not modelling decisions. Each is a
 small fix once the plan is upgraded:
 
 1. **No light/dark mode switcher.** Multi-mode variable collections are a paid
-   feature, so `light/` and `dark/` are variable *groups* inside one
+   feature, so `light/` and `dark/` are variable _groups_ inside one
    collection rather than two modes. All 64 values are present and correct.
    Upgrading lets you add a second mode and move the `dark/` values into it.
 2. **3 pages maximum.** One-page-per-component is not possible, so components
@@ -69,7 +69,7 @@ small fix once the plan is upgraded:
 - Visual QA of `Button Icon`, `Badge`, `Input` and `Card` — they were created
   and their structure confirmed by the API's return values, but the tool-call
   cap hit before screenshots. Button, both foundations sections and all six
-  FigJam diagrams *were* visually verified.
+  FigJam diagrams _were_ visually verified.
 
 The Starter tool-call cap refills slowly — roughly a couple of calls at a
 time — so these are best finished in a session where the budget isn't already
@@ -82,7 +82,7 @@ things worth fixing in code:
 
 1. **`Badge` variant `destructive` is unreadable in light mode.**
    `components/ui/badge.tsx` puts `text-destructive-foreground` on
-   `bg-destructive`, and `app/globals.css:75-76` set both to the *same*
+   `bg-destructive`, and `app/globals.css:75-76` set both to the _same_
    `oklch(0.577 0.245 27.325)`. Red text on a red pill. The Figma component
    reproduces it faithfully rather than quietly correcting it.
 2. **`Card` does not use the elevation tokens.** This design system defines
@@ -90,14 +90,13 @@ things worth fixing in code:
    `components/ui/card.tsx` uses Tailwind's `shadow-sm`. The shadcn primitives
    predate the elevation rule and were never migrated.
 
-
 ## Why there's no `.fig` file
 
 To be precise about two different things that are easy to conflate:
 
 - **Figma imports `.fig` fine.** It is Figma's own format; drag one in and
   it opens. That was never the problem.
-- **Nothing outside Figma can *write* one.** `.fig` is an undocumented
+- **Nothing outside Figma can _write_ one.** `.fig` is an undocumented
   proprietary binary, and Figma's REST API cannot create file content
   either. So there is no "export to .fig" step available to this repo.
 
@@ -105,7 +104,7 @@ To be precise about two different things that are easy to conflate:
 
 Since February 2026 Figma's official MCP server supports **write access**
 ("Code to canvas", built with Anthropic's Claude Code). An agent connected
-to it can create and edit *native* Figma content — frames, components,
+to it can create and edit _native_ Figma content — frames, components,
 variables, auto layout in Design files, and stickies/sections/connectors in
 FigJam — using your design system as the source of truth.
 
@@ -141,12 +140,12 @@ beta and no cost — keep them as the fallback.
 
 ## Files in this folder
 
-| File | Import path | Plugin/cost |
-|---|---|---|
-| `erd.svg` | Drag/drop onto canvas | None, free |
-| `user-flows.svg` | Drag/drop onto canvas | None, free |
-| `sitemap.svg` | Drag/drop onto canvas | None, free |
-| `tokens.json` | Tokens Studio plugin | Free plugin |
+| File                       | Import path           | Plugin/cost                              |
+| -------------------------- | --------------------- | ---------------------------------------- |
+| `erd.svg`                  | Drag/drop onto canvas | None, free                               |
+| `user-flows.svg`           | Drag/drop onto canvas | None, free                               |
+| `sitemap.svg`              | Drag/drop onto canvas | None, free                               |
+| `tokens.json`              | Tokens Studio plugin  | Free plugin                              |
 | `design-system-board.html` | html.to.design plugin | Free tier is limited; see fallback below |
 
 ## SVG diagrams — `erd.svg`, `user-flows.svg`, `sitemap.svg`

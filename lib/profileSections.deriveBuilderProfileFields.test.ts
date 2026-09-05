@@ -55,7 +55,12 @@ test("deriveComponentOrder is applicable-and-enabled ids, in block order", () =>
   ]);
   // individual excludes Products/Properties regardless of isEnabled, but
   // keeps Education.
-  expect(deriveComponentOrder("individual", blocks)).toEqual(["Hero", "About", "Education", "Contact"]);
+  expect(deriveComponentOrder("individual", blocks)).toEqual([
+    "Hero",
+    "About",
+    "Education",
+    "Contact",
+  ]);
 });
 
 // Task 13 regression test — this is THE fix. Before it, deriveBuilderProfileFields
@@ -77,7 +82,11 @@ test("deriveComponentOrder is applicable-and-enabled ids, in block order", () =>
 // componentOrder is never rendered no matter what agentInfo holds — so
 // stripping agentInfo at save time was pure risk with no rendering benefit.
 test("deriveBuilderProfileFields NEVER strips agentInfo data for a disabled block — hiding only affects componentOrder, not what's persisted", () => {
-  const { componentOrder, filteredAgentInfo } = deriveBuilderProfileFields("individual", blocks, baseAgentInfo);
+  const { componentOrder, filteredAgentInfo } = deriveBuilderProfileFields(
+    "individual",
+    blocks,
+    baseAgentInfo,
+  );
 
   // componentOrder (the thing ProfileRenderer actually reads) still excludes
   // disabled/inapplicable blocks — hiding still works for RENDERING.
@@ -121,15 +130,12 @@ test("deriveBuilderProfileFields NEVER strips agentInfo data for a disabled bloc
  * invariant breaks.
  */
 test("both handleSave and renderPreview route through the shared derivation", () => {
-  const src = readFileSync(
-    join(process.cwd(), "app", "dashboard", "builder", "page.tsx"),
-    "utf8"
-  );
+  const src = readFileSync(join(process.cwd(), "app", "dashboard", "builder", "page.tsx"), "utf8");
 
   const usages = src.match(/deriveBuilderProfileFields\s*\(/g) ?? [];
   expect(
     usages.length,
-    "expected deriveBuilderProfileFields to be called at BOTH call sites (handleSave and renderPreview)"
+    "expected deriveBuilderProfileFields to be called at BOTH call sites (handleSave and renderPreview)",
   ).toBeGreaterThanOrEqual(2);
 
   // The save path must feed the derivation's output into the mutation, not a
@@ -144,11 +150,11 @@ test("both handleSave and renderPreview route through the shared derivation", ()
   const bodyAfter = (start: number) => src.slice(start, start + 4000);
   expect(
     bodyAfter(saveIdx),
-    "handleSave must derive componentOrder/agentInfo via deriveBuilderProfileFields"
+    "handleSave must derive componentOrder/agentInfo via deriveBuilderProfileFields",
   ).toContain("deriveBuilderProfileFields(");
   expect(
     bodyAfter(previewIdx),
-    "renderPreview must derive componentOrder/agentInfo via deriveBuilderProfileFields"
+    "renderPreview must derive componentOrder/agentInfo via deriveBuilderProfileFields",
   ).toContain("deriveBuilderProfileFields(");
 });
 

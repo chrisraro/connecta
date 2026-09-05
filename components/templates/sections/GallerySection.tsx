@@ -18,10 +18,19 @@ export function GallerySection({
   resolvedImages?: ProfileData["resolvedImages"];
 }) {
   return (
-    <SectionShell theme={theme} index={index} heading="Gallery" bleed={theme.composition.imagery === "bleed"}>
+    <SectionShell
+      theme={theme}
+      index={index}
+      heading="Gallery"
+      bleed={theme.composition.imagery === "bleed"}
+    >
       <div className={galleryGridClass(theme)}>
         {gallery.slice(0, 6).map((img, i) => (
-          <div key={i} className={galleryItemClass(theme, i)} style={{ backgroundColor: theme.colors.surface }}>
+          <div
+            key={i}
+            className={galleryItemClass(theme, i)}
+            style={{ backgroundColor: theme.colors.surface }}
+          >
             <ProfileImage
               src={img}
               alt={`Gallery ${i + 1}`}

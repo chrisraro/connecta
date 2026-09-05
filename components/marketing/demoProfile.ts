@@ -28,12 +28,7 @@ export function buildDemoProfile(templateId: TemplateId): ProfileData {
       avatarUrl: "/marketing/demo-avatar.svg",
       about:
         "Interior designer crafting warm, livable spaces across Metro Manila — from condo makeovers to boutique hospitality projects. Fifteen years turning empty rooms into homes clients actually want to live in.",
-      services: [
-        "Interior Design",
-        "Space Planning",
-        "Styling & Staging",
-        "Renovation Consulting",
-      ],
+      services: ["Interior Design", "Space Planning", "Styling & Staging", "Renovation Consulting"],
       experience: [
         {
           title: "Founder & Creative Director",

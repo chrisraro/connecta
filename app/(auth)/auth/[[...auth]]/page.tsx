@@ -1,9 +1,9 @@
-import { SignIn, SignUp } from '@clerk/nextjs';
-import { ArrowLeft, Loader2, Sparkles, ShieldCheck, Zap, SmartphoneNfc } from 'lucide-react';
-import Link from 'next/link';
-import { Suspense } from 'react';
-import { ConnectaMark } from '@/components/brand/ConnectaMark';
-import { CONNECTA } from '@/lib/brand';
+import { SignIn, SignUp } from "@clerk/nextjs";
+import { ArrowLeft, Loader2, Sparkles, ShieldCheck, Zap, SmartphoneNfc } from "lucide-react";
+import Link from "next/link";
+import { Suspense } from "react";
+import { ConnectaMark } from "@/components/brand/ConnectaMark";
+import { CONNECTA } from "@/lib/brand";
 
 export default function AuthPage({
   searchParams,
@@ -32,7 +32,7 @@ async function AuthContent({
   const mode = params.mode;
   const cardUuid = params.card_uuid;
 
-  const isSignIn = mode === 'signin';
+  const isSignIn = mode === "signin";
 
   // Build redirect URL - always route to callback which redirects to /dashboard (or /admin).
   // card_uuid MUST ride along: the QR on a physical card lands on
@@ -42,16 +42,16 @@ async function AuthContent({
   // activation path — users scanned, signed up, and nothing happened.
   const redirectUrl = cardUuid
     ? `/auth/callback?card_uuid=${encodeURIComponent(cardUuid)}`
-    : '/auth/callback';
+    : "/auth/callback";
 
   // Build auth URLs preserving card_uuid when toggling sign-in vs sign-up
   const signUpUrl = cardUuid
     ? `/auth?mode=signup&card_uuid=${encodeURIComponent(cardUuid)}`
-    : '/auth?mode=signup';
+    : "/auth?mode=signup";
 
   const signInUrl = cardUuid
     ? `/auth?mode=signin&card_uuid=${encodeURIComponent(cardUuid)}`
-    : '/auth?mode=signin';
+    : "/auth?mode=signin";
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground relative overflow-hidden px-4 py-12 selection:bg-yellow-500/30">
@@ -117,9 +117,12 @@ async function AuthContent({
                   card: "bg-card/80 backdrop-blur-2xl border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8",
                   headerTitle: "text-lg font-bold text-foreground",
                   headerSubtitle: "text-xs text-muted-foreground",
-                  formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs py-3 transition-all shadow-md hover:shadow-lg",
-                  socialButtonsBlockButton: "border border-border bg-background/90 hover:bg-muted font-semibold text-xs rounded-xl py-2.5 transition-all",
-                  formFieldInput: "bg-background border border-border rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/40",
+                  formButtonPrimary:
+                    "bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs py-3 transition-all shadow-md hover:shadow-lg",
+                  socialButtonsBlockButton:
+                    "border border-border bg-background/90 hover:bg-muted font-semibold text-xs rounded-xl py-2.5 transition-all",
+                  formFieldInput:
+                    "bg-background border border-border rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/40",
                   footerActionLink: "text-primary hover:underline font-semibold text-xs",
                 },
               }}
@@ -135,9 +138,12 @@ async function AuthContent({
                   card: "bg-card/80 backdrop-blur-2xl border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8",
                   headerTitle: "text-lg font-bold text-foreground",
                   headerSubtitle: "text-xs text-muted-foreground",
-                  formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs py-3 transition-all shadow-md hover:shadow-lg",
-                  socialButtonsBlockButton: "border border-border bg-background/90 hover:bg-muted font-semibold text-xs rounded-xl py-2.5 transition-all",
-                  formFieldInput: "bg-background border border-border rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/40",
+                  formButtonPrimary:
+                    "bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs py-3 transition-all shadow-md hover:shadow-lg",
+                  socialButtonsBlockButton:
+                    "border border-border bg-background/90 hover:bg-muted font-semibold text-xs rounded-xl py-2.5 transition-all",
+                  formFieldInput:
+                    "bg-background border border-border rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/40",
                   footerActionLink: "text-primary hover:underline font-semibold text-xs",
                 },
               }}

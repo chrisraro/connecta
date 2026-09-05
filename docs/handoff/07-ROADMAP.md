@@ -35,6 +35,7 @@ The wave ran in **three phases**, each ending in either a shipped merge or a
 whole-branch review that generated the next phase's task list:
 
 ### Phase 1 — security-critical fixes + a live production outage
+
 - **Task 1**: `getCardByUuid` was a public, unauthenticated query returning
   the full card document including the manual-claim `activationCode` secret
   — anyone scanning a QR code could read and hijack it. Fixed to a minimal
@@ -53,8 +54,10 @@ whole-branch review that generated the next phase's task list:
   Convex functions pushed in lockstep (`.superpowers/sdd/progress.md:26,39`).
 
 ### Phase 2 — the journey audit and 5 core-journey blockers
+
 A dedicated `audit-journey.md` found "5 Blockers / 6 Majors / 3 Minor"
 (`.superpowers/sdd/progress.md:40`). All 5 blockers were fixed:
+
 - **Task 12**: the onboarding wizard's first-profile path didn't go through
   the same plan-aware creation path as every subsequent profile —
   live-verified end to end with a genuinely fresh 0-profile Clerk user.
@@ -76,7 +79,7 @@ single documented convention), Task 11 (Pro-tier gating rendered as visible
 locked CTAs instead of vanishing features, plus the payment placeholder —
 see §3), Tasks 3+7 (webhook observability, card-deletion guard so an admin
 can't hard-delete an active customer card), Task 6 (capped Convex queries
-were missing `.order()`, so they silently froze on the *oldest* rows forever
+were missing `.order()`, so they silently froze on the _oldest_ rows forever
 instead of showing new ones — see `06-DESIGN-SYSTEM.md`/`02-TECH-STACK.md`
 for this as a general codebase rule), Task 4 (account deletion now actually
 deletes the Clerk identity + a Clerk deletion webhook exists), Task 8 (the
@@ -84,6 +87,7 @@ deletes the Clerk identity + a Clerk deletion webhook exists), Task 8 (the
 
 Phase 2 ended in a **whole-branch review** (`d5424b5..516f22e`, 37 commits)
 that found 3 Critical + 6 Important + more, all live at the time:
+
 - C1: several NFC-activation and rate-limit code paths still threw plain
   `Error` instead of `ConvexError` — invisible in dev (plain `Error` shows
   its real message) but on a genuine production Convex deployment, plain
@@ -105,12 +109,13 @@ that found 3 Critical + 6 Important + more, all live at the time:
   table ever crosses Convex's read limit; **carried, not yet fixed**.
 
 ### Phase 3 — closing what the whole-branch review found
+
 - **Task 17**: fixed C3 properly — the first fix attempt traded one
   data-loss bug for another (merging stale `onboardingData` over live
   builder fields); the real fix hydrates edit mode from the live profile
   (`.superpowers/sdd/progress.md:101-105`).
 - **Task 18**: finished the `ConvexError` conversion across cards/leads/
-  checkout (closing C1), and found `validateDiscount` was a Convex *query*
+  checkout (closing C1), and found `validateDiscount` was a Convex _query_
   — queries cannot write, so it was **completely unmeterable**, not merely
   unmetered. Converted to a rate-limited action.
 - **Task 19**: closed C2 (guest checkout now requires an opaque
@@ -120,7 +125,7 @@ that found 3 Critical + 6 Important + more, all live at the time:
 - **Tasks 20+21**: I5 (Pro users can create a 2nd profile — routed through
   the same plan-aware helper as onboarding) and I6 (admins can now reach and
   stay in the consumer dashboard — see `05-USER-FLOWS.md` for the redirect
-  mechanism). Task 21 fixed a real bug found *during* Task 20's review: the
+  mechanism). Task 21 fixed a real bug found _during_ Task 20's review: the
   onboarding wizard's "Finish →" button only advanced to a summary screen
   and did **not** complete onboarding — closing the tab there left the user
   with no profile despite the button saying "Finish". Now "Finish →" calls
@@ -143,11 +148,12 @@ gateway integration.
 The original, larger PayRex scope was moved to **`Task 3-DEFERRED`**
 (`docs/superpowers/plans/production-audit-fixes.md:86-110`) to revive when a
 gateway is chosen:
+
 - `payrex.ts:33-141` creates a fresh checkout session on every call — a
   double-click produces two payable sessions for one order.
 - `payrex.ts:93-98` sends discounts as a **negative** line-item amount, but
   PayRex requires positive integer amounts and has no discount field, so
-  every discounted order would fail session creation *after* the cart was
+  every discounted order would fail session creation _after_ the cart was
   already cleared.
 - `checkout.ts:290-311` guest order confirmation throws Unauthorized (a
   pre-existing in-code TODO) — needs a guest access-token design.

@@ -24,7 +24,7 @@ async function seedBusinessOwner(
   t: ReturnType<typeof convexTest>,
   clerkId: string,
   email: string,
-  seats: number
+  seats: number,
 ) {
   return await t.run(async (ctx) => {
     const ownerId = await ctx.db.insert("users", {
@@ -52,7 +52,7 @@ async function seedUser(
   t: ReturnType<typeof convexTest>,
   email: string,
   clerkId: string,
-  teamId: Id<"teams"> | undefined
+  teamId: Id<"teams"> | undefined,
 ) {
   return await t.run(async (ctx) =>
     ctx.db.insert("users", {
@@ -62,7 +62,7 @@ async function seedUser(
       subscriptionStatus: "active",
       plan: "free",
       teamId,
-    })
+    }),
   );
 }
 
@@ -77,7 +77,7 @@ test("getMyTeam members include only users whose teamId matches this team, exclu
       ownerId: memberInTeamId, // arbitrary distinct owner, not under test
       seats: 5,
       createdAt: Date.now(),
-    })
+    }),
   );
   // Boundary: on a DIFFERENT team — must be excluded.
   await seedUser(t, "otherteam@test.dev", "otherteam_clerk", otherTeamId);
@@ -105,7 +105,7 @@ test("getMyTeam still includes the owner when the owner's own teamId isn't set y
       plan: "business",
       planExpiresAt: FUTURE_EXPIRY,
       // teamId intentionally left unset.
-    })
+    }),
   );
   const teamId = await t.run(async (ctx) =>
     ctx.db.insert("teams", {
@@ -113,7 +113,7 @@ test("getMyTeam still includes the owner when the owner's own teamId isn't set y
       ownerId,
       seats: 3,
       createdAt: Date.now(),
-    })
+    }),
   );
   const memberInTeamId = await seedUser(t, "member2@test.dev", "member2_clerk", teamId);
 
@@ -134,17 +134,25 @@ test("inviteMember counts only this team's own members toward the seat limit", a
 
   // Boundary users that must NOT count against this team's seats.
   const otherTeamId = await t.run(async (ctx) =>
-    ctx.db.insert("teams", { name: "Other", ownerId: await ctx.db.insert("users", {
-      email: "filler@test.dev", clerkId: "filler_clerk", role: "agent",
-      subscriptionStatus: "active", plan: "free",
-    }), seats: 5, createdAt: Date.now() })
+    ctx.db.insert("teams", {
+      name: "Other",
+      ownerId: await ctx.db.insert("users", {
+        email: "filler@test.dev",
+        clerkId: "filler_clerk",
+        role: "agent",
+        subscriptionStatus: "active",
+        plan: "free",
+      }),
+      seats: 5,
+      createdAt: Date.now(),
+    }),
   );
   await seedUser(t, "otherteam3@test.dev", "otherteam3_clerk", otherTeamId);
   await seedUser(t, "noteam3@test.dev", "noteam3_clerk", undefined);
 
   const asOwner = t.withIdentity({ subject: "owner3_clerk" });
   await expect(
-    asOwner.mutation(api.teams.inviteMember, { email: "newperson@test.dev" })
+    asOwner.mutation(api.teams.inviteMember, { email: "newperson@test.dev" }),
   ).rejects.toThrow(/no seats available/i);
 });
 
@@ -157,12 +165,20 @@ test("inviteMember succeeds when this team (excluding other-team members) has a 
   // A user on a different team must not consume this team's seat.
   const fillerOwnerId = await t.run(async (ctx) =>
     ctx.db.insert("users", {
-      email: "filler4@test.dev", clerkId: "filler4_clerk", role: "agent",
-      subscriptionStatus: "active", plan: "free",
-    })
+      email: "filler4@test.dev",
+      clerkId: "filler4_clerk",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
+    }),
   );
   const otherTeamId = await t.run(async (ctx) =>
-    ctx.db.insert("teams", { name: "Other4", ownerId: fillerOwnerId, seats: 5, createdAt: Date.now() })
+    ctx.db.insert("teams", {
+      name: "Other4",
+      ownerId: fillerOwnerId,
+      seats: 5,
+      createdAt: Date.now(),
+    }),
   );
   await seedUser(t, "otherteam4@test.dev", "otherteam4_clerk", otherTeamId);
 
@@ -180,12 +196,20 @@ test("acceptInvitesForCurrentUser only counts this team's own members against se
   // this team's single seat.
   const fillerOwnerId = await t.run(async (ctx) =>
     ctx.db.insert("users", {
-      email: "filler5@test.dev", clerkId: "filler5_clerk", role: "agent",
-      subscriptionStatus: "active", plan: "free",
-    })
+      email: "filler5@test.dev",
+      clerkId: "filler5_clerk",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
+    }),
   );
   const otherTeamId = await t.run(async (ctx) =>
-    ctx.db.insert("teams", { name: "Other5", ownerId: fillerOwnerId, seats: 5, createdAt: Date.now() })
+    ctx.db.insert("teams", {
+      name: "Other5",
+      ownerId: fillerOwnerId,
+      seats: 5,
+      createdAt: Date.now(),
+    }),
   );
   await seedUser(t, "otherteam5@test.dev", "otherteam5_clerk", otherTeamId);
   await seedUser(t, "noteam5@test.dev", "noteam5_clerk", undefined);
@@ -207,7 +231,7 @@ test("acceptInvitesForCurrentUser only counts this team's own members against se
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   await t.run(async (ctx) => {
@@ -242,7 +266,7 @@ test("acceptInvitesForCurrentUser links the user when this team's own member cou
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   await t.run(async (ctx) => {
@@ -261,15 +285,28 @@ test("getTeamLeads aggregates leads only from this team's own members, excluding
 
   const otherTeamOwnerId = await t.run(async (ctx) =>
     ctx.db.insert("users", {
-      email: "otherowner7@test.dev", clerkId: "otherowner7_clerk", role: "agent",
-      subscriptionStatus: "active", plan: "free",
-    })
+      email: "otherowner7@test.dev",
+      clerkId: "otherowner7_clerk",
+      role: "agent",
+      subscriptionStatus: "active",
+      plan: "free",
+    }),
   );
   // Boundary: this member is on a DIFFERENT team — their leads must be excluded.
   const otherTeamId = await t.run(async (ctx) =>
-    ctx.db.insert("teams", { name: "Other7", ownerId: otherTeamOwnerId, seats: 5, createdAt: Date.now() })
+    ctx.db.insert("teams", {
+      name: "Other7",
+      ownerId: otherTeamOwnerId,
+      seats: 5,
+      createdAt: Date.now(),
+    }),
   );
-  const otherTeamMemberId = await seedUser(t, "otherteam7@test.dev", "otherteam7_clerk", otherTeamId);
+  const otherTeamMemberId = await seedUser(
+    t,
+    "otherteam7@test.dev",
+    "otherteam7_clerk",
+    otherTeamId,
+  );
 
   await t.run(async (ctx) => {
     await ctx.db.insert("leads", {

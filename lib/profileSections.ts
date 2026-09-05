@@ -14,7 +14,7 @@ export interface BuilderBlock {
  */
 export function getBlocksForProfileType<T extends BuilderBlock>(
   profileType: ProfileType,
-  blocks: T[]
+  blocks: T[],
 ): T[] {
   return blocks.filter((block) => {
     if (profileType === "individual") {
@@ -79,7 +79,7 @@ export function deriveComponentOrder(profileType: ProfileType, blocks: BuilderBl
 export function deriveBuilderProfileFields(
   profileType: ProfileType,
   blocks: BuilderBlock[],
-  agentInfo: ProfileInfo
+  agentInfo: ProfileInfo,
 ): { componentOrder: string[]; filteredAgentInfo: ProfileInfo } {
   return {
     componentOrder: deriveComponentOrder(profileType, blocks),

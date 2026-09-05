@@ -16,7 +16,7 @@ const DEFAULT_WINDOW_MS = 60_000;
 export async function checkRateLimit(
   ctx: MutationCtx,
   key: string,
-  opts: { max: number; windowMs?: number }
+  opts: { max: number; windowMs?: number },
 ): Promise<void> {
   const windowMs = opts.windowMs ?? DEFAULT_WINDOW_MS;
   const now = Date.now();

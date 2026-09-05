@@ -43,7 +43,7 @@ async function hmacSha256Hex(secret: string, message: string): Promise<string> {
     enc.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
   const bytes = new Uint8Array(sig);
@@ -65,11 +65,7 @@ export const WEBHOOK_TIMESTAMP_WINDOW_MS = 5 * 60 * 1000;
 // string) within `windowMs` of `nowMs`? Exported and kept side-effect-free
 // so the boundary conditions can be tested directly without going through
 // signature verification or HTTP plumbing.
-export function isWebhookTimestampFresh(
-  t: string,
-  nowMs: number,
-  windowMs: number
-): boolean {
+export function isWebhookTimestampFresh(t: string, nowMs: number, windowMs: number): boolean {
   if (!/^\d+$/.test(t)) return false;
   const tMs = Number(t) * 1000;
   return Math.abs(nowMs - tMs) <= windowMs;
@@ -135,8 +131,7 @@ const payrexWebhook = httpAction(async (ctx, request) => {
   }
 
   const isPaid =
-    event.type === "payment_intent.succeeded" ||
-    event.type === "checkout_session.payment.paid";
+    event.type === "payment_intent.succeeded" || event.type === "checkout_session.payment.paid";
   const isFailed =
     event.type === "payment_intent.payment_failed" ||
     event.type === "checkout_session.expire" ||
@@ -150,16 +145,11 @@ const payrexWebhook = httpAction(async (ctx, request) => {
     // Subscription invoice id (Phase 4 plan upgrades) takes priority — it
     // routes to the billing activation path instead of the shop order path.
     const invoiceId =
-      (typeof metaA?.invoice_id === "string"
-        ? (metaA.invoice_id as string)
-        : undefined) ??
-      (typeof metaB?.invoice_id === "string"
-        ? (metaB.invoice_id as string)
-        : undefined);
+      (typeof metaA?.invoice_id === "string" ? (metaA.invoice_id as string) : undefined) ??
+      (typeof metaB?.invoice_id === "string" ? (metaB.invoice_id as string) : undefined);
 
     // Fall back to the payment intent id (event.data.id for payment_intent.*).
-    const paymentIntentId =
-      typeof event.data.id === "string" ? event.data.id : undefined;
+    const paymentIntentId = typeof event.data.id === "string" ? event.data.id : undefined;
 
     // Wrapped so a thrown error from the internal mutation (an unexpected
     // failure, not a normal business-rule rejection — those already return
@@ -185,21 +175,14 @@ const payrexWebhook = httpAction(async (ctx, request) => {
       } else {
         // Existing shop order flow.
         const orderNumber =
-          (typeof metaA?.order_number === "string"
-            ? (metaA.order_number as string)
-            : undefined) ??
-          (typeof metaB?.order_number === "string"
-            ? (metaB.order_number as string)
-            : undefined);
+          (typeof metaA?.order_number === "string" ? (metaA.order_number as string) : undefined) ??
+          (typeof metaB?.order_number === "string" ? (metaB.order_number as string) : undefined);
 
-        const result = await ctx.runMutation(
-          internal.checkout.internalConfirmOrderPayment,
-          {
-            orderNumber,
-            paymentIntentId,
-            paymentStatus: isPaid ? "paid" : "failed",
-          }
-        );
+        const result = await ctx.runMutation(internal.checkout.internalConfirmOrderPayment, {
+          orderNumber,
+          paymentIntentId,
+          paymentStatus: isPaid ? "paid" : "failed",
+        });
 
         if (!result.success) {
           // A handled business-rule rejection (order not found, insufficient
@@ -277,17 +260,14 @@ function base64Encode(bytes: Uint8Array): string {
 }
 
 // Compute base64 HMAC-SHA256 of `message` keyed by raw `secretBytes`.
-async function hmacSha256Base64(
-  secretBytes: Uint8Array,
-  message: string
-): Promise<string> {
+async function hmacSha256Base64(secretBytes: Uint8Array, message: string): Promise<string> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
     secretBytes as BufferSource,
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
   return base64Encode(new Uint8Array(sig));
@@ -303,7 +283,7 @@ export async function verifyClerkWebhookSignature(
   svixId: string,
   svixTimestamp: string,
   svixSignatureHeader: string,
-  rawBody: string
+  rawBody: string,
 ): Promise<boolean> {
   const secretB64 = secret.startsWith("whsec_") ? secret.slice(6) : secret;
 
@@ -314,10 +294,7 @@ export async function verifyClerkWebhookSignature(
     return false;
   }
 
-  const expected = await hmacSha256Base64(
-    secretBytes,
-    `${svixId}.${svixTimestamp}.${rawBody}`
-  );
+  const expected = await hmacSha256Base64(secretBytes, `${svixId}.${svixTimestamp}.${rawBody}`);
 
   // The header can carry multiple space-separated "v<version>,<signature>"
   // candidates (e.g. during a Clerk secret rotation) — any match is valid.
@@ -356,7 +333,7 @@ const clerkWebhook = httpAction(async (ctx, request) => {
     svixId,
     svixTimestamp,
     svixSignature,
-    rawBody
+    rawBody,
   );
   if (!validSignature) {
     return new Response("Invalid signature", { status: 400 });

@@ -51,7 +51,11 @@ export const CONNECTA = buildConnecta(typeof process !== "undefined" ? process.e
 
 export function parseHex(hex: string): { r: number; g: number; b: number } | null {
   let c = hex.trim().toLowerCase().replace(/^#/, "");
-  if (c.length === 3) c = c.split("").map((ch) => ch + ch).join("");
+  if (c.length === 3)
+    c = c
+      .split("")
+      .map((ch) => ch + ch)
+      .join("");
   if (!/^[0-9a-f]{6}$/.test(c)) return null;
   return {
     r: parseInt(c.slice(0, 2), 16),
@@ -68,11 +72,7 @@ export function relativeLuminance(hex: string): number {
     const s = v / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   };
-  return (
-    0.2126 * toLinear(rgb.r) +
-    0.7152 * toLinear(rgb.g) +
-    0.0722 * toLinear(rgb.b)
-  );
+  return 0.2126 * toLinear(rgb.r) + 0.7152 * toLinear(rgb.g) + 0.0722 * toLinear(rgb.b);
 }
 
 /** WCAG 2.1 contrast ratio between two hex colors. Range 1–21. */

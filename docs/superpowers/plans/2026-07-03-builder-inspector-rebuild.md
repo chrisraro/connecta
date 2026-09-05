@@ -25,11 +25,13 @@
 ## Task 1: `<EditableList>` primitive, and migrate all eight lists to it
 
 **Files:**
+
 - Create: `components/profile-builder/EditableList.tsx`
 - Create: `components/profile-builder/EditableList.test.tsx`
 - Modify: `app/dashboard/builder/page.tsx`
 
 **Interfaces:**
+
 - Produces: `<EditableList<T> items fields onChange onAdd? addLabel? emptyHint? itemLabel />` — renders each existing item as a row of **editable inputs** plus a 44px delete button, and (optionally) a draft row for adding a new one.
 - `FieldDef<T>` = `{ key: keyof T & string; label: string; placeholder?: string; type?: "text" | "textarea" | "url" | "number"; required?: boolean; width?: "full" | "half" }`.
 - Consumed by: the Education, TechStack, Experience, Testimonials, Products, PropertyListings, and InlineProjects editors in `builder/page.tsx`. (Gallery is image-based and keeps `GalleryUploader`.)
@@ -61,7 +63,7 @@ describe("EditableList", () => {
         fields={FIELDS}
         onChange={() => {}}
         itemLabel="job"
-      />
+      />,
     );
     // The value must live in a real form control the user can focus and type into.
     const input = screen.getByDisplayValue("Developer");
@@ -82,7 +84,7 @@ describe("EditableList", () => {
         fields={FIELDS}
         onChange={onChange}
         itemLabel="job"
-      />
+      />,
     );
 
     await user.type(screen.getByDisplayValue("Developer"), "!");
@@ -108,7 +110,7 @@ describe("EditableList", () => {
         fields={FIELDS}
         onChange={onChange}
         itemLabel="job"
-      />
+      />,
     );
 
     await user.click(screen.getAllByRole("button", { name: /remove job 1/i })[0]);
@@ -123,7 +125,7 @@ describe("EditableList", () => {
         fields={FIELDS}
         onChange={() => {}}
         itemLabel="job"
-      />
+      />,
     );
     const btn = screen.getByRole("button", { name: /remove job 1/i });
     expect(btn).toBeInTheDocument();
@@ -137,7 +139,7 @@ describe("EditableList", () => {
         onChange={() => {}}
         itemLabel="job"
         emptyHint="No jobs yet."
-      />
+      />,
     );
     expect(screen.getByText("No jobs yet.")).toBeInTheDocument();
   });
@@ -171,15 +173,15 @@ Expected: PASS — 5 tests.
 
 Replace the read-only rendered block in each editor with an `<EditableList>`. Current line ranges (verify by content — they shift as you edit):
 
-| List | Read-only block | State setter | Keep the existing add-handler |
-|---|---|---|---|
-| education | 1637–1648 | `setEducation` | `addEducation` (L815) |
-| techStack | 1664–1674 | `setTechStack` | `addTechStack` (L821) |
-| experience | 1689–1701 | `setExperience` | `addExperience` (L830) |
-| inlineProjects | 1724–1736 | `setInlineProjects` | `addInlineProject` (L866) |
-| products | 1769–1781 | `setProducts` | `addProduct` (L842) |
-| propertyListings | 1805–1821 | `setPropertyListings` | `addPropertyListing` (L853) |
-| testimonials | 1854–1865 | `setTestimonials` | `addTestimonial` (L836) |
+| List             | Read-only block | State setter          | Keep the existing add-handler |
+| ---------------- | --------------- | --------------------- | ----------------------------- |
+| education        | 1637–1648       | `setEducation`        | `addEducation` (L815)         |
+| techStack        | 1664–1674       | `setTechStack`        | `addTechStack` (L821)         |
+| experience       | 1689–1701       | `setExperience`       | `addExperience` (L830)        |
+| inlineProjects   | 1724–1736       | `setInlineProjects`   | `addInlineProject` (L866)     |
+| products         | 1769–1781       | `setProducts`         | `addProduct` (L842)           |
+| propertyListings | 1805–1821       | `setPropertyListings` | `addPropertyListing` (L853)   |
+| testimonials     | 1854–1865       | `setTestimonials`     | `addTestimonial` (L836)       |
 
 Field definitions must match each type's real shape — read `types/profile.ts` for `ProfileInfo["education"]`, `["techStack"]`, `["experience"]`, `["testimonials"]`, and `ProductItem` / `PropertyListingItem` / `InlineProject`. Note `techStack` items hold `skills: string[]`; render that as a comma-separated text field and split on change (mirroring how `addTechStack` already parses it).
 
@@ -210,11 +212,13 @@ git commit -m "feat(builder): editable entries via one EditableList primitive, r
 ## Task 2: Docked inspector — stop hiding the preview
 
 **Files:**
+
 - Modify: `app/dashboard/builder/page.tsx`
 - Create: `components/profile-builder/InspectorPanel.tsx`
 - Create: `components/profile-builder/InspectorPanel.test.tsx`
 
 **Interfaces:**
+
 - Produces: `<InspectorPanel isOpen title onClose onSave? children />` — replaces `SectionEditor` (currently L326–361). Renders as a right-docked panel from `lg:` up and a bottom sheet below `lg:`, never covering the preview column on desktop.
 - The 12 call sites keep their existing shape (`isOpen={activeModal === "X"}`, `onClose={() => setActiveModal(null)}`), so this is a drop-in replacement — only the component's own rendering changes.
 
@@ -235,7 +239,7 @@ describe("InspectorPanel", () => {
     const { container } = render(
       <InspectorPanel isOpen={false} title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -244,7 +248,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     const panel = screen.getByRole("dialog");
     // The old SectionEditor used `fixed inset-0`, which is exactly what hid the
@@ -256,7 +260,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={() => {}}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     expect(screen.getByRole("dialog", { name: "Experience" })).toBeInTheDocument();
   });
@@ -267,7 +271,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={onClose}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     await user.click(screen.getByRole("button", { name: /close/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -279,7 +283,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={onClose}>
         <p>body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -289,7 +293,7 @@ describe("InspectorPanel", () => {
     render(
       <InspectorPanel isOpen title="Experience" onClose={() => {}}>
         <p>the editor body</p>
-      </InspectorPanel>
+      </InspectorPanel>,
     );
     expect(screen.getByText("the editor body")).toBeInTheDocument();
   });
@@ -344,13 +348,12 @@ Expected: both pass. `lib/profileSections.test.ts` still green and untouched.
 - [ ] **Step 9: Manual verification — the whole point of the task**
 
 Run `npm run dev`. At a desktop width (≥1280px):
+
 1. Open the Experience editor. **The live preview must remain visible** beside it — this is the defect being fixed.
 2. Edit a field and watch the preview update **without closing the editor**.
 3. Confirm Escape and the Close button both dismiss it.
 
-Then at 390px width (device toolbar):
-4. Confirm the editor is a bottom sheet, the preview is above it, and nothing is clipped or horizontally scrolling.
-5. Confirm reorder and hide/show still work end to end (drag a section, toggle one off, Save, view the public profile).
+Then at 390px width (device toolbar): 4. Confirm the editor is a bottom sheet, the preview is above it, and nothing is clipped or horizontally scrolling. 5. Confirm reorder and hide/show still work end to end (drag a section, toggle one off, Save, view the public profile).
 
 Report measured evidence, not impressions — for step 1, confirm the preview element still has a non-zero bounding box while the inspector is open. Stop the dev server.
 

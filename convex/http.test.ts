@@ -19,7 +19,7 @@ async function signPayrex(secret: string, t: string, rawBody: string): Promise<s
     enc.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(`${t}.${rawBody}`));
   const bytes = new Uint8Array(sig);
@@ -31,7 +31,7 @@ async function signPayrex(secret: string, t: string, rawBody: string): Promise<s
 async function postSignedWebhook(
   t: ReturnType<typeof convexTest>,
   body: unknown,
-  tSeconds: string
+  tSeconds: string,
 ): Promise<Response> {
   const rawBody = JSON.stringify(body);
   const sig = await signPayrex(WEBHOOK_SECRET, tSeconds, rawBody);
@@ -85,13 +85,13 @@ test("payrex webhook handler rejects a validly signed request whose timestamp is
   vi.stubEnv("PAYREX_WEBHOOK_SECRET", WEBHOOK_SECRET);
   const t = convexTest(schema);
   const staleSeconds = String(
-    Math.floor((Date.now() - WEBHOOK_TIMESTAMP_WINDOW_MS - 60_000) / 1000)
+    Math.floor((Date.now() - WEBHOOK_TIMESTAMP_WINDOW_MS - 60_000) / 1000),
   );
 
   const res = await postSignedWebhook(
     t,
     { id: "evt_stale", type: "some.unhandled.event", data: {} },
-    staleSeconds
+    staleSeconds,
   );
 
   expect(res.status).toBe(400);
@@ -105,7 +105,7 @@ test("payrex webhook handler accepts a validly signed request within the replay 
   const res = await postSignedWebhook(
     t,
     { id: "evt_fresh", type: "some.unhandled.event", data: {} },
-    freshSeconds
+    freshSeconds,
   );
 
   expect(res.status).toBe(200);
@@ -119,7 +119,7 @@ test("payrex webhook handler acks unknown event types with 200 without dispatchi
   const res = await postSignedWebhook(
     t,
     { id: "evt_unknown", type: "customer.updated", data: { id: "cus_1" } },
-    freshSeconds
+    freshSeconds,
   );
 
   expect(res.status).toBe(200);
@@ -145,7 +145,7 @@ test("payrex webhook handler returns 500 and logs only the event id/type (no pay
         metadata: { invoice_id: "not-a-real-subscription-invoice-id" },
       },
     },
-    freshSeconds
+    freshSeconds,
   );
 
   expect(res.status).toBe(500);
@@ -180,7 +180,7 @@ test("payrex webhook handler acks 200 but logs event context when the order can'
         attributes: { metadata: { order_number: "TF-2026-DOESNOTEXIST" } },
       },
     },
-    freshSeconds
+    freshSeconds,
   );
 
   // This is a permanent mismatch, not a transient failure — retrying the
@@ -222,7 +222,7 @@ test("payrex webhook handler does not log when the order payment confirmation ap
       images: [],
       primaryImageIndex: 0,
       shippingRequired: true,
-    })
+    }),
   );
   const orderNumber = "TF-2026-NOLOGOK";
   await t.run(async (ctx) =>
@@ -250,7 +250,7 @@ test("payrex webhook handler does not log when the order payment confirmation ap
       },
       createdAt: Date.now(),
       updatedAt: Date.now(),
-    })
+    }),
   );
 
   const freshSeconds = String(Math.floor(Date.now() / 1000));
@@ -261,7 +261,7 @@ test("payrex webhook handler does not log when the order payment confirmation ap
       type: "checkout_session.payment.paid",
       data: { id: "cs_ok", attributes: { metadata: { order_number: orderNumber } } },
     },
-    freshSeconds
+    freshSeconds,
   );
 
   expect(res.status).toBe(200);
@@ -289,7 +289,7 @@ test("payrex webhook handler is idempotent: a PayRex retry of the same paid even
       images: [],
       primaryImageIndex: 0,
       shippingRequired: true,
-    })
+    }),
   );
 
   const orderNumber = "TF-2026-HTTPIDEMP";
@@ -318,7 +318,7 @@ test("payrex webhook handler is idempotent: a PayRex retry of the same paid even
       },
       createdAt: Date.now(),
       updatedAt: Date.now(),
-    })
+    }),
   );
 
   const freshSeconds = String(Math.floor(Date.now() / 1000));
@@ -347,7 +347,7 @@ test("payrex webhook handler is idempotent: a PayRex retry of the same paid even
   expect(product?.inventory).toBe(3); // decremented exactly once (5 - 2), not twice
 
   const scheduled = await t.run(async (ctx) =>
-    ctx.db.system.query("_scheduled_functions").collect()
+    ctx.db.system.query("_scheduled_functions").collect(),
   );
   expect(scheduled.length).toBe(1); // confirmation email scheduled exactly once
 });
@@ -371,7 +371,7 @@ async function signClerkWebhook(
   secret: string,
   svixId: string,
   svixTimestamp: string,
-  rawBody: string
+  rawBody: string,
 ): Promise<string> {
   const secretB64 = secret.startsWith("whsec_") ? secret.slice(6) : secret;
   const binary = atob(secretB64);
@@ -384,12 +384,12 @@ async function signClerkWebhook(
     secretBytes,
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
   const sig = await crypto.subtle.sign(
     "HMAC",
     key,
-    enc.encode(`${svixId}.${svixTimestamp}.${rawBody}`)
+    enc.encode(`${svixId}.${svixTimestamp}.${rawBody}`),
   );
   const sigBytes = new Uint8Array(sig);
   let sigBinary = "";
@@ -405,12 +405,11 @@ async function postClerkWebhook(
     svixTimestamp?: string;
     svixSignature?: string;
     skipHeaders?: string[];
-  }
+  },
 ): Promise<Response> {
   const rawBody = JSON.stringify(body);
   const svixId = overrides?.svixId ?? "msg_test123";
-  const svixTimestamp =
-    overrides?.svixTimestamp ?? String(Math.floor(Date.now() / 1000));
+  const svixTimestamp = overrides?.svixTimestamp ?? String(Math.floor(Date.now() / 1000));
   const svixSignature =
     overrides?.svixSignature ??
     `v1,${await signClerkWebhook(CLERK_WEBHOOK_SECRET, svixId, svixTimestamp, rawBody)}`;
@@ -438,7 +437,7 @@ test("verifyClerkWebhookSignature accepts a correctly signed payload", async () 
     svixId,
     svixTimestamp,
     `v1,${sig}`,
-    rawBody
+    rawBody,
   );
   expect(valid).toBe(true);
 });
@@ -454,7 +453,7 @@ test("verifyClerkWebhookSignature accepts a match among multiple space-separated
     svixId,
     svixTimestamp,
     `v1,not-a-real-signature v1,${sig}`,
-    rawBody
+    rawBody,
   );
   expect(valid).toBe(true);
 });
@@ -463,14 +462,19 @@ test("verifyClerkWebhookSignature rejects a signature produced with the wrong se
   const svixId = "msg_wrong_secret";
   const svixTimestamp = String(Math.floor(Date.now() / 1000));
   const rawBody = JSON.stringify({ type: "user.deleted", data: { id: "user_1" } });
-  const sig = await signClerkWebhook("whsec_d29uZ19zZWNyZXRfYnl0ZXM=", svixId, svixTimestamp, rawBody);
+  const sig = await signClerkWebhook(
+    "whsec_d29uZ19zZWNyZXRfYnl0ZXM=",
+    svixId,
+    svixTimestamp,
+    rawBody,
+  );
 
   const valid = await verifyClerkWebhookSignature(
     CLERK_WEBHOOK_SECRET,
     svixId,
     svixTimestamp,
     `v1,${sig}`,
-    rawBody
+    rawBody,
   );
   expect(valid).toBe(false);
 });
@@ -487,7 +491,7 @@ test("verifyClerkWebhookSignature rejects when the body was tampered with after 
     svixId,
     svixTimestamp,
     `v1,${sig}`,
-    tamperedBody
+    tamperedBody,
   );
   expect(valid).toBe(false);
 });
@@ -498,7 +502,7 @@ test("verifyClerkWebhookSignature returns false (not a throw) for a malformed se
     "msg_1",
     String(Math.floor(Date.now() / 1000)),
     "v1,anything",
-    "{}"
+    "{}",
   );
   expect(valid).toBe(false);
 });
@@ -514,7 +518,7 @@ test("clerk webhook route returns 500 and logs, without processing the event, wh
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   const res = await postClerkWebhook(t, {
@@ -538,7 +542,7 @@ test("clerk webhook route returns 400 when svix headers are missing", async () =
   const res = await postClerkWebhook(
     t,
     { type: "user.deleted", data: { id: "some_user" } },
-    { skipHeaders: ["svix-signature"] }
+    { skipHeaders: ["svix-signature"] },
   );
 
   expect(res.status).toBe(400);
@@ -551,7 +555,7 @@ test("clerk webhook route returns 400 for an invalid signature", async () => {
   const res = await postClerkWebhook(
     t,
     { type: "user.deleted", data: { id: "some_user" } },
-    { svixSignature: "v1,not-a-valid-signature" }
+    { svixSignature: "v1,not-a-valid-signature" },
   );
 
   expect(res.status).toBe(400);
@@ -561,13 +565,13 @@ test("clerk webhook route returns 400 for a validly signed but stale (replayed) 
   vi.stubEnv("CLERK_WEBHOOK_SIGNING_SECRET", CLERK_WEBHOOK_SECRET);
   const t = convexTest(schema);
   const staleSeconds = String(
-    Math.floor((Date.now() - WEBHOOK_TIMESTAMP_WINDOW_MS - 60_000) / 1000)
+    Math.floor((Date.now() - WEBHOOK_TIMESTAMP_WINDOW_MS - 60_000) / 1000),
   );
 
   const res = await postClerkWebhook(
     t,
     { type: "user.deleted", data: { id: "some_user" } },
-    { svixTimestamp: staleSeconds }
+    { svixTimestamp: staleSeconds },
   );
 
   expect(res.status).toBe(400);
@@ -583,7 +587,7 @@ test("clerk webhook route acks unknown event types with 200 without erasing any 
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   const res = await postClerkWebhook(t, {
@@ -606,7 +610,7 @@ test("clerk webhook route erases the matching user's Convex data on a verified u
       role: "agent",
       subscriptionStatus: "active",
       plan: "free",
-    })
+    }),
   );
 
   const res = await postClerkWebhook(t, {

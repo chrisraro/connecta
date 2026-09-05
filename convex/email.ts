@@ -7,36 +7,36 @@ import { CONNECTA } from "../lib/brand";
 // HTML-escape untrusted strings before interpolating them into an email
 // template — Resend does not auto-escape (Security audit #4).
 export function escapeHtml(input: string): string {
-    return input
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export const sendLeadNotification = internalAction({
-    args: {
-        toEmail: v.string(),
-        inquirerName: v.string(),
-        inquirerContact: v.string(),
-        propertyName: v.optional(v.string()),
-        message: v.optional(v.string()),
-    },
-    handler: async (ctx, args) => {
-        const resendKey = process.env.RESEND_API_KEY;
-        if (!resendKey) {
-            console.warn("RESEND_API_KEY is not configured. Email not sent.");
-            return;
-        }
-        const resend = new Resend(resendKey);
-        const propertyText = args.propertyName ? `regarding ${args.propertyName}` : "from your profile";
-        await resend.emails.send({
-            // TODO(ops): once a real domain is registered (see lib/brand.ts), verify it as a Resend sending domain before launch; onboarding@resend.dev only delivers to the account owner.
-            from: `${CONNECTA.name} <onboarding@resend.dev>`,
-            to: args.toEmail,
-            subject: `New Lead ${propertyText} - ${args.inquirerName}`,
-            html: `
+  args: {
+    toEmail: v.string(),
+    inquirerName: v.string(),
+    inquirerContact: v.string(),
+    propertyName: v.optional(v.string()),
+    message: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const resendKey = process.env.RESEND_API_KEY;
+    if (!resendKey) {
+      console.warn("RESEND_API_KEY is not configured. Email not sent.");
+      return;
+    }
+    const resend = new Resend(resendKey);
+    const propertyText = args.propertyName ? `regarding ${args.propertyName}` : "from your profile";
+    await resend.emails.send({
+      // TODO(ops): once a real domain is registered (see lib/brand.ts), verify it as a Resend sending domain before launch; onboarding@resend.dev only delivers to the account owner.
+      from: `${CONNECTA.name} <onboarding@resend.dev>`,
+      to: args.toEmail,
+      subject: `New Lead ${propertyText} - ${args.inquirerName}`,
+      html: `
                 <h2>You have a new inquiry!</h2>
                 <p><strong>Name:</strong> ${args.inquirerName}</p>
                 <p><strong>Contact:</strong> ${args.inquirerContact}</p>
@@ -45,67 +45,69 @@ export const sendLeadNotification = internalAction({
                 <br/>
                 <p>Log in to your ${CONNECTA.name} dashboard to reply.</p>
             `,
-        });
-    },
+    });
+  },
 });
 
 export const sendOrderConfirmation = internalAction({
-    args: {
-        toEmail: v.string(),
-        orderNumber: v.string(),
-        orderTotal: v.number(),
-        currency: v.string(),
-        items: v.array(v.object({
-            productName: v.string(),
-            variationName: v.optional(v.string()),
-            quantity: v.number(),
-            unitPrice: v.number(),
-            total: v.number(),
-        })),
-        shippingAddress: v.object({
-            fullName: v.string(),
-            addressLine1: v.string(),
-            addressLine2: v.optional(v.string()),
-            city: v.string(),
-            state: v.optional(v.string()),
-            postalCode: v.string(),
-            country: v.string(),
-            phone: v.string(),
-        }),
-        subtotal: v.number(),
-        tax: v.number(),
-        shipping: v.number(),
-    },
-    handler: async (ctx, args) => {
-        const resendKey = process.env.RESEND_API_KEY;
-        if (!resendKey) {
-            console.warn("RESEND_API_KEY is not configured. Email not sent.");
-            return { success: false, error: "Email not configured" };
-        }
-        const resend = new Resend(resendKey);
-        const formatPrice = (cents: number, currency: string) => {
-            if (currency.toUpperCase() === "PHP") {
-                return `₱${(cents / 100).toFixed(2)}`;
-            }
-            return `${currency.toUpperCase()} ${(cents / 100).toFixed(2)}`;
-        };
-        try {
-            await resend.emails.send({
-                // TODO(ops): once a real domain is registered (see lib/brand.ts), verify it
-                // as a Resend sending domain before launch. This shares the sandbox
-                // limitation of sendLeadNotification above — Resend's
-                // *.resend.dev test sender only reliably delivers to the account owner.
-                from: `${CONNECTA.name} Shop <orders@resend.dev>`,
-                to: args.toEmail,
-                subject: `Order Confirmation - ${args.orderNumber}`,
-                html: `
+  args: {
+    toEmail: v.string(),
+    orderNumber: v.string(),
+    orderTotal: v.number(),
+    currency: v.string(),
+    items: v.array(
+      v.object({
+        productName: v.string(),
+        variationName: v.optional(v.string()),
+        quantity: v.number(),
+        unitPrice: v.number(),
+        total: v.number(),
+      }),
+    ),
+    shippingAddress: v.object({
+      fullName: v.string(),
+      addressLine1: v.string(),
+      addressLine2: v.optional(v.string()),
+      city: v.string(),
+      state: v.optional(v.string()),
+      postalCode: v.string(),
+      country: v.string(),
+      phone: v.string(),
+    }),
+    subtotal: v.number(),
+    tax: v.number(),
+    shipping: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const resendKey = process.env.RESEND_API_KEY;
+    if (!resendKey) {
+      console.warn("RESEND_API_KEY is not configured. Email not sent.");
+      return { success: false, error: "Email not configured" };
+    }
+    const resend = new Resend(resendKey);
+    const formatPrice = (cents: number, currency: string) => {
+      if (currency.toUpperCase() === "PHP") {
+        return `₱${(cents / 100).toFixed(2)}`;
+      }
+      return `${currency.toUpperCase()} ${(cents / 100).toFixed(2)}`;
+    };
+    try {
+      await resend.emails.send({
+        // TODO(ops): once a real domain is registered (see lib/brand.ts), verify it
+        // as a Resend sending domain before launch. This shares the sandbox
+        // limitation of sendLeadNotification above — Resend's
+        // *.resend.dev test sender only reliably delivers to the account owner.
+        from: `${CONNECTA.name} Shop <orders@resend.dev>`,
+        to: args.toEmail,
+        subject: `Order Confirmation - ${args.orderNumber}`,
+        html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                         <h1 style="color: #333;">Thank you for your order!</h1>
                         <p style="color: #666;">Your order has been confirmed and is being processed.</p>
                         <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
                             <h2 style="color: #333; margin-top: 0;">Order Details</h2>
                             <p><strong>Order Number:</strong> ${args.orderNumber}</p>
-                            <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            <p><strong>Date:</strong> ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
                         </div>
                         <div style="margin: 20px 0;">
                             <h2 style="color: #333;">Order Items</h2>
@@ -118,16 +120,20 @@ export const sendOrderConfirmation = internalAction({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${args.items.map(item => `
+                                    ${args.items
+                                      .map(
+                                        (item) => `
                                         <tr>
                                             <td style="padding: 10px; border-bottom: 1px solid #eee;">
                                                 <strong>${escapeHtml(item.productName)}</strong>
-                                                ${item.variationName ? `<br/><span style="color: #666; font-size: 12px;">${escapeHtml(item.variationName)}</span>` : ''}
+                                                ${item.variationName ? `<br/><span style="color: #666; font-size: 12px;">${escapeHtml(item.variationName)}</span>` : ""}
                                             </td>
                                             <td style="padding: 10px; text-align: center; border-bottom: 1px solid #eee;">${item.quantity}</td>
                                             <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${formatPrice(item.total, args.currency)}</td>
                                         </tr>
-                                    `).join('')}
+                                    `,
+                                      )
+                                      .join("")}
                                 </tbody>
                             </table>
                         </div>
@@ -135,8 +141,8 @@ export const sendOrderConfirmation = internalAction({
                             <h3 style="color: #333; margin-top: 0;">Shipping Address</h3>
                             <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.fullName)}</p>
                             <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.addressLine1)}</p>
-                            ${args.shippingAddress.addressLine2 ? `<p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.addressLine2)}</p>` : ''}
-                            <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.city)}${args.shippingAddress.state ? ', ' + escapeHtml(args.shippingAddress.state) : ''} ${escapeHtml(args.shippingAddress.postalCode)}</p>
+                            ${args.shippingAddress.addressLine2 ? `<p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.addressLine2)}</p>` : ""}
+                            <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.city)}${args.shippingAddress.state ? ", " + escapeHtml(args.shippingAddress.state) : ""} ${escapeHtml(args.shippingAddress.postalCode)}</p>
                             <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.country)}</p>
                             <p style="margin: 5px 0;">${escapeHtml(args.shippingAddress.phone)}</p>
                         </div>
@@ -167,11 +173,11 @@ export const sendOrderConfirmation = internalAction({
                         </div>
                     </div>
                 `,
-            });
-            return { success: true };
-        } catch (error) {
-            console.error("Failed to send order confirmation:", error);
-            return { success: false, error: "Failed to send email" };
-        }
-    },
+      });
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send order confirmation:", error);
+      return { success: false, error: "Failed to send email" };
+    }
+  },
 });

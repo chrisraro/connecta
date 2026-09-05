@@ -30,7 +30,7 @@
  * to /dashboard (e.g., via the "Back to user app" button).
  */
 export function shouldRedirectAdminToConsole(pathname: string | null | undefined): boolean {
-    return pathname === "/dashboard";
+  return pathname === "/dashboard";
 }
 
 /**
@@ -48,30 +48,30 @@ export function shouldRedirectAdminToConsole(pathname: string | null | undefined
  * Must be called from a client component (requires sessionStorage).
  */
 export function shouldRedirectAdminOnFirstLanding(pathname: string | null | undefined): boolean {
-    // Must check the route first — redirect only from /dashboard root
-    if (!shouldRedirectAdminToConsole(pathname)) {
-        return false;
-    }
+  // Must check the route first — redirect only from /dashboard root
+  if (!shouldRedirectAdminToConsole(pathname)) {
+    return false;
+  }
 
-    // No sessionStorage outside the browser. This is called from a client
-    // effect today, so it never runs during SSR — but it is an exported
-    // helper, and an unguarded access would crash the whole page the first
-    // time someone calls it during render or from the edge-runtime test
-    // project. Fail closed: no storage means no redirect, never a throw.
-    if (typeof sessionStorage === "undefined") {
-        return false;
-    }
+  // No sessionStorage outside the browser. This is called from a client
+  // effect today, so it never runs during SSR — but it is an exported
+  // helper, and an unguarded access would crash the whole page the first
+  // time someone calls it during render or from the edge-runtime test
+  // project. Fail closed: no storage means no redirect, never a throw.
+  if (typeof sessionStorage === "undefined") {
+    return false;
+  }
 
-    // Only redirect if we haven't already done so in this session
-    // Using sessionStorage so the flag persists across navigations within the same tab
-    const redirectKey = "admin-redirect-done";
-    const hasAlreadyRedirected = sessionStorage.getItem(redirectKey) === "true";
+  // Only redirect if we haven't already done so in this session
+  // Using sessionStorage so the flag persists across navigations within the same tab
+  const redirectKey = "admin-redirect-done";
+  const hasAlreadyRedirected = sessionStorage.getItem(redirectKey) === "true";
 
-    if (hasAlreadyRedirected) {
-        return false;
-    }
+  if (hasAlreadyRedirected) {
+    return false;
+  }
 
-    // Mark that we've redirected so we don't do it again this session
-    sessionStorage.setItem(redirectKey, "true");
-    return true;
+  // Mark that we've redirected so we don't do it again this session
+  sessionStorage.setItem(redirectKey, "true");
+  return true;
 }

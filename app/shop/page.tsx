@@ -8,7 +8,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, Search, Filter, Sparkles, Check, ArrowRight, Package, ShoppingBag, X, Loader2, SlidersHorizontal } from "lucide-react";
+import {
+  ShoppingCart,
+  Search,
+  Filter,
+  Sparkles,
+  Check,
+  ArrowRight,
+  Package,
+  ShoppingBag,
+  X,
+  Loader2,
+  SlidersHorizontal,
+} from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
 import { useEffect, useRef } from "react";
@@ -17,13 +29,13 @@ import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 
 // Enhanced toast notification component with actions
-function ToastNotification({ 
-  message, 
+function ToastNotification({
+  message,
   visible,
   onViewCart,
-  onDismiss
-}: { 
-  message: string; 
+  onDismiss,
+}: {
+  message: string;
   visible: boolean;
   onViewCart: () => void;
   onDismiss: () => void;
@@ -34,25 +46,25 @@ function ToastNotification({
 
   useEffect(() => {
     if (!visible) return;
-    
+
     startTimeRef.current = Date.now();
-    
+
     const animate = () => {
       const elapsed = Date.now() - startTimeRef.current;
       const remaining = Math.max(0, 100 - (elapsed / 10000) * 100);
       setProgress(remaining);
-      
+
       if (remaining > 0) {
         animationRef.current = requestAnimationFrame(animate);
       }
     };
-    
+
     animationRef.current = requestAnimationFrame(animate);
-    
+
     const timer = setTimeout(() => {
       onDismiss();
     }, 10000);
-    
+
     return () => {
       clearTimeout(timer);
       if (animationRef.current) {
@@ -62,15 +74,15 @@ function ToastNotification({
   }, [visible, onDismiss]);
 
   if (!visible) return null;
-  
+
   const secondsLeft = Math.ceil((progress / 100) * 10);
-  
+
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
       <div className="bg-card border border-border rounded-lg shadow-xl overflow-hidden">
         {/* Progress bar with time indicator */}
         <div className="relative h-2 bg-muted">
-          <div 
+          <div
             className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-100 ease-linear"
             style={{ width: `${progress}%` }}
           />
@@ -80,21 +92,17 @@ function ToastNotification({
             </span>
           </div>
         </div>
-        
+
         <div className="p-4">
           <div className="flex items-start gap-3">
             <div className="bg-green-500/10 rounded-full p-2 flex-shrink-0">
               <Check className="w-5 h-5 text-green-500" />
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm mb-1">{message}</p>
               <div className="flex flex-wrap gap-2 mt-2">
-                <Button
-                  size="sm"
-                  className="h-8 text-xs flex-1 sm:flex-none"
-                  onClick={onViewCart}
-                >
+                <Button size="sm" className="h-8 text-xs flex-1 sm:flex-none" onClick={onViewCart}>
                   <ShoppingBag className="w-3 h-3 mr-1" />
                   View Cart
                 </Button>
@@ -108,7 +116,7 @@ function ToastNotification({
                 </Button>
               </div>
             </div>
-            
+
             <button
               onClick={onDismiss}
               className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 p-1"
@@ -126,10 +134,18 @@ function ToastNotification({
 const formatPrice = formatPHP;
 
 // Helper component to resolve and display product images
-function ProductImage({ storageId, alt, className }: { storageId: string; alt: string; className?: string }) {
+function ProductImage({
+  storageId,
+  alt,
+  className,
+}: {
+  storageId: string;
+  alt: string;
+  className?: string;
+}) {
   const imageUrl = useQuery(
     api.images.getImageUrl,
-    storageId && !storageId.startsWith("http") ? { storageId } : "skip"
+    storageId && !storageId.startsWith("http") ? { storageId } : "skip",
   );
 
   const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
@@ -153,13 +169,7 @@ function ProductImage({ storageId, alt, className }: { storageId: string; alt: s
   );
 }
 import { Id } from "@/convex/_generated/dataModel";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -255,9 +265,7 @@ export default function ShopPage() {
                   <button
                     onClick={() => setSelectedCategory(null)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                      !selectedCategory
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
+                      !selectedCategory ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                     }`}
                   >
                     All Products
@@ -324,9 +332,7 @@ export default function ShopPage() {
                 <button
                   onClick={() => setSelectedCategory(null)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                    !selectedCategory
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
+                    !selectedCategory ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                   }`}
                 >
                   All Products
@@ -397,7 +403,7 @@ export default function ShopPage() {
               <div className="mb-4 text-sm text-muted-foreground">
                 Showing {products.length} product{products.length !== 1 ? "s" : ""}
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product) => (
                   <Link href={`/shop/product/${product.slug}`} key={product._id}>
@@ -406,7 +412,9 @@ export default function ShopPage() {
                       <div className="aspect-square bg-muted relative overflow-hidden rounded-t-lg">
                         {product.images.length > 0 ? (
                           <ProductImage
-                            storageId={product.images[product.primaryImageIndex] || product.images[0]}
+                            storageId={
+                              product.images[product.primaryImageIndex] || product.images[0]
+                            }
                             alt={product.name}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           />
@@ -415,7 +423,7 @@ export default function ShopPage() {
                             No Image
                           </div>
                         )}
-                        
+
                         {/* Badges */}
                         <div className="absolute top-2 left-2 flex flex-col gap-2">
                           {product.compareAtPrice && product.compareAtPrice > product.basePrice && (
@@ -445,7 +453,7 @@ export default function ShopPage() {
                         <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
                           {product.name}
                         </h3>
-                        
+
                         {product.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-2">
                             {product.tags.slice(0, 2).map((tag) => (
@@ -461,11 +469,12 @@ export default function ShopPage() {
                             <span className="text-xl font-bold">
                               {formatPrice(product.basePrice)}
                             </span>
-                            {product.compareAtPrice && product.compareAtPrice > product.basePrice && (
-                              <span className="text-sm text-muted-foreground line-through">
-                                {formatPrice(product.compareAtPrice)}
-                              </span>
-                            )}
+                            {product.compareAtPrice &&
+                              product.compareAtPrice > product.basePrice && (
+                                <span className="text-sm text-muted-foreground line-through">
+                                  {formatPrice(product.compareAtPrice)}
+                                </span>
+                              )}
                           </div>
                         </div>
 
@@ -481,8 +490,7 @@ export default function ShopPage() {
                             handleAddToCart(product._id);
                           }}
                           disabled={
-                            cartLoading ||
-                            (product.trackInventory && product.inventory === 0)
+                            cartLoading || (product.trackInventory && product.inventory === 0)
                           }
                         >
                           {addedToCart === product._id ? (
@@ -506,13 +514,13 @@ export default function ShopPage() {
           )}
         </div>
       </div>
-      
+
       {/* Toast Notification */}
-      <ToastNotification 
-        message="Added to cart!" 
+      <ToastNotification
+        message="Added to cart!"
         visible={addedToCart !== null}
         onViewCart={() => {
-          window.location.href = '/shop/cart';
+          window.location.href = "/shop/cart";
         }}
         onDismiss={() => setAddedToCart(null)}
       />

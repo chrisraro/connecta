@@ -95,7 +95,7 @@ function delay(ms: number): Promise<void> {
  */
 export async function withRetries<T>(
   fn: () => Promise<T>,
-  { attempts, delayMs }: WithRetriesOptions
+  { attempts, delayMs }: WithRetriesOptions,
 ): Promise<WithRetriesResult<T>> {
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {

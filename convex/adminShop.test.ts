@@ -54,10 +54,7 @@ type OrderOverrides = Partial<{
   }>;
 }>;
 
-async function seedOrder(
-  t: ReturnType<typeof convexTest>,
-  overrides: OrderOverrides = {}
-) {
+async function seedOrder(t: ReturnType<typeof convexTest>, overrides: OrderOverrides = {}) {
   return await t.run(async (ctx) => {
     const now = Date.now();
     return ctx.db.insert("orders", {
@@ -158,11 +155,26 @@ test("getSalesStats only counts paid orders within the requested date range (by_
   const { asAdmin } = await seedAdmin(t, "admin_clerk5");
 
   const now = Date.now();
-  await seedOrder(t, { paymentStatus: "paid", createdAt: now, total: 500, orderNumber: "IN_RANGE_PAID" });
+  await seedOrder(t, {
+    paymentStatus: "paid",
+    createdAt: now,
+    total: 500,
+    orderNumber: "IN_RANGE_PAID",
+  });
   // Boundary: paid but outside the date range.
-  await seedOrder(t, { paymentStatus: "paid", createdAt: now - 10 * DAY_MS, total: 999, orderNumber: "OUT_OF_RANGE_PAID" });
+  await seedOrder(t, {
+    paymentStatus: "paid",
+    createdAt: now - 10 * DAY_MS,
+    total: 999,
+    orderNumber: "OUT_OF_RANGE_PAID",
+  });
   // Boundary: in range but not paid.
-  await seedOrder(t, { paymentStatus: "pending", createdAt: now, total: 777, orderNumber: "IN_RANGE_UNPAID" });
+  await seedOrder(t, {
+    paymentStatus: "pending",
+    createdAt: now,
+    total: 777,
+    orderNumber: "IN_RANGE_UNPAID",
+  });
 
   const result = await asAdmin.query(api.adminShop.getSalesStats, {
     clerkId: "admin_clerk5",
@@ -178,9 +190,29 @@ test("getShopAnalytics: recent paid/unpaid orders produce the same totals and st
   const { asAdmin } = await seedAdmin(t, "admin_clerk6");
 
   const now = Date.now();
-  await seedOrder(t, { paymentStatus: "paid", status: "delivered", total: 300, createdAt: now, paidAt: now, orderNumber: "A" });
-  await seedOrder(t, { paymentStatus: "paid", status: "shipped", total: 200, createdAt: now, paidAt: now, orderNumber: "B" });
-  await seedOrder(t, { paymentStatus: "pending", status: "pending", total: 999, createdAt: now, orderNumber: "C" });
+  await seedOrder(t, {
+    paymentStatus: "paid",
+    status: "delivered",
+    total: 300,
+    createdAt: now,
+    paidAt: now,
+    orderNumber: "A",
+  });
+  await seedOrder(t, {
+    paymentStatus: "paid",
+    status: "shipped",
+    total: 200,
+    createdAt: now,
+    paidAt: now,
+    orderNumber: "B",
+  });
+  await seedOrder(t, {
+    paymentStatus: "pending",
+    status: "pending",
+    total: 999,
+    createdAt: now,
+    orderNumber: "C",
+  });
 
   const result = await asAdmin.query(api.adminShop.getShopAnalytics, { clerkId: "admin_clerk6" });
 
@@ -197,7 +229,14 @@ test("getShopAnalytics: an order older than the 90-day analytics window is exclu
   const { asAdmin } = await seedAdmin(t, "admin_clerk7");
 
   const now = Date.now();
-  await seedOrder(t, { paymentStatus: "paid", status: "delivered", total: 300, createdAt: now, paidAt: now, orderNumber: "RECENT" });
+  await seedOrder(t, {
+    paymentStatus: "paid",
+    status: "delivered",
+    total: 300,
+    createdAt: now,
+    paidAt: now,
+    orderNumber: "RECENT",
+  });
   // Older than the 90-day analytics window -> must be excluded post-conversion.
   await seedOrder(t, {
     paymentStatus: "paid",

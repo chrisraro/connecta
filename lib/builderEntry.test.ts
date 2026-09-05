@@ -1,42 +1,38 @@
 import { expect, test } from "vitest";
-import { resolveBuilderEntryRedirect, shouldPrefillCreateForm, newestProfileId } from "./builderEntry";
+import {
+  resolveBuilderEntryRedirect,
+  shouldPrefillCreateForm,
+  newestProfileId,
+} from "./builderEntry";
 
 const profile = (id: string, creationTime: number) => ({ _id: id, _creationTime: creationTime });
 
 test("does nothing when already editing (an id is present)", () => {
-    expect(
-        resolveBuilderEntryRedirect("existing-id", [profile("a", 1)], 1)
-    ).toBeNull();
+  expect(resolveBuilderEntryRedirect("existing-id", [profile("a", 1)], 1)).toBeNull();
 });
 
 test("does nothing when the user has no profiles yet", () => {
-    expect(resolveBuilderEntryRedirect(null, [], 1)).toBeNull();
-    expect(resolveBuilderEntryRedirect(null, undefined, 1)).toBeNull();
+  expect(resolveBuilderEntryRedirect(null, [], 1)).toBeNull();
+  expect(resolveBuilderEntryRedirect(null, undefined, 1)).toBeNull();
 });
 
 test("does nothing on an unlimited plan (maxProfiles null)", () => {
-    expect(
-        resolveBuilderEntryRedirect(null, [profile("a", 1)], null)
-    ).toBeNull();
+  expect(resolveBuilderEntryRedirect(null, [profile("a", 1)], null)).toBeNull();
 });
 
 test("does nothing while still under the plan's profile limit", () => {
-    expect(
-        resolveBuilderEntryRedirect(null, [profile("a", 1)], 2)
-    ).toBeNull();
+  expect(resolveBuilderEntryRedirect(null, [profile("a", 1)], 2)).toBeNull();
 });
 
 test("redirects to the newest profile once at the plan's limit", () => {
-    expect(
-        resolveBuilderEntryRedirect(null, [profile("a", 1)], 1)
-    ).toBe("a");
+  expect(resolveBuilderEntryRedirect(null, [profile("a", 1)], 1)).toBe("a");
 });
 
 test("redirects to the newest profile once OVER the plan's limit", () => {
-    // Free plan is 1, but a user can end up with more than one (e.g. a
-    // downgrade from Pro) — the newest is still the sensible edit target.
-    const profiles = [profile("older", 1), profile("newest", 3), profile("middle", 2)];
-    expect(resolveBuilderEntryRedirect(null, profiles, 1)).toBe("newest");
+  // Free plan is 1, but a user can end up with more than one (e.g. a
+  // downgrade from Pro) — the newest is still the sensible edit target.
+  const profiles = [profile("older", 1), profile("newest", 3), profile("middle", 2)];
+  expect(resolveBuilderEntryRedirect(null, profiles, 1)).toBe("newest");
 });
 
 // --- shouldPrefillCreateForm ---
@@ -59,27 +55,27 @@ test("redirects to the newest profile once OVER the plan's limit", () => {
 // component render.
 
 test("shouldPrefillCreateForm: false once already prefilled, regardless of everything else", () => {
-    expect(shouldPrefillCreateForm(null, null, true, true)).toBe(false);
+  expect(shouldPrefillCreateForm(null, null, true, true)).toBe(false);
 });
 
 test("shouldPrefillCreateForm: false when editing an existing profile (id present)", () => {
-    expect(shouldPrefillCreateForm("existing-id", null, false, true)).toBe(false);
+  expect(shouldPrefillCreateForm("existing-id", null, false, true)).toBe(false);
 });
 
 test("shouldPrefillCreateForm: false while entryRedirectId is still loading (undefined)", () => {
-    expect(shouldPrefillCreateForm(null, undefined, false, true)).toBe(false);
+  expect(shouldPrefillCreateForm(null, undefined, false, true)).toBe(false);
 });
 
 test("shouldPrefillCreateForm: false while a redirect is pending (entryRedirectId is a profile id)", () => {
-    expect(shouldPrefillCreateForm(null, "some-profile-id", false, true)).toBe(false);
+  expect(shouldPrefillCreateForm(null, "some-profile-id", false, true)).toBe(false);
 });
 
 test("shouldPrefillCreateForm: false once resolved to no-redirect but there is no onboarding data yet", () => {
-    expect(shouldPrefillCreateForm(null, null, false, false)).toBe(false);
+  expect(shouldPrefillCreateForm(null, null, false, false)).toBe(false);
 });
 
 test("shouldPrefillCreateForm: true only once resolved to no-redirect AND onboarding data is present", () => {
-    expect(shouldPrefillCreateForm(null, null, false, true)).toBe(true);
+  expect(shouldPrefillCreateForm(null, null, false, true)).toBe(true);
 });
 
 // --- newestProfileId ---
@@ -93,14 +89,14 @@ test("shouldPrefillCreateForm: true only once resolved to no-redirect AND onboar
 // Both call sites now reuse this helper instead of `profiles[0]`.
 
 test("newestProfileId: null for an empty list", () => {
-    expect(newestProfileId([])).toBeNull();
+  expect(newestProfileId([])).toBeNull();
 });
 
 test("newestProfileId: the only profile when there's exactly one", () => {
-    expect(newestProfileId([profile("only", 5)])).toBe("only");
+  expect(newestProfileId([profile("only", 5)])).toBe("only");
 });
 
 test("newestProfileId: the newest by _creationTime, regardless of array order", () => {
-    const profiles = [profile("older", 1), profile("newest", 3), profile("middle", 2)];
-    expect(newestProfileId(profiles)).toBe("newest");
+  const profiles = [profile("older", 1), profile("newest", 3), profile("middle", 2)];
+  expect(newestProfileId(profiles)).toBe("newest");
 });

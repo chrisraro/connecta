@@ -78,7 +78,7 @@ export const validateUploadMetadata = internalMutation({
 
 function validateMetadata(
   contentType: string,
-  size: number
+  size: number,
 ): { valid: true } | { valid: false; reason: string } {
   if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
     return { valid: false, reason: `Unsupported content type: ${contentType}` };
@@ -144,14 +144,14 @@ export const validateUpload = action({
 });
 
 export const getImageUrl = query({
-    args: { storageId: v.string() },
-    handler: async (ctx, args) => {
-        try {
-            const url = await ctx.storage.getUrl(args.storageId);
-            return url;
-        } catch (error) {
-            console.error("Failed to get image URL:", error);
-            return null;
-        }
-    },
+  args: { storageId: v.string() },
+  handler: async (ctx, args) => {
+    try {
+      const url = await ctx.storage.getUrl(args.storageId);
+      return url;
+    } catch (error) {
+      console.error("Failed to get image URL:", error);
+      return null;
+    }
+  },
 });

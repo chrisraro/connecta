@@ -13,7 +13,15 @@ import { readableTextColor } from "@/lib/utils";
 import { TemplateTheme } from "../theme";
 import { SectionShell } from "./SectionShell";
 
-export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme; index: number; ownerId: string }) {
+export function ContactSection({
+  theme,
+  index,
+  ownerId,
+}: {
+  theme: TemplateTheme;
+  index: number;
+  ownerId: string;
+}) {
   // createLead is a Convex action (not a mutation) so its rate-limit
   // bookkeeping survives an invalid-input rejection instead of being rolled
   // back with it — see convex/leads.ts. useAction has the same calling
@@ -71,7 +79,13 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor={nameId} className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Name</label>
+          <label
+            htmlFor={nameId}
+            className="text-xs mb-2 block font-medium"
+            style={{ color: theme.colors.inkSoft }}
+          >
+            Name
+          </label>
           <Input
             id={nameId}
             required
@@ -83,7 +97,13 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
           />
         </div>
         <div>
-          <label htmlFor={emailId} className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Email</label>
+          <label
+            htmlFor={emailId}
+            className="text-xs mb-2 block font-medium"
+            style={{ color: theme.colors.inkSoft }}
+          >
+            Email
+          </label>
           <Input
             id={emailId}
             required
@@ -96,7 +116,13 @@ export function ContactSection({ theme, index, ownerId }: { theme: TemplateTheme
           />
         </div>
         <div>
-          <label htmlFor={messageId} className="text-xs mb-2 block font-medium" style={{ color: theme.colors.inkSoft }}>Message</label>
+          <label
+            htmlFor={messageId}
+            className="text-xs mb-2 block font-medium"
+            style={{ color: theme.colors.inkSoft }}
+          >
+            Message
+          </label>
           <Textarea
             id={messageId}
             required

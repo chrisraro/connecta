@@ -15,29 +15,30 @@ Two separate runtimes ship from this one repo, and they deploy independently:
 
 ## Frontend
 
-| Package | Version | Owns |
-|---|---|---|
-| `next` | `16.2.12` | App Router, routing, SSR, `next.config.ts` (`next.config.ts:1-55`) |
-| `react` / `react-dom` | `19.2.3` | UI runtime |
-| `babel-plugin-react-compiler` | `1.0.0` | React Compiler, turned on via `reactCompiler: true` (`next.config.ts:4`) |
-| `@clerk/nextjs` | `^6.39.2` | Auth UI + middleware (`middleware.ts`) |
-| `convex` | `^1.31.6` | Client SDK (`useQuery`/`useMutation`) and the `convex` CLI (`npx convex ...`) — one package, two jobs |
-| `tailwindcss` | `^4` (via `@tailwindcss/postcss` `^4`) | Styling; tokens in `app/globals.css` |
-| `next-themes` | `^0.4.6` | Light/dark/system theme (`components/ThemeProvider.tsx`, `components/ui/theme-toggle.tsx`, `components/ui/toaster.tsx`) |
-| `radix-ui` (aggregator) + individual `@radix-ui/react-*` (`checkbox` `^1.3.3`, `dialog` `^1.1.15`, `dropdown-menu` `^2.1.16`, `label` `^2.1.8`, `select` `^2.2.6`, `slot` `^1.2.4`, `switch` `^1.2.6`, `tabs` `^1.1.13`) | mixed | Unstyled primitives under `components/ui/**` (e.g. `components/ui/button.tsx` imports from the `radix-ui` aggregator) |
-| `class-variance-authority` | `^0.7.1` | Variant styling for `components/ui/*` (e.g. `alert.tsx`, `badge.tsx`, `button.tsx`) |
-| `clsx` + `tailwind-merge` | `^2.1.1` / `^3.4.0` | `lib/utils.ts`'s `cn()` class-merge helper |
-| `lucide-react` | `^0.563.0` | Icon set (`components.json` declares `"iconLibrary": "lucide"`) |
-| `sonner` | `^2.0.8` | Toasts (used across `app/admin/factory`, `app/dashboard/billing`, `app/dashboard/builder`, etc.) |
-| `react-hook-form` | `^7.71.1` | Form state, wired into the shadcn `components/ui/form.tsx` primitive |
-| `@dnd-kit/core` `^6.3.1`, `@dnd-kit/sortable` `^10.0.0`, `@dnd-kit/utilities` `^3.2.2` | Drag-and-drop reordering in the profile builder (`app/dashboard/builder/page.tsx`) |
-| `html-to-image` | `^1.11.13` | Renders the digital business card to a PNG for download/share (`app/dashboard/builder/page.tsx`, `components/ui/DigitalCardModal.tsx`) |
-| `qrcode.react` | `^4.2.0` | Generates the QR code shown on cards/factory pages (`app/admin/factory/page.tsx`, `components/profile-builder/AccessCard.tsx`, `components/ui/digital-business-card.tsx`) |
-| `jsqr` | `^1.4.0` | Decodes a QR code from camera frames for claim-by-scan (`components/dashboard/QrClaimScanner.tsx`) |
-| `sanitize-html` | `^2.17.3` | XSS-safe HTML sanitization of user-generated bio/about text (`lib/sanitize.ts`) |
+| Package                                                                                                                                                                                                                  | Version                                                                            | Owns                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `next`                                                                                                                                                                                                                   | `16.2.12`                                                                          | App Router, routing, SSR, `next.config.ts` (`next.config.ts:1-55`)                                                                                                        |
+| `react` / `react-dom`                                                                                                                                                                                                    | `19.2.3`                                                                           | UI runtime                                                                                                                                                                |
+| `babel-plugin-react-compiler`                                                                                                                                                                                            | `1.0.0`                                                                            | React Compiler, turned on via `reactCompiler: true` (`next.config.ts:4`)                                                                                                  |
+| `@clerk/nextjs`                                                                                                                                                                                                          | `^6.39.2`                                                                          | Auth UI + middleware (`middleware.ts`)                                                                                                                                    |
+| `convex`                                                                                                                                                                                                                 | `^1.31.6`                                                                          | Client SDK (`useQuery`/`useMutation`) and the `convex` CLI (`npx convex ...`) — one package, two jobs                                                                     |
+| `tailwindcss`                                                                                                                                                                                                            | `^4` (via `@tailwindcss/postcss` `^4`)                                             | Styling; tokens in `app/globals.css`                                                                                                                                      |
+| `next-themes`                                                                                                                                                                                                            | `^0.4.6`                                                                           | Light/dark/system theme (`components/ThemeProvider.tsx`, `components/ui/theme-toggle.tsx`, `components/ui/toaster.tsx`)                                                   |
+| `radix-ui` (aggregator) + individual `@radix-ui/react-*` (`checkbox` `^1.3.3`, `dialog` `^1.1.15`, `dropdown-menu` `^2.1.16`, `label` `^2.1.8`, `select` `^2.2.6`, `slot` `^1.2.4`, `switch` `^1.2.6`, `tabs` `^1.1.13`) | mixed                                                                              | Unstyled primitives under `components/ui/**` (e.g. `components/ui/button.tsx` imports from the `radix-ui` aggregator)                                                     |
+| `class-variance-authority`                                                                                                                                                                                               | `^0.7.1`                                                                           | Variant styling for `components/ui/*` (e.g. `alert.tsx`, `badge.tsx`, `button.tsx`)                                                                                       |
+| `clsx` + `tailwind-merge`                                                                                                                                                                                                | `^2.1.1` / `^3.4.0`                                                                | `lib/utils.ts`'s `cn()` class-merge helper                                                                                                                                |
+| `lucide-react`                                                                                                                                                                                                           | `^0.563.0`                                                                         | Icon set (`components.json` declares `"iconLibrary": "lucide"`)                                                                                                           |
+| `sonner`                                                                                                                                                                                                                 | `^2.0.8`                                                                           | Toasts (used across `app/admin/factory`, `app/dashboard/billing`, `app/dashboard/builder`, etc.)                                                                          |
+| `react-hook-form`                                                                                                                                                                                                        | `^7.71.1`                                                                          | Form state, wired into the shadcn `components/ui/form.tsx` primitive                                                                                                      |
+| `@dnd-kit/core` `^6.3.1`, `@dnd-kit/sortable` `^10.0.0`, `@dnd-kit/utilities` `^3.2.2`                                                                                                                                   | Drag-and-drop reordering in the profile builder (`app/dashboard/builder/page.tsx`) |
+| `html-to-image`                                                                                                                                                                                                          | `^1.11.13`                                                                         | Renders the digital business card to a PNG for download/share (`app/dashboard/builder/page.tsx`, `components/ui/DigitalCardModal.tsx`)                                    |
+| `qrcode.react`                                                                                                                                                                                                           | `^4.2.0`                                                                           | Generates the QR code shown on cards/factory pages (`app/admin/factory/page.tsx`, `components/profile-builder/AccessCard.tsx`, `components/ui/digital-business-card.tsx`) |
+| `jsqr`                                                                                                                                                                                                                   | `^1.4.0`                                                                           | Decodes a QR code from camera frames for claim-by-scan (`components/dashboard/QrClaimScanner.tsx`)                                                                        |
+| `sanitize-html`                                                                                                                                                                                                          | `^2.17.3`                                                                          | XSS-safe HTML sanitization of user-generated bio/about text (`lib/sanitize.ts`)                                                                                           |
 
 **Installed but not actually used anywhere in `app/`, `components/`, `lib/`, or `convex/`** (verified by
 grepping every import path across those directories — zero hits beyond the line cited):
+
 - `isomorphic-dompurify` (`^3.9.0`) — no import found anywhere.
 - `zod` (`^4.3.6`) and `@hookform/resolvers` (`^5.2.2`) — no `zodResolver`/`z.` usage found; forms in this
   codebase validate manually, not via a zod schema.
@@ -54,6 +55,7 @@ scratch review artifacts under `.superpowers/` and this document itself. A dynam
 dynamic-import escape hatch is ruled out.
 
 Two of them are superseded rather than merely unused, which is why they linger:
+
 - `isomorphic-dompurify` → the codebase sanitizes via `sanitize-html` (`lib/sanitize.ts:1`).
 - `vcards-js` → the vCard is hand-built as a vCard 3.0 string (`lib/vcard.ts:3-4`).
 
@@ -62,10 +64,10 @@ done as part of this documentation pass — it is a `package.json` change, and t
 
 ## Backend / data
 
-| Package | Version | Owns |
-|---|---|---|
+| Package  | Version   | Owns                                                                                                   |
+| -------- | --------- | ------------------------------------------------------------------------------------------------------ |
 | `convex` | `^1.31.6` | Database, server functions (`query`/`mutation`/`action`), scheduling (`convex/crons.ts`), file storage |
-| `resend` | `^6.12.0` | Transactional email, `convex/email.ts` only (lead notifications, order confirmations) |
+| `resend` | `^6.12.0` | Transactional email, `convex/email.ts` only (lead notifications, order confirmations)                  |
 
 Schema: `convex/schema.ts` — 20 tables, see `docs/handoff/03-DATABASE-SCHEMA.md`.
 
@@ -75,18 +77,19 @@ exactly — see Trap 2 below.
 
 ## Testing / linting / types
 
-| Package | Version | Owns |
-|---|---|---|
-| `vitest` | `^4.1.9` (`@vitest/ui` same) | Test runner |
-| `convex-test` | `^0.0.54` | In-memory Convex backend for testing `convex/*.ts` mutations/queries against a fake `ctx.db` |
-| `jsdom` | `^29.1.1` | DOM environment for `*.test.tsx` component tests |
-| `@edge-runtime/vm` | `^5.0.0` | Backs the `edge-runtime` Vitest environment (see below) |
-| `@testing-library/react` `^16.3.2`, `@testing-library/jest-dom` `^6.9.1`, `@testing-library/user-event` `^14.6.1` | Component test helpers |
-| `eslint` | `^9` | Linting, flat config (`eslint.config.mjs:1-19`) built from `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript` |
-| `eslint-config-next` | `16.1.6` | Next-specific lint rules — note this is one minor behind the `next` runtime version (`16.2.12`); not a bug, just worth knowing it can lag |
-| `typescript` | `^5` | Type checking (`npx tsc --noEmit`) |
+| Package                                                                                                           | Version                      | Owns                                                                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `vitest`                                                                                                          | `^4.1.9` (`@vitest/ui` same) | Test runner                                                                                                                               |
+| `convex-test`                                                                                                     | `^0.0.54`                    | In-memory Convex backend for testing `convex/*.ts` mutations/queries against a fake `ctx.db`                                              |
+| `jsdom`                                                                                                           | `^29.1.1`                    | DOM environment for `*.test.tsx` component tests                                                                                          |
+| `@edge-runtime/vm`                                                                                                | `^5.0.0`                     | Backs the `edge-runtime` Vitest environment (see below)                                                                                   |
+| `@testing-library/react` `^16.3.2`, `@testing-library/jest-dom` `^6.9.1`, `@testing-library/user-event` `^14.6.1` | Component test helpers       |
+| `eslint`                                                                                                          | `^9`                         | Linting, flat config (`eslint.config.mjs:1-19`) built from `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript`         |
+| `eslint-config-next`                                                                                              | `16.1.6`                     | Next-specific lint rules — note this is one minor behind the `next` runtime version (`16.2.12`); not a bug, just worth knowing it can lag |
+| `typescript`                                                                                                      | `^5`                         | Type checking (`npx tsc --noEmit`)                                                                                                        |
 
 `vitest.config.ts:1-36` runs **two** Vitest projects in one pass:
+
 - `server`: `environment: "edge-runtime"`, everything except `*.test.tsx` (covers `convex/*.test.ts` and
   `lib/*.test.ts`).
 - `client`: `environment: "jsdom"`, only `*.test.tsx` (component tests).
@@ -126,7 +129,7 @@ run directly via `npx`, confirmed by repeated use in `.superpowers/sdd/task-*-re
    Convex functions live at root `/convex` and only reach the dev deployment when someone runs
    `npx convex dev` (watch mode) or `npx convex dev --once` (one-shot). The Vercel build (`next build`)
    never touches them. If you edit a `convex/*.ts` file and immediately test in the browser without
-   pushing first, you are exercising the *previously deployed* function — this produced a real false
+   pushing first, you are exercising the _previously deployed_ function — this produced a real false
    conclusion during the production audit (`.superpowers/sdd/task-3-report.md:86-91`: a slug field and
    `createProfile` change were committed but never pushed, so the running app kept calling the old
    function and slugs silently never appeared). Always `npx convex dev --once` (or have `npx convex dev`
@@ -160,7 +163,7 @@ run directly via `npx`, confirmed by repeated use in `.superpowers/sdd/task-*-re
    client/server boundary unmodified (`lib/errors.ts:20-25`). Practical rule: **anything the UI needs to
    branch on, or show verbatim to a user, must be thrown as `new ConvexError({ code, message })`, never a
    plain `throw new Error(...)`.** Because prod today points at the dev deployment (Trap 3), code that
-   still throws plain `Error` for user-facing branching *looks* like it works in every manual test — the
+   still throws plain `Error` for user-facing branching _looks_ like it works in every manual test — the
    redaction only bites on a real production deployment. `.superpowers/sdd/progress.md:34` records exactly
    this: a duplicate-detection check that regex-matched on error message text was "dead against a true
    prod Convex deployment... works today only because prod points at the dev deployment."
@@ -168,7 +171,7 @@ run directly via `npx`, confirmed by repeated use in `.superpowers/sdd/task-*-re
 5. **Convex mutations are atomic, so a rate-limit write followed by a throw in the same mutation rolls
    back together — silently defeating the rate limit.** `convex/rateLimit.ts:38-51`'s inline comment spells
    out the consequence directly: if a single mutation calls `checkRateLimit` and then throws (e.g. "wrong
-   activation code"), the rate-limit counter write is *part of that same transaction* and rolls back with
+   activation code"), the rate-limit counter write is _part of that same transaction_ and rolls back with
    the throw, so repeated bad attempts never actually accumulate toward the limit. The fix used in this
    codebase is to split the check into its own `internalMutation` (e.g.
    `recordActivationAttempt`/`recordClaimAttempt`, `convex/cards.ts:41-64`) invoked via a separate

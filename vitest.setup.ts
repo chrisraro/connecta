@@ -7,5 +7,5 @@ import { cleanup } from "@testing-library/react";
 // when it detects a global `afterEach`) never fires. Without this, DOM nodes
 // from one test leak into the next within the same *.test.tsx file.
 afterEach(() => {
-    cleanup();
+  cleanup();
 });

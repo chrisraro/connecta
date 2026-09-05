@@ -4,7 +4,7 @@ import { requireUserMatching } from "./authz";
 
 /**
  * Public Shop Queries & Mutations
- * 
+ *
  * Handles product browsing, cart management, and guest checkout flow.
  */
 
@@ -46,12 +46,14 @@ export const getProducts = query({
     inStockOnly: v.optional(v.boolean()),
     minPrice: v.optional(v.number()),
     maxPrice: v.optional(v.number()),
-    sortBy: v.optional(v.union(
-      v.literal("newest"),
-      v.literal("price_asc"),
-      v.literal("price_desc"),
-      v.literal("popular")
-    )),
+    sortBy: v.optional(
+      v.union(
+        v.literal("newest"),
+        v.literal("price_asc"),
+        v.literal("price_desc"),
+        v.literal("popular"),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     // .order("desc") is load-bearing: within the by_published index, rows
@@ -70,35 +72,36 @@ export const getProducts = query({
 
     // Filter by category
     if (args.categoryId) {
-      products = products.filter(p => p.categoryId === args.categoryId);
+      products = products.filter((p) => p.categoryId === args.categoryId);
     }
 
     // Filter by featured
     if (args.featured) {
-      products = products.filter(p => p.isFeatured);
+      products = products.filter((p) => p.isFeatured);
     }
 
     // Filter by search (name, description, tags)
     if (args.search) {
       const searchLower = args.search.toLowerCase();
-      products = products.filter(p =>
-        p.name.toLowerCase().includes(searchLower) ||
-        p.description?.toLowerCase().includes(searchLower) ||
-        p.tags.some(tag => tag.toLowerCase().includes(searchLower))
+      products = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchLower) ||
+          p.description?.toLowerCase().includes(searchLower) ||
+          p.tags.some((tag) => tag.toLowerCase().includes(searchLower)),
       );
     }
 
     // Filter by stock
     if (args.inStockOnly) {
-      products = products.filter(p => !p.trackInventory || p.inventory > 0);
+      products = products.filter((p) => !p.trackInventory || p.inventory > 0);
     }
 
     // Filter by price range
     if (args.minPrice !== undefined) {
-      products = products.filter(p => p.basePrice >= args.minPrice!);
+      products = products.filter((p) => p.basePrice >= args.minPrice!);
     }
     if (args.maxPrice !== undefined) {
-      products = products.filter(p => p.basePrice <= args.maxPrice!);
+      products = products.filter((p) => p.basePrice <= args.maxPrice!);
     }
 
     // Sort
@@ -154,7 +157,7 @@ export const getProductById = query({
   args: { productId: v.id("products") },
   handler: async (ctx, args) => {
     const product = await ctx.db.get(args.productId);
-    
+
     if (!product || !product.isPublished) {
       return null;
     }
@@ -204,7 +207,7 @@ export const getCart = query({
       cart.items.map(async (item) => {
         const product = await ctx.db.get(item.productId);
         let variation = null;
-        
+
         if (item.variationId) {
           variation = await ctx.db.get(item.variationId);
         }
@@ -215,7 +218,7 @@ export const getCart = query({
           variation,
           lineTotal: item.priceAtAdd * item.quantity,
         };
-      })
+      }),
     );
 
     return {
@@ -267,7 +270,7 @@ export const addToCart = mutation({
         throw new Error("Invalid variation");
       }
       price = variation.price;
-      
+
       if (variation.inventory < args.quantity) {
         throw new Error("Insufficient stock for this variation");
       }
@@ -294,12 +297,14 @@ export const addToCart = mutation({
       const cartId = await ctx.db.insert("carts", {
         userId,
         guestId: args.guestId,
-        items: [{
-          productId: args.productId,
-          variationId: args.variationId,
-          quantity: args.quantity,
-          priceAtAdd: price,
-        }],
+        items: [
+          {
+            productId: args.productId,
+            variationId: args.variationId,
+            quantity: args.quantity,
+            priceAtAdd: price,
+          },
+        ],
         createdAt: now,
         updatedAt: now,
       });
@@ -309,7 +314,7 @@ export const addToCart = mutation({
 
     // Update existing cart
     const existingItemIndex = cart.items.findIndex(
-      item => item.productId === args.productId && item.variationId === args.variationId
+      (item) => item.productId === args.productId && item.variationId === args.variationId,
     );
 
     const updatedItems = [...cart.items];
@@ -380,7 +385,7 @@ export const updateCartItem = mutation({
 
     // Find and update item
     const itemIndex = cart.items.findIndex(
-      item => item.productId === args.productId && item.variationId === args.variationId
+      (item) => item.productId === args.productId && item.variationId === args.variationId,
     );
 
     if (itemIndex === -1) {
@@ -445,7 +450,7 @@ export const removeFromCart = mutation({
 
     // Remove item
     const updatedItems = cart.items.filter(
-      item => !(item.productId === args.productId && item.variationId === args.variationId)
+      (item) => !(item.productId === args.productId && item.variationId === args.variationId),
     );
 
     await ctx.db.patch(cart._id, {
@@ -567,7 +572,8 @@ export const mergeGuestCart = mutation({
 
       for (const guestItem of guestCart.items) {
         const existingIndex = mergedItems.findIndex(
-          item => item.productId === guestItem.productId && item.variationId === guestItem.variationId
+          (item) =>
+            item.productId === guestItem.productId && item.variationId === guestItem.variationId,
         );
 
         if (existingIndex >= 0) {

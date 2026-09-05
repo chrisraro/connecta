@@ -54,7 +54,7 @@ test("findOrCreatePendingInvoice reuses an existing pending invoice for the same
     ctx.db
       .query("subscriptionInvoices")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect()
+      .collect(),
   );
   expect(invoices.length).toBe(1);
 });

@@ -38,9 +38,7 @@ export interface DeletionOutcomeUI {
 // with it.
 export const DEGRADED_REDIRECT_DELAY_MS = 4000;
 
-export function decideDeletionOutcome(
-  identityDeletion: IdentityDeletionResult
-): DeletionOutcomeUI {
+export function decideDeletionOutcome(identityDeletion: IdentityDeletionResult): DeletionOutcomeUI {
   if (identityDeletion.status === "deleted") {
     return { showWarningToast: false, toastMessage: null, redirectDelayMs: 0 };
   }

@@ -1,5 +1,12 @@
 import {
-  Phone, Mail, Globe, Facebook, Instagram, Linkedin, Twitter, Youtube,
+  Phone,
+  Mail,
+  Globe,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Youtube,
   Link as LinkIcon,
 } from "lucide-react";
 import { ProfileInfo, ProfileData } from "@/types/profile";
@@ -50,16 +57,45 @@ type Props = {
 export function HeroSection({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
   switch (theme.composition.hero) {
     case "full-bleed-portrait":
-      return <FullBleedPortraitHero agent={agent} theme={theme} resolvedImages={resolvedImages} headingLevel={headingLevel} />;
+      return (
+        <FullBleedPortraitHero
+          agent={agent}
+          theme={theme}
+          resolvedImages={resolvedImages}
+          headingLevel={headingLevel}
+        />
+      );
     case "structured-split":
-      return <StructuredSplitHero agent={agent} theme={theme} resolvedImages={resolvedImages} headingLevel={headingLevel} />;
+      return (
+        <StructuredSplitHero
+          agent={agent}
+          theme={theme}
+          resolvedImages={resolvedImages}
+          headingLevel={headingLevel}
+        />
+      );
     case "editorial-stack":
     default:
-      return <EditorialStackHero agent={agent} theme={theme} resolvedImages={resolvedImages} headingLevel={headingLevel} />;
+      return (
+        <EditorialStackHero
+          agent={agent}
+          theme={theme}
+          resolvedImages={resolvedImages}
+          headingLevel={headingLevel}
+        />
+      );
   }
 }
 
-function SocialLinks({ agent, theme, tone }: { agent: ProfileInfo; theme: TemplateTheme; tone: "on-surface" | "on-image" }) {
+function SocialLinks({
+  agent,
+  theme,
+  tone,
+}: {
+  agent: ProfileInfo;
+  theme: TemplateTheme;
+  tone: "on-surface" | "on-image";
+}) {
   if (!agent.socialLinks || agent.socialLinks.length === 0) return null;
   return (
     <div className="flex gap-3 mt-6">
@@ -109,7 +145,11 @@ function EditorialStackHero({ agent, theme, resolvedImages, headingLevel = "h1" 
         <div className="mb-8">
           <NameHeading
             className="text-4xl font-normal mb-3 leading-tight"
-            style={{ fontFamily: `var(${theme.fontVars.display})`, color: theme.colors.ink, letterSpacing: "-0.02em" }}
+            style={{
+              fontFamily: `var(${theme.fontVars.display})`,
+              color: theme.colors.ink,
+              letterSpacing: "-0.02em",
+            }}
           >
             {agent.fullName}
           </NameHeading>
@@ -117,7 +157,9 @@ function EditorialStackHero({ agent, theme, resolvedImages, headingLevel = "h1" 
             {agent.title}
           </p>
           {agent.company && (
-            <p className="text-sm" style={{ color: theme.colors.inkSoft }}>{agent.company}</p>
+            <p className="text-sm" style={{ color: theme.colors.inkSoft }}>
+              {agent.company}
+            </p>
           )}
         </div>
 
@@ -126,7 +168,10 @@ function EditorialStackHero({ agent, theme, resolvedImages, headingLevel = "h1" 
             <a
               href={`tel:${agent.phone}`}
               className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-medium"
-              style={{ backgroundColor: theme.colors.accent, color: readableTextColor(theme.colors.accent) }}
+              style={{
+                backgroundColor: theme.colors.accent,
+                color: readableTextColor(theme.colors.accent),
+              }}
             >
               <Phone className="w-4 h-4" /> Call Me
             </a>
@@ -165,29 +210,42 @@ function FullBleedPortraitHero({ agent, theme, resolvedImages, headingLevel = "h
         {/* Legibility scrim so the overlaid name/title clear contrast on any photo. */}
         <div
           className="absolute inset-0"
-          style={{ background: `linear-gradient(to top, ${theme.colors.background} 0%, transparent 55%)` }}
+          style={{
+            background: `linear-gradient(to top, ${theme.colors.background} 0%, transparent 55%)`,
+          }}
         />
         <div className="absolute bottom-0 left-0 right-0 px-6 pb-6 md:px-12">
           <NameHeading
             className="text-5xl md:text-6xl font-bold leading-none mb-2"
-            style={{ fontFamily: `var(${theme.fontVars.display})`, color: theme.colors.ink, letterSpacing: "-0.03em" }}
+            style={{
+              fontFamily: `var(${theme.fontVars.display})`,
+              color: theme.colors.ink,
+              letterSpacing: "-0.03em",
+            }}
           >
             {agent.fullName}
           </NameHeading>
-          <p className="text-base font-semibold" style={{ color: theme.colors.accent }}>{agent.title}</p>
+          <p className="text-base font-semibold" style={{ color: theme.colors.accent }}>
+            {agent.title}
+          </p>
         </div>
       </div>
 
       <div className="px-6 md:px-12 py-8">
         {agent.company && (
-          <p className="text-sm mb-6" style={{ color: theme.colors.inkSoft }}>{agent.company}</p>
+          <p className="text-sm mb-6" style={{ color: theme.colors.inkSoft }}>
+            {agent.company}
+          </p>
         )}
         <div className="flex gap-3 flex-wrap">
           {agent.phone && (
             <a
               href={`tel:${agent.phone}`}
               className="flex items-center gap-2 px-5 py-3 rounded-[var(--r-sm)] text-sm font-semibold"
-              style={{ backgroundColor: theme.colors.accent, color: readableTextColor(theme.colors.accent) }}
+              style={{
+                backgroundColor: theme.colors.accent,
+                color: readableTextColor(theme.colors.accent),
+              }}
             >
               <Phone className="w-4 h-4" /> Call
             </a>
@@ -215,7 +273,10 @@ function StructuredSplitHero({ agent, theme, resolvedImages, headingLevel = "h1"
       <div className={measureClass(theme)}>
         <div className="pt-10 pb-6">
           <div className="grid grid-cols-[80px_1fr] gap-5 items-start">
-            <div className="w-20 h-20 rounded-[var(--r-md)] overflow-hidden" style={{ backgroundColor: theme.colors.surface }}>
+            <div
+              className="w-20 h-20 rounded-[var(--r-md)] overflow-hidden"
+              style={{ backgroundColor: theme.colors.surface }}
+            >
               <ProfileImage
                 src={agent.avatarUrl}
                 alt={agent.fullName}
@@ -227,13 +288,21 @@ function StructuredSplitHero({ agent, theme, resolvedImages, headingLevel = "h1"
             <div>
               <NameHeading
                 className="text-2xl font-bold mb-1"
-                style={{ fontFamily: `var(${theme.fontVars.display})`, color: theme.colors.ink, letterSpacing: "-0.02em" }}
+                style={{
+                  fontFamily: `var(${theme.fontVars.display})`,
+                  color: theme.colors.ink,
+                  letterSpacing: "-0.02em",
+                }}
               >
                 {agent.fullName}
               </NameHeading>
-              <p className="text-xs font-semibold mb-1" style={{ color: theme.colors.accent }}>{agent.title}</p>
+              <p className="text-xs font-semibold mb-1" style={{ color: theme.colors.accent }}>
+                {agent.title}
+              </p>
               {agent.company && (
-                <p className="text-sm" style={{ color: theme.colors.inkSoft }}>{agent.company}</p>
+                <p className="text-sm" style={{ color: theme.colors.inkSoft }}>
+                  {agent.company}
+                </p>
               )}
             </div>
           </div>
@@ -243,7 +312,10 @@ function StructuredSplitHero({ agent, theme, resolvedImages, headingLevel = "h1"
               <a
                 href={`tel:${agent.phone}`}
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-[var(--r-md)] text-sm font-semibold"
-                style={{ backgroundColor: theme.colors.accent, color: readableTextColor(theme.colors.accent) }}
+                style={{
+                  backgroundColor: theme.colors.accent,
+                  color: readableTextColor(theme.colors.accent),
+                }}
               >
                 <Phone className="w-4 h-4" /> Call
               </a>
