@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useMyProfiles } from "@/hooks/useProfiles";
+import { useMyLeads } from "@/hooks/useLeads";
+import { useMyCards } from "@/hooks/useCards";
+import { agentInfoOf, layoutConfigOf } from "@/lib/db/profile";
 import {
   ChevronRight,
   Sparkles,
@@ -26,18 +30,24 @@ import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import { newestProfileId } from "@/lib/builderEntry";
 
 export default function DashboardPage() {
-  const { user } = useUser();
-  const clerkId = user?.id;
+  const { user } = useAuth();
 
   const [showDigitalCardModal, setShowDigitalCardModal] = useState(false);
   const [selectedModalProfile, setSelectedModalProfile] = useState<
     NonNullable<typeof profiles>[number] | null
   >(null);
 
-  const onboarding = useQuery(api.users.getOnboardingStatus, clerkId ? { clerkId } : "skip");
-  const profiles = useQuery(api.profiles.getMyProfiles, clerkId ? { clerkId } : "skip");
-  const leads = useQuery(api.leads.getLeads, clerkId ? { clerkId } : "skip");
-  const cards = useQuery(api.users.getMyCards, clerkId ? { clerkId } : "skip");
+  const { data: appUser } = useCurrentUser();
+  const { data: profiles } = useMyProfiles();
+  const { data: leads } = useMyLeads();
+  const { data: cards } = useMyCards();
+
+  // Shaped like the Convex getOnboardingStatus it replaces, so the JSX below
+  // is untouched. The data now comes off the users row rather than its own
+  // query -- it was only ever two fields.
+  const onboarding = appUser
+    ? { completed: appUser.onboarding_completed, data: appUser.onboarding_data }
+    : undefined;
 
   const primaryProfile = profiles && profiles.length > 0 ? profiles[0] : null;
   // The profile the "Edit profile" quick action below routes to, kept
@@ -54,7 +64,7 @@ export default function DashboardPage() {
   const activeProfilesCount = profiles?.length ?? 0;
   const newLeadsCount = leadsList.filter((l) => l.status === "new").length;
   const totalLeadsCount = leadsList.length + (leads?.lockedCount ?? 0);
-  const totalTaps = cards?.reduce((acc, card) => acc + card.tapCount, 0) ?? 0;
+  const totalTaps = cards?.reduce((acc, card) => acc + card.tap_count, 0) ?? 0;
   const activeCardsCount = cards?.filter((c) => c.status === "active").length ?? 0;
   const recentLeads = leadsList.slice(0, 4);
 
@@ -65,7 +75,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold mb-1">
-          Welcome{user?.firstName ? `, ${user.firstName}` : " back"}
+          Welcome{appUser?.name ? `, ${appUser.name.split(" ")[0]}` : " back"}
         </h1>
         <p className="text-muted-foreground">
           Manage your portfolio, share via NFC &amp; QR, and capture leads.
@@ -131,10 +141,9 @@ export default function DashboardPage() {
             setShowDigitalCardModal(open);
             if (!open) setSelectedModalProfile(null);
           }}
-          agent={activeCardProfile.agentInfo}
-          profileId={activeCardProfile._id}
+          agent={agentInfoOf(activeCardProfile)}
+          profileId={activeCardProfile.id}
           profileSlug={activeCardProfile.slug}
-          digitalCardConfig={activeCardProfile.digitalCard}
           isOwner={true}
         />
       )}
@@ -254,12 +263,12 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {profiles.slice(0, 4).map((profile) => (
               <div
-                key={profile._id}
+                key={profile.id}
                 className="group bg-card border border-border p-4 rounded-3xl hover:border-primary/30 transition-all duration-300 flex items-center gap-4 relative overflow-hidden"
               >
                 <div className="w-14 h-14 rounded-2xl overflow-hidden border border-border bg-muted shrink-0">
                   <ProfileImage
-                    src={profile.agentInfo.avatarUrl}
+                    src={agentInfoOf(profile).avatarUrl}
                     alt={`${profile.name} profile avatar`}
                     fallbackSeed={profile.name}
                     className="w-full h-full"
@@ -271,10 +280,10 @@ export default function DashboardPage() {
                   </h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] font-bold uppercase py-0.5 px-2 bg-primary/10 text-primary rounded-full">
-                      {profile.layoutConfig.themeId}
+                      {layoutConfigOf(profile).themeId}
                     </span>
                     <span className="text-[10px] font-medium text-muted-foreground italic">
-                      {new Date(profile._creationTime).toLocaleDateString()}
+                      {new Date(profile.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -315,7 +324,7 @@ export default function DashboardPage() {
                     title="Edit"
                   >
                     <Link
-                      href={`/dashboard/builder?id=${profile._id}`}
+                      href={`/dashboard/builder?id=${profile.id}`}
                       aria-label={`Edit ${profile.name}`}
                     >
                       <Edit2 className="w-4 h-4" />
@@ -361,7 +370,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {recentLeads.map((lead) => (
               <Link
-                key={lead._id}
+                key={lead.id}
                 href="/dashboard/leads"
                 className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/30"
               >
@@ -369,13 +378,13 @@ export default function DashboardPage() {
                   <MessageSquare className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{lead.inquirerName}</p>
+                  <p className="truncate text-sm font-semibold">{lead.inquirer_name}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {lead.message || lead.propertyName || lead.inquirerContact}
+                    {lead.message || lead.property_name || lead.inquirer_contact}
                   </p>
                 </div>
                 <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
-                  {new Date(lead.createdAt).toLocaleDateString()}
+                  {new Date(lead.created_at).toLocaleDateString()}
                 </span>
               </Link>
             ))}

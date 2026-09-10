@@ -5,31 +5,66 @@ import { useSupabase } from "@/lib/db/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { queryKeys } from "@/lib/db/keys";
 import type { Tables } from "@/lib/supabase/database.types";
+import { PLAN_LIMITS, type PlanId } from "@/lib/plans";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export type Lead = Tables<"leads">;
 
+export type LeadsView = {
+  /** The leads this plan may actually see, newest first. */
+  leads: Lead[];
+  /** Captured but hidden behind an upgrade. Never lost, just not shown. */
+  lockedCount: number;
+  leadViewCap: number | null;
+  canExport: boolean;
+};
+
 /**
- * The inbox for the signed-in user. RLS scopes it to rows they own.
+ * The inbox for the signed-in user. RLS scopes the rows to their own.
  *
- * NOTE: the Free-plan cap belongs HERE, not in a policy. Leads are always
- * captured regardless of plan; the plan limits only how many are VIEWABLE.
- * Expressed as a policy it would hide rows from every query including the
- * ones that count and export them, turning a display cap into data loss.
+ * The Free-plan cap is applied HERE, in the read, and deliberately NOT as an
+ * RLS policy. Leads are ALWAYS captured regardless of plan -- the plan limits
+ * only how many are VIEWABLE (convex/leads.ts:118). As a policy it would hide
+ * rows from every query including the ones that count and export them, turning
+ * a display cap into silent data loss: a user upgrading would find the older
+ * leads had never existed.
+ *
+ * lockedCount is what the upgrade prompt counts, so the person can see exactly
+ * what they are being asked to pay for.
  */
 export function useMyLeads() {
   const supabase = useSupabase();
   const { user, isLoaded } = useAuth();
+  const { data: appUser } = useCurrentUser();
+  const plan = (appUser?.plan ?? "free") as PlanId;
+  const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
 
   return useQuery({
-    queryKey: queryKeys.myLeads(),
-    enabled: isLoaded && Boolean(user),
-    queryFn: async (): Promise<Lead[]> => {
+    queryKey: [...queryKeys.myLeads(), plan],
+    enabled: isLoaded && Boolean(user) && Boolean(appUser),
+    queryFn: async (): Promise<LeadsView> => {
       const { data, error } = await supabase
         .from("leads")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+
+      const all = data ?? [];
+      const cap = limits.leadViewCap;
+      if (cap !== null && all.length > cap) {
+        return {
+          leads: all.slice(0, cap),
+          lockedCount: all.length - cap,
+          leadViewCap: cap,
+          canExport: limits.canExportLeads,
+        };
+      }
+      return {
+        leads: all,
+        lockedCount: 0,
+        leadViewCap: cap,
+        canExport: limits.canExportLeads,
+      };
     },
   });
 }

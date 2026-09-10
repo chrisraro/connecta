@@ -1,8 +1,10 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useMyPlan } from "@/hooks/useCurrentUser";
+import { useMyProfiles, useDeleteProfile } from "@/hooks/useProfiles";
+import { agentInfoOf, layoutConfigOf } from "@/lib/db/profile";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,13 +54,14 @@ import { profilePath } from "@/lib/profileUrl";
 import { resolveBuilderEntryRedirect } from "@/lib/builderEntry";
 
 export default function ProfilesPage() {
-  const { user } = useUser();
-  const profiles = useQuery(api.profiles.getMyProfiles, user?.id ? { clerkId: user.id } : "skip");
+  const { user } = useAuth();
+  const { data: profiles } = useMyProfiles();
   // Needed for the "Create" CTAs below — see createProfileHref. Also
   // covers editing (getProfile enforces plan limits server-side; this
   // just decides where the buttons on THIS page point).
-  const myPlan = useQuery(api.billing.getMyPlan, user?.id ? { clerkId: user.id } : "skip");
-  const deleteProfile = useMutation(api.profiles.deleteProfile);
+  const myPlan = useMyPlan();
+  const deleteProfileMutation = useDeleteProfile();
+  const deleteProfile = deleteProfileMutation.mutateAsync;
 
   const [activeChip, setActiveChip] = useState("All");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -90,7 +93,7 @@ export default function ProfilesPage() {
   const handleDelete = async (profileId: string) => {
     if (!user?.id) return;
     try {
-      await deleteProfile({ profileId: profileId as Id<"profiles">, clerkId: user.id });
+      await deleteProfile(profileId);
       setIsDeleting(null);
       toast.success("Profile deleted");
     } catch (error) {
@@ -174,12 +177,12 @@ export default function ProfilesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {profiles.map((profile) => (
             <Card
-              key={profile._id}
+              key={profile.id}
               className="overflow-hidden border-border bg-card backdrop-blur-sm hover:border-primary/20 transition-all duration-300 group rounded-[2rem] relative"
             >
               <div
                 className="h-32 w-full relative"
-                style={{ backgroundColor: profile.layoutConfig.colorPalette.primary }}
+                style={{ backgroundColor: layoutConfigOf(profile).colorPalette.primary }}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-4 left-4 flex items-center gap-2">
@@ -187,7 +190,7 @@ export default function ProfilesPage() {
                     <Users className="w-5 h-5 text-white" />
                   </div>
                   <span className="text-white font-bold text-sm uppercase tracking-wider">
-                    {profile.layoutConfig.themeId}
+                    {layoutConfigOf(profile).themeId}
                   </span>
                 </div>
 
@@ -205,13 +208,13 @@ export default function ProfilesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40 rounded-2xl p-2">
                       <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                        <Link href={`/dashboard/builder?id=${profile._id}`}>
+                        <Link href={`/dashboard/builder?id=${profile.id}`}>
                           <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="rounded-xl cursor-pointer text-destructive focus:text-destructive"
-                        onClick={() => setIsDeleting(profile._id)}
+                        onClick={() => setIsDeleting(profile.id)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" /> Delete
                       </DropdownMenuItem>
@@ -220,22 +223,22 @@ export default function ProfilesPage() {
                 </div>
               </div>
 
-              {profile.agentInfo.avatarUrl && (
+              {agentInfoOf(profile).avatarUrl && (
                 <div className="flex justify-center -mt-8 relative z-10">
                   <ProfileImage
-                    src={profile.agentInfo.avatarUrl}
+                    src={agentInfoOf(profile).avatarUrl}
                     alt="avatar"
-                    fallbackSeed={profile.agentInfo.fullName || profile.name}
+                    fallbackSeed={agentInfoOf(profile).fullName || profile.name}
                     className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card shadow-lg"
                   />
                 </div>
               )}
-              {!profile.agentInfo.avatarUrl && (
+              {!agentInfoOf(profile).avatarUrl && (
                 <div className="flex justify-center -mt-8 relative z-10">
                   <ProfileImage
                     src={undefined}
                     alt="avatar"
-                    fallbackSeed={profile.agentInfo.fullName || profile.name}
+                    fallbackSeed={agentInfoOf(profile).fullName || profile.name}
                     className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card shadow-lg"
                   />
                 </div>
@@ -246,7 +249,7 @@ export default function ProfilesPage() {
                   {profile.name}
                 </CardTitle>
                 <CardDescription className="text-muted-foreground font-medium">
-                  {profile.agentInfo.fullName}
+                  {agentInfoOf(profile).fullName}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-6 text-center">
@@ -283,9 +286,9 @@ export default function ProfilesPage() {
 
                     <div className="w-full flex justify-center pt-8 px-4">
                       <AccessCard
-                        profileId={profile._id}
+                        profileId={profile.id}
                         profileSlug={profile.slug}
-                        agent={profile.agentInfo}
+                        agent={agentInfoOf(profile)}
                       />
                     </div>
 

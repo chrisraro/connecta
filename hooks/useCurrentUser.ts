@@ -5,6 +5,7 @@ import { useSupabase } from "@/lib/db/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { queryKeys } from "@/lib/db/keys";
 import type { Tables } from "@/lib/supabase/database.types";
+import { PLAN_LIMITS, PLAN_GRACE_DAYS, type PlanId } from "@/lib/plans";
 
 export type AppUser = Tables<"users">;
 
@@ -56,4 +57,38 @@ export function useIsAdmin() {
       return Boolean(data);
     },
   });
+}
+
+/**
+ * The caller EFFECTIVE plan and its limits.
+ *
+ * Mirrors public.effective_plan() and convex/billing.ts:51: a stored paid plan
+ * whose expiry plus the 3-day grace has passed reads as free. Derived from the
+ * users row already in cache rather than fetched separately -- it is a pure
+ * function of two columns.
+ *
+ * This is for RENDERING (which upgrade prompts to show, which templates to
+ * grey out). It is not the enforcement point: the database re-derives the same
+ * thing in effective_plan(), because a limit the client computes is a limit
+ * anyone calling the API directly does not have.
+ */
+export function useMyPlan() {
+  const { data: appUser, isPending } = useCurrentUser();
+
+  const stored = (appUser?.plan ?? "free") as PlanId;
+  const expiresAt = appUser?.plan_expires_at ? Date.parse(appUser.plan_expires_at) : null;
+  const graceEnds = (expiresAt ?? 0) + PLAN_GRACE_DAYS * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  const plan: PlanId = stored === "free" ? "free" : graceEnds < now ? "free" : stored;
+  const inGrace = stored !== "free" && expiresAt !== null && expiresAt < now && graceEnds >= now;
+
+  return {
+    plan,
+    storedPlan: stored,
+    planExpiresAt: expiresAt,
+    inGrace,
+    limits: PLAN_LIMITS[plan] ?? PLAN_LIMITS.free,
+    isPending,
+  };
 }

@@ -19,7 +19,7 @@
  */
 export function resolveBuilderEntryRedirect(
   editingId: string | null,
-  profiles: readonly { _id: string; _creationTime: number }[] | undefined,
+  profiles: readonly { id: string; created_at: string }[] | undefined,
   maxProfiles: number | null,
 ): string | null {
   if (editingId) return null;
@@ -31,7 +31,7 @@ export function resolveBuilderEntryRedirect(
 }
 
 /**
- * The id of the newest profile in a list (by `_creationTime`), or null for
+ * The id of the newest profile in a list (by `created_at`), or null for
  * an empty list.
  *
  * Single source of truth for "which profile is THE profile" whenever a nav
@@ -45,10 +45,13 @@ export function resolveBuilderEntryRedirect(
  * clicked. All three call sites now go through this one function.
  */
 export function newestProfileId(
-  profiles: readonly { _id: string; _creationTime: number }[],
+  profiles: readonly { id: string; created_at: string }[],
 ): string | null {
   if (profiles.length === 0) return null;
-  return profiles.reduce((latest, p) => (p._creationTime > latest._creationTime ? p : latest))._id;
+  // String compare is correct here: created_at is an ISO 8601 UTC timestamp
+  // from Postgres, and ISO 8601 in a fixed zone sorts lexicographically the
+  // same way it sorts chronologically.
+  return profiles.reduce((latest, p) => (p.created_at > latest.created_at ? p : latest)).id;
 }
 
 /**

@@ -5,7 +5,11 @@ import {
   newestProfileId,
 } from "./builderEntry";
 
-const profile = (id: string, creationTime: number) => ({ _id: id, _creationTime: creationTime });
+// created_at is an ISO 8601 UTC string, matching what Postgres returns.
+const profile = (id: string, creationTime: number) => ({
+  id,
+  created_at: new Date(creationTime).toISOString(),
+});
 
 test("does nothing when already editing (an id is present)", () => {
   expect(resolveBuilderEntryRedirect("existing-id", [profile("a", 1)], 1)).toBeNull();
