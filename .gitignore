@@ -71,3 +71,6 @@ SENTINEL_TEST.txt
 
 # local convex data snapshots (never commit customer data)
 .backups/
+
+# Supabase CLI local state (project ref + cached CLI version, machine-local)
+supabase/.temp/
