@@ -37,6 +37,11 @@ yarn-error.log*
 .env*
 !.env.example
 
+# project-local MCP credentials (scripts/supabase-mcp.mjs reads .mcp.env).
+# .mcp.json itself is committed and carries no secret.
+.mcp.env
+!.mcp.env.example
+
 # credential material that must never be committed
 *.pem
 *.p12
