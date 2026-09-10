@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { allFontVariables } from "@/lib/fonts";
 import "./globals.css";
-import ConvexClientProvider from "@/components/ConvexClientProvider";
+import { AppProviders } from "@/components/providers/AppProviders";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { CONNECTA } from "@/lib/brand";
@@ -51,7 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={allFontVariables}>
       <body className="antialiased">
-        <ConvexClientProvider>
+        <AppProviders>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -63,7 +63,7 @@ export default function RootLayout({
               <Toaster />
             </CartProvider>
           </ThemeProvider>
-        </ConvexClientProvider>
+        </AppProviders>
       </body>
     </html>
   );

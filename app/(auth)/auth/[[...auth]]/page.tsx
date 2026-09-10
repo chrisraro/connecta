@@ -1,4 +1,4 @@
-import { SignIn, SignUp } from "@clerk/nextjs";
+import { AuthForm } from "@/components/auth/AuthForm";
 import { ArrowLeft, Loader2, Sparkles, ShieldCheck, Zap, SmartphoneNfc } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -106,49 +106,11 @@ async function AuthContent({
 
         {/* Auth Form Box with 2026 Trend Design System Styling */}
         <div className="w-full">
-          {isSignIn ? (
-            <SignIn
-              routing="hash"
-              forceRedirectUrl={redirectUrl}
-              fallbackRedirectUrl="/dashboard"
-              signUpUrl={signUpUrl}
-              appearance={{
-                elements: {
-                  card: "bg-card/80 backdrop-blur-2xl border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8",
-                  headerTitle: "text-lg font-bold text-foreground",
-                  headerSubtitle: "text-xs text-muted-foreground",
-                  formButtonPrimary:
-                    "bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs py-3 transition-all shadow-md hover:shadow-lg",
-                  socialButtonsBlockButton:
-                    "border border-border bg-background/90 hover:bg-muted font-semibold text-xs rounded-xl py-2.5 transition-all",
-                  formFieldInput:
-                    "bg-background border border-border rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/40",
-                  footerActionLink: "text-primary hover:underline font-semibold text-xs",
-                },
-              }}
-            />
-          ) : (
-            <SignUp
-              routing="hash"
-              forceRedirectUrl={redirectUrl}
-              fallbackRedirectUrl="/dashboard"
-              signInUrl={signInUrl}
-              appearance={{
-                elements: {
-                  card: "bg-card/80 backdrop-blur-2xl border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8",
-                  headerTitle: "text-lg font-bold text-foreground",
-                  headerSubtitle: "text-xs text-muted-foreground",
-                  formButtonPrimary:
-                    "bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs py-3 transition-all shadow-md hover:shadow-lg",
-                  socialButtonsBlockButton:
-                    "border border-border bg-background/90 hover:bg-muted font-semibold text-xs rounded-xl py-2.5 transition-all",
-                  formFieldInput:
-                    "bg-background border border-border rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/40",
-                  footerActionLink: "text-primary hover:underline font-semibold text-xs",
-                },
-              }}
-            />
-          )}
+          <AuthForm
+            mode={isSignIn ? "signin" : "signup"}
+            redirectUrl={redirectUrl}
+            cardUuid={cardUuid}
+          />
         </div>
 
         {/* Feature Highlights */}

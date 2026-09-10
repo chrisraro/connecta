@@ -1,90 +1,98 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
-// Public surface now outnumbers the protected one: every top-level segment
-// that isn't one of the app's known static sections is a potential vanity
-// profile slug (see app/[slug]/page.tsx + lib/slug.ts RESERVED set) and must
-// be reachable by anonymous visitors tapping an NFC card. So instead of an
-// allow-list of public routes, we deny-list the areas that actually require
-// authentication and let everything else — including arbitrary vanity
-// slugs — fall through.
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)", // Authenticated profile builder / account area
-  "/admin(.*)", // Admin console (role-gated further below)
-]);
+// Public surface outnumbers the protected one: every top-level segment that is
+// not a known static section is a potential vanity profile slug (see
+// app/[slug]/page.tsx + lib/slug.ts RESERVED) and must be reachable by an
+// anonymous visitor tapping an NFC card. So this deny-lists the areas that
+// require authentication and lets everything else -- including arbitrary
+// vanity slugs -- fall through.
+const PROTECTED_PREFIXES = ["/dashboard", "/admin"];
 
-// All /api routes require auth EXCEPT payment webhooks (Stripe/PayPal call
-// without a Clerk session and verify via their own signature checks) and
-// the health check (must be reachable by uptime monitoring with no
-// credentials — that's the entire point of a health endpoint). Matched with
-// a plain startsWith check (rather than a negative-lookahead route-matcher
-// pattern) so behavior doesn't depend on whether the underlying
-// path-to-regexp version supports that regex construct.
-const isPublicApiRoute = createRouteMatcher(["/api/webhooks(.*)", "/api/health"]);
+// All /api routes require auth EXCEPT webhooks (called by third parties with
+// no session, verified by their own signatures) and the health check, which
+// must be reachable by uptime monitoring with no credentials -- that is the
+// entire point of a health endpoint.
+const PUBLIC_API_PREFIXES = ["/api/webhooks", "/api/health"];
 
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+function hasPrefix(pathname: string, prefixes: string[]) {
+  return prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
 
-export default clerkMiddleware(async (auth, req) => {
-  const { pathname } = req.nextUrl;
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  const { userId } = await auth();
+  // Always refresh first. Skipping this for public routes would mean a signed-in
+  // visitor browsing public pages has their token quietly expire, and they
+  // discover it only when they next open the dashboard.
+  const { supabaseResponse, user } = await updateSession(request);
 
-  // If authenticated user attempts to access auth pages, route straight to /dashboard
-  if (userId && (pathname === "/auth" || pathname === "/sign-in" || pathname === "/sign-up")) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
-  // Single URL Experience: Redirect old auth paths to /auth
+  // Single URL experience: one /auth page, old paths fold into it.
   if (pathname === "/sign-in" || pathname === "/sign-up") {
-    return NextResponse.redirect(new URL("/auth", req.url));
+    return NextResponse.redirect(new URL("/auth", request.url));
   }
-  if (pathname.startsWith("/auth/") && pathname !== "/auth" && pathname !== "/auth/callback") {
-    return NextResponse.redirect(new URL("/auth", req.url));
+  if (pathname.startsWith("/auth/") && pathname !== "/auth/callback") {
+    return NextResponse.redirect(new URL("/auth", request.url));
+  }
+  if (user && pathname === "/auth") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Segment-aware, so a vanity slug like /apikeys is not mistaken for an
-  // API route and hidden behind auth.
+  // Segment-aware, so a vanity slug like /apikeys is not mistaken for an API
+  // route and hidden behind auth.
   const isApiRoute = pathname === "/api" || pathname.startsWith("/api/");
-  const needsAuth = isProtectedRoute(req) || (isApiRoute && !isPublicApiRoute(req));
-  if (needsAuth) {
-    await auth.protect();
+  const needsAuth =
+    hasPrefix(pathname, PROTECTED_PREFIXES) ||
+    (isApiRoute && !hasPrefix(pathname, PUBLIC_API_PREFIXES));
+
+  if (needsAuth && !user) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const signIn = new URL("/auth", request.url);
+    // So the user lands back where they were aiming after signing in.
+    signIn.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(signIn);
   }
 
-  // Defense-in-depth for /admin/*: if the Clerk session carries a role claim,
-  // use it to reject non-admins before the shell even renders.
+  // Admin gate.
   //
-  // The claim only exists once Clerk's session token is customised to expose
-  // publicMetadata (Dashboard -> Sessions -> Customize session token, with
-  // {"metadata": "{{user.public_metadata}}"}). That is a manual dashboard
-  // step with no API, and it is easy to miss.
+  // The Clerk version of this had to DEGRADE: its role check depended on a
+  // session claim that only exists after a manual dashboard step, so a missing
+  // claim had to fall through rather than lock out the real superadmin.
   //
-  // So this DEGRADES rather than fails closed. Blocking on a missing claim
-  // locked every account out of the admin console — including the real
-  // superadmin — which is a self-inflicted outage, not security. It bought
-  // nothing, because /admin is already gated twice over:
+  // That compromise is gone. is_admin() reads the admins table directly, so
+  // the answer is authoritative and a failure means NOT an admin. One RPC on
+  // /admin routes only -- the rest of the app never pays for it.
   //
-  //   1. app/admin/layout.tsx verifies the signed-in user server-side via
-  //      Convex and redirects non-admins to /dashboard.
-  //   2. Every admin Convex function calls authz.ts:requireAdmin, so no
-  //      admin DATA is reachable without a real admin grant regardless of
-  //      what any UI shell renders.
-  //
-  // Present claim -> enforce it. Absent claim -> fall through to those two.
-  if (isAdminRoute(req)) {
-    const { sessionClaims } = await auth();
-    const role = (sessionClaims?.metadata as { role?: string } | undefined)?.role;
-    const claimConfigured = role !== undefined && role !== null;
-    if (claimConfigured && role !== "admin" && role !== "superadmin") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+  // Still defence in depth, not the boundary: app/admin/layout.tsx re-checks
+  // server-side, and every admin table is behind an is_admin() RLS policy, so
+  // no admin DATA is reachable regardless of what UI shell renders.
+  if (hasPrefix(pathname, ["/admin"])) {
+    const { createServerClient } = await import("@supabase/ssr");
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      {
+        cookies: {
+          getAll: () => request.cookies.getAll(),
+          setAll: () => {},
+        },
+      },
+    );
+    const { data: isAdmin } = await supabase.rpc("is_admin");
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
-});
+
+  return supabaseResponse;
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
+    // Skip Next.js internals and static files, unless found in search params.
+    "/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
   ],
 };
