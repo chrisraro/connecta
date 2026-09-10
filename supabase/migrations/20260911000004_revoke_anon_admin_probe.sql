@@ -1,0 +1,32 @@
+-- Close an anonymous admin-enumeration oracle.
+--
+-- 20260911000002 tried to lock these down with:
+--
+--     revoke all on function public.is_admin(uuid) from public;
+--
+-- That was not enough, and the ACL proves it:
+--
+--     is_admin: {postgres=X/postgres, anon=X/postgres,
+--                authenticated=X/postgres, service_role=X/postgres}
+--
+-- Supabase ships ALTER DEFAULT PRIVILEGES that grant EXECUTE on every new
+-- function in `public` to anon, authenticated and service_role INDIVIDUALLY.
+-- `revoke ... from public` removes only the PUBLIC (`=X/postgres`) entry --
+-- visible above by its absence -- and leaves each named grant untouched. The
+-- revoke appeared to work and did nothing to the grant that mattered.
+--
+-- Consequence: PostgREST exposes every function in `public` as an RPC
+-- endpoint, so an unauthenticated caller could POST /rest/v1/rpc/is_admin with
+-- any uuid and learn whether that account holds an admin grant -- an
+-- enumeration oracle for exactly the accounts worth attacking. It reads no
+-- rows, which is why RLS never came into it and why nothing else caught this.
+--
+-- The tap functions keep their anon grant: being callable by a signed-out
+-- visitor is their entire purpose (see 20260911000003).
+revoke execute on function public.is_admin(uuid)      from anon;
+revoke execute on function public.is_superadmin(uuid) from anon;
+
+-- Safe because no policy evaluated under the `anon` role calls either
+-- function: every policy that does (profiles/properties/projects/cards/pfp
+-- write paths) is declared `to authenticated`. The anon-facing policies are
+-- all plain `using (true)` reads.

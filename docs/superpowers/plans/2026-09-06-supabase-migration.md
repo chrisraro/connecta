@@ -251,3 +251,89 @@ confirms user B's rows are invisible. It replaces the per-function guards, so it
 that must never be skipped.
 
 **Cutover is not done until the physical tag has been re-tapped and `/t/43:45:08:03` resolves.**
+
+---
+
+# Phase 1 record — schema + RLS (2026-09-11, COMPLETE)
+
+18 tables, RLS on every one, applied as `supabase/migrations/2026091100000{1..7}`. The counts
+below differ from the plan above because the payment gateway was removed on 2026-09-10:
+`orders`, `discounts` and `subscriptionInvoices` no longer exist, taking the schema from 20
+tables to 17, plus one new junction table.
+
+## Decisions taken — recording these so the record is not lost twice
+
+| #   | Decision                                                                                                                 | Why                                                                                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | **`public.users.id` IS `auth.users.id`.** No `clerk_id`, no surrogate key.                                               | Every ownership check becomes `auth.uid() = owner_id` — no join to translate identity, on every row of every query.                                                              |
+| D2  | **snake_case** throughout; TS reads generated types.                                                                     | Postgres convention; avoids quoting every identifier.                                                                                                                            |
+| D3  | **Every table gets `created_at timestamptz`**; epoch-ms fields become `timestamptz`; `updated_at` is trigger-maintained. | Convex's implicit `_creationTime` has no equivalent, and a hand-maintained `updated_at` is one forgotten mutation away from lying.                                               |
+| D4  | **The jsonb line:** payload stays jsonb, entities become tables.                                                         | `agent_info`/`layout_config` are rendered as blocks and never filtered on; `properties`/`projects` are queried independently.                                                    |
+| D5  | **`digitalCard` never created** — collapses to `skin card_skin default 'charcoal'`.                                      | Salvaged decisions 1 and 2. Zero profiles remain, so there is nothing to back-fill.                                                                                              |
+| D6  | **`is_admin()` / `is_superadmin()` are `security definer`, `search_path = ''`.**                                         | Policies on `admins` must read `admins`; an invoker function would recurse forever.                                                                                              |
+| D7  | **Privilege columns are withheld with COLUMN grants, not policies.**                                                     | RLS is row-level and cannot say "edit your name but not your role". Without this, `update users set role='admin' where id=auth.uid()` passes a correct-looking ownership policy. |
+| D8  | **Money is `numeric`, never float.**                                                                                     | `v.number()` is an IEEE double; money in a float silently rounds.                                                                                                                |
+
+## The four lost carve-outs, re-identified
+
+The plan required these be re-found during Phase 1. Each is a table deviating from a straight port:
+
+1. **`cards.owner_id` is nullable.** `convex/admin.ts:447` mints stock with `ownerId: adminUser._id`
+   and warns "do not use ownerId as an ownership gate for unactivated stock". Under RLS that
+   warning is a trap — `auth.uid() = owner_id` would hand every unclaimed card to the admin who
+   minted it, and the policy would look right. Nullable owner_id makes _unclaimed means unowned_
+   true rather than documented, enforced by `cards_inventory_is_unowned`.
+2. **`cards` is invisible to anon; the tap goes through `resolve_card_for_tap()`.**
+   `getCardByUuid` returns a narrowed projection hiding `activation_code`. RLS is row-level, so a
+   policy letting anon read the row leaks the activation codes that convert stock into a claimed card.
+3. **`leads` is the one table anon WRITES.** The public inquiry form is submitted by someone not
+   signed in. Anon has INSERT on six columns and no SELECT — the column list, not the policy, is
+   what stops a submitter pre-setting `status` or backdating `created_at`.
+4. **`carts.guest_id` never created.** A browser-minted, guessable, unauthenticated token cannot
+   be checked against anything, so honouring it means an open table. With checkout gone the basket
+   only produces an email, so guest baskets stay in localStorage.
+
+Plus the fifth already on record (`profiles.skin`), and two more found while porting:
+`profiles.featuredProperties` became a junction table (an array of FKs cannot be constrained
+element-wise), and `featuredProjects` was never created — all four call sites write `[]` and
+nothing reads it.
+
+## The `settings.is_public` addition
+
+`getShopSettings` is a public query, but `settings` is a generic key/value table. A blanket anon
+read would expose every future key the day it is added. The flag defaults to `false`, so a new
+setting is private until deliberately published.
+
+## Trap found the hard way — Supabase default privileges
+
+`revoke all on function ... from public` **is not enough**. Supabase ships
+`ALTER DEFAULT PRIVILEGES` granting EXECUTE on every new `public` function to `anon`,
+`authenticated` and `service_role` _individually_; revoking from `PUBLIC` removes only the
+`=X/postgres` entry and leaves each named grant intact. The revoke appears to work and does nothing.
+
+Because PostgREST exposes every `public` function as an RPC endpoint, `is_admin` was briefly
+callable at `/rest/v1/rpc/is_admin` by an unauthenticated caller — an oracle for enumerating which
+accounts hold admin grants. It reads no rows, so RLS never came into it. Fixed in
+`20260911000004`; the advisor caught it, not review.
+
+**Standing rule for every later phase: after creating any function in `public`, explicitly
+`revoke execute ... from anon` unless anon is meant to call it, and re-run the security advisor.**
+
+## Verification actually performed
+
+Not inspection — impersonation, via `set local role` + `request.jwt.claims`, exactly as PostgREST
+authenticates. 22 assertions, all passing, including positive controls so a merely-broken table
+cannot pass as a secure one:
+
+- user A sees only their own row; cannot write B's row; cannot self-grant admin
+- user A **can** still update their own name (positive control)
+- `updated_at` overrides a client-supplied value
+- anon cannot read `cards`; anon **can** resolve a tap and increment its counter
+- user A sees their own card but **not** inventory stock
+- an `active` card cannot be ownerless; an uppercase uuid is rejected at write
+- anon **can** submit a lead; cannot pre-set its status; cannot read the inbox
+- the lead→notification trigger and `set_updated_at` both still fire after their EXECUTE revoke
+
+One test initially failed for a test-construction reason worth remembering: `now()` is
+transaction-start time, so an insert and a trigger inside one `DO` block stamp the identical value
+and `pg_sleep` cannot separate them. The trigger was fine; the assertion was wrong.
