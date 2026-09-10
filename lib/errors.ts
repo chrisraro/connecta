@@ -1,178 +1,107 @@
 /**
- * Turns whatever a Convex mutation/action (or any other call site) throws
- * into a short, human-readable string safe to hand straight to a toast.
+ * Turns whatever a Supabase call rejects with into a short, human-readable
+ * string safe to hand straight to a toast.
  *
- * Three real shapes drove this design (captured live during the production
- * audit, see .superpowers/sdd/audit-journey.md and lib/errors.test.ts for
- * the verbatim fixtures):
+ * Rewritten for PostgREST. The Convex version unwrapped a transport envelope
+ * ("[CONVEX M(mod:fn)] ... Uncaught Error: <real message>") and had to cope
+ * with production redacting that envelope down to a bare "Server Error".
+ * PostgREST has no envelope: an error arrives as a structured object
+ * { message, details, hint, code }, the same shape in every environment.
  *
- * 1. A plain `Error` thrown from a Convex mutation/action arrives on the
- *    client with its message rewritten into a transport envelope:
- *    `"[CONVEX M(mod:fn)] [Request ID: ...] Server Error\nUncaught Error:
- *    <original message>\n  at <stack frame>"`. The original message is
- *    still in there — it needs unwrapping, not showing verbatim.
- * 2. On a REAL PRODUCTION deployment, that envelope is redacted further:
- *    the "Uncaught Error: ..." detail is stripped entirely, leaving just
- *    `"[CONVEX M(mod:fn)] Server Error"`. There is nothing left to unwrap —
- *    this function must recognize that shape and return a generic message,
- *    NEVER the literal "Server Error" (which is meaningless to a user and
- *    looks like the app is broken).
- * 3. `ConvexError` is the one channel that survives redaction intact: its
- *    `.data` payload crosses the client/server boundary unmodified. Server
- *    code that wants a specific, reliable user-facing message throws
- *    `new ConvexError({ code, message })` (see convex/admin.ts) — this
- *    function checks `.data` FIRST, before ever touching `.message`.
+ * What replaces the old ConvexError channel is `details`. Server code raises
+ *
+ *     raise exception using errcode = 'P0001',
+ *       message = 'Upgrade to Pro to activate more than one card.',
+ *       detail  = 'PLAN_LIMIT';
+ *
+ * so `message` is the sentence to show a person and `details` is the stable
+ * machine code callers branch on -- never the message text, which is written
+ * for humans and will be reworded.
+ *
+ * Raw Postgres failures are mapped rather than shown. "duplicate key value
+ * violates unique constraint profiles_slug_lower_key" is accurate, useless to
+ * the person reading it, and leaks schema internals; the RLS variant
+ * ("new row violates row-level security policy") additionally tells an
+ * attacker exactly which wall they hit.
  */
-
-import { ConvexError } from "convex/values";
 
 export const GENERIC_ERROR_MESSAGE = "Something went wrong. Please try again.";
 
-function messageFromConvexErrorData(data: unknown): string | null {
-  if (typeof data === "string") {
-    return data.trim() ? data : null;
-  }
-  if (data && typeof data === "object") {
-    const record = data as Record<string, unknown>;
-    if (typeof record.message === "string" && record.message.trim()) {
-      return record.message;
-    }
-    // A data.code with no message is still a deliberate, structured signal
-    // from the server (see convex/admin.ts's DUPLICATE_UUID) — it's just
-    // not one this shared helper knows how to phrase. Callers that care
-    // about a specific code should branch on `err.data.code` themselves
-    // BEFORE calling toUserMessage (as lib/nfc.ts's
-    // isDuplicateRegistrationError already does); this is only the
-    // last-resort generic phrasing.
-    if (typeof record.code === "string") {
-      return null;
-    }
+/** The structured error supabase-js surfaces for a failed PostgREST call. */
+type PostgrestLikeError = {
+  message?: unknown;
+  details?: unknown;
+  hint?: unknown;
+  code?: unknown;
+};
+
+function asPostgrestError(err: unknown): PostgrestLikeError | null {
+  if (!err || typeof err !== "object") return null;
+  const candidate = err as PostgrestLikeError;
+  const hasCode = typeof candidate.code === "string";
+  const hasMessage = typeof candidate.message === "string";
+  return hasCode || hasMessage ? candidate : null;
+}
+
+/**
+ * The application error code a raised exception carries in `detail`, or null.
+ *
+ * Exported so callers can branch on a specific outcome (PLAN_LIMIT,
+ * RATE_LIMIT, CARD_NOT_FOUND, ...) without matching on prose.
+ */
+export function errorCode(err: unknown): string | null {
+  const pg = asPostgrestError(err);
+  if (!pg) return null;
+  if (typeof pg.details === "string" && /^[A-Z_]+$/.test(pg.details.trim())) {
+    return pg.details.trim();
   }
   return null;
 }
 
-// Matches the "Uncaught <ErrorType>: <message>" section of a Convex
-// transport envelope, stopping before the stack frame ("  at ...") or the
-// "Called by client" trailer that follows it on a real deployment.
-//
-// The gap between the colon and the captured detail uses `[^\S\n]*`
-// (horizontal whitespace only), NOT `\s*`. `\s*` also matches newlines, so
-// when the detail is empty it would eat the newline+indent that the
-// stop-alternative below needs as a delimiter, letting the lazy capture
-// group swallow the stack frame itself instead of stopping before it.
-const UNCAUGHT_DETAIL_RE =
-  /Uncaught (?:\w+):[^\S\n]*([\s\S]*?)(?:\n\s*(?:at\s|Called by client)|$)/;
+// SQLSTATEs that reach a user through ordinary use. Anything not listed falls
+// through to the generic message rather than surfacing raw Postgres text.
+const SQLSTATE_MESSAGES: Record<string, string> = {
+  // unique_violation -- a slug or SKU somebody else already has
+  "23505": "That value is already taken. Please choose another.",
+  // foreign_key_violation -- referencing a row that has since been deleted
+  "23503": "That item no longer exists. Please refresh and try again.",
+  // check_violation -- a value the database refuses as malformed
+  "23514": "Some of that information is not in a valid format.",
+  // not_null_violation
+  "23502": "A required field is missing.",
+  // insufficient_privilege, and the RLS rejection that shares it
+  "42501": "You do not have permission to do that.",
+};
 
-// A message is unsafe to show a user if it's empty, if it's (or contains) a
-// raw Convex transport envelope, if it's exactly the meaningless literal
-// "Server Error", or if it's a raw stack-trace line. This is intentionally
-// narrow: a message that merely *ends* with the words "Server Error" (e.g.
-// "Email delivery failed (500): Internal Server Error")
-// is legitimate diagnostic text and must NOT be caught here — only the
-// literal Convex-envelope shape is unsafe.
-//
-// This is the single predicate applied to BOTH candidate messages
-// toUserMessage ever considers showing: the raw fallback string when
-// unwrapping fails, and whatever unwrapConvexTransportNoise successfully
-// extracts. A leak closed on one path and not the other is how findings 1-3
-// happened — every candidate must clear the same bar.
-const CONVEX_ENVELOPE_PREFIX_RE = /^\[CONVEX\b/;
-const LITERAL_SERVER_ERROR_RE = /^Server Error$/;
-const STACK_FRAME_LINE_RE = /(^|\n)[^\S\n]*at\s+\S.*:\d+:\d+\)?[^\S\n]*($|\n)/;
-// Anchored to its own line (optionally the whole candidate): the real
-// trailer only ever appears as a standalone line at the end of the
-// envelope. Un-anchored, this would false-positive on ordinary prose that
-// happens to contain the substring "Called by client".
-const CALLED_BY_CLIENT_RE = /(^|\n)[^\S\n]*Called by client[^\S\n]*$/;
-
-function isUnsafeToShow(candidate: string): boolean {
-  const trimmed = candidate.trim();
-  if (!trimmed) return true;
-  if (CONVEX_ENVELOPE_PREFIX_RE.test(trimmed)) return true;
-  if (LITERAL_SERVER_ERROR_RE.test(trimmed)) return true;
-  if (STACK_FRAME_LINE_RE.test(trimmed)) return true;
-  if (CALLED_BY_CLIENT_RE.test(trimmed)) return true;
-  return false;
-}
-
-function unwrapConvexTransportNoise(raw: string): string | null {
-  const match = raw.match(UNCAUGHT_DETAIL_RE);
-  if (!match) return null;
-
-  const inner = match[1].trim();
-  if (!inner) return null;
-
-  // The unwrapped detail is sometimes itself a JSON-encoded ConvexError
-  // payload (e.g. a raw string caught outside convex/react's normal
-  // ConvexError reconstruction) — prefer its .message the same way a real
-  // ConvexError instance's .data would be preferred.
-  try {
-    const parsed = JSON.parse(inner);
-    const fromData = messageFromConvexErrorData(parsed);
-    if (fromData) return isUnsafeToShow(fromData) ? null : fromData;
-  } catch {
-    // Not JSON — inner is already the plain message text.
-  }
-
-  return isUnsafeToShow(inner) ? null : inner;
-}
-
-function rawMessageOf(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "string") return err;
-  return "";
-}
-
-// Hard cap on how much text a toast/dialog is ever asked to render. A
-// message this long is already useless as UX copy regardless of what it
-// contains.
-const MAX_MESSAGE_LENGTH = 300;
-
-function capLength(message: string): string {
-  if (message.length <= MAX_MESSAGE_LENGTH) return message;
-  // Slice on code points, not raw UTF-16 code units: a plain `.slice()` can
-  // land inside a surrogate pair (e.g. an emoji) and cut it in half,
-  // producing a lone, invalid surrogate in the output.
-  const codePoints = Array.from(message);
-  return `${codePoints
-    .slice(0, MAX_MESSAGE_LENGTH - 3)
-    .join("")
-    .trimEnd()}...`;
-}
-
-/**
- * Converts any thrown value into a short, user-safe message. Never returns
- * a stack trace, a "[CONVEX ...]" transport envelope, or the literal
- * "Server Error" — falls back to a friendly generic instead.
- */
 export function toUserMessage(err: unknown): string {
-  if (err instanceof ConvexError) {
-    const fromData = messageFromConvexErrorData(err.data);
-    if (fromData && !isUnsafeToShow(fromData)) return capLength(fromData);
-    // A ConvexError with no usable .data (bare code, or no data at all)
-    // falls through to the generic — its .message is Convex's own
-    // boilerplate ("[CONVEX ...] Uncaught ConvexError: ..."), not written
-    // for end users.
-    return GENERIC_ERROR_MESSAGE;
+  const pg = asPostgrestError(err);
+
+  if (pg) {
+    const code = typeof pg.code === "string" ? pg.code : "";
+
+    // P0001 is a deliberate `raise exception` from our own functions: the
+    // message was written to be read by a person, so it is shown verbatim.
+    if (code === "P0001" && typeof pg.message === "string" && pg.message.trim()) {
+      return pg.message.trim();
+    }
+
+    const mapped = SQLSTATE_MESSAGES[code];
+    if (mapped) return mapped;
+
+    // Supabase Auth errors (bad password, unconfirmed email) are already
+    // phrased for people and carry no SQLSTATE.
+    if (!code && typeof pg.message === "string" && pg.message.trim()) {
+      return pg.message.trim();
+    }
   }
 
-  const raw = rawMessageOf(err).trim();
-  if (!raw) return GENERIC_ERROR_MESSAGE;
-
-  // unwrapConvexTransportNoise already re-guards whatever it extracts with
-  // isUnsafeToShow — a nested/double-wrapped envelope is caught by that same
-  // predicate's `[CONVEX` prefix check, no special case needed — so a
-  // non-null result here is always safe to show.
-  const unwrapped = unwrapConvexTransportNoise(raw);
-  if (unwrapped) return capLength(unwrapped);
-
-  // Either the redacted production shape ("[CONVEX ...] Server Error" with
-  // nothing to unwrap), some other unrecognized Convex transport noise, or
-  // an unwrap that itself extracted something unsafe — in all cases there's
-  // no safe detail left to show.
-  if (isUnsafeToShow(raw)) {
-    return GENERIC_ERROR_MESSAGE;
+  if (err instanceof Error && err.message.trim()) {
+    return err.message.trim();
   }
 
-  return capLength(raw);
+  if (typeof err === "string" && err.trim()) {
+    return err.trim();
+  }
+
+  return GENERIC_ERROR_MESSAGE;
 }

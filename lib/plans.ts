@@ -7,8 +7,8 @@
  * anything here is for cosmetic UI gating only.
  */
 
-import { ConvexError } from "convex/values";
 import { CONNECTA } from "@/lib/brand";
+import { errorCode } from "@/lib/errors";
 
 export type PlanId = "free" | "pro" | "business";
 
@@ -108,16 +108,14 @@ export function isTemplateLocked(templateId: string, allowedTemplateIds: string[
 
 /**
  * Detects a plan-limit rejection (profile count, active-card count, locked
- * template) from convex/cards.ts / convex/profiles.ts. Those throw
- * `ConvexError({ code: "PLAN_LIMIT", message })` specifically so the signal
- * survives production's redaction of plain Error messages — see
- * lib/errors.ts#toUserMessage and lib/nfc.ts#isDuplicateRegistrationError,
- * which establish the same "check ConvexError.data.code, never the message
- * text" pattern for the same reason. A regex against `.message` would only
- * ever fire in dev, where nothing redacts it.
+ * template).
+ *
+ * The database raises these with `detail = PLAN_LIMIT` -- a stable machine
+ * code alongside the human sentence in `message` -- so the UI can show its
+ * upgrade CTA instead of a dead-end error. Matching on the message text would
+ * break the first time somebody rewords it, which is exactly the kind of
+ * change nobody expects to alter behaviour.
  */
 export function isPlanLimitError(err: unknown): boolean {
-  if (!(err instanceof ConvexError)) return false;
-  const data = err.data as { code?: unknown } | undefined;
-  return typeof data === "object" && data !== null && data.code === "PLAN_LIMIT";
+  return errorCode(err) === "PLAN_LIMIT";
 }

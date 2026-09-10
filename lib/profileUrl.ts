@@ -10,12 +10,12 @@
  */
 export interface ProfileLinkable {
   slug?: string | null;
-  _id: string;
+  id: string;
 }
 
 /** `/<slug>` when the profile has one, else the stable `/p/<id>` fallback. */
 export function profilePath(profile: ProfileLinkable): string {
-  return profile.slug ? `/${profile.slug}` : `/p/${profile._id}`;
+  return profile.slug ? `/${profile.slug}` : `/p/${profile.id}`;
 }
 
 /** Absolute URL: `origin` (trailing slash tolerated) + `profilePath`. */

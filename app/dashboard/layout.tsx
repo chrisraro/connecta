@@ -1,10 +1,9 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUser, useIsAdmin } from "@/hooks/useCurrentUser";
 import { useEffect, useState } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { UserMenu } from "@/components/auth/UserMenu";
 import {
   LayoutDashboard,
   Users,
@@ -43,15 +42,6 @@ import { toUserMessage } from "@/lib/errors";
 // ring on top of that mismatch. Sizing them equal and putting the ring
 // directly on the avatar box (a box-shadow ring, not a border, so it never
 // eats into the photo's box) makes the ring hug the image edge instead.
-// The `!` importants are required: Clerk's own component styles otherwise
-// win the specificity fight against plain Tailwind utility classes.
-const AVATAR_BUTTON_APPEARANCE = {
-  elements: {
-    userButtonAvatarBox: "w-11! h-11! rounded-full! ring-2! ring-primary/20!",
-    userButtonTrigger: "rounded-full! w-11! h-11! flex items-center justify-center",
-  },
-};
-
 /**
  * Mobile dashboard used to mount two independent floating action buttons —
  * this Quick Actions sheet trigger (bottom-28) and OfflineLeadCapture's own
@@ -235,12 +225,8 @@ function QuickActionButton({
 
 function DashboardSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
-  const { user } = useUser();
-  const onboarding = useQuery(
-    api.users.getOnboardingStatus,
-    user?.id ? { clerkId: user.id } : "skip",
-  );
-  const isOnboardingIncomplete = onboarding !== undefined && !onboarding.completed;
+  const { data: appUser } = useCurrentUser();
+  const isOnboardingIncomplete = Boolean(appUser) && !appUser!.onboarding_completed;
 
   const menuItems = [
     { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
@@ -290,7 +276,7 @@ function DashboardSidebar({ className }: { className?: string }) {
       </nav>
       <div className="p-6 border-t border-sidebar-border">
         <div className="flex items-center gap-3 bg-sidebar-accent/50 p-3 rounded-2xl border border-sidebar-border">
-          <UserButton appearance={AVATAR_BUTTON_APPEARANCE} />
+          <UserMenu />
           <div className="flex-1 text-xs text-muted-foreground font-medium">Manage Account</div>
           <ThemeToggle />
           <NotificationsPopover />
@@ -383,15 +369,14 @@ function MobileHeader() {
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <NotificationsPopover />
-        <UserButton appearance={AVATAR_BUTTON_APPEARANCE} />
+        <UserMenu />
       </div>
     </header>
   );
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoaded } = useUser();
-  const syncUser = useMutation(api.users.syncUser);
+  const { isLoaded } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -409,29 +394,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // the nav.
   const hideMobileChrome = isFullScreenDashboardRoute(pathname);
 
-  // Check admin status
-  const adminStatus = useQuery(
-    api.admin.checkAdminStatus,
-    isLoaded && user ? { clerkId: user.id } : "skip",
-  );
+  const { data: isAdmin } = useIsAdmin();
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      syncUser({
-        clerkId: user.id,
-        email: user.primaryEmailAddress?.emailAddress || "",
-        name: user.fullName || "",
-      }).catch((err) => {
-        // Runs on every dashboard page load — a silent failure here
-        // desyncs Convex's user record from Clerk (stale name/email,
-        // or an admin-status check that can never resolve). No
-        // retry loop; just make the failure visible once so it
-        // doesn't look like the dashboard is simply broken.
-        console.error("Failed to sync user:", err);
-        toast.error(toUserMessage(err));
-      });
-    }
-  }, [isLoaded, user, syncUser]);
+  // NOTE: the Clerk version ran a syncUser mutation here on every dashboard
+  // page load, mirroring name/email into the backend and toasting when that
+  // failed. It is gone: handle_new_user and handle_user_email_change are
+  // triggers on auth.users, so the mirror cannot drift and there is no
+  // per-render write to fail.
 
   // Redirect admins to the admin console — but only on FIRST landing at
   // the dashboard root, not from every consumer sub-route (Task 20, I6).
@@ -448,13 +417,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // /dashboard (e.g., via "Back to user app" button) and stay there,
   // enabling full consumer app dogfooding without infinite bouncing.
   useEffect(() => {
-    if (!isLoaded || !adminStatus || !pathname) return;
+    if (!isLoaded || !isAdmin || !pathname) return;
 
-    if (adminStatus.isAdmin && shouldRedirectAdminOnFirstLanding(pathname)) {
+    if (shouldRedirectAdminOnFirstLanding(pathname)) {
       console.log("Admin detected on user dashboard, redirecting to admin...");
       router.replace("/admin");
     }
-  }, [isLoaded, adminStatus, pathname, router]);
+  }, [isLoaded, isAdmin, pathname, router]);
 
   if (!isLoaded) {
     return (

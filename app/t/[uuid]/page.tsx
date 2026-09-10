@@ -1,115 +1,111 @@
 "use client";
 
-import { useQuery, useMutation, useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useEffect, use, useRef, useState } from "react";
-import { useUser } from "@clerk/nextjs";
 import { Loader2, Smartphone } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCardByUuid, useClaimCard, useRecordTap } from "@/hooks/useCards";
+import { useProfile } from "@/hooks/useProfiles";
 import { profilePath } from "@/lib/profileUrl";
 import { toUserMessage } from "@/lib/errors";
 import { isPlanLimitError } from "@/lib/plans";
 import { UpgradeGate } from "@/components/billing/UpgradeGate";
-import Link from "next/link";
 
+/**
+ * Where a physical tag lands.
+ *
+ * This is the cutover validation for the whole migration: tag 43:45:08:03 is
+ * programmed with a URL that cannot be changed without physically rewriting
+ * the tag, so /t/<uuid> must resolve.
+ */
 export default function TapRedirectPage({ params }: { params: Promise<{ uuid: string }> }) {
-  const resolvedParams = use(params);
-  const uuid = resolvedParams.uuid;
+  const { uuid } = use(params);
   const router = useRouter();
-  const card = useQuery(api.cards.getCardByUuid, { uuid });
-  const incrementTap = useMutation(api.cards.incrementTapCount);
-  const { isSignedIn, isLoaded: authLoaded, user } = useUser();
-  // claimCardByUuid is a Convex action (not a mutation) so its rate-limit
-  // bookkeeping survives a "card not found" rejection instead of being
-  // rolled back with it — see convex/cards.ts. useAction keeps the same
-  // calling convention as useMutation, so the .then()/.catch() below is
-  // unchanged.
-  const claimCard = useAction(api.cards.claimCardByUuid);
+
+  const { data: card, isPending: cardPending, isError: cardError } = useCardByUuid(uuid);
+  const { isSignedIn, isLoaded: authLoaded } = useAuth();
+  const claimCard = useClaimCard();
+  const recordTap = useRecordTap();
+
   const [claimFailed, setClaimFailed] = useState<string | null>(null);
-  // True when claimFailed is a plan-limit rejection (e.g. the free plan's
-  // 1-active-card cap) — renders the same "Get Pro" CTA as every other
-  // gated surface instead of a dead-end error page.
+  // True when the rejection was a plan-limit one (the free plan cap of one
+  // active card), so the same upgrade CTA every other gated surface uses is
+  // rendered instead of a dead-end error page.
   const [claimFailedLocked, setClaimFailedLocked] = useState(false);
   const claimingRef = useRef(false);
+  const tappedRef = useRef(false);
 
-  // Resolve the linked profile so we can redirect to its vanity slug
-  // instead of the bare /p/<id> fallback whenever one is set.
-  const linkedProfile = useQuery(
-    api.profiles.getProfile,
-    card?.linkedProfileId ? { profileId: card.linkedProfileId } : "skip",
-  );
-
-  const incrementedRef = useRef(false);
+  // Only resolve the linked profile once there is one, so the redirect can use
+  // the vanity slug instead of the bare /p/<id> fallback.
+  const { data: linkedProfile, isPending: profilePending } = useProfile(card?.linked_profile_id);
 
   const errorMessage =
     claimFailed !== null
       ? claimFailed
-      : card === null
-        ? "This card ID was not found in our system."
-        : card && card.status !== "inventory" && card.status !== "active"
-          ? "This card is not available."
-          : card && card.status === "active" && !card.linkedProfileId
-            ? "This card is activated but not linked to any profile yet."
-            : null;
+      : cardError
+        ? "We could not look up this card. Please try again."
+        : !cardPending && card === null
+          ? "This card ID was not found in our system."
+          : card && card.status !== "inventory" && card.status !== "active"
+            ? "This card is not available."
+            : card && card.status === "active" && !card.linked_profile_id
+              ? "This card is activated but not linked to any profile yet."
+              : null;
 
   useEffect(() => {
     if (!card) return;
 
     if (card.status === "inventory") {
       /*
-              Two paths, split on session state — and the split is
-              load-bearing, not an optimization. A signed-in user routed to
-              the signup page never RUNS a sign-up flow: Clerk sees the
-              active session and bounces straight to fallbackRedirectUrl
-              ("/dashboard"), and forceRedirectUrl — the only place
-              card_uuid survives — fires exclusively on a COMPLETED auth
-              flow. So for signed-in users the auth detour silently dropped
-              the uuid and the card was never claimed. Claim it right here
-              instead; only signed-out visitors take the auth detour.
-            */
+        Two paths, split on session state, and the split is load-bearing
+        rather than an optimisation. Sending a SIGNED-IN user to the signup
+        page never runs a signup flow -- the auth page sees the live session
+        and bounces straight to /dashboard, and card_uuid only survives on a
+        COMPLETED auth flow. So for signed-in users the detour silently
+        dropped the uuid and the card was never claimed. Claim it right here
+        instead; only signed-out visitors take the detour.
+      */
       if (!authLoaded) return;
-      if (isSignedIn && user) {
+
+      if (isSignedIn) {
         if (claimingRef.current || claimFailed) return;
         claimingRef.current = true;
-        claimCard({ clerkId: user.id, uuid })
+        claimCard
+          .mutateAsync(uuid)
           .then(() => {
             router.replace("/dashboard/cards?claimed=1");
           })
           .catch((err: unknown) => {
-            // toUserMessage handles the Convex transport-noise
-            // unwrapping (and, on a real production deployment,
-            // the further redaction of plain Error text down to
-            // a bare "Server Error") — see lib/errors.ts. The
-            // old inline regex here only ever worked in dev.
             setClaimFailed(toUserMessage(err));
             setClaimFailedLocked(isPlanLimitError(err));
           });
       } else {
         router.replace(`/auth?mode=signup&card_uuid=${encodeURIComponent(uuid)}`);
       }
-    } else if (
-      card.status === "active" &&
-      card.linkedProfileId &&
-      linkedProfile !== undefined &&
-      !incrementedRef.current
-    ) {
-      // Success! Increment count only once. Wait for the linked
-      // profile query to settle so we redirect to its slug when it
-      // has one, rather than firing immediately on the bare id.
-      incrementedRef.current = true;
-      incrementTap({ cardId: card._id });
-      router.replace(profilePath(linkedProfile ?? { _id: card.linkedProfileId, slug: undefined }));
+      return;
+    }
+
+    if (card.status === "active" && card.linked_profile_id && !tappedRef.current) {
+      // Wait for the profile lookup to settle so the redirect uses the slug
+      // when there is one, rather than firing immediately on the bare id.
+      if (profilePending) return;
+      tappedRef.current = true;
+      // Deliberately not awaited: a failed vanity counter must never delay or
+      // block the redirect a person is standing there waiting for.
+      recordTap.mutate(uuid);
+      router.replace(profilePath(linkedProfile ?? { id: card.linked_profile_id, slug: undefined }));
     }
   }, [
     card,
     linkedProfile,
+    profilePending,
     router,
-    incrementTap,
     uuid,
     authLoaded,
     isSignedIn,
-    user,
     claimCard,
+    recordTap,
     claimFailed,
   ]);
 
@@ -121,8 +117,8 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
         </div>
         <h1 className="text-2xl font-bold mb-2">Card Not Ready</h1>
         {claimFailed && claimFailedLocked ? (
-          // The upgrade CTA already carries the message — skip
-          // the plain paragraph so it isn't shown twice.
+          // The upgrade CTA already carries the message, so the plain
+          // paragraph is skipped to avoid showing it twice.
           <div className="w-full max-w-xs mb-8">
             <UpgradeGate locked reason={claimFailed} variant="banner" />
           </div>

@@ -1156,7 +1156,7 @@ function BuilderContent() {
       });
       captureSnapshot();
       toast.success("Profile saved");
-      router.push(profilePath({ _id: profileId, slug }));
+      router.push(profilePath({ id: profileId, slug }));
     } catch (error: unknown) {
       console.error("Save error:", error);
       // The template picker already blocks selecting a Pro-only

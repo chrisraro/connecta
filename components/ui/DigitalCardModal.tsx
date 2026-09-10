@@ -42,7 +42,7 @@ export function DigitalCardModal({
   const [copied, setCopied] = useState(false);
 
   const host = typeof window !== "undefined" ? window.location.origin : "";
-  const publicUrl = profileId ? profileUrl(host, { _id: profileId, slug: profileSlug }) : host;
+  const publicUrl = profileId ? profileUrl(host, { id: profileId, slug: profileSlug }) : host;
 
   const handleDownloadImage = async () => {
     if (!cardWrapperRef.current) return;

@@ -18,7 +18,7 @@ interface AccessCardProps {
 
 export function AccessCard({ profileId, profileSlug, agent, className }: AccessCardProps) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const profileUrl = buildProfileUrl(origin, { _id: profileId, slug: profileSlug });
+  const profileUrl = buildProfileUrl(origin, { id: profileId, slug: profileSlug });
 
   return (
     <div

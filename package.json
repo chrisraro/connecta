@@ -10,7 +10,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:types": "supabase gen types typescript --project-id szfkysqinjowmgdzonje --schema public > lib/supabase/database.types.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.2",

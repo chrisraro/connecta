@@ -49,7 +49,7 @@ export function DigitalBusinessCard({
   const cardRef = useRef<HTMLDivElement>(null);
 
   const host = typeof window !== "undefined" ? window.location.origin : "";
-  const qrUrl = profileId ? profileUrl(host, { _id: profileId, slug: profileSlug }) : host;
+  const qrUrl = profileId ? profileUrl(host, { id: profileId, slug: profileSlug }) : host;
 
   // Defaults
   const activeTheme = config?.theme || "dark";
