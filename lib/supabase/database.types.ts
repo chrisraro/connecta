@@ -1000,6 +1000,8 @@ export type Database = {
         Args: { check_user?: string };
         Returns: Database["public"]["Enums"]["plan_tier"];
       };
+      get_my_team: { Args: never; Returns: Json };
+      get_team_leads: { Args: never; Returns: Json };
       is_admin: { Args: { check_user?: string }; Returns: boolean };
       is_reserved_slug: { Args: { candidate: string }; Returns: boolean };
       is_superadmin: { Args: { check_user?: string }; Returns: boolean };
@@ -1026,7 +1028,28 @@ export type Database = {
           uuid: string;
         }[];
       };
+      save_onboarding: {
+        Args: {
+          about?: string;
+          avatar_url?: string;
+          company_name?: string;
+          contact_email: string;
+          full_name: string;
+          job_title: string;
+          mark_completed?: boolean;
+          phone?: string;
+          profile_category: string;
+          services?: string[];
+          social_links?: Json;
+          website?: string;
+        };
+        Returns: Json;
+      };
       slugify: { Args: { input: string; suffix?: string }; Returns: string };
+      team_accept_invite: { Args: { invite_id: string }; Returns: undefined };
+      team_invite_member: { Args: { invite_email: string }; Returns: string };
+      team_remove_member: { Args: { member_id: string }; Returns: undefined };
+      team_revoke_invite: { Args: { invite_id: string }; Returns: undefined };
       unaccent_fallback: { Args: { input: string }; Returns: string };
       unclaim_card: { Args: { card_id: string }; Returns: undefined };
     };

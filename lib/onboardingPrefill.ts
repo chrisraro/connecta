@@ -23,7 +23,7 @@
  * field), and the merge overwrites the live Builder-set value with it —
  * silent data loss, not an edge case, the steady state for any active user.
  *
- * The fix: in edit mode, hydrate from the LIVE `profile.agentInfo` (plus
+ * The fix: in edit mode, hydrate from the LIVE `profile.agent_info` (plus
  * `profileType`) instead of `onboardingData`, so whatever the wizard sends
  * back on completion is a faithful snapshot of current state and the merge
  * can never erase anything the user didn't actually change. First-run
@@ -57,11 +57,19 @@ export interface OnboardingDataLike {
   services?: string[];
 }
 
+/**
+ * The subset of a profile's agent_info this helper reads.
+ *
+ * company/phone are OPTIONAL here even though the wizard always collects
+ * them: types/profile.ts ProfileInfo declares them optional, and a row read
+ * back from the database satisfies that type, not a stricter one. Requiring
+ * them made a real ProfileInfo unassignable to this.
+ */
 export interface ProfileAgentInfoLike {
   fullName: string;
   title: string;
-  company: string;
-  phone: string;
+  company?: string;
+  phone?: string;
   website?: string;
   about?: string;
   avatarUrl?: string;
@@ -69,25 +77,33 @@ export interface ProfileAgentInfoLike {
 }
 
 export interface ProfileLike {
-  profileType?: OnboardingProfileCategory;
-  agentInfo: ProfileAgentInfoLike;
+  profile_type?: OnboardingProfileCategory | null;
+  agent_info: ProfileAgentInfoLike;
 }
 
-export interface ClerkUserLike {
+/**
+ * The bits of the signed-in account this prefill can fall back on.
+ *
+ * Was AuthUserLike. Supabase Auth carries no display name of its own -- the
+ * name lives on public.users and any avatar comes from OAuth metadata -- so
+ * the caller supplies both rather than this module reaching for provider
+ * fields that may not exist.
+ */
+export interface AuthUserLike {
   fullName?: string | null;
   imageUrl?: string | null;
 }
 
-function clerkOnlyPrefill(clerkUser: ClerkUserLike | null | undefined): OnboardingPrefillValues {
+function clerkOnlyPrefill(authUser: AuthUserLike | null | undefined): OnboardingPrefillValues {
   return {
     profileCategory: "individual",
-    fullName: clerkUser?.fullName || "",
+    fullName: authUser?.fullName || "",
     title: "",
     company: "",
     phone: "",
     website: "",
     about: "",
-    avatarUrl: clerkUser?.imageUrl || "",
+    avatarUrl: authUser?.imageUrl || "",
     services: [],
   };
 }
@@ -96,9 +112,9 @@ export function resolveOnboardingPrefill(params: {
   isEditMode: boolean;
   onboardingData: OnboardingDataLike | null | undefined;
   profiles: readonly ProfileLike[] | undefined;
-  clerkUser: ClerkUserLike | null | undefined;
+  authUser: AuthUserLike | null | undefined;
 }): OnboardingPrefillValues | null {
-  const { isEditMode, onboardingData, profiles, clerkUser } = params;
+  const { isEditMode, onboardingData, profiles, authUser } = params;
 
   if (isEditMode) {
     // Still loading the profile list — wait rather than prefilling
@@ -111,19 +127,19 @@ export function resolveOnboardingPrefill(params: {
       // expected in normal use — the "Edit Profile Setup" entry point only
       // exists once a profile does — but degrade to the same Clerk-only
       // prefill a brand-new user gets rather than crash or prefill blank).
-      return clerkOnlyPrefill(clerkUser);
+      return clerkOnlyPrefill(authUser);
     }
 
-    const info = profile.agentInfo;
+    const info = profile.agent_info;
     return {
-      profileCategory: profile.profileType ?? "individual",
-      fullName: info.fullName || clerkUser?.fullName || "",
+      profileCategory: profile.profile_type ?? "individual",
+      fullName: info.fullName || authUser?.fullName || "",
       title: info.title || "",
       company: info.company || "",
       phone: info.phone || "",
       website: info.website || "",
       about: info.about || "",
-      avatarUrl: info.avatarUrl || clerkUser?.imageUrl || "",
+      avatarUrl: info.avatarUrl || authUser?.imageUrl || "",
       services: info.services || [],
     };
   }
@@ -131,19 +147,19 @@ export function resolveOnboardingPrefill(params: {
   if (onboardingData) {
     return {
       profileCategory: onboardingData.profileCategory ?? "individual",
-      fullName: onboardingData.fullName || clerkUser?.fullName || "",
+      fullName: onboardingData.fullName || authUser?.fullName || "",
       title: onboardingData.title || "",
       company: onboardingData.company || "",
       phone: onboardingData.phone || "",
       website: onboardingData.website || "",
       about: onboardingData.about || "",
-      avatarUrl: onboardingData.avatarUrl || clerkUser?.imageUrl || "",
+      avatarUrl: onboardingData.avatarUrl || authUser?.imageUrl || "",
       services: onboardingData.services || [],
     };
   }
 
-  if (clerkUser) {
-    return clerkOnlyPrefill(clerkUser);
+  if (authUser) {
+    return clerkOnlyPrefill(authUser);
   }
 
   return null;

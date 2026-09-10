@@ -2,9 +2,12 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useMyProfiles, useSaveOnboarding } from "@/hooks/useProfiles";
+import { useClaimCard, useLinkCardProfile } from "@/hooks/useCards";
+import { onboardingDataOf, agentInfoOf } from "@/lib/db/profile";
 import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
@@ -156,24 +159,19 @@ function OnboardingContent() {
   const isEditMode = searchParams.get("edit") === "true";
   const cardUuid = searchParams.get("card_uuid");
 
-  const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
-  const updateOnboarding = useMutation(api.users.updateOnboarding);
-  // claimCardByUuid is a Convex action (not a mutation) — see
-  // convex/cards.ts. useAction keeps the same calling convention.
-  const claimCard = useAction(api.cards.claimCardByUuid);
-  const linkProfile = useMutation(api.cards.linkProfile);
-  const onboarding = useQuery(
-    api.users.getOnboardingStatus,
-    clerkUser?.id ? { clerkId: clerkUser.id } : "skip",
-  );
+  const { user: authUser, isLoaded: isAuthLoaded } = useAuth();
+  const { data: appUser } = useCurrentUser();
+  const updateOnboarding = useSaveOnboarding().mutateAsync;
+  const claimCard = useClaimCard().mutateAsync;
+  const linkProfile = useLinkCardProfile().mutateAsync;
+  const onboarding = appUser
+    ? { completed: appUser.onboarding_completed, data: appUser.onboarding_data }
+    : undefined;
   // Drives the "Profile Setup Complete" screen's "Go to Profile Builder"
   // button below — same Task 12 fix as handleFinish's routing: link to
   // the profile that already exists instead of a doomed no-id create.
-  const profiles = useQuery(
-    api.profiles.getMyProfiles,
-    clerkUser?.id ? { clerkId: clerkUser.id } : "skip",
-  );
-  const myProfileId = profiles && profiles.length > 0 ? profiles[0]._id : null;
+  const { data: profiles } = useMyProfiles();
+  const myProfileId = profiles && profiles.length > 0 ? profiles[0].id : null;
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -201,7 +199,7 @@ function OnboardingContent() {
   const [services, setServices] = useState<string[]>([]);
   const [serviceInput, setServiceInput] = useState("");
 
-  const email = clerkUser?.primaryEmailAddress?.emailAddress ?? "";
+  const email = authUser?.email ?? "";
 
   // Prefill the form. First-run onboarding prefills from
   // onboarding.data/Clerk as before; "Edit Profile Setup" (?edit=true)
@@ -213,9 +211,20 @@ function OnboardingContent() {
     if (hasPrefilled) return;
     const prefill = resolveOnboardingPrefill({
       isEditMode,
-      onboardingData: onboarding?.data,
-      profiles,
-      clerkUser: clerkUser ? { fullName: clerkUser.fullName, imageUrl: clerkUser.imageUrl } : null,
+      onboardingData: onboardingDataOf(onboarding?.data),
+      profiles: profiles?.map((p) => ({
+        profile_type: p.profile_type ?? undefined,
+        agent_info: agentInfoOf(p),
+      })),
+      authUser: authUser
+        ? {
+            // Supabase Auth has no display name of its own: the name lives
+            // on public.users, and an avatar only exists if an OAuth
+            // provider supplied one.
+            fullName: appUser?.name ?? null,
+            imageUrl: (authUser.user_metadata?.avatar_url as string | undefined) ?? null,
+          }
+        : null,
     });
     if (!prefill) return; // still loading — don't lock in a blank prefill
     setProfileCategory(prefill.profileCategory);
@@ -228,7 +237,7 @@ function OnboardingContent() {
     setAvatarUrl(prefill.avatarUrl);
     setServices(prefill.services);
     setHasPrefilled(true);
-  }, [onboarding, hasPrefilled, clerkUser, isEditMode, profiles]);
+  }, [onboarding, hasPrefilled, authUser, isEditMode, profiles]);
 
   // Claim card when user is authenticated and card_uuid is present
   useEffect(() => {
@@ -238,20 +247,16 @@ function OnboardingContent() {
     // 3. We have a Clerk user ID
     // 4. Card hasn't been claimed yet
     // 5. We're not already in the process of claiming
-    if (!isClerkLoaded || !cardUuid || !clerkUser?.id || cardClaimed || isClaiming) return;
+    if (!isAuthLoaded || !cardUuid || !authUser?.id || cardClaimed || isClaiming) return;
 
     const claim = async () => {
       setIsClaiming(true);
       try {
         console.log("Attempting to claim card:", {
-          clerkId: clerkUser.id,
           uuid: cardUuid,
         });
 
-        const cardId = await claimCard({
-          clerkId: clerkUser.id,
-          uuid: cardUuid,
-        });
+        const cardId = await claimCard(cardUuid);
 
         console.log("Card claimed successfully:", cardId);
         setClaimedCardId(cardId);
@@ -273,7 +278,7 @@ function OnboardingContent() {
     };
 
     claim();
-  }, [cardUuid, clerkUser?.id, cardClaimed, isClaiming, claimCard, isClerkLoaded]);
+  }, [cardUuid, authUser?.id, cardClaimed, isClaiming, claimCard, isAuthLoaded]);
 
   const progress = (step / (STEPS.length - 1)) * 100;
 
@@ -288,14 +293,13 @@ function OnboardingContent() {
   const removeService = (s: string) => setServices((prev) => prev.filter((x) => x !== s));
 
   const saveProgress = async (completed: boolean) => {
-    if (!clerkUser?.id) return;
+    if (!authUser?.id) return;
     setSaving(true);
     try {
       await updateOnboarding({
-        clerkId: clerkUser.id,
         profileCategory,
         email,
-        fullName: fullName || (clerkUser?.fullName ?? ""),
+        fullName: fullName || (appUser?.name ?? ""),
         title: title || "Professional",
         company: company || undefined,
         phone: phone || "",
@@ -326,10 +330,9 @@ function OnboardingContent() {
     setSaving(true);
     try {
       const result = await updateOnboarding({
-        clerkId: clerkUser!.id,
         profileCategory,
         email,
-        fullName: fullName || (clerkUser?.fullName ?? ""),
+        fullName: fullName || (appUser?.name ?? ""),
         title: title || "Professional",
         company: company || undefined,
         phone: phone || "",
@@ -344,9 +347,8 @@ function OnboardingContent() {
       if (claimedCardId && result.profileId) {
         try {
           await linkProfile({
-            clerkId: clerkUser!.id,
-            cardId: claimedCardId as Id<"cards">,
-            profileId: result.profileId as Id<"profiles">,
+            cardId: claimedCardId,
+            profileId: result.profileId,
           });
         } catch (linkErr) {
           console.error("Failed to link card to profile:", linkErr);
@@ -407,7 +409,7 @@ function OnboardingContent() {
 
   // ─── COMPLETED STATE ─────────────────────────────────────────────
   if (onboarding?.completed && !isEditMode) {
-    const d = onboarding.data;
+    const d = onboardingDataOf(onboarding.data);
     const cat = PROFILE_CATEGORIES.find((c) => c.id === d?.profileCategory);
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">

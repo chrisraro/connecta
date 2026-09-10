@@ -1,8 +1,13 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  useMyNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+  type Notification,
+} from "@/hooks/useNotifications";
 import { Bell, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,17 +20,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
-import { Doc } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 
 export function NotificationsPopover() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const router = useRouter();
 
-  const notifications = useQuery(api.notifications.get, user?.id ? { clerkId: user.id } : "skip");
-  const markAsRead = useMutation(api.notifications.markAsRead);
-  const markAllAsRead = useMutation(api.notifications.markAllAsRead);
+  const { data: notifications } = useMyNotifications();
+  const markAsRead = useMarkNotificationRead().mutateAsync;
+  const markAllAsRead = useMarkAllNotificationsRead().mutateAsync;
 
   if (notifications === undefined) {
     return (
@@ -42,9 +46,9 @@ export function NotificationsPopover() {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const handleNotificationClick = (notification: Doc<"notifications">) => {
+  const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
-      markAsRead({ notificationId: notification._id }).catch((err) => {
+      markAsRead(notification.id).catch((err) => {
         console.error("Failed to mark notification as read:", err);
         toast.error(toUserMessage(err));
       });
@@ -57,7 +61,7 @@ export function NotificationsPopover() {
   const handleMarkAllRead = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (user?.id) {
-      markAllAsRead({ clerkId: user.id }).catch((err) => {
+      markAllAsRead().catch((err) => {
         console.error("Failed to mark all notifications as read:", err);
         toast.error(toUserMessage(err));
       });
@@ -102,7 +106,7 @@ export function NotificationsPopover() {
           ) : (
             notifications.map((notification) => (
               <DropdownMenuItem
-                key={notification._id}
+                key={notification.id}
                 className={`flex flex-col items-start p-3 cursor-pointer gap-1 transition-colors ${
                   !notification.read ? "bg-muted/50" : ""
                 }`}
@@ -118,7 +122,7 @@ export function NotificationsPopover() {
                   {notification.message}
                 </span>
                 <span className="text-[10px] text-muted-foreground/70 mt-1 uppercase font-bold tracking-wider">
-                  {new Date(notification.createdAt).toLocaleDateString()}
+                  {new Date(notification.created_at).toLocaleDateString()}
                 </span>
               </DropdownMenuItem>
             ))

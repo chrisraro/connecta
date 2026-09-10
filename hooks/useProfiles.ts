@@ -195,3 +195,53 @@ export function useSaveProfile() {
     },
   });
 }
+
+export type OnboardingInput = {
+  profileCategory: string;
+  email: string;
+  fullName: string;
+  title: string;
+  company?: string;
+  phone?: string;
+  website?: string;
+  about?: string;
+  avatarUrl?: string;
+  services: string[];
+  socialLinks?: { platform: string; url: string }[];
+  markCompleted: boolean;
+};
+
+/**
+ * Saves the onboarding wizard, and on completion creates or patches the
+ * profile it describes -- both in one transaction, so a snapshot can never be
+ * stored without the profile that gives it meaning.
+ */
+export function useSaveOnboarding() {
+  const supabase = useSupabase();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: OnboardingInput): Promise<{ profileId: string | null }> => {
+      const { data, error } = await supabase.rpc("save_onboarding", {
+        profile_category: input.profileCategory,
+        contact_email: input.email,
+        full_name: input.fullName,
+        job_title: input.title,
+        company_name: input.company ?? undefined,
+        phone: input.phone ?? undefined,
+        website: input.website ?? undefined,
+        about: input.about ?? undefined,
+        avatar_url: input.avatarUrl ?? undefined,
+        services: input.services,
+        social_links: (input.socialLinks ?? []) as never,
+        mark_completed: input.markCompleted,
+      });
+      if (error) throw error;
+      return data as unknown as { profileId: string | null };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myProfiles() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.currentUser() });
+    },
+  });
+}

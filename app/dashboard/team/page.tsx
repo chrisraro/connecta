@@ -1,7 +1,14 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useQuery, useMutation } from "convex/react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  useMyTeam,
+  useTeamLeads,
+  useInviteMember,
+  useRemoveMember,
+  useRevokeInvite,
+  useUpdateTeamBranding,
+} from "@/hooks/useTeam";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -34,18 +41,18 @@ import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 
 export default function TeamPage() {
-  const { user } = useUser();
-  const data = useQuery(api.teams.getMyTeam, user?.id ? { clerkId: user.id } : {});
-  const teamLeads = useQuery(api.teams.getTeamLeads, user?.id ? { clerkId: user.id } : {});
+  const { user } = useAuth();
+  const { data } = useMyTeam();
+  const { data: teamLeads } = useTeamLeads();
 
-  const inviteMember = useMutation(api.teams.inviteMember);
-  const removeMember = useMutation(api.teams.removeMember);
-  const revokeInvite = useMutation(api.teams.revokeInvite);
-  const updateBranding = useMutation(api.teams.updateTeamBranding);
+  const inviteMember = useInviteMember().mutateAsync;
+  const removeMember = useRemoveMember().mutateAsync;
+  const revokeInvite = useRevokeInvite().mutateAsync;
+  const updateBrandingMutation = useUpdateTeamBranding().mutateAsync;
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [busy, setBusy] = useState(false);
-  const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<Id<"users"> | null>(null);
+  const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null);
   const [branding, setBranding] = useState({
     name: "",
     companyName: "",
@@ -115,7 +122,7 @@ export default function TeamPage() {
     const email = inviteEmail.trim();
     if (!email) return;
     await run(async () => {
-      await inviteMember({ email });
+      await inviteMember(email);
       setInviteEmail("");
     }, "Invite sent");
   };
@@ -123,7 +130,8 @@ export default function TeamPage() {
   const handleSaveBranding = () =>
     run(
       () =>
-        updateBranding({
+        updateBrandingMutation({
+          teamId: teamObj!.id,
           name: branding.name,
           companyName: branding.companyName,
           logoUrl: branding.logoUrl,
@@ -223,7 +231,7 @@ export default function TeamPage() {
                             variant="ghost"
                             size="icon"
                             disabled={busy}
-                            onClick={() => setConfirmRemoveMemberId(m.userId as Id<"users">)}
+                            onClick={() => setConfirmRemoveMemberId(m.userId as string)}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -244,7 +252,7 @@ export default function TeamPage() {
               <ul className="space-y-2">
                 {pendingInvites.map((inv) => (
                   <li
-                    key={inv._id}
+                    key={inv.id}
                     className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm"
                   >
                     <span>{inv.email}</span>
@@ -253,12 +261,7 @@ export default function TeamPage() {
                         variant="ghost"
                         size="icon"
                         disabled={busy}
-                        onClick={() =>
-                          run(
-                            () => revokeInvite({ inviteId: inv._id as Id<"teamInvites"> }),
-                            "Invite revoked",
-                          )
-                        }
+                        onClick={() => run(() => revokeInvite(inv.id), "Invite revoked")}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -368,10 +371,10 @@ export default function TeamPage() {
                   </TableHeader>
                   <TableBody>
                     {teamLeads.map((l) => (
-                      <TableRow key={l._id}>
+                      <TableRow key={l.id}>
                         <TableCell className="font-medium">{l.inquirerName}</TableCell>
                         <TableCell className="text-muted-foreground">{l.inquirerContact}</TableCell>
-                        <TableCell className="text-muted-foreground">{l.memberName}</TableCell>
+                        <TableCell className="text-muted-foreground">{l.ownerName}</TableCell>
                         <TableCell className="capitalize">{l.status}</TableCell>
                         <TableCell className="text-right text-muted-foreground">
                           {new Date(l.createdAt).toLocaleDateString()}
@@ -405,7 +408,7 @@ export default function TeamPage() {
               onClick={() => {
                 const memberId = confirmRemoveMemberId;
                 setConfirmRemoveMemberId(null);
-                if (memberId) run(() => removeMember({ memberId }), "Member removed");
+                if (memberId) run(() => removeMember(memberId), "Member removed");
               }}
             >
               Remove Member

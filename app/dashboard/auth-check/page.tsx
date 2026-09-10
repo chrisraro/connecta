@@ -1,140 +1,108 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { useAuth, useUser } from "@clerk/nextjs";
-import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUser, useIsAdmin } from "@/hooks/useCurrentUser";
 import { CONNECTA } from "@/lib/brand";
 
 /**
- * Clerk -> Convex auth chain smoke test.
+ * Supabase auth-chain smoke test.
  *
  * WHY THIS PAGE EXISTS
  * --------------------
- * The chain that authenticates a Convex request has four independent links,
- * and three of them live outside this repo:
+ * It replaces the Clerk version, which diagnosed a JWT-template chain that no
+ * longer exists. The Supabase chain is shorter but still has links that can
+ * break without any code being wrong:
  *
- *   1. middleware.ts protects the route (in repo)
- *   2. ConvexProviderWithClerk asks Clerk for a token via the JWT template
- *      named in convex/auth.config.ts's applicationID  (Clerk dashboard)
- *   3. that template must exist and mint aud: "convex"  (Clerk dashboard)
- *   4. Convex verifies the token against auth.config.ts's domain  (in repo)
+ *   1. middleware refreshes the session cookie on every request  (in repo)
+ *   2. the browser client is configured with URL + publishable key  (env)
+ *   3. a public.users row exists for the auth user  (database trigger)
+ *   4. RLS resolves that row, and is_admin() answers  (database)
  *
- * Link 3 silently broke the entire authenticated app once already: the Clerk
- * instance had ZERO JWT templates, so getToken({template:"convex"}) returned
- * null, ctx.auth.getUserIdentity() was null on every call, and every
- * authenticated page threw "Unauthorized: authentication required". Nothing
- * in the codebase was wrong, so nothing in the test suite could catch it.
+ * Link 3 is the one that bites. Every RLS policy resolves ownership through
+ * public.users, so an auth account without its mirror row can sign in and then
+ * see nothing at all -- which looks like data loss, not a broken trigger. That
+ * failure is invisible from any feature screen, and no test can catch it
+ * because nothing in the repo is wrong when it happens.
  *
- * This page makes that class of failure visible in one glance instead of
- * surfacing as a generic error on some unrelated screen. It is deliberately
- * a route, not a unit test: the failure mode is environmental, and a test
- * running against convex-test's in-memory harness would pass regardless.
- *
- * Route lives under /dashboard so middleware already protects it, and so it
- * cannot collide with a user's vanity profile slug at /<slug>.
+ * Deliberately a route rather than a unit test: the failure mode is
+ * environmental. Kept out of the nav; visit /dashboard/auth-check directly.
  */
 export default function AuthCheckPage() {
-  const { isLoaded: clerkLoaded, isSignedIn, userId } = useAuth();
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuth();
+  const { data: appUser, isPending: userPending, error: userError } = useCurrentUser();
+  const { data: isAdmin, isPending: adminPending, error: adminError } = useIsAdmin();
 
-  // A genuinely protected query: convex/users.ts:getUser reads ctx.auth
-  // and returns null when the request carries no verified identity. If the
-  // JWT template is missing this stays null forever even while Clerk itself
-  // reports a healthy session — which is exactly the split this page exposes.
-  const convexUser = useQuery(api.users.getUser, {});
-
-  const rows: Array<{ label: string; ok: boolean | null; detail: string }> = [
+  const rows: { label: string; ok: boolean | null; detail: string }[] = [
     {
-      label: "Clerk session",
-      ok: clerkLoaded ? Boolean(isSignedIn) : null,
-      detail: !clerkLoaded
-        ? "loading…"
+      label: "1. Session resolved (middleware + browser client)",
+      ok: isLoaded ? isSignedIn : null,
+      detail: !isLoaded
+        ? "resolving..."
         : isSignedIn
-          ? `signed in as ${user?.primaryEmailAddress?.emailAddress ?? userId}`
-          : "not signed in",
+          ? `signed in as ${user?.email ?? user?.id}`
+          : "no session — sign in first",
     },
     {
-      label: "Convex identity",
-      ok: convexUser === undefined ? null : convexUser !== null,
-      detail:
-        convexUser === undefined
-          ? "loading…"
-          : convexUser === null
-            ? "ctx.auth.getUserIdentity() is null — the Clerk JWT template named in convex/auth.config.ts is missing or misconfigured"
-            : `verified as ${convexUser.email}`,
+      label: "2. NEXT_PUBLIC_SUPABASE_URL configured",
+      ok: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      detail: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "MISSING",
     },
     {
-      label: "User synced to Convex",
-      ok: convexUser === undefined ? null : Boolean(convexUser?._id),
-      detail:
-        convexUser === undefined
-          ? "loading…"
-          : convexUser
-            ? `users row ${convexUser._id}`
-            : "no row — syncUser has not run for this account",
+      label: "3. public.users row exists (signup trigger)",
+      ok: userPending ? null : Boolean(appUser),
+      detail: userError
+        ? `error: ${userError.message}`
+        : userPending
+          ? "loading..."
+          : appUser
+            ? `id ${appUser.id} · plan ${appUser.plan}`
+            : "NO ROW — handle_new_user did not fire for this account",
+    },
+    {
+      label: "4. RLS + is_admin() answer",
+      ok: adminPending ? null : !adminError,
+      detail: adminError
+        ? `error: ${adminError.message}`
+        : adminPending
+          ? "loading..."
+          : isAdmin
+            ? "admin grant present"
+            : "no admin grant (expected for a normal account)",
     },
   ];
 
-  const allPassing = rows.every((r) => r.ok === true);
-  const anyFailing = rows.some((r) => r.ok === false);
-
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-10">
-      <h1 className="text-2xl font-black tracking-tight text-foreground">Auth chain check</h1>
-      <p className="mt-2 max-w-prose text-sm text-muted-foreground">
-        Verifies that a Clerk session actually produces a verified identity inside a Convex query.
-        Every link below must pass for authenticated {CONNECTA.name} features to work.
-      </p>
+    <div className="max-w-2xl mx-auto py-10 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">{CONNECTA.name} auth chain</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Each link below can fail without any code being wrong. Check them in order.
+        </p>
+      </div>
 
-      <ul className="mt-8 flex flex-col gap-3">
-        {rows.map((r) => (
+      <ul className="space-y-3">
+        {rows.map((row) => (
           <li
-            key={r.label}
-            className="flex items-start gap-3 rounded-[var(--r-md)] border border-border bg-card p-4"
+            key={row.label}
+            className="flex items-start gap-3 rounded-2xl border border-border p-4 bg-card"
           >
             <span
-              aria-hidden="true"
-              className={`mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                r.ok === null
-                  ? "bg-muted text-muted-foreground"
-                  : r.ok
-                    ? "bg-emerald-500/15 text-emerald-500"
-                    : "bg-destructive/15 text-destructive"
+              aria-hidden
+              className={`mt-0.5 inline-block w-3 h-3 rounded-full shrink-0 ${
+                row.ok === null
+                  ? "bg-muted-foreground/40"
+                  : row.ok
+                    ? "bg-emerald-500"
+                    : "bg-red-500"
               }`}
-            >
-              {r.ok === null ? "…" : r.ok ? "✓" : "✕"}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-foreground">
-                {r.label}
-                <span className="sr-only">
-                  {r.ok === null ? " — checking" : r.ok ? " — passing" : " — failing"}
-                </span>
-              </span>
-              <span className="mt-0.5 block break-words text-sm text-muted-foreground">
-                {r.detail}
-              </span>
-            </span>
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">{row.label}</p>
+              <p className="text-xs text-muted-foreground break-all">{row.detail}</p>
+            </div>
           </li>
         ))}
       </ul>
-
-      <p
-        role="status"
-        className={`mt-6 rounded-[var(--r-md)] border p-4 text-sm ${
-          allPassing
-            ? "border-emerald-500/30 bg-emerald-500/5 text-foreground"
-            : anyFailing
-              ? "border-destructive/30 bg-destructive/5 text-foreground"
-              : "border-border bg-card text-muted-foreground"
-        }`}
-      >
-        {allPassing
-          ? "All links passing — Clerk sessions are reaching Convex with a verified identity."
-          : anyFailing
-            ? "Broken. If “Clerk session” passes but “Convex identity” fails, the Clerk JWT template is the cause: create one named to match applicationID in convex/auth.config.ts, with claims {“aud”: “convex”}."
-            : "Checking…"}
-      </p>
     </div>
   );
 }

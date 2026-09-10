@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { resolveOnboardingPrefill } from "./onboardingPrefill";
 
-const clerkUser = { fullName: "Clerk Name", imageUrl: "https://clerk.example/avatar.png" };
+const authUser = { fullName: "Clerk Name", imageUrl: "https://clerk.example/avatar.png" };
 
 describe("resolveOnboardingPrefill — edit mode", () => {
   test("hydrates from the LIVE profile's agentInfo, not onboardingData — the Task 17 C3 regression", () => {
@@ -22,8 +22,8 @@ describe("resolveOnboardingPrefill — edit mode", () => {
       },
       profiles: [
         {
-          profileType: "business",
-          agentInfo: {
+          profile_type: "business",
+          agent_info: {
             fullName: "Live Name",
             title: "Live Title",
             company: "Live Co",
@@ -35,7 +35,7 @@ describe("resolveOnboardingPrefill — edit mode", () => {
           },
         },
       ],
-      clerkUser,
+      authUser,
     });
 
     expect(result).toEqual({
@@ -56,7 +56,7 @@ describe("resolveOnboardingPrefill — edit mode", () => {
       isEditMode: true,
       onboardingData: null,
       profiles: undefined,
-      clerkUser,
+      authUser,
     });
     expect(result).toBeNull();
   });
@@ -66,7 +66,7 @@ describe("resolveOnboardingPrefill — edit mode", () => {
       isEditMode: true,
       onboardingData: null,
       profiles: [],
-      clerkUser,
+      authUser,
     });
     expect(result).toEqual({
       profileCategory: "individual",
@@ -87,8 +87,8 @@ describe("resolveOnboardingPrefill — edit mode", () => {
       onboardingData: null,
       profiles: [
         {
-          profileType: "individual",
-          agentInfo: {
+          profile_type: "individual",
+          agent_info: {
             fullName: "",
             title: "Title",
             company: "Co",
@@ -97,7 +97,7 @@ describe("resolveOnboardingPrefill — edit mode", () => {
           },
         },
       ],
-      clerkUser,
+      authUser,
     });
     expect(result?.fullName).toBe("Clerk Name");
     expect(result?.avatarUrl).toBe("https://clerk.example/avatar.png");
@@ -120,7 +120,7 @@ describe("resolveOnboardingPrefill — first-run (create mode), unchanged behavi
         services: ["Web Design"],
       },
       profiles: [],
-      clerkUser,
+      authUser,
     });
     expect(result).toEqual({
       profileCategory: "company",
@@ -140,7 +140,7 @@ describe("resolveOnboardingPrefill — first-run (create mode), unchanged behavi
       isEditMode: false,
       onboardingData: null,
       profiles: [],
-      clerkUser,
+      authUser,
     });
     expect(result).toEqual({
       profileCategory: "individual",
@@ -160,7 +160,7 @@ describe("resolveOnboardingPrefill — first-run (create mode), unchanged behavi
       isEditMode: false,
       onboardingData: null,
       profiles: [],
-      clerkUser: null,
+      authUser: null,
     });
     expect(result).toBeNull();
   });
