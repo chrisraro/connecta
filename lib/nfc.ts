@@ -12,7 +12,7 @@
  * text (and its "null") must never reach the UI.
  */
 
-import { ConvexError } from "convex/values";
+import { errorCode } from "@/lib/errors";
 
 export type NfcWriteErrorKind = "tag-lost" | "not-supported" | "permission" | "unknown";
 
@@ -115,21 +115,18 @@ export async function withRetries<T>(
 }
 
 /**
- * Detects a "card already registered" failure from `admin.registerSingleCard`.
+ * Detects a "card already registered" failure from admin_register_card.
  *
- * This MUST key off a structured `ConvexError.data.code`, never off thrown
- * message text. Plain `Error` messages thrown from a Convex mutation are
- * redacted client-side to the fixed string "Server Error" on a real
- * production deployment (unlike `ConvexError.data`, which crosses the
- * client/server boundary intact) — a regex against `.message` would only
- * ever fire in dev, where nothing redacts it. If it silently stopped
- * firing in prod, an admin re-tapping an already-registered card would fall
- * into the generic write-retry path with the scan session still alive,
- * looping on the same duplicate tag forever instead of getting the
- * dedicated "already registered" message and having the scanner stop.
+ * Keys off the structured error code the database raises, never off message
+ * text. The RPC raises with `detail = DUPLICATE_UUID` alongside a human
+ * sentence in `message`, and errorCode() reads the former -- so rewording the
+ * sentence cannot silently break this.
+ *
+ * If it stopped firing, an admin re-tapping an already-registered card would
+ * fall into the generic write-retry path with the scan session still alive,
+ * looping on the same duplicate tag forever instead of getting the dedicated
+ * "already registered" message and having the scanner stop.
  */
 export function isDuplicateRegistrationError(err: unknown): boolean {
-  if (!(err instanceof ConvexError)) return false;
-  const data = err.data as { code?: unknown } | undefined;
-  return typeof data === "object" && data !== null && data.code === "DUPLICATE_UUID";
+  return errorCode(err) === "DUPLICATE_UUID";
 }

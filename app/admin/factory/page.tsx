@@ -1,8 +1,7 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useAdminCards, useRegisterCard, useDeleteCards } from "@/hooks/useAdmin";
 import {
   Copy,
   Download,
@@ -82,7 +81,7 @@ interface NDEFReadingEvent extends Event {
  */
 
 export default function AdminFactoryPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuth();
   // NEXT_PUBLIC_APP_URL is inlined by Next at build time, so it's read
   // directly here rather than passing the whole process.env object through
   // at runtime. See the comment block above for why there is no fallback.
@@ -94,14 +93,16 @@ export default function AdminFactoryPage() {
   // an explicit warning instead of shipping silently.
   const nfcHostname = nfcHost ? new URL(nfcHost).hostname : null;
   const isLocalNfcHost = nfcHostname === "localhost" || nfcHostname === "127.0.0.1";
-  const cardsList = useQuery(api.admin.getCards, user?.id ? { clerkId: user.id } : "skip");
-  const registerCard = useMutation(api.admin.registerSingleCard);
-  const deleteCards = useMutation(api.admin.deleteCards);
+  const { data: cardsList, isPending: cardsPending } = useAdminCards();
+  const registerCardMutation = useRegisterCard();
+  const deleteCardsMutation = useDeleteCards();
+  const registerCard = registerCardMutation.mutateAsync;
+  const deleteCards = deleteCardsMutation.mutateAsync;
 
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [lastRegistered, setLastRegistered] = useState<{
-    id: Id<"cards">;
+    id: string;
     uuid: string;
     activationCode: string;
   } | null>(null);
@@ -109,7 +110,7 @@ export default function AdminFactoryPage() {
   const [selectedCard, setSelectedCard] = useState<{ uuid: string; activationCode: string } | null>(
     null,
   );
-  const [selectedIds, setSelectedIds] = useState<Set<Id<"cards">>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -207,10 +208,7 @@ export default function AdminFactoryPage() {
             // `ACT-<serial>-<timestamp>` codes were never enterable in
             // the user activation form (which promises 6 characters
             // and uppercases input before an exact-match lookup).
-            result = await registerCard({
-              clerkId: user.id,
-              uuid: serialNumber,
-            });
+            result = await registerCard({ uuid: serialNumber });
           } catch (registerErr) {
             if (isDuplicateRegistrationError(registerErr)) {
               // The write already succeeded and put a valid URL
@@ -231,9 +229,9 @@ export default function AdminFactoryPage() {
 
           // Transform response to match expected state shape
           const cardData = {
-            id: result.cardId,
+            id: result.id,
             uuid: result.uuid,
-            activationCode: result.activationCode,
+            activationCode: result.activation_code,
           };
 
           setLastRegistered(cardData);
@@ -302,16 +300,13 @@ export default function AdminFactoryPage() {
     try {
       // Server generates the 6-char activation code — see the NFC
       // scan handler above for why the client no longer does.
-      const result = await registerCard({
-        clerkId: user!.id!,
-        uuid: uuid,
-      });
+      const result = await registerCard({ uuid: uuid });
 
       // Transform response to match expected state shape
       const cardData = {
-        id: result.cardId,
+        id: result.id,
         uuid: result.uuid,
-        activationCode: result.activationCode,
+        activationCode: result.activation_code,
       };
 
       setLastRegistered(cardData);
@@ -329,11 +324,11 @@ export default function AdminFactoryPage() {
     if (selectedIds.size === cardsList.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(cardsList.map((c) => c._id)));
+      setSelectedIds(new Set(cardsList.map((c) => c.id)));
     }
   };
 
-  const toggleSelect = (id: Id<"cards">) => {
+  const toggleSelect = (id: string) => {
     const newSet = new Set(selectedIds);
     if (newSet.has(id)) {
       newSet.delete(id);
@@ -353,10 +348,7 @@ export default function AdminFactoryPage() {
 
     setIsDeleting(true);
     try {
-      const result = await deleteCards({
-        clerkId: user!.id!,
-        cardIds: Array.from(selectedIds),
-      });
+      const result = await deleteCards(Array.from(selectedIds));
       // deleteCards refuses to delete "active" cards (physical cards
       // are never destroyed while paired to a customer — only
       // returned to inventory) and reports them back as skippedIds
@@ -377,7 +369,7 @@ export default function AdminFactoryPage() {
     }
   };
 
-  const handleDeleteSingle = async (id: Id<"cards">) => {
+  const handleDeleteSingle = async (id: string) => {
     if (!user?.id) {
       alert("User not authenticated.");
       return;
@@ -386,10 +378,7 @@ export default function AdminFactoryPage() {
 
     setIsDeleting(true);
     try {
-      const result = await deleteCards({
-        clerkId: user!.id!,
-        cardIds: [id],
-      });
+      const result = await deleteCards([id]);
       if (result.skippedIds.length > 0) {
         toast.warning("This card is active and cannot be deleted — unpair it first.");
       } else {
@@ -405,7 +394,7 @@ export default function AdminFactoryPage() {
     }
   };
 
-  if (!isLoaded || cardsList === undefined) {
+  if (!isLoaded || cardsPending || !cardsList) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="animate-spin text-red-600 w-8 h-8" />
@@ -727,13 +716,13 @@ export default function AdminFactoryPage() {
                   ) : (
                     cardsList.map((card) => (
                       <TableRow
-                        key={card._id}
-                        className={`border-border transition-colors group ${selectedIds.has(card._id) ? "bg-red-500/5 hover:bg-red-500/10" : "hover:bg-accent/30"}`}
+                        key={card.id}
+                        className={`border-border transition-colors group ${selectedIds.has(card.id) ? "bg-red-500/5 hover:bg-red-500/10" : "hover:bg-accent/30"}`}
                       >
                         <TableCell className="pl-6">
                           <Checkbox
-                            checked={selectedIds.has(card._id)}
-                            onCheckedChange={() => toggleSelect(card._id)}
+                            checked={selectedIds.has(card.id)}
+                            onCheckedChange={() => toggleSelect(card.id)}
                             className="border-border data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
                           />
                         </TableCell>
@@ -742,7 +731,7 @@ export default function AdminFactoryPage() {
                         </TableCell>
                         <TableCell>
                           <span className="font-mono font-black text-red-500 tracking-wider">
-                            {card.activationCode}
+                            {card.activation_code}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -776,7 +765,10 @@ export default function AdminFactoryPage() {
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                               onClick={() => {
-                                setSelectedCard(card);
+                                setSelectedCard({
+                                  uuid: card.uuid,
+                                  activationCode: card.activation_code,
+                                });
                                 setShowPrintDialog(true);
                               }}
                               disabled={!nfcHost}
@@ -793,7 +785,7 @@ export default function AdminFactoryPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-foreground hover:text-red-500 hover:bg-red-500/10"
-                              onClick={() => handleDeleteSingle(card._id)}
+                              onClick={() => handleDeleteSingle(card.id)}
                               title="Delete Card"
                             >
                               <Trash2 className="w-4 h-4" />

@@ -11,16 +11,19 @@ export type AdminCardRow = Tables<"cards">;
 export type AuditLogRow = Tables<"audit_logs">;
 
 export type AdminStats = {
-  users: number;
+  totalUsers: number;
   suspendedUsers: number;
   paidUsers: number;
-  profiles: number;
-  cardsTotal: number;
-  cardsInventory: number;
-  cardsActive: number;
-  cardsLost: number;
+  totalProfiles: number;
+  totalCards: number;
+  inventoryCards: number;
+  activeCards: number;
+  lostCards: number;
   totalTaps: number;
-  leads: number;
+  totalLeads: number;
+  newLeads7d: number;
+  newLeads: number;
+  lowStockCount: number;
   admins: number;
 };
 
@@ -120,16 +123,31 @@ export function useRegisterCard() {
   });
 }
 
-/** Delete unclaimed stock. The RPC refuses anything already claimed. */
+export type DeleteCardsResult = {
+  success: boolean;
+  deletedCount: number;
+  totalRequested: number;
+  skippedIds: string[];
+};
+
+/**
+ * Delete cards.
+ *
+ * Partial success is the normal case, not an error: ACTIVE cards are skipped
+ * and reported back rather than failing the whole call, because an operator
+ * selecting a page of rows should not have the entire delete rejected over one
+ * paired card. Inventory and lost cards are removed -- lost meaning reported
+ * physically gone, which cannot be cleared through the unpair flow.
+ */
 export function useDeleteCards() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (ids: string[]): Promise<number> => {
+    mutationFn: async (ids: string[]): Promise<DeleteCardsResult> => {
       const { data, error } = await supabase.rpc("admin_delete_cards", { card_ids: ids });
       if (error) throw error;
-      return (data as number) ?? 0;
+      return data as unknown as DeleteCardsResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.adminCards() });

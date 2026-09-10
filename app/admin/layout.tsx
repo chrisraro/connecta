@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useIsAdmin } from "@/hooks/useCurrentUser";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -32,46 +32,43 @@ import { CONNECTA } from "@/lib/brand";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname(); // Move hooks BEFORE any conditional returns
-  const { user, isLoaded, isSignedIn } = useUser();
-  const { signOut } = useClerk();
-  const syncUser = useMutation(api.users.syncUser);
+  const { user, isLoaded, isSignedIn } = useAuth();
+
+  const signOut = async () => {
+    await createClient().auth.signOut();
+    // Full navigation, not a client transition: the session cookie has just
+    // been cleared and middleware must see that on the next request.
+    window.location.assign("/");
+  };
 
   /*
-      This shell used to gate on users.role === "admin", which is a DIFFERENT
-      admin system from the one that actually authorises admin data. Every
-      admin Convex function calls authz.ts:requireAdmin, which reads the
-      `admins` table — and nothing in admin.ts ever writes users.role. So the
-      two could drift apart: setupFirstAdmin grants a real `admins` row yet
-      left users.role as "agent", which rendered the console unreachable even
-      for a legitimate superadmin.
+      This shell gates on the `admins` table, not on users.role.
 
-      Gating on checkAdminStatus makes the shell agree with the data layer by
-      construction: one source of truth, the `admins` table. It is also
-      auth-checked server-side (it compares ctx.auth identity against the
-      clerkId), so it cannot be spoofed by passing someone else's id.
-    */
-  const adminStatus = useQuery(
-    api.admin.checkAdminStatus,
-    user?.id ? { clerkId: user.id } : "skip",
-  );
+      Those are two different admin systems, and they drifted: nothing ever
+      wrote users.role, so a legitimate superadmin with a real `admins` row
+      still rendered the console unreachable. is_admin() reads the same table
+      the RLS policies read, so the shell and the data layer cannot disagree.
 
-  // Ensure a users row exists for this Clerk account. checkAdminStatus
-  // returns isAdmin:false until it does, so this must still run.
+      It is also unspoofable by construction -- is_admin() takes its identity
+      from auth.uid(), the verified JWT subject, not from anything the client
+      passes in.
+
+      NOTE: this is the third of three gates, and the weakest by design. The
+      middleware refuses /admin without an admin grant, and every admin table
+      is behind an is_admin() policy, so no admin DATA is reachable regardless
+      of what shell renders here.
+  */
+  const { data: isAdmin, isPending: adminPending } = useIsAdmin();
+
+  // No syncUser: public.users is created by a trigger on auth.users, so there
+  // is no client-side mirror that can fail and leave the console unreachable.
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push("/");
-    } else if (isLoaded && user) {
-      syncUser({
-        clerkId: user.id,
-        email: user.primaryEmailAddress?.emailAddress || "",
-        name: user.fullName || "",
-      }).catch(() => {
-        // Sync failure leaves adminStatus falsy, which redirects below.
-      });
     }
-  }, [isLoaded, isSignedIn, user, router, syncUser]);
+  }, [isLoaded, isSignedIn, router]);
 
-  const verifiedAdmin = adminStatus === undefined ? null : adminStatus.isAdmin;
+  const verifiedAdmin = adminPending ? null : Boolean(isAdmin);
 
   useEffect(() => {
     if (verifiedAdmin === false) {
@@ -206,7 +203,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Button
                 variant="ghost"
                 className="w-full justify-start min-h-11 text-muted-foreground hover:text-red-500"
-                onClick={() => signOut({ redirectUrl: "/" })}
+                onClick={() => signOut()}
               >
                 <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
                 Sign out
@@ -292,7 +289,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Button
             variant="ghost"
             className="w-full justify-start min-h-11 text-muted-foreground hover:text-red-500"
-            onClick={() => signOut({ redirectUrl: "/" })}
+            onClick={() => signOut()}
           >
             <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
             Sign out

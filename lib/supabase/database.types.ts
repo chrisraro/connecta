@@ -926,7 +926,7 @@ export type Database = {
     Functions: {
       activate_card_by_code: { Args: { code: string }; Returns: string }
       admin_dashboard_stats: { Args: never; Returns: Json }
-      admin_delete_cards: { Args: { card_ids: string[] }; Returns: number }
+      admin_delete_cards: { Args: { card_ids: string[] }; Returns: Json }
       admin_grant_role: {
         Args: {
           grant_reason?: string

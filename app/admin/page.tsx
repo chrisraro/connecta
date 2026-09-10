@@ -1,8 +1,8 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAdminStats, useAdminGrants } from "@/hooks/useAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
@@ -22,14 +22,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export default function AdminDashboardPage() {
-  const { user, isLoaded } = useUser();
-  const stats = useQuery(api.admin.getAdminDashboard, user?.id ? { clerkId: user.id } : "skip");
-  const adminStatus = useQuery(
-    api.admin.checkAdminStatus,
-    user?.id ? { clerkId: user.id } : "skip",
-  );
+  const { user, isLoaded } = useAuth();
+  const { data: appUser } = useCurrentUser();
+  const { data: stats } = useAdminStats();
+  const { data: grants } = useAdminGrants();
 
-  if (!isLoaded || stats === undefined || adminStatus === undefined) {
+  // The caller's own grant, so the badge shows superadmin vs moderator.
+  const myRole = grants?.find((g) => g.user_id === user?.id)?.role ?? "admin";
+
+  if (!isLoaded || !stats) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="animate-spin text-red-600 w-8 h-8" />
@@ -42,13 +43,11 @@ export default function AdminDashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
-          </p>
+          <p className="text-muted-foreground mt-1">Welcome back, {appUser?.name || user?.email}</p>
         </div>
         <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 gap-1">
           <Shield className="w-3 h-3" />
-          {adminStatus.role}
+          {myRole}
         </Badge>
       </div>
 
