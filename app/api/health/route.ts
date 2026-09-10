@@ -6,7 +6,7 @@ import { buildHealthReport, type ConvexReachability } from "./health-report";
 /**
  * GET /api/health — public, unauthenticated diagnostic endpoint.
  *
- * Exists so a misconfigured deployment (missing PayRex/Resend/Clerk secrets,
+ * Exists so a misconfigured deployment (missing Resend/Clerk secrets,
  * an unset NEXT_PUBLIC_APP_URL, a Convex deployment that can't be reached)
  * shows up in one request instead of surfacing later as a customer-facing
  * throw. See `./health-report.ts` for the response-shape logic (tested in
@@ -29,23 +29,23 @@ export async function GET() {
 
 // Calls the real Convex deployment. Any failure — bad/missing
 // NEXT_PUBLIC_CONVEX_URL, network error, deployment down — collapses to
-// `{ reachable: false, payments: null }`. Deliberately swallows the actual
+// `{ reachable: false, config: null }`. Deliberately swallows the actual
 // error: this route is public, so its response must never carry internal
 // error text or a stack trace that could help an attacker map the backend.
 async function queryConvex(): Promise<ConvexReachability> {
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
   if (!convexUrl) {
-    return { reachable: false, payments: null };
+    return { reachable: false, config: null };
   }
 
   try {
     const client = new ConvexHttpClient(convexUrl);
-    const [, payments] = await Promise.all([
+    const [, config] = await Promise.all([
       client.query(api.health.ping, {}),
       client.query(api.health.checkConfig, {}),
     ]);
-    return { reachable: true, payments };
+    return { reachable: true, config };
   } catch {
-    return { reachable: false, payments: null };
+    return { reachable: false, config: null };
   }
 }

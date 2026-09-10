@@ -112,8 +112,9 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     try {
       await addItem(product._id, selectedVariation, quantity);
-      // Redirect to checkout immediately after adding to cart
-      router.push("/shop/checkout");
+      // There is no checkout — adding takes the shopper to their selection,
+      // which is where the purchase inquiry is sent from.
+      router.push("/shop/cart");
     } catch (error) {
       // Task 19 follow-up (Task 18 review, Medium): this used to only
       // console.error — a failed add-to-cart (stale stock, network error,
@@ -316,16 +317,16 @@ export default function ProductPage() {
               disabled={!isInStock || isLoading}
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
-              {isInStock ? "Add to Cart & Checkout" : "Out of Stock"}
+              {isInStock ? "Add to Selection" : "Out of Stock"}
             </Button>
 
             <p className="text-xs text-muted-foreground text-center">
-              You&apos;ll be redirected to checkout after adding to cart
+              We&apos;ll take you to your selection, where you can send a purchase inquiry
             </p>
 
             <Link href="/shop/cart">
               <Button variant="outline" size="lg" className="w-full">
-                View Cart
+                View Selection
               </Button>
             </Link>
           </div>

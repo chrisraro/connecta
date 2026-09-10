@@ -419,104 +419,6 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_guest", ["guestId"]),
 
-  orders: defineTable({
-    orderNumber: v.string(),
-    userId: v.optional(v.id("users")),
-    guestEmail: v.optional(v.string()),
-    // Server-minted, cryptographically random secret, set only on guest
-    // orders (userId undefined) at creation time and returned to the client
-    // once. The one thing a guest checkout can present to prove "I am the
-    // person who created this order" — orderNumber alone cannot serve that
-    // role (predictable timestamp + 3-char suffix, see
-    // getOrderByNumber/getOrderForPaymentAuthorized) and guests have no
-    // Convex user id to check ownership against. Required by
-    // convex/payrex.ts#createCheckoutSession for any guest order (Task 19 /
-    // C2).
-    guestOrderToken: v.optional(v.string()),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("processing"),
-      v.literal("shipped"),
-      v.literal("delivered"),
-      v.literal("cancelled"),
-      v.literal("refunded"),
-    ),
-    items: v.array(
-      v.object({
-        productId: v.id("products"),
-        productName: v.string(),
-        variationId: v.optional(v.id("productVariations")),
-        variationName: v.optional(v.string()),
-        quantity: v.number(),
-        unitPrice: v.number(),
-        total: v.number(),
-      }),
-    ),
-    subtotal: v.number(),
-    tax: v.number(),
-    shipping: v.number(),
-    discount: v.optional(v.number()),
-    appliedDiscountCode: v.optional(v.string()),
-    total: v.number(),
-    currency: v.string(),
-    paymentProvider: v.union(v.literal("payrex"), v.literal("stripe"), v.literal("paypal")),
-    paymentStatus: v.union(
-      v.literal("pending"),
-      v.literal("paid"),
-      v.literal("failed"),
-      v.literal("refunded"),
-    ),
-    paymentIntentId: v.optional(v.string()),
-    payrexCheckoutId: v.optional(v.string()),
-    paidAt: v.optional(v.number()),
-    shippingAddress: v.object({
-      fullName: v.string(),
-      addressLine1: v.string(),
-      addressLine2: v.optional(v.string()),
-      city: v.string(),
-      state: v.optional(v.string()),
-      postalCode: v.string(),
-      country: v.string(),
-      phone: v.string(),
-    }),
-    billingAddress: v.optional(
-      v.object({
-        fullName: v.string(),
-        addressLine1: v.string(),
-        addressLine2: v.optional(v.string()),
-        city: v.string(),
-        state: v.optional(v.string()),
-        postalCode: v.string(),
-        country: v.string(),
-      }),
-    ),
-    notes: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_orderNumber", ["orderNumber"])
-    .index("by_user", ["userId"])
-    .index("by_status", ["status"])
-    .index("by_paymentStatus", ["paymentStatus"])
-    .index("by_createdAt", ["createdAt"])
-    .index("by_paymentIntentId", ["paymentIntentId"]),
-
-  discounts: defineTable({
-    code: v.string(),
-    type: v.union(v.literal("percentage"), v.literal("fixed")),
-    value: v.number(),
-    minOrderValue: v.optional(v.number()),
-    maxDiscountAmount: v.optional(v.number()),
-    usageLimit: v.optional(v.number()),
-    usedCount: v.number(),
-    validFrom: v.number(),
-    validUntil: v.optional(v.number()),
-    isActive: v.boolean(),
-    applicableProducts: v.optional(v.array(v.id("products"))),
-  })
-    .index("by_code", ["code"])
-    .index("by_active", ["isActive"]),
-
   settings: defineTable({
     key: v.string(),
     value: v.any(),
@@ -530,7 +432,7 @@ export default defineSchema({
     count: v.number(),
   }).index("by_key", ["key"]),
 
-  // --- SaaS layer (Phase 4): teams, invites, subscription invoices ---
+  // --- SaaS layer (Phase 4): teams and invites ---
 
   teams: defineTable({
     name: v.string(),
@@ -551,21 +453,4 @@ export default defineSchema({
   })
     .index("by_team", ["teamId"])
     .index("by_email", ["email"]),
-
-  subscriptionInvoices: defineTable({
-    userId: v.id("users"),
-    plan: v.union(v.literal("pro"), v.literal("business")),
-    amountCentavos: v.number(),
-    periodDays: v.number(),
-    payrexCheckoutId: v.optional(v.string()),
-    paymentIntentId: v.optional(v.string()),
-    status: v.union(v.literal("pending"), v.literal("paid"), v.literal("expired")),
-    periodStart: v.optional(v.number()),
-    periodEnd: v.optional(v.number()),
-    createdAt: v.number(),
-  })
-    .index("by_user", ["userId"])
-    .index("by_checkoutId", ["payrexCheckoutId"])
-    .index("by_status", ["status"])
-    .index("by_paymentIntentId", ["paymentIntentId"]),
 });

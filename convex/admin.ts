@@ -203,28 +203,23 @@ export const getDashboardStats = query({
 
 /**
  * Single aggregated query powering the admin dashboard home stat cards.
- * Combines user/card/profile/order/lead/inventory metrics in one round trip.
- * Revenue is in centavos (PHP).
+ * Combines user/card/profile/lead/inventory metrics in one round trip.
  */
 export const getAdminDashboard = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
     await requireAdmin(ctx, args.clerkId);
 
-    const [users, cards, profiles, orders, leads, products] = await Promise.all([
+    const [users, cards, profiles, leads, products] = await Promise.all([
       ctx.db.query("users").collect(),
       ctx.db.query("cards").collect(),
       ctx.db.query("profiles").collect(),
-      ctx.db.query("orders").collect(),
       ctx.db.query("leads").collect(),
       ctx.db.query("products").collect(),
     ]);
 
     const activeCards = cards.filter((c) => c.status === "active").length;
     const inventoryCards = cards.filter((c) => c.status === "inventory").length;
-
-    const paidOrders = orders.filter((o) => o.paymentStatus === "paid");
-    const revenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
 
     const lowStockCount = products.filter(
       (p) => p.trackInventory && p.inventory <= p.lowStockThreshold,
@@ -238,10 +233,6 @@ export const getAdminDashboard = query({
       activeCards,
       inventoryCards,
       totalProfiles: profiles.length,
-      paidOrders: paidOrders.length,
-      totalOrders: orders.length,
-      revenue,
-      currency: "PHP" as const,
       lowStockCount,
       totalLeads: leads.length,
       newLeads7d,
@@ -355,17 +346,11 @@ export const getAllUsers = query({
       users.map(async (user) => {
         const adminGrant = adminGrantByUser.get(user._id) ?? null;
         const isUserAdmin = !!adminGrant && !adminGrant.revokedAt;
-        // cards/orders stay per-user indexed lookups (by_owner / by_user) —
-        // each reads exactly the rows that belong to this user, unlike a
-        // full-table collect. Replaces the old full `orders` collect +
-        // in-JS filter, which read every order in the system on every call.
+        // cards stay a per-user indexed lookup (by_owner) — it reads exactly
+        // the rows that belong to this user, never a full-table collect.
         const cards = await ctx.db
           .query("cards")
           .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
-          .collect();
-        const orders = await ctx.db
-          .query("orders")
-          .withIndex("by_user", (q) => q.eq("userId", user._id))
           .collect();
         return {
           id: user._id,
@@ -379,7 +364,6 @@ export const getAllUsers = query({
           planExpiresAt: user.planExpiresAt ?? null,
           onboardingCompleted: user.onboardingCompleted || false,
           cardCount: cards.length,
-          orderCount: orders.length,
           createdAt: user._creationTime,
         };
       }),

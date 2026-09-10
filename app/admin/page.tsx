@@ -14,15 +14,12 @@ import {
   Shield,
   BarChart3,
   Settings,
-  DollarSign,
-  ShoppingBag,
   AlertTriangle,
   UserCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatPHP } from "@/lib/payment";
 
 export default function AdminDashboardPage() {
   const { user, isLoaded } = useUser();
@@ -88,28 +85,6 @@ export default function AdminDashboardPage() {
           <CardContent>
             <div className="text-3xl font-bold">{stats.totalProfiles}</div>
             <p className="text-xs text-muted-foreground mt-1">Published portfolios</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-emerald-500">{formatPHP(stats.revenue)}</div>
-            <p className="text-xs text-muted-foreground mt-1">From paid orders</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border text-foreground hover:border-border transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Paid Orders</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.paidOrders}</div>
-            <p className="text-xs text-muted-foreground mt-1">of {stats.totalOrders} total</p>
           </CardContent>
         </Card>
 

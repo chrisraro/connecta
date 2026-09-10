@@ -13,15 +13,14 @@ import {
 import { CONNECTA } from "@/lib/brand";
 
 /**
- * The single dialog every payment entry point opens instead of calling a
- * dead checkout action while `PAYMENTS_ENABLED` is `false` (see
- * lib/payments.ts). Task 11 introduced this for the Pro-upgrade funnel
- * (PlanUpgradeButton); the shop checkout (PayrexCheckoutButton) reuses the
- * exact same component with its own copy instead of duplicating the
- * markup — one place to keep the "polite placeholder, not a dead action"
- * promise consistent across every payment surface.
+ * The single dialog every "upgrade" / "buy" entry point opens. There is no
+ * payment gateway in the product: plan upgrades and shop purchases are
+ * handled as inquiries (email support), and checkout is a future roadmap
+ * item. Callers pass their own copy so one component keeps the "polite
+ * hand-off to a human, not a dead action" promise consistent across every
+ * commerce surface.
  */
-export interface PaymentPlaceholderDialogProps {
+export interface InquiryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -30,16 +29,22 @@ export interface PaymentPlaceholderDialogProps {
   supportBody?: string;
   /** Subject line for the mailto: support link. */
   mailSubject: string;
+  /** Optional prefilled mailto: body — e.g. the items being inquired about. */
+  mailBody?: string;
 }
 
-export function PaymentPlaceholderDialog({
+export function InquiryDialog({
   open,
   onOpenChange,
   title,
   description,
   supportBody = "Want to be notified the moment it opens, or need help sooner? Reach out and we'll take care of it directly.",
   mailSubject,
-}: PaymentPlaceholderDialogProps) {
+  mailBody,
+}: InquiryDialogProps) {
+  const mailto =
+    `mailto:${CONNECTA.supportEmail}?subject=${encodeURIComponent(mailSubject)}` +
+    (mailBody ? `&body=${encodeURIComponent(mailBody)}` : "");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -50,7 +55,7 @@ export function PaymentPlaceholderDialog({
         <p className="text-sm text-muted-foreground">{supportBody}</p>
         <DialogFooter>
           <Button asChild variant="outline">
-            <a href={`mailto:${CONNECTA.supportEmail}?subject=${encodeURIComponent(mailSubject)}`}>
+            <a href={mailto}>
               <Mail className="mr-2 h-4 w-4" />
               Email support
             </a>

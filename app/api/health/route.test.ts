@@ -27,8 +27,6 @@ afterEach(() => {
 });
 
 const ALL_PRESENT = {
-  PAYREX_SECRET_KEY: true,
-  PAYREX_WEBHOOK_SECRET: true,
   RESEND_API_KEY: true,
   CLERK_SECRET_KEY: true,
   CLERK_WEBHOOK_SIGNING_SECRET: true,
@@ -59,7 +57,7 @@ test("GET /api/health returns 200, no-store, and healthy status when everything 
       NEXT_PUBLIC_APP_URL: true,
       NEXT_PUBLIC_CONVEX_URL: true,
     },
-    payments: ALL_PRESENT,
+    config: ALL_PRESENT,
   });
 });
 
@@ -77,7 +75,7 @@ test("GET /api/health returns 503 and no internal error detail when Convex is un
   expect(res.status).toBe(503);
   expect(body.status).toBe("unhealthy");
   expect(body.convex).toBe(false);
-  expect(body.payments).toBeNull();
+  expect(body.config).toBeNull();
   expect(raw).not.toContain("ECONNREFUSED");
   expect(raw).not.toContain("internal detail");
 });

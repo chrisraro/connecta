@@ -125,7 +125,7 @@ test("finding 3: a nested/double-wrapped envelope is not returned verbatim", () 
   // that closes findings 1-2 must also catch it as defense in depth, rather
   // than needing a bespoke nested-envelope special case.
   const raw =
-    "[CONVEX M(billing:upgrade)] [Request ID: abc] Server Error\nUncaught Error: [CONVEX A(payrex:createCheckoutSession)] [Request ID: def] Server Error\n  at foo (../convex/billing.ts:10:2)";
+    "[CONVEX M(billing:updatePlanPricing)] [Request ID: abc] Server Error\nUncaught Error: [CONVEX A(email:sendLeadNotification)] [Request ID: def] Server Error\n  at foo (../convex/billing.ts:10:2)";
   const message = toUserMessage(new Error(raw));
   expect(message).not.toMatch(/\[CONVEX/);
   expect(message).not.toMatch(/Request ID/);
@@ -133,15 +133,15 @@ test("finding 3: a nested/double-wrapped envelope is not returned verbatim", () 
 });
 
 test("finding 4: a real diagnostic message that merely ends in 'Server Error' keeps its detail", () => {
-  // convex/payrex.ts:120-122 throws
-  // `PayRex checkout session creation failed (500): Internal Server Error`.
+  // An action reporting an upstream provider's HTTP failure produces
+  // `Email delivery failed (500): Internal Server Error`.
   // The guard must not genericize every message ending in those two words —
   // only the literal Convex-envelope shape. This message is legitimate,
   // specific, user-facing diagnostic text and must survive intact.
   const raw =
-    "[CONVEX A(payrex:createCheckoutSession)] [Request ID: xyz] Server Error\nUncaught Error: PayRex checkout session creation failed (500): Internal Server Error\n  at handler (../convex/payrex.ts:120:11)";
+    "[CONVEX A(email:sendLeadNotification)] [Request ID: xyz] Server Error\nUncaught Error: Email delivery failed (500): Internal Server Error\n  at handler (../convex/email.ts:120:11)";
   const message = toUserMessage(new Error(raw));
-  expect(message).toBe("PayRex checkout session creation failed (500): Internal Server Error");
+  expect(message).toBe("Email delivery failed (500): Internal Server Error");
 });
 
 test("finding 5: a very long message is truncated with an ellipsis instead of rendering as a wall of text", () => {

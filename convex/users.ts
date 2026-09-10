@@ -326,9 +326,9 @@ export const internalStripLegacyCredits = internalMutation({
  * (internalPurgeTestAccounts), which walks every table that points at
  * `users` rather than deleting the user row alone and orphaning its
  * dependents:
- *  - profiles, leads, notifications, properties, projects, carts,
- *    subscriptionInvoices, orders: deleted outright — this is the user's own
- *    data, with no other party's rights attached to it.
+ *  - profiles, leads, notifications, properties, projects, carts:
+ *    deleted outright — this is the user's own data, with no other party's
+ *    rights attached to it.
  *  - cards: NEVER deleted. They are real hardware sitting in the physical
  *    world; deleting the row would not reclaim the object. They are
  *    returned to unassigned inventory (status "inventory", tap count reset,
@@ -368,8 +368,6 @@ export const internalEraseUserByClerkId = internalMutation({
           properties: 0,
           projects: 0,
           carts: 0,
-          invoices: 0,
-          orders: 0,
           adminGrants: 0,
         },
         cardsReturnedToInventory: 0,
@@ -378,59 +376,41 @@ export const internalEraseUserByClerkId = internalMutation({
 
     const userId = user._id;
 
-    const [
-      profiles,
-      cards,
-      leads,
-      notifications,
-      properties,
-      projects,
-      carts,
-      invoices,
-      orders,
-      adminGrants,
-    ] = await Promise.all([
-      ctx.db
-        .query("profiles")
-        .withIndex("by_owner", (q) => q.eq("ownerId", userId))
-        .collect(),
-      ctx.db
-        .query("cards")
-        .withIndex("by_owner", (q) => q.eq("ownerId", userId))
-        .collect(),
-      ctx.db
-        .query("leads")
-        .withIndex("by_owner", (q) => q.eq("ownerId", userId))
-        .collect(),
-      ctx.db
-        .query("notifications")
-        .withIndex("by_user", (q) => q.eq("userId", userId))
-        .collect(),
-      ctx.db
-        .query("properties")
-        .withIndex("by_owner", (q) => q.eq("ownerId", userId))
-        .collect(),
-      ctx.db
-        .query("projects")
-        .withIndex("by_owner", (q) => q.eq("ownerId", userId))
-        .collect(),
-      ctx.db
-        .query("carts")
-        .withIndex("by_user", (q) => q.eq("userId", userId))
-        .collect(),
-      ctx.db
-        .query("subscriptionInvoices")
-        .withIndex("by_user", (q) => q.eq("userId", userId))
-        .collect(),
-      ctx.db
-        .query("orders")
-        .withIndex("by_user", (q) => q.eq("userId", userId))
-        .collect(),
-      ctx.db
-        .query("admins")
-        .withIndex("by_user", (q) => q.eq("userId", userId))
-        .collect(),
-    ]);
+    const [profiles, cards, leads, notifications, properties, projects, carts, adminGrants] =
+      await Promise.all([
+        ctx.db
+          .query("profiles")
+          .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+          .collect(),
+        ctx.db
+          .query("cards")
+          .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+          .collect(),
+        ctx.db
+          .query("leads")
+          .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+          .collect(),
+        ctx.db
+          .query("notifications")
+          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .collect(),
+        ctx.db
+          .query("properties")
+          .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+          .collect(),
+        ctx.db
+          .query("projects")
+          .withIndex("by_owner", (q) => q.eq("ownerId", userId))
+          .collect(),
+        ctx.db
+          .query("carts")
+          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .collect(),
+        ctx.db
+          .query("admins")
+          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .collect(),
+      ]);
 
     // Record the deletion in the (retained) audit trail before the user
     // row disappears, so there is a durable record of who requested it
@@ -447,8 +427,6 @@ export const internalEraseUserByClerkId = internalMutation({
         propertiesDeleted: properties.length,
         projectsDeleted: projects.length,
         cartsDeleted: carts.length,
-        invoicesDeleted: invoices.length,
-        ordersDeleted: orders.length,
         cardsReturnedToInventory: cards.length,
       },
     });
@@ -459,8 +437,6 @@ export const internalEraseUserByClerkId = internalMutation({
     for (const p of properties) await ctx.db.delete(p._id);
     for (const p of projects) await ctx.db.delete(p._id);
     for (const c of carts) await ctx.db.delete(c._id);
-    for (const i of invoices) await ctx.db.delete(i._id);
-    for (const o of orders) await ctx.db.delete(o._id);
     for (const a of adminGrants) await ctx.db.delete(a._id);
 
     // Physical cards survive as unassigned inventory — never deleted.
@@ -486,8 +462,6 @@ export const internalEraseUserByClerkId = internalMutation({
         properties: properties.length,
         projects: projects.length,
         carts: carts.length,
-        invoices: invoices.length,
-        orders: orders.length,
         adminGrants: adminGrants.length,
       },
       cardsReturnedToInventory: cards.length,
@@ -541,8 +515,6 @@ export const deleteMyAccount = action({
       properties: number;
       projects: number;
       carts: number;
-      invoices: number;
-      orders: number;
       adminGrants: number;
     };
     cardsReturnedToInventory: number;

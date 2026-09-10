@@ -25,8 +25,6 @@ export type WebEnvPresence = Record<(typeof REQUIRED_WEB_ENV_VARS)[number], bool
 // roots in this project; the fields are kept in sync by convention and by
 // the route-level test that exercises the real Convex query.
 export type ConfigPresence = {
-  PAYREX_SECRET_KEY: boolean;
-  PAYREX_WEBHOOK_SECRET: boolean;
   RESEND_API_KEY: boolean;
   CLERK_SECRET_KEY: boolean;
   CLERK_WEBHOOK_SIGNING_SECRET: boolean;
@@ -35,14 +33,14 @@ export type ConfigPresence = {
 
 export interface ConvexReachability {
   reachable: boolean;
-  payments: ConfigPresence | null;
+  config: ConfigPresence | null;
 }
 
 export interface HealthReportBody {
   status: "healthy" | "degraded" | "unhealthy";
   convex: boolean;
   env: WebEnvPresence;
-  payments: ConfigPresence | null;
+  config: ConfigPresence | null;
 }
 
 export interface HealthReport {
@@ -68,19 +66,19 @@ export async function buildHealthReport(deps: BuildHealthReportDeps): Promise<He
     REQUIRED_WEB_ENV_VARS.map((key) => [key, Boolean(deps.env[key]?.trim())]),
   ) as WebEnvPresence;
 
-  const { reachable, payments } = await deps.queryConvex();
+  const { reachable, config } = await deps.queryConvex();
 
   const envOk = Object.values(env).every(Boolean);
-  const paymentsOk = payments !== null && Object.values(payments).every(Boolean);
+  const configOk = config !== null && Object.values(config).every(Boolean);
 
   const status: HealthReportBody["status"] = !reachable
     ? "unhealthy"
-    : envOk && paymentsOk
+    : envOk && configOk
       ? "healthy"
       : "degraded";
 
   return {
     status: reachable ? 200 : 503,
-    body: { status, convex: reachable, env, payments },
+    body: { status, convex: reachable, env, config },
   };
 }

@@ -13,15 +13,12 @@ import {
   SmartphoneNfc,
   LogOut,
   Menu,
-  BarChart3,
   FileText,
   Settings,
   ShoppingCart,
   Package,
   Tags,
-  ShoppingCart as CartIcon,
   TrendingUp,
-  Percent,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -109,12 +106,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       children: [
         { href: "/admin/shop/products", label: "Products", icon: Package },
         { href: "/admin/shop/categories", label: "Categories", icon: Tags },
-        { href: "/admin/shop/orders", label: "Orders", icon: CartIcon },
         { href: "/admin/shop/inventory", label: "Inventory", icon: TrendingUp },
-        { href: "/admin/shop/discounts", label: "Discounts", icon: Percent },
       ],
     },
-    { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/admin/audit", label: "Audit Logs", icon: FileText },
     { href: "/admin/settings", label: "Settings", icon: Settings },
   ];

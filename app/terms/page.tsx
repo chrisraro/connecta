@@ -138,9 +138,9 @@ export default function TermsOfServicePage() {
       <Section id="billing" heading="Billing & subscriptions">
         <p>
           Paid plans (Pro and Business) are billed as <strong>prepaid 30-day periods</strong>. There
-          is no automatic recurring charge: your card or e-wallet is not billed again automatically
-          when a period ends. To keep a paid plan active, you renew manually before or shortly after
-          it expires, via a hosted PayRex checkout (GCash, Maya, card, or QR Ph).
+          is no automatic recurring charge, and no online checkout: we do not store or process
+          payment details at all. To start or keep a paid plan active, you contact us and we arrange
+          payment and activation with you directly.
         </p>
         <p>
           If your plan expires without renewal, you get a <strong>3-day grace period</strong> during
@@ -154,8 +154,8 @@ export default function TermsOfServicePage() {
           expiry — so renewing early never costs you days you already paid for.
         </p>
         <p>
-          All prices are in Philippine Pesos (PHP). Payment processing is handled by PayRex;{" "}
-          {CONNECTA.name} does not store your card or e-wallet credentials.
+          All prices are in Philippine Pesos (PHP). {CONNECTA.name} does not collect or store card
+          or e-wallet credentials.
         </p>
       </Section>
 

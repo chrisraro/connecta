@@ -1,33 +1,19 @@
 import { v } from "convex/values";
-import {
-  action,
-  internalMutation,
-  internalQuery,
-  mutation,
-  query,
-  QueryCtx,
-  MutationCtx,
-} from "./_generated/server";
-import { Doc, Id } from "./_generated/dataModel";
-import { internal } from "./_generated/api";
-import { requireUser, requireAdmin, getAuthedUser } from "./authz";
+import { internalMutation, mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
+import { requireAdmin, getAuthedUser } from "./authz";
 import { logAudit } from "./audit";
-import {
-  PlanId,
-  PLAN_LIMITS,
-  PLAN_PERIOD_DAYS,
-  PLAN_GRACE_DAYS,
-  DEFAULT_PLAN_PRICING,
-} from "./plans";
-import { CONNECTA } from "../lib/brand";
+import { PlanId, PLAN_LIMITS, PLAN_GRACE_DAYS, DEFAULT_PLAN_PRICING } from "./plans";
 
 /**
  * Billing & subscriptions (Phase 4).
  *
- * Plans are prepaid 30-day periods. There is no auto-recurring billing with
- * PayRex here: the user upgrades/renews via a PayRex hosted checkout, the
- * webhook (convex/http.ts) activates the invoice, and a daily cron downgrades
- * expired plans (after a 3-day grace period) back to free.
+ * Plans are prepaid 30-day periods. There is no payment gateway and no
+ * checkout: upgrades are arranged with the customer directly and applied by
+ * setting `plan`/`planExpiresAt` on the user. This module owns what remains
+ * server-side — the effective-plan rule (with its 3-day grace window),
+ * admin-editable pricing, and the daily cron that downgrades expired plans
+ * back to free.
  *
  * All monetary values are in PHP centavos.
  */
@@ -90,7 +76,6 @@ export const getMyPlan = query({
         planExpiresAt: null as number | null,
         inGrace: false,
         limits: PLAN_LIMITS.free,
-        invoices: [],
         pricing: await readPlanPricing(ctx),
       };
     }
@@ -105,293 +90,14 @@ export const getMyPlan = query({
       expiry < now &&
       expiry + PLAN_GRACE_DAYS * DAY_MS >= now;
 
-    const invoices = await ctx.db
-      .query("subscriptionInvoices")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .take(50);
-
     return {
       plan,
       storedPlan,
       planExpiresAt: expiry,
       inGrace,
       limits: PLAN_LIMITS[plan],
-      invoices: invoices.map((inv) => ({
-        _id: inv._id,
-        plan: inv.plan,
-        amountCentavos: inv.amountCentavos,
-        status: inv.status,
-        periodStart: inv.periodStart ?? null,
-        periodEnd: inv.periodEnd ?? null,
-        createdAt: inv.createdAt,
-      })),
       pricing: await readPlanPricing(ctx),
     };
-  },
-});
-
-// Internal query for the PayRex action to load the invoice user + pricing.
-export const getInvoiceContext = internalQuery({
-  args: { userId: v.id("users"), plan: v.union(v.literal("pro"), v.literal("business")) },
-  handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
-    const pricing = await readPlanPricing(ctx);
-    return { user, pricing };
-  },
-});
-
-// Internal mutation: create the pending invoice row. Returns its id.
-export const createPendingInvoice = internalMutation({
-  args: {
-    userId: v.id("users"),
-    plan: v.union(v.literal("pro"), v.literal("business")),
-    amountCentavos: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const invoiceId = await ctx.db.insert("subscriptionInvoices", {
-      userId: args.userId,
-      plan: args.plan,
-      amountCentavos: args.amountCentavos,
-      periodDays: PLAN_PERIOD_DAYS,
-      status: "pending",
-      createdAt: Date.now(),
-    });
-    return invoiceId;
-  },
-});
-
-// Idempotent version of createPendingInvoice: reuses an existing PENDING
-// invoice for the same (userId, plan) instead of always inserting a new one.
-// This closes the double-charge hole where a double-click / tab reload /
-// network retry on the upgrade button created two independent invoices that
-// could both be paid (Payments audit #2).
-export const findOrCreatePendingInvoice = internalMutation({
-  args: {
-    userId: v.id("users"),
-    plan: v.union(v.literal("pro"), v.literal("business")),
-    amountCentavos: v.number(),
-  },
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("subscriptionInvoices")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .filter((q) => q.and(q.eq(q.field("plan"), args.plan), q.eq(q.field("status"), "pending")))
-      .first();
-    if (existing) {
-      return existing._id;
-    }
-    return await ctx.db.insert("subscriptionInvoices", {
-      userId: args.userId,
-      plan: args.plan,
-      amountCentavos: args.amountCentavos,
-      periodDays: PLAN_PERIOD_DAYS,
-      status: "pending",
-      createdAt: Date.now(),
-    });
-  },
-});
-
-// Attach the PayRex session ids to the pending invoice (after creation).
-export const attachInvoiceSession = internalMutation({
-  args: {
-    invoiceId: v.id("subscriptionInvoices"),
-    payrexCheckoutId: v.string(),
-    paymentIntentId: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const inv = await ctx.db.get(args.invoiceId);
-    if (!inv) throw new Error("Invoice not found");
-    await ctx.db.patch(args.invoiceId, {
-      payrexCheckoutId: args.payrexCheckoutId,
-      paymentIntentId: args.paymentIntentId ?? inv.paymentIntentId,
-    });
-    return { success: true };
-  },
-});
-
-/**
- * Create a PayRex hosted checkout for a plan upgrade/renewal. Mirrors the
- * fetch/form-encoding approach of convex/payrex.ts.
- */
-export const createUpgradeCheckout = action({
-  args: { plan: v.union(v.literal("pro"), v.literal("business")) },
-  handler: async (ctx, args): Promise<{ url: string }> => {
-    const secretKey = process.env.PAYREX_SECRET_KEY;
-    if (!secretKey) throw new Error("PAYREX_SECRET_KEY is not configured");
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!appUrl) throw new Error("NEXT_PUBLIC_APP_URL is not configured");
-
-    // Resolve the authenticated user id via an internal query path.
-    const me = await ctx.runQuery(internal.billing.getMeForCheckout, {});
-    if (!me) throw new Error("Unauthorized: sign in to upgrade");
-
-    const { user, pricing } = await ctx.runQuery(internal.billing.getInvoiceContext, {
-      userId: me.userId,
-      plan: args.plan,
-    });
-    if (!user) throw new Error("User not found");
-
-    const amount = args.plan === "pro" ? pricing.pro : pricing.business;
-    const planName = PLAN_LIMITS[args.plan].name;
-
-    const invoiceId = await ctx.runMutation(internal.billing.findOrCreatePendingInvoice, {
-      userId: me.userId,
-      plan: args.plan,
-      amountCentavos: amount,
-    });
-
-    const pairs: Array<[string, string]> = [
-      ["currency", "PHP"],
-      ["success_url", `${appUrl}/dashboard/billing?paid=1`],
-      ["cancel_url", `${appUrl}/dashboard/billing?cancelled=1`],
-      ["billing_details_collection", "auto"],
-    ];
-    for (const method of ["gcash", "maya", "card", "qrph"]) {
-      pairs.push(["payment_methods[]", method]);
-    }
-    pairs.push(["line_items[][name]", `${CONNECTA.name} ${planName} — 30 days`]);
-    pairs.push(["line_items[][amount]", String(amount)]);
-    pairs.push(["line_items[][quantity]", "1"]);
-    pairs.push(["metadata[invoice_id]", invoiceId]);
-
-    const body = pairs
-      .map(([k, val]) => `${encodeURIComponent(k)}=${encodeURIComponent(val)}`)
-      .join("&");
-
-    const res = await fetch("https://api.payrexhq.com/checkout_sessions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: "Basic " + btoa(`${secretKey}:`),
-        "Idempotency-Key": `upgrade-invoice-${invoiceId}`,
-      },
-      body,
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`PayRex checkout session creation failed (${res.status}): ${errText}`);
-    }
-    const session = (await res.json()) as {
-      id: string;
-      url: string;
-      payment_intent?: string | { id?: string };
-    };
-    const paymentIntentId =
-      typeof session.payment_intent === "string"
-        ? session.payment_intent
-        : session.payment_intent?.id;
-
-    await ctx.runMutation(internal.billing.attachInvoiceSession, {
-      invoiceId,
-      payrexCheckoutId: session.id,
-      paymentIntentId,
-    });
-
-    return { url: session.url };
-  },
-});
-
-// Internal query: resolve the authenticated caller's userId for the action.
-export const getMeForCheckout = internalQuery({
-  args: {},
-  handler: async (ctx): Promise<{ userId: Id<"users"> } | null> => {
-    const user = await getAuthedUser(ctx);
-    if (!user) return null;
-    return { userId: user._id };
-  },
-});
-
-/**
- * Activate a paid invoice (called by the PayRex webhook). Marks the invoice
- * paid, sets the user's plan and planExpiresAt = max(now, currentExpiry) + 30d,
- * and auto-creates a team for business upgrades. Idempotent.
- */
-export const internalActivateInvoice = internalMutation({
-  args: {
-    invoiceId: v.optional(v.id("subscriptionInvoices")),
-    payrexCheckoutId: v.optional(v.string()),
-    paymentIntentId: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    let invoice: Doc<"subscriptionInvoices"> | null = null;
-    if (args.invoiceId) {
-      invoice = await ctx.db.get(args.invoiceId);
-    }
-    if (!invoice && args.payrexCheckoutId) {
-      invoice = await ctx.db
-        .query("subscriptionInvoices")
-        .withIndex("by_checkoutId", (q) => q.eq("payrexCheckoutId", args.payrexCheckoutId))
-        .first();
-    }
-    if (!invoice && args.paymentIntentId) {
-      invoice = await ctx.db
-        .query("subscriptionInvoices")
-        .withIndex("by_paymentIntentId", (q) => q.eq("paymentIntentId", args.paymentIntentId))
-        .first();
-    }
-    if (!invoice) {
-      return { success: false, reason: "invoice_not_found" };
-    }
-    if (invoice.status === "paid") {
-      return { success: true, alreadyProcessed: true };
-    }
-
-    const user = await ctx.db.get(invoice.userId);
-    if (!user) {
-      return { success: false, reason: "user_not_found" };
-    }
-
-    const now = Date.now();
-    const currentExpiry = user.planExpiresAt ?? 0;
-    // Renewals extend from the later of now / current expiry (no lost days).
-    const base = Math.max(now, currentExpiry);
-    const periodStart = now;
-    const periodEnd = base + invoice.periodDays * DAY_MS;
-
-    await ctx.db.patch(invoice._id, {
-      status: "paid",
-      paymentIntentId: args.paymentIntentId ?? invoice.paymentIntentId,
-      periodStart,
-      periodEnd,
-    });
-
-    const userPatch: Partial<Doc<"users">> = {
-      plan: invoice.plan,
-      planExpiresAt: periodEnd,
-    };
-
-    // Business upgrade with no team yet → auto-create a workspace.
-    if (invoice.plan === "business" && !user.teamId) {
-      const teamName = `${user.name || user.email || "My"}'s team`;
-      const teamId = await ctx.db.insert("teams", {
-        name: teamName,
-        ownerId: user._id,
-        seats: PLAN_LIMITS.business.teamSeats,
-        companyName: user.onboardingData?.company,
-        createdAt: now,
-      });
-      userPatch.teamId = teamId;
-    }
-
-    await ctx.db.patch(user._id, userPatch);
-
-    return { success: true, plan: invoice.plan, periodEnd };
-  },
-});
-
-// Called by the webhook when PayRex reports a failed/expired checkout for a
-// subscription invoice, so the invoice stops showing as permanently
-// "pending" and the user can see (and retry) the failure (Payments #1).
-export const internalFailInvoice = internalMutation({
-  args: { invoiceId: v.id("subscriptionInvoices") },
-  handler: async (ctx, args) => {
-    const invoice = await ctx.db.get(args.invoiceId);
-    if (!invoice || invoice.status !== "pending") {
-      return { success: false, reason: "not_pending" };
-    }
-    await ctx.db.patch(args.invoiceId, { status: "expired" });
-    return { success: true };
   },
 });
 
@@ -472,7 +178,3 @@ export const getPlanPricing = query({
 // Re-export for callers that want plan limits without a round trip.
 export { PLAN_LIMITS, effectivePlan as _effectivePlan };
 export type { PlanId };
-
-// Silence unused import lint (requireUser used by other modules via shared
-// patterns); keep available for future billing mutations.
-void requireUser;

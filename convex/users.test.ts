@@ -209,39 +209,6 @@ async function seedFullAccount(t: ReturnType<typeof convexTest>, clerkId: string
       updatedAt: Date.now(),
     });
 
-    const invoiceId = await ctx.db.insert("subscriptionInvoices", {
-      userId,
-      plan: "pro",
-      amountCentavos: 29900,
-      periodDays: 30,
-      status: "paid",
-      createdAt: Date.now(),
-    });
-
-    const orderId = await ctx.db.insert("orders", {
-      orderNumber: `TF-${clerkId}`,
-      userId,
-      status: "delivered",
-      items: [],
-      subtotal: 100,
-      tax: 0,
-      shipping: 0,
-      total: 100,
-      currency: "PHP",
-      paymentProvider: "payrex",
-      paymentStatus: "paid",
-      shippingAddress: {
-        fullName: "Delete Me",
-        addressLine1: "123 Street",
-        city: "Manila",
-        postalCode: "1000",
-        country: "PH",
-        phone: "0917",
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-
     const adminId = await ctx.db.insert("admins", {
       userId,
       role: "moderator",
@@ -266,8 +233,6 @@ async function seedFullAccount(t: ReturnType<typeof convexTest>, clerkId: string
       propertyId,
       projectId,
       cartId,
-      invoiceId,
-      orderId,
       adminId,
       priorAuditLogId,
     };
@@ -290,8 +255,6 @@ test("deleteMyAccount erases the caller's own data across every referencing tabl
     expect(await ctx.db.get(seed.propertyId)).toBeNull();
     expect(await ctx.db.get(seed.projectId)).toBeNull();
     expect(await ctx.db.get(seed.cartId)).toBeNull();
-    expect(await ctx.db.get(seed.invoiceId)).toBeNull();
-    expect(await ctx.db.get(seed.orderId)).toBeNull();
     expect(await ctx.db.get(seed.adminId)).toBeNull();
   });
 });
@@ -318,7 +281,6 @@ test("deleteMyAccount cannot delete another user's account or data", async () =>
     expect(await ctx.db.get(victim.profileId)).not.toBeNull();
     expect(await ctx.db.get(victim.leadId)).not.toBeNull();
     expect(await ctx.db.get(victim.cardId)).not.toBeNull();
-    expect(await ctx.db.get(victim.orderId)).not.toBeNull();
   });
 
   // And a follow-up call cannot reach the victim by any means — there is no

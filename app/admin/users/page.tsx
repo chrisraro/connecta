@@ -102,7 +102,6 @@ export default function AdminUsersPage() {
               <TableHead className="text-muted-foreground">Role</TableHead>
               <TableHead className="text-muted-foreground">Plan</TableHead>
               <TableHead className="text-muted-foreground">Cards</TableHead>
-              <TableHead className="text-muted-foreground">Orders</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground text-right">Actions</TableHead>
             </TableRow>
@@ -168,7 +167,6 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-foreground font-mono">{u.cardCount}</TableCell>
-                    <TableCell className="text-foreground font-mono">{u.orderCount}</TableCell>
                     <TableCell>
                       {isSuspended ? (
                         <Badge className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">

@@ -67,7 +67,7 @@ const UNCAUGHT_DETAIL_RE =
 // raw Convex transport envelope, if it's exactly the meaningless literal
 // "Server Error", or if it's a raw stack-trace line. This is intentionally
 // narrow: a message that merely *ends* with the words "Server Error" (e.g.
-// "PayRex checkout session creation failed (500): Internal Server Error")
+// "Email delivery failed (500): Internal Server Error")
 // is legitimate diagnostic text and must NOT be caught here — only the
 // literal Convex-envelope shape is unsafe.
 //

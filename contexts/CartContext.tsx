@@ -41,11 +41,10 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Helper to generate/retrieve guest ID. Exported so other shop surfaces that
-// need a stable per-browser id for an unauthenticated caller (e.g.
-// checkout.validateDiscount's rate-limit key, see app/shop/cart/page.tsx and
-// app/shop/checkout/page.tsx) reuse the SAME id instead of minting their own,
-// which would otherwise scatter unrelated per-browser ids across the app.
+// Helper to generate/retrieve guest ID. Exported so any other shop surface
+// that needs a stable per-browser id for an unauthenticated caller reuses
+// the SAME id instead of minting its own, which would otherwise scatter
+// unrelated per-browser ids across the app.
 export function getOrCreateGuestId(): string {
   if (typeof window === "undefined") return "";
 

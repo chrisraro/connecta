@@ -16,8 +16,6 @@ export const ping = query({
 // Secrets whose *presence* (not value) in the Convex deployment's env is
 // worth surfacing to /api/health. Keep in sync with README's env table.
 const CONFIG_KEYS = [
-  "PAYREX_SECRET_KEY",
-  "PAYREX_WEBHOOK_SECRET",
   "RESEND_API_KEY",
   "CLERK_SECRET_KEY",
   "CLERK_WEBHOOK_SIGNING_SECRET",
@@ -37,7 +35,7 @@ export type ConfigPresence = Record<(typeof CONFIG_KEYS)[number], boolean>;
  * Deliberately NOT rate-limited: it performs zero database reads (this is
  * pure `process.env` access, not a `ctx.db` call), so it carries none of
  * the read-bandwidth cost `convex/rateLimit.ts` exists to bound, and its
- * output space is six booleans with no sensitive content — there is no
+ * output space is four booleans with no sensitive content — there is no
  * information an attacker gains by calling it 1 time vs. 100,000 times.
  * Convex's platform-level function-call limits are the appropriate backstop
  * for raw call volume; an app-level limiter would add a mutation-based

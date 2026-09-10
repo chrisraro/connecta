@@ -75,21 +75,13 @@ export const internalPurgeTestAccounts = internalMutation({
         continue;
       }
 
-      const invoices = await ctx.db
-        .query("subscriptionInvoices")
-        .withIndex("by_user", (q) => q.eq("userId", userId))
-        .collect();
-      if (invoices.some((i) => i.status === "paid")) {
-        refused.push({ clerkId, email: user.email, reason: "has_paid_invoice" });
-        continue;
-      }
-
-      const orders = await ctx.db
-        .query("orders")
-        .withIndex("by_user", (q) => q.eq("userId", userId))
-        .collect();
-      if (orders.some((o) => o.paymentStatus === "paid")) {
-        refused.push({ clerkId, email: user.email, reason: "has_paid_order" });
+      // A customer who has paid us for something is never purged by a
+      // bulk job. With no payment gateway there are no invoice or order
+      // rows to consult, so the stored plan is the record of that: anyone
+      // ever put on a paid plan is refused here and must be removed
+      // deliberately, one at a time.
+      if ((user.plan ?? "free") !== "free") {
+        refused.push({ clerkId, email: user.email, reason: "has_paid_plan" });
         continue;
       }
 
@@ -142,8 +134,6 @@ export const internalPurgeTestAccounts = internalMutation({
         projects: projects.length,
         carts: carts.length,
         auditLogsRetained: auditLogs.length,
-        unpaidInvoices: invoices.length,
-        unpaidOrders: orders.length,
       };
       report.push(entry);
 
@@ -156,8 +146,6 @@ export const internalPurgeTestAccounts = internalMutation({
       for (const p of properties) await ctx.db.delete(p._id);
       for (const p of projects) await ctx.db.delete(p._id);
       for (const c of carts) await ctx.db.delete(c._id);
-      for (const i of invoices) await ctx.db.delete(i._id);
-      for (const o of orders) await ctx.db.delete(o._id);
 
       // Physical cards survive as inventory, unassigned.
       for (const c of cards) {

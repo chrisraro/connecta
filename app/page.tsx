@@ -349,8 +349,8 @@ export default function LandingPage() {
             </Reveal>
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Plans are prepaid 30-day periods, billed securely via PayRex (GCash, Maya, Card, QR Ph).
-            NFC cards are available in the{" "}
+            Plans are prepaid 30-day periods. Online checkout is on our roadmap — for now we set up
+            upgrades with you directly. NFC cards are available in the{" "}
             <Link
               href="/shop"
               className="font-medium text-primary underline-offset-4 hover:underline"

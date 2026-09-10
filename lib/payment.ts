@@ -1,29 +1,25 @@
 /**
- * Payment helpers (PayRex)
+ * PHP currency formatting helpers.
  *
- * DEPRECATION NOTE
- * ----------------
- * The previous Stripe/PayPal provider-abstraction layer has been removed.
- * Payments are now handled exclusively by PayRex via hosted Checkout Sessions:
- *   - Session creation: convex/payrex.ts (Convex action `createCheckoutSession`)
- *   - Webhook confirmation: convex/http.ts (`/webhooks/payrex`)
+ * Named for the amounts it formats, not for a payment gateway — there is
+ * none. The shop routes purchases to an inquiry and plan upgrades are
+ * arranged directly, so nothing here talks to a processor.
  *
- * This module exposes PHP currency formatting helpers for TWO distinct
- * storage conventions that coexist in this codebase — pick the one that
- * matches where the amount came from, they are not interchangeable:
+ * It exposes formatters for TWO distinct storage conventions that coexist
+ * in this codebase — pick the one that matches where the amount came from,
+ * they are not interchangeable:
  *
  *   - `formatPHP` — for amounts stored as integer CENTAVOS (PHP cents).
  *     This is subscription/billing amounts (convex/plans.ts
- *     `priceCentavos`), the shop/checkout system (convex/schema.ts
- *     `products.basePrice`, `carts.items.priceAtAdd`, `orders`), and
- *     billing invoices (`amountCentavos`).
+ *     `priceCentavos`) and the shop catalog (convex/schema.ts
+ *     `products.basePrice`, `carts.items.priceAtAdd`).
  *   - `formatCatalogPrice` — for a profile's Storefront/Portfolio catalog
  *     price (`profiles.products[].price`, convex/schema.ts), which the
  *     builder stores as a plain decimal PESO amount (`Number(p.price)`,
- *     no ×100 conversion — see app/dashboard/builder/page.tsx
+ *     no x100 conversion — see app/dashboard/builder/page.tsx
  *     `cleanProducts`). Feeding that value into `formatPHP` divides an
  *     already-in-pesos amount by 100 a second time (audit-journey Major
- *     #7: ₱19.99 rendered as ₱0.20 on the Storefront tab).
+ *     #7: P19.99 rendered as P0.20 on the Storefront tab).
  */
 
 const phpFormatter = new Intl.NumberFormat("en-PH", {

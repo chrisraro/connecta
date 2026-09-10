@@ -168,17 +168,16 @@ test("deleteCards deletes allowed cards and reports skipped ids in a mixed batch
 /**
  * Behavior-preservation tests for getAllUsers/getCards.
  *
- * getAllUsers (pre-conversion) collects the full `users` and `orders`
- * tables, then for every user runs two more per-user sub-queries (admins,
- * cards) — the N+1 pattern the audit flagged. getCards collects the whole
- * `cards` table unbounded. These tests seed rows on both sides of the
- * relevant boundaries (active vs. revoked admin grant, a subtle
- * revoke-then-regrant history, cards/orders belonging vs. not belonging to
- * a user) so a batched/capped conversion that quietly changes results fails
- * loudly.
+ * getAllUsers (pre-conversion) collects the full `users` table, then for
+ * every user runs two more per-user sub-queries (admins, cards) — the N+1
+ * pattern the audit flagged. getCards collects the whole `cards` table
+ * unbounded. These tests seed rows on both sides of the relevant
+ * boundaries (active vs. revoked admin grant, a subtle revoke-then-regrant
+ * history, cards belonging vs. not belonging to a user) so a batched/capped
+ * conversion that quietly changes results fails loudly.
  */
 
-test("getAllUsers reports accurate per-user card/order counts and admin role for a plain admin grant", async () => {
+test("getAllUsers reports an accurate per-user card count and admin role for a plain admin grant", async () => {
   const t = convexTest(schema);
   const { userId: adminId, asAdmin } = await seedAdmin(t, "admin_clerk_id");
 
@@ -196,62 +195,11 @@ test("getAllUsers reports accurate per-user card/order counts and admin role for
   // A card owned by someone else must not leak into plainUser's count.
   await seedCard(t, adminId, "inventory", "admin-card-1");
 
-  await t.run(async (ctx) => {
-    await ctx.db.insert("orders", {
-      orderNumber: "ORD-PLAIN-1",
-      userId: plainUserId,
-      status: "pending",
-      items: [],
-      subtotal: 100,
-      tax: 0,
-      shipping: 0,
-      total: 100,
-      currency: "PHP",
-      paymentProvider: "payrex",
-      paymentStatus: "pending",
-      shippingAddress: {
-        fullName: "Plain User",
-        addressLine1: "1 Test St",
-        city: "Manila",
-        postalCode: "1000",
-        country: "PH",
-        phone: "09171234567",
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-    // An order belonging to someone else must not count toward plainUser.
-    await ctx.db.insert("orders", {
-      orderNumber: "ORD-ADMIN-1",
-      userId: adminId,
-      status: "pending",
-      items: [],
-      subtotal: 50,
-      tax: 0,
-      shipping: 0,
-      total: 50,
-      currency: "PHP",
-      paymentProvider: "payrex",
-      paymentStatus: "pending",
-      shippingAddress: {
-        fullName: "Admin",
-        addressLine1: "1 Test St",
-        city: "Manila",
-        postalCode: "1000",
-        country: "PH",
-        phone: "09171234567",
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-  });
-
   const result = await asAdmin.query(api.admin.getAllUsers, { clerkId: "admin_clerk_id" });
 
   const plainUserRow = result.find((u) => u.id === plainUserId);
   expect(plainUserRow).toBeDefined();
   expect(plainUserRow?.cardCount).toBe(2);
-  expect(plainUserRow?.orderCount).toBe(1);
   expect(plainUserRow?.role).toBe("agent");
   expect(plainUserRow?.adminRole).toBeNull();
 
@@ -259,7 +207,6 @@ test("getAllUsers reports accurate per-user card/order counts and admin role for
   expect(adminRow?.role).toBe("admin");
   expect(adminRow?.adminRole).toBe("superadmin");
   expect(adminRow?.cardCount).toBe(1);
-  expect(adminRow?.orderCount).toBe(1);
 });
 
 test("getAllUsers treats a user whose ONLY admin grant was revoked as a plain agent, not admin", async () => {

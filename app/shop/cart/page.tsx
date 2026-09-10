@@ -2,25 +2,19 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useQuery, useAction } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useCart, getOrCreateGuestId } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Loader2, Mail } from "lucide-react";
+import { useState } from "react";
 import { formatPHP } from "@/lib/payment";
-import { DISCOUNT_CODE_KEY } from "@/lib/storage-keys";
 import { toUserMessage } from "@/lib/errors";
 import { toast } from "sonner";
+import { InquiryDialog } from "@/components/inquiry/InquiryDialog";
 
 const formatPrice = formatPHP;
-
-// How long to wait after the last subtotal/code change before re-validating
-// the applied discount — see the comment on the effect below (Task 19
-// follow-up, Task 18 review).
-const DISCOUNT_REVALIDATE_DEBOUNCE_MS = 600;
 
 function CartItemImage({ storageId, alt }: { storageId: string; alt: string }) {
   const imageUrl = useQuery(
@@ -41,20 +35,26 @@ function CartItemImage({ storageId, alt }: { storageId: string; alt: string }) {
   return <Image src={displayUrl} alt={alt} fill sizes="96px" className="object-cover" />;
 }
 
+/**
+ * The shop "cart" is an inquiry basket, not a checkout funnel.
+ *
+ * There is no payment gateway in this product: a shopper collects the cards
+ * they want here and sends the list to us as a purchase inquiry, which we
+ * complete off-app. Everything that only made sense alongside a real
+ * checkout — discount codes, tax and shipping lines, an order total — is
+ * gone. The subtotal stays, because it is exactly what the shopper is
+ * asking us about.
+ */
 export default function CartPage() {
   const { items, itemCount, subtotal, isLoading, updateQuantity, removeItem, clearCart } =
     useCart();
-  const [discountCode, setDiscountCode] = useState("");
-  const [appliedCode, setAppliedCode] = useState<string | null>(null);
+  const [showInquiry, setShowInquiry] = useState(false);
 
-  // Task 19 follow-up (Task 18 review, Medium): addItem/updateQuantity/
-  // removeItem/clearCart in CartContext all re-throw on failure, but every
-  // caller here previously fired-and-forgot them straight from onClick with
-  // no try/catch at all — a rejected mutation (stale stock, network error,
-  // rate limit) surfaced NOWHERE, leaving the customer staring at a button
-  // that silently did nothing. Wrapping each in the established
-  // toUserMessage + sonner toast pattern (see components/ui/image-uploader.tsx)
-  // makes failures visible instead of swallowed.
+  // addItem/updateQuantity/removeItem/clearCart in CartContext all re-throw
+  // on failure. Every caller here routes that through the established
+  // toUserMessage + sonner toast pattern, so a rejected mutation (stale
+  // stock, network error, rate limit) is visible instead of leaving the
+  // customer staring at a button that silently did nothing.
   const handleUpdateQuantity = async (
     productId: Parameters<typeof updateQuantity>[0],
     variationId: Parameters<typeof updateQuantity>[1],
@@ -86,85 +86,21 @@ export default function CartPage() {
     }
   };
 
-  // Shop settings are the single source of truth for tax/shipping (no hardcoding).
-  const settings = useQuery(api.settings.getShopSettings, {});
-
-  // validateDiscount is a Convex action (not a query) so it can meter itself
-  // via ctx.runMutation before revealing a code's validity/value — see
-  // convex/checkout.ts. Unlike useQuery this isn't reactive, so we trigger it
-  // ourselves whenever the applied code or subtotal changes and hold the
-  // result in local state.
-  const validateDiscountAction = useAction(api.checkout.validateDiscount);
-  const [discountResult, setDiscountResult] = useState<Awaited<
-    ReturnType<typeof validateDiscountAction>
-  > | null>(null);
-
-  // Debounced (Task 19 follow-up, Task 18 review, Medium): subtotal changes
-  // on every quantity +/- click, and this effect re-runs on every subtotal
-  // change while a code is applied — undebounced, a shopper fiddling with
-  // quantities fires one validateDiscount call per click, and validateDiscount
-  // is metered against a SINGLE SHOP-WIDE bucket (convex/checkout.ts's
-  // discount-validate:global — this shop has no ownerId to scope it further).
-  // A few concurrent shoppers doing that during a sale could exhaust that
-  // bucket and 60s-block every customer. Waiting for quantity changes to
-  // settle before validating fixes the self-inflicted-DoS side of that; see
-  // convex/checkout.ts#DISCOUNT_VALIDATE_GLOBAL_MAX for the other half (the
-  // ceiling itself was also raised).
-  useEffect(() => {
-    if (!appliedCode) {
-      setDiscountResult(null);
-      return;
-    }
-    let cancelled = false;
-    const timeoutId = setTimeout(() => {
-      validateDiscountAction({
-        code: appliedCode,
-        subtotal,
-        visitorId: getOrCreateGuestId(),
-      })
-        .then((result) => {
-          if (!cancelled) setDiscountResult(result);
-        })
-        .catch((err) => {
-          if (!cancelled) setDiscountResult({ valid: false, error: toUserMessage(err) });
-        });
-    }, DISCOUNT_REVALIDATE_DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-    };
-    // validateDiscountAction's identity is stable across renders (convex/react
-    // memoizes action hooks the same way it does mutation hooks); omitting it
-    // avoids re-running this effect on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appliedCode, subtotal]);
-
-  const discountAmount = discountResult && discountResult.valid ? discountResult.discountAmount : 0;
-  const discountError = discountResult && !discountResult.valid ? discountResult.error : null;
-
-  const freeShippingThreshold = settings?.freeShippingThresholdCentavos ?? 250000;
-  const shippingFlatRate = settings?.shippingFlatRateCentavos ?? 50000;
-  const taxRatePercent = settings?.taxRatePercent ?? 0;
-
-  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
-  const shipping = discountedSubtotal >= freeShippingThreshold ? 0 : shippingFlatRate;
-  const tax = Math.round(discountedSubtotal * (taxRatePercent / 100));
-  const total = subtotal + shipping + tax - discountAmount;
-
-  const handleApplyDiscount = () => {
-    const code = discountCode.trim() || null;
-    setAppliedCode(code);
-  };
-
-  // Persist a successfully-applied code so checkout can pass it into createOrder.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (discountResult?.valid) {
-      localStorage.setItem(DISCOUNT_CODE_KEY, discountResult.code);
-    } else if (appliedCode && discountResult && !discountResult.valid) {
-      localStorage.removeItem(DISCOUNT_CODE_KEY);
-    }
-  }, [discountResult, appliedCode]);
+  // The inquiry email carries the basket itself, so the shopper never has to
+  // retype what they picked and we never have to ask.
+  const inquiryBody = [
+    "Hi! I would like to purchase the following:",
+    "",
+    ...items.map((item) => {
+      const name = item.product?.name ?? "Product";
+      const variant = item.variation ? ` (${item.variation.name})` : "";
+      return `- ${item.quantity} x ${name}${variant} — ${formatPrice(item.lineTotal || 0)}`;
+    }),
+    "",
+    `Subtotal: ${formatPrice(subtotal)}`,
+    "",
+    "Please let me know the next steps. Thanks!",
+  ].join("\n");
 
   if (isLoading) {
     return (
@@ -178,9 +114,9 @@ export default function CartPage() {
     return (
       <div className="text-center py-16">
         <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Your Cart is Empty</h1>
+        <h1 className="text-2xl font-bold mb-2">Your List is Empty</h1>
         <p className="text-muted-foreground mb-6">
-          Looks like you haven&apos;t added anything to your cart yet.
+          Add the cards you&apos;re interested in and we&apos;ll take it from there.
         </p>
         <Link href="/shop">
           <Button size="lg">
@@ -196,14 +132,14 @@ export default function CartPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Shopping Cart</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Your Selection</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            {itemCount} item{itemCount !== 1 ? "s" : ""} in your cart
+            {itemCount} item{itemCount !== 1 ? "s" : ""} ready to inquire about
           </p>
         </div>
         <Button variant="outline" onClick={() => handleClearCart()} className="w-full sm:w-auto">
           <Trash2 className="w-4 h-4 mr-2" />
-          <span className="hidden sm:inline">Clear Cart</span>
+          <span className="hidden sm:inline">Clear List</span>
           <span className="sm:hidden">Clear</span>
         </Button>
       </div>
@@ -310,7 +246,7 @@ export default function CartPage() {
         <div className="lg:col-span-1">
           <Card className="sticky top-24">
             <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+              <CardTitle>Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between">
@@ -318,71 +254,15 @@ export default function CartPage() {
                 <span className="font-medium">{formatPrice(subtotal)}</span>
               </div>
 
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discount{appliedCode ? ` (${appliedCode})` : ""}</span>
-                  <span className="font-medium">-{formatPrice(discountAmount)}</span>
-                </div>
-              )}
+              <p className="text-xs text-muted-foreground">
+                Shipping is quoted with your inquiry — it depends on where the cards are going.
+              </p>
 
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Shipping</span>
-                <span className="font-medium">
-                  {shipping === 0 ? "Free" : formatPrice(shipping)}
-                </span>
-              </div>
-
-              {tax > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax ({taxRatePercent}%)</span>
-                  <span className="font-medium">{formatPrice(tax)}</span>
-                </div>
-              )}
-
-              <div className="pt-4 border-t border-border">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Discount Code</label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter code"
-                      value={discountCode}
-                      onChange={(e) => setDiscountCode(e.target.value)}
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={handleApplyDiscount}
-                      disabled={!discountCode}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                  {discountError && <p className="text-xs text-destructive">{discountError}</p>}
-                  {discountAmount > 0 && (
-                    <p className="text-xs text-green-600">Discount applied!</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-border">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span>{formatPrice(total)}</span>
-                </div>
-                {shipping > 0 && discountedSubtotal < freeShippingThreshold && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Add {formatPrice(freeShippingThreshold - discountedSubtotal)} more for free
-                    shipping!
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-4 space-y-3">
-                <Link href="/shop/checkout">
-                  <Button size="lg" className="w-full mb-3">
-                    Proceed to Checkout
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+              <div className="pt-4 space-y-3 border-t border-border">
+                <Button size="lg" className="w-full mb-3" onClick={() => setShowInquiry(true)}>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Send Purchase Inquiry
+                </Button>
 
                 <Link href="/shop">
                   <Button variant="outline" className="w-full">
@@ -394,6 +274,16 @@ export default function CartPage() {
           </Card>
         </div>
       </div>
+
+      <InquiryDialog
+        open={showInquiry}
+        onOpenChange={setShowInquiry}
+        title="Send your purchase inquiry"
+        description="Online checkout is on our roadmap. For now we arrange each order personally — send us your list and we'll reply with payment and delivery details."
+        supportBody="Your selection is already written into the email, so you only need to hit send."
+        mailSubject="Card purchase inquiry"
+        mailBody={inquiryBody}
+      />
     </div>
   );
 }

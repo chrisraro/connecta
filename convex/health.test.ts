@@ -4,8 +4,6 @@ import schema from "./schema";
 import { api } from "./_generated/api";
 
 const CONFIG_KEYS = [
-  "PAYREX_SECRET_KEY",
-  "PAYREX_WEBHOOK_SECRET",
   "RESEND_API_KEY",
   "CLERK_SECRET_KEY",
   "CLERK_WEBHOOK_SIGNING_SECRET",
@@ -26,15 +24,12 @@ test("checkConfig reports true for every configured secret and false for every u
   for (const key of CONFIG_KEYS) {
     vi.stubEnv(key, "");
   }
-  vi.stubEnv("PAYREX_SECRET_KEY", "sk_live_super_secret_value");
   vi.stubEnv("CLERK_SECRET_KEY", "sk_clerk_super_secret_value");
 
   const t = convexTest(schema);
   const result = await t.query(api.health.checkConfig, {});
 
   expect(result).toEqual({
-    PAYREX_SECRET_KEY: true,
-    PAYREX_WEBHOOK_SECRET: false,
     RESEND_API_KEY: false,
     CLERK_SECRET_KEY: true,
     CLERK_WEBHOOK_SIGNING_SECRET: false,
@@ -61,8 +56,6 @@ test("checkConfig never returns anything but booleans, even for a whitespace-onl
 
 test("checkConfig response never contains a secret's actual value as a substring", async () => {
   const secretValues = {
-    PAYREX_SECRET_KEY: "sk_live_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    PAYREX_WEBHOOK_SECRET: "whsec_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
     RESEND_API_KEY: "re_CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
     CLERK_SECRET_KEY: "sk_clerk_DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
     CLERK_WEBHOOK_SIGNING_SECRET: "whsec_EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",

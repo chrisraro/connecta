@@ -150,11 +150,6 @@ export default function PrivacyPolicyPage() {
             described above is stored here.
           </li>
           <li>
-            <strong>PayRex</strong> (payrexhq.com) — payment processing for card purchases and plan
-            subscriptions (GCash, Maya, card, and QR Ph). PayRex, not {CONNECTA.name}, handles your
-            card/payment credentials directly.
-          </li>
-          <li>
             <strong>Resend</strong> — delivery of transactional email (lead notifications, order
             confirmations).
           </li>
@@ -211,8 +206,8 @@ export default function PrivacyPolicyPage() {
           <li>All traffic is served over HTTPS.</li>
           <li>The public lead-capture form is rate-limited to reduce automated abuse and spam.</li>
           <li>
-            Payment webhooks from PayRex are verified using an HMAC signature before any payment or
-            order state is trusted.
+            Account webhooks from Clerk are verified using an HMAC signature, and rejected if the
+            signature or its timestamp does not check out, before any account state is changed.
           </li>
           <li>
             Authentication, session management, and credential storage are handled entirely by

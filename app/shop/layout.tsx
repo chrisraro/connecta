@@ -27,10 +27,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
         breadcrumbs.push({ label: "Product", href: pathname });
       } else if (paths[shopIndex + 1] === "cart") {
         breadcrumbs.push({ label: "Shop", href: "/shop" });
-        breadcrumbs.push({ label: "Cart", href: "/shop/cart" });
-      } else if (paths[shopIndex + 1] === "checkout") {
-        breadcrumbs.push({ label: "Shop", href: "/shop" });
-        breadcrumbs.push({ label: "Checkout", href: "/shop/checkout" });
+        breadcrumbs.push({ label: "Your Selection", href: "/shop/cart" });
       }
     }
 
@@ -88,7 +85,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
                 variant="ghost"
                 size="icon"
                 className="relative size-11"
-                aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+                aria-label={`Your selection, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
                 asChild
               >
                 <Link href="/shop/cart">
@@ -137,15 +134,11 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       {/* Trust strip */}
       <div className="border-b border-border bg-card/40">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground sm:px-6 lg:px-8">
-          <span>GCash, Maya, Card &amp; QR Ph accepted</span>
-          <span aria-hidden="true" className="hidden sm:inline">
-            &bull;
-          </span>
           <span>Ships nationwide PH</span>
           <span aria-hidden="true" className="hidden sm:inline">
             &bull;
           </span>
-          <span>Secure checkout via PayRex</span>
+          <span>Every order arranged personally</span>
         </div>
       </div>
 
@@ -175,7 +168,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
                   href="/shop/cart"
                   className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Shopping Cart
+                  Your Selection
                 </Link>
               </div>
             </div>
