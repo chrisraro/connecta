@@ -245,3 +245,52 @@ export function useSaveOnboarding() {
     },
   });
 }
+
+export type PublicProfileView = {
+  id: string;
+  ownerId: string;
+  name: string;
+  slug: string | null;
+  profileType: Profile["profile_type"];
+  agentInfo: Record<string, unknown>;
+  layoutConfig: Record<string, unknown>;
+  products: unknown;
+  services: unknown;
+  propertyListings: unknown;
+  inlineProjects: unknown;
+  skin: Profile["skin"];
+  showStorefront: boolean;
+  /** Plan entitlement, resolved server-side. The plan itself never crosses. */
+  showBranding: boolean;
+  teamBranding: {
+    companyName: string | null;
+    logoUrl: string | null;
+    accentColor: string | null;
+  } | null;
+};
+
+/**
+ * The public profile page read, by slug or id.
+ *
+ * Goes through an RPC because two fields depend on the OWNER's plan, and a
+ * visitor cannot read the owner's row -- deliberately. Only the derived
+ * result crosses the boundary, never the plan or its expiry.
+ */
+export function usePublicProfile(
+  lookup: { by: "id"; profileId: string } | { by: "slug"; slug: string },
+) {
+  const supabase = useSupabase();
+  const key = lookup.by === "id" ? lookup.profileId : lookup.slug;
+
+  return useQuery({
+    queryKey: ["publicProfile", lookup.by, key],
+    queryFn: async (): Promise<PublicProfileView | null> => {
+      const { data, error } = await supabase.rpc("get_public_profile", {
+        lookup_slug: lookup.by === "slug" ? lookup.slug : undefined,
+        lookup_id: lookup.by === "id" ? lookup.profileId : undefined,
+      });
+      if (error) throw error;
+      return (data as unknown as PublicProfileView) ?? null;
+    },
+  });
+}

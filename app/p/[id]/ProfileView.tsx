@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
 import { StorefrontView } from "@/components/templates/StorefrontView";
 import { ProfileData, ProfileType, DigitalCardConfig } from "@/types/profile";
@@ -13,6 +10,15 @@ import Link from "next/link";
 import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { CONNECTA } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
+import { usePublicProfile } from "@/hooks/useProfiles";
+import { jsonArrayOf, type LayoutConfig } from "@/lib/db/profile";
+import type {
+  ProfileInfo,
+  ProductItem,
+  ServiceItem,
+  PropertyListingItem,
+  InlineProject,
+} from "@/types/profile";
 
 /**
  * Client renderer for a public profile, shared by both the `/p/<id>`
@@ -29,19 +35,10 @@ export function ProfileView({
   const [activeTab, setActiveTab] = useState<"portfolio" | "storefront">("portfolio");
   const [showCardModal, setShowCardModal] = useState(false);
 
-  const byId = useQuery(
-    api.profiles.getProfile,
-    lookup.by === "id" ? { profileId: lookup.profileId as Id<"profiles"> } : "skip",
-  );
-  const bySlug = useQuery(
-    api.profiles.getProfileBySlug,
-    lookup.by === "slug" ? { slug: lookup.slug } : "skip",
-  );
-  const profile = lookup.by === "id" ? byId : bySlug;
-  const profileIdForCard =
-    lookup.by === "id" ? lookup.profileId : ((profile?._id as string | undefined) ?? "");
+  const { data: profile, isPending } = usePublicProfile(lookup);
+  const profileIdForCard = lookup.by === "id" ? lookup.profileId : (profile?.id ?? "");
 
-  if (profile === undefined) {
+  if (isPending) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -50,7 +47,7 @@ export function ProfileView({
     );
   }
 
-  if (profile === null) {
+  if (!profile) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center text-foreground">
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted text-muted-foreground">
@@ -71,7 +68,8 @@ export function ProfileView({
     );
   }
 
-  const { layoutConfig, agentInfo } = profile;
+  const layoutConfig = profile.layoutConfig as unknown as LayoutConfig;
+  const agentInfo = profile.agentInfo as unknown as ProfileInfo;
 
   const data: ProfileData = {
     ownerId: profile.ownerId,
@@ -80,12 +78,11 @@ export function ProfileView({
     agent: agentInfo,
     properties: [],
     projects: [],
-    products: profile.products,
-    services: profile.services,
-    propertyListings: profile.propertyListings,
-    inlineProjects: profile.inlineProjects,
+    products: jsonArrayOf<ProductItem>(profile.products),
+    services: jsonArrayOf<ServiceItem>(profile.services),
+    propertyListings: jsonArrayOf<PropertyListingItem>(profile.propertyListings),
+    inlineProjects: jsonArrayOf<InlineProject>(profile.inlineProjects),
     componentOrder: layoutConfig.componentOrder,
-    resolvedImages: profile.resolvedImages,
     theme: {
       primaryColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.primary,
       backgroundColor: layoutConfig.colorPalette.background,
@@ -93,7 +90,7 @@ export function ProfileView({
       secondaryColor: layoutConfig.colorPalette.secondary,
       accentColor: profile.teamBranding?.accentColor || layoutConfig.colorPalette.accent,
     },
-    digitalCard: profile.digitalCard as DigitalCardConfig | undefined,
+    digitalCard: undefined,
     showStorefront: profile.showStorefront,
   };
 
@@ -104,8 +101,7 @@ export function ProfileView({
   // profile with only tag-based services (no products) never auto-showed
   // its Storefront tab even though StorefrontView renders those tags fine.
   const hasCatalogItems =
-    (profile.products && profile.products.length > 0) ||
-    (agentInfo.services && agentInfo.services.length > 0);
+    data.products!.length > 0 || (agentInfo.services && agentInfo.services.length > 0);
   const isStorefrontEnabled =
     profile.showStorefront !== false && (profile.showStorefront || hasCatalogItems);
 
@@ -160,7 +156,7 @@ export function ProfileView({
         agent={agentInfo}
         profileId={profileIdForCard}
         profileSlug={profile.slug}
-        digitalCardConfig={profile.digitalCard}
+
         isOwner={false}
       />
 

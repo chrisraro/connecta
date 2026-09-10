@@ -1,5 +1,4 @@
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
+import { getProfileBySlug } from "@/lib/db/publicProfile";
 import { isReservedSlug } from "@/lib/slug";
 import {
   renderProfileOgImage,
@@ -7,6 +6,7 @@ import {
   ogImageSize,
   ogImageContentType,
 } from "@/lib/profileOgImage";
+import { agentInfoOf, layoutConfigOf } from "@/lib/db/profile";
 
 /**
  * Vanity-URL sibling of app/p/[id]/opengraph-image.tsx. `/<slug>` is the
@@ -22,8 +22,11 @@ export const contentType = ogImageContentType;
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const profile = isReservedSlug(slug)
-    ? null
-    : await fetchQuery(api.profiles.getProfileBySlug, { slug }).catch(() => null);
-  return renderProfileOgImage(profile);
+  const profile = isReservedSlug(slug) ? null : await getProfileBySlug(slug);
+  // The row carries agent_info/layout_config as Json, which Postgres cannot
+  // type. Narrowed here at the boundary rather than widening OgProfile,
+  // so the renderer keeps a precise input.
+  return renderProfileOgImage(
+    profile ? { agent_info: agentInfoOf(profile), layout_config: layoutConfigOf(profile) } : null,
+  );
 }

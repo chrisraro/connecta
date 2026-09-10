@@ -1001,6 +1001,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["plan_tier"];
       };
       get_my_team: { Args: never; Returns: Json };
+      get_public_profile: {
+        Args: { lookup_id?: string; lookup_slug?: string };
+        Returns: Json;
+      };
       get_team_leads: { Args: never; Returns: Json };
       is_admin: { Args: { check_user?: string }; Returns: boolean };
       is_reserved_slug: { Args: { candidate: string }; Returns: boolean };

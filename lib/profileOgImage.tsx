@@ -22,12 +22,12 @@ const SYSTEM_SANS =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
 export type OgProfile = {
-  agentInfo?: {
+  agent_info?: {
     fullName?: string;
     title?: string;
     company?: string;
   };
-  layoutConfig?: {
+  layout_config?: {
     themeId?: string;
     colorPalette?: {
       primary?: string;
@@ -39,10 +39,10 @@ export type OgProfile = {
   };
 } | null;
 
-export function renderProfileOgImage(profile: OgProfile) {
-  const palette = profile?.layoutConfig?.colorPalette;
+export function renderProfileOgImage(profile: OgProfile | null) {
+  const palette = profile?.layout_config?.colorPalette;
   const theme = resolveTheme(
-    profile?.layoutConfig?.themeId ?? "editorial",
+    profile?.layout_config?.themeId ?? "editorial",
     palette && {
       primaryColor: palette.primary,
       backgroundColor: palette.background,
@@ -51,7 +51,7 @@ export function renderProfileOgImage(profile: OgProfile) {
       accentColor: palette.accent,
     },
   );
-  const { fullName, title, company } = profile?.agentInfo ?? {
+  const { fullName, title, company } = profile?.agent_info ?? {
     fullName: CONNECTA.name,
     title: CONNECTA.tagline,
     company: "",

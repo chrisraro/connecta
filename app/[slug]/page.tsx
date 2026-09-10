@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
+import { getProfileBySlug } from "@/lib/db/publicProfile";
+import { agentInfoOf } from "@/lib/db/profile";
 import { isReservedSlug } from "@/lib/slug";
 import { ProfileView } from "../p/[id]/ProfileView";
 import { CONNECTA } from "@/lib/brand";
@@ -14,10 +14,10 @@ export async function generateMetadata({
   const { slug } = await params;
   if (isReservedSlug(slug)) return { title: CONNECTA.name };
 
-  const profile = await fetchQuery(api.profiles.getProfileBySlug, { slug }).catch(() => null);
+  const profile = await getProfileBySlug(slug);
   if (!profile) return { title: `Profile not found — ${CONNECTA.name}` };
 
-  const { fullName, title, company, about } = profile.agentInfo;
+  const { fullName, title, company, about } = agentInfoOf(profile);
   const heading = [fullName, title].filter(Boolean).join(" — ");
   const description =
     about?.slice(0, 160) ||
@@ -42,7 +42,7 @@ export default async function VanityProfilePage({ params }: { params: Promise<{ 
   // rather than render as a "missing profile").
   if (isReservedSlug(slug)) notFound();
 
-  const profile = await fetchQuery(api.profiles.getProfileBySlug, { slug }).catch(() => null);
+  const profile = await getProfileBySlug(slug);
   if (!profile) notFound();
 
   return <ProfileView lookup={{ by: "slug", slug }} />;

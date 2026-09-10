@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { getProfileById } from "@/lib/db/publicProfile";
+import { agentInfoOf } from "@/lib/db/profile";
 import { ProfileView } from "./ProfileView";
 import { CONNECTA } from "@/lib/brand";
 
@@ -12,12 +11,10 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const profile = await fetchQuery(api.profiles.getProfile, {
-    profileId: id as Id<"profiles">,
-  }).catch(() => null);
+  const profile = await getProfileById(id);
   if (!profile) return { title: `Profile not found — ${CONNECTA.name}` };
 
-  const { fullName, title, company, about } = profile.agentInfo;
+  const { fullName, title, company, about } = agentInfoOf(profile);
   const heading = [fullName, title].filter(Boolean).join(" — ");
   const description =
     about?.slice(0, 160) ||
@@ -39,9 +36,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   // previously shipped a 200 with a client-rendered "not found" screen.
   // ProfileView still owns the loading state and the (client, reactive)
   // not-found UI for a profile that's deleted after this initial check.
-  const profile = await fetchQuery(api.profiles.getProfile, {
-    profileId: id as Id<"profiles">,
-  }).catch(() => null);
+  const profile = await getProfileById(id);
   if (!profile) notFound();
 
   return <ProfileView lookup={{ by: "id", profileId: id }} />;
