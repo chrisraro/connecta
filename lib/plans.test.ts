@@ -1,57 +1,77 @@
-import { ConvexError } from "convex/values";
-import { describe, expect, test } from "vitest";
-import { isPlanLimitError, isTemplateLocked } from "./plans";
-
-describe("isTemplateLocked", () => {
-  test("returns false when the plan has no template allowlist (pro/business)", () => {
-    expect(isTemplateLocked("kinetic", null)).toBe(false);
-  });
-
-  test("returns false when the templateId IS in the plan's allowlist", () => {
-    expect(isTemplateLocked("editorial", ["editorial", "architectural"])).toBe(false);
-  });
-
-  test("returns true when the templateId is NOT in the plan's allowlist", () => {
-    expect(isTemplateLocked("kinetic", ["editorial", "architectural"])).toBe(true);
-  });
-
-  test("returns true against an empty allowlist", () => {
-    expect(isTemplateLocked("editorial", [])).toBe(true);
-  });
-});
+import { expect, test, describe } from "vitest";
+import { isPlanLimitError, isTemplateLocked, PLAN_LIMITS } from "./plans";
 
 describe("isPlanLimitError", () => {
-  // Mirrors lib/nfc.ts#isDuplicateRegistrationError: convex/cards.ts and
-  // convex/profiles.ts throw `ConvexError({ code: "PLAN_LIMIT", message })`
-  // for every plan-limit rejection (profile count, active-card count,
-  // locked template) specifically so the signal survives production's
-  // redaction of plain Error messages — detection must key off
-  // `.data.code`, never message text, or it silently stops firing in prod.
-
-  test("returns true for a ConvexError with data.code PLAN_LIMIT", () => {
-    const err = new ConvexError({
-      code: "PLAN_LIMIT",
-      message: "Upgrade to Pro for unlimited profiles.",
-    });
+  /**
+   * The database raises plan rejections with `detail = PLAN_LIMIT` beside the
+   * human sentence, so the UI can show its upgrade CTA rather than a dead-end
+   * error. Matching on the message text would break the first time somebody
+   * rewords it -- a change nobody expects to alter behaviour.
+   */
+  test("detects the plan-limit code the database raises", () => {
+    const err = {
+      code: "P0001",
+      message: "Upgrade to Pro to create more than one profile.",
+      details: "PLAN_LIMIT",
+      hint: "",
+    };
     expect(isPlanLimitError(err)).toBe(true);
   });
 
-  test("returns false for a plain Error carrying the redacted production message shape", () => {
-    const err = new Error("[CONVEX M(profiles:createProfile)] Server Error");
+  test("does not fire on a different application code", () => {
+    const err = {
+      code: "P0001",
+      message: "Card is not available for claiming.",
+      details: "NOT_AVAILABLE",
+      hint: "",
+    };
     expect(isPlanLimitError(err)).toBe(false);
   });
 
-  test("returns false for a ConvexError with an unrelated data code", () => {
-    const err = new ConvexError({ code: "DUPLICATE_UUID" });
+  // Guards the exact regression the code channel exists to prevent: the
+  // wording is right there in the message, and matching it would pass.
+  test("does not match on message text alone", () => {
+    const err = {
+      code: "P0001",
+      message: "Upgrade to Pro to create more than one profile.",
+      details: "",
+      hint: "",
+    };
     expect(isPlanLimitError(err)).toBe(false);
   });
 
-  test("returns false for a ConvexError whose data isn't an object with a code", () => {
-    const err = new ConvexError("plain string data");
-    expect(isPlanLimitError(err)).toBe(false);
+  test.each([[null], [undefined], [new Error("boom")], ["PLAN_LIMIT"], [{}]])(
+    "returns false for %p",
+    (input) => {
+      expect(isPlanLimitError(input)).toBe(false);
+    },
+  );
+});
+
+describe("plan limits", () => {
+  test("free is capped at one profile and one active card", () => {
+    expect(PLAN_LIMITS.free.maxProfiles).toBe(1);
+    expect(PLAN_LIMITS.free.maxActiveCards).toBe(1);
   });
 
-  test("returns false for a non-Error thrown value", () => {
-    expect(isPlanLimitError("just a string")).toBe(false);
+  test("paid tiers are uncapped", () => {
+    expect(PLAN_LIMITS.pro.maxProfiles).toBeNull();
+    expect(PLAN_LIMITS.business.maxActiveCards).toBeNull();
+  });
+
+  test("free plan caps how many leads are VIEWABLE, not how many are captured", () => {
+    expect(PLAN_LIMITS.free.leadViewCap).toBe(100);
+    expect(PLAN_LIMITS.pro.leadViewCap).toBeNull();
+  });
+});
+
+describe("isTemplateLocked", () => {
+  test("nothing is locked when the plan allows every template", () => {
+    expect(isTemplateLocked("editorial", null)).toBe(false);
+  });
+
+  test("a template outside the allow-list is locked", () => {
+    expect(isTemplateLocked("luxe", ["editorial", "architectural"])).toBe(true);
+    expect(isTemplateLocked("editorial", ["editorial", "architectural"])).toBe(false);
   });
 });

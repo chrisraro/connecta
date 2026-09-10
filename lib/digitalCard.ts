@@ -15,7 +15,10 @@ import { DigitalCardConfig } from "../types/profile";
  * insertNewProfile in convex/profiles.ts) seed the exact same default
  * instead of maintaining two copies that can drift apart again.
  */
+import { DEFAULT_CARD_SKIN } from "./cardSkins";
+
 export const DEFAULT_DIGITAL_CARD: DigitalCardConfig = {
+  skin: DEFAULT_CARD_SKIN,
   backgroundColor: "#1e1e1e",
   textColor: "#ffffff",
   layout: "split",

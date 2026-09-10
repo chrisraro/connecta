@@ -148,6 +148,13 @@ export interface InlineProject {
 }
 
 export interface DigitalCardConfig {
+  /**
+   * The persisted card design. Everything else on this interface is
+   * PREVIEW-ONLY now: profiles.skin is the single column that survives a
+   * save (salvaged decision 1 -- the freeform designer collapsed to one
+   * enum), so the fields below seed the live preview and are never written.
+   */
+  skin: import("@/lib/cardSkins").CardSkinId;
   backgroundColor: string;
   textColor: string;
   layout: "classic" | "split" | "centered";

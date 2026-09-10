@@ -51,3 +51,29 @@ export function layoutConfigOf(profile: Pick<ProfileRow, "layout_config">): Layo
 export function jsonArrayOf<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
+
+/**
+ * The onboarding snapshot stored on users.onboarding_data.
+ *
+ * Mirrors the Convex validator it replaces. It is a SNAPSHOT, not live data:
+ * the builder prefills a blank form from it once, and the profile is the
+ * source of truth from then on -- which is why an already-edited profile must
+ * never be re-prefilled from here.
+ */
+export interface OnboardingData {
+  profileCategory?: "individual" | "company" | "business";
+  email?: string;
+  fullName?: string;
+  title?: string;
+  company?: string;
+  phone?: string;
+  website?: string;
+  about?: string;
+  avatarUrl?: string;
+  services?: string[];
+  socialLinks?: { platform: string; url: string }[];
+}
+
+export function onboardingDataOf(value: unknown): OnboardingData {
+  return (value ?? {}) as OnboardingData;
+}

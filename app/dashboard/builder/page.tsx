@@ -3,9 +3,13 @@
 import { useState, useEffect, useRef, useCallback, useId, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useMyPlan } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useMyProfiles, useProfile, useSaveProfile } from "@/hooks/useProfiles";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { agentInfoOf, layoutConfigOf, jsonArrayOf, onboardingDataOf } from "@/lib/db/profile";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { isPlanLimitError, isTemplateLocked } from "@/lib/plans";
@@ -92,6 +96,7 @@ import { deriveBuilderProfileFields, getBlocksForProfileType } from "@/lib/profi
 import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
 import { resolveBuilderEntryRedirect, shouldPrefillCreateForm } from "@/lib/builderEntry";
 import { DEFAULT_DIGITAL_CARD } from "@/lib/digitalCard";
+import { CARD_SKINS } from "@/lib/cardSkins";
 
 // --- Types & Defaults ---
 
@@ -147,14 +152,10 @@ function GalleryUploader({
   maxImages?: number;
   maxSizeMB?: number;
 }) {
-  const { user } = useUser();
+  const uploadImage = useImageUpload();
   const [isUploading, setIsUploading] = useState(false);
   const [localPreviews, setLocalPreviews] = useState<Record<number, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
-  const generateUploadUrl = useMutation(api.images.generateUploadUrl);
-  // See components/ui/image-uploader.tsx for why this is the required
-  // server-side enforcement step (Task 19 / I4) and why it's an action.
-  const validateUpload = useAction(api.images.validateUpload);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -183,19 +184,11 @@ function GalleryUploader({
     setLocalPreviews((prev) => ({ ...prev, [previewIdx]: localUrl }));
 
     try {
-      if (!user?.id) {
-        throw new Error("User not authenticated");
-      }
-      const postUrl = await generateUploadUrl({ clerkId: user.id });
-      const result = await fetch(postUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!result.ok) throw new Error("Upload failed");
-      const { storageId } = await result.json();
-      await validateUpload({ storageId, clerkId: user.id });
-      onAdd(storageId);
+      // One call. The bucket enforces MIME type and size before the object
+      // exists, so the separate validate-and-delete step the Convex flow
+      // needed has nothing left to do.
+      const path = await uploadImage.mutateAsync(file);
+      onAdd(path);
       setLocalPreviews((prev) => {
         const next = { ...prev };
         delete next[previewIdx];
@@ -484,7 +477,7 @@ const TESTIMONIAL_FIELDS: FieldDef<TestimonialItem>[] = [
 
 function BuilderContent() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user } = useAuth();
   // Stable unique id prefix for this mount, so every field's `id`/`htmlFor`
   // pairing below is guaranteed collision-free (same pattern EditableList
   // already uses internally). One call is enough — this component renders
@@ -494,27 +487,22 @@ function BuilderContent() {
   const editingId =
     searchParams.get("id") && searchParams.get("id") !== "null" ? searchParams.get("id") : null;
 
-  const createProfile = useMutation(api.profiles.createProfile);
-  const onboarding = useQuery(
-    api.users.getOnboardingStatus,
-    user?.id ? { clerkId: user.id } : "skip",
-  );
-  const existingProfile = useQuery(
-    api.profiles.getProfile,
-    editingId ? { profileId: editingId as Id<"profiles"> } : "skip",
-  );
+  const saveProfile = useSaveProfile();
+  const createProfile = saveProfile.mutateAsync;
+  const { data: appUser } = useCurrentUser();
+  const onboarding = appUser
+    ? { completed: appUser.onboarding_completed, data: appUser.onboarding_data }
+    : undefined;
+  const { data: existingProfile } = useProfile(editingId);
   // Guards every "create profile" entry (no `?id=`) against the doomed
   // save Task 12 found: a user already at their plan's profile limit
   // landing on this blank form anyway. See lib/builderEntry.ts.
-  const myProfiles = useQuery(
-    api.profiles.getMyProfiles,
-    !editingId && user?.id ? { clerkId: user.id } : "skip",
-  );
+  const { data: myProfiles } = useMyProfiles();
   // Needed in BOTH create and edit mode — not just the entry-redirect
   // check below — so the template picker can show its locked state (see
   // TemplateSelector's `allowedTemplateIds` prop) while editing an
   // existing profile too, not only when starting a new one.
-  const myPlan = useQuery(api.billing.getMyPlan, user?.id ? { clerkId: user.id } : "skip");
+  const myPlan = useMyPlan();
 
   // Tri-state: `undefined` while the two queries above are still loading
   // (verdict not known yet), `null` once loaded with no redirect needed,
@@ -537,7 +525,7 @@ function BuilderContent() {
   // saved state.
   const entryRedirectId: string | null | undefined = editingId
     ? null
-    : myProfiles === undefined || myPlan === undefined
+    : myProfiles === undefined || myPlan.isPending
       ? undefined
       : resolveBuilderEntryRedirect(editingId, myProfiles, myPlan.limits.maxProfiles);
 
@@ -819,14 +807,13 @@ function BuilderContent() {
 
     try {
       if (editingId && existingProfile) {
-        setProfileType((existingProfile.profileType as ProfileType) || "individual");
+        setProfileType((existingProfile.profile_type as ProfileType) || "individual");
+        const info = agentInfoOf(existingProfile);
         setAgentInfo({
           ...INITIAL_AGENT_INFO,
-          ...existingProfile.agentInfo,
+          ...info,
         });
 
-        // Load new fields
-        const info = existingProfile.agentInfo;
         if (info.certification) setCertification(info.certification);
         if (info.education) setEducation(info.education.map((e) => ({ ...e, year: e.year || "" })));
         if (info.techStack) setTechStack(info.techStack);
@@ -837,14 +824,15 @@ function BuilderContent() {
         if (info.gallery) setGallery(info.gallery);
         if (info.additionalPhones) setAdditionalPhones(info.additionalPhones);
         if (info.additionalEmails) setAdditionalEmails(info.additionalEmails);
-        if (existingProfile.digitalCard) setDigitalCard(existingProfile.digitalCard);
-        if (existingProfile.showStorefront !== undefined)
-          setShowStorefront(existingProfile.showStorefront);
+        // digitalCard is gone -- it collapsed to `skin` (salvaged decision 1),
+        // so the freeform designer state is seeded from the skin alone.
+        setDigitalCard((prev) => ({ ...prev, skin: existingProfile.skin }));
+        setShowStorefront(Boolean(existingProfile.show_storefront));
 
         // Load products
-        if (existingProfile.products) {
+        {
           setProducts(
-            existingProfile.products.map((p) => ({
+            jsonArrayOf<ProductItem>(existingProfile.products).map((p) => ({
               ...p,
               price: p.price ?? undefined,
               image: p.image ?? undefined,
@@ -854,25 +842,22 @@ function BuilderContent() {
         }
 
         // Load property listings
-        if (existingProfile.propertyListings) {
-          setPropertyListings(existingProfile.propertyListings);
-        }
+        setPropertyListings(jsonArrayOf<PropertyListingItem>(existingProfile.property_listings));
 
         // Load inline projects
-        if (existingProfile.inlineProjects) {
-          setInlineProjects(existingProfile.inlineProjects);
-        }
+        setInlineProjects(jsonArrayOf<InlineProject>(existingProfile.inline_projects));
 
         // Load template
-        if (existingProfile.layoutConfig?.themeId) {
-          const templateId = existingProfile.layoutConfig.themeId;
+        if (layoutConfigOf(existingProfile).themeId) {
+          const templateId = layoutConfigOf(existingProfile).themeId;
           if (TEMPLATES.find((t) => t.id === templateId)) {
             setSelectedTemplate(templateId);
           }
         }
 
-        if (existingProfile.layoutConfig) {
-          const palette = existingProfile.layoutConfig.colorPalette || TEMPLATES[0].defaultColors;
+        if (existingProfile.layout_config) {
+          const palette =
+            layoutConfigOf(existingProfile).colorPalette || TEMPLATES[0].defaultColors;
           setCustomColors({
             primary: palette.primary,
             background: palette.background,
@@ -880,7 +865,7 @@ function BuilderContent() {
             secondary: palette.secondary || palette.primary,
             accent: palette.accent || palette.primary,
           });
-          const order = existingProfile.layoutConfig.componentOrder || [];
+          const order = layoutConfigOf(existingProfile).componentOrder || [];
           setBlocks((prev) => {
             const updated = prev.map((b) => ({ ...b, isEnabled: order.includes(b.id) }));
             return [...updated].sort((a, b) => {
@@ -909,7 +894,7 @@ function BuilderContent() {
         ) &&
         onboarding?.data
       ) {
-        const data = onboarding.data;
+        const data = onboardingDataOf(onboarding.data);
         const type = (data.profileCategory || "individual") as ProfileType;
         setProfileType(type);
         setAgentInfo((prev) => ({
@@ -917,7 +902,7 @@ function BuilderContent() {
           fullName: data.fullName || "",
           title: data.title || "",
           phone: data.phone || "",
-          email: data.email || user?.primaryEmailAddress?.emailAddress || "",
+          email: data.email || user?.email || "",
           company: data.company || "",
           website: data.website || "",
           about: data.about || "",
@@ -1121,12 +1106,11 @@ function BuilderContent() {
           : undefined;
 
       const { id: profileId, slug } = await createProfile({
-        id: editingId ? (editingId as Id<"profiles">) : undefined,
-        clerkId: user.id,
+        id: editingId ?? undefined,
         name: agentInfo.fullName ? `${agentInfo.fullName}'s Profile` : "My Profile",
-        profileType: profileType,
-        agentInfo: filteredAgentInfo,
-        layoutConfig: {
+        profile_type: profileType,
+        agent_info: filteredAgentInfo,
+        layout_config: {
           themeId: selectedTemplate,
           colorPalette: {
             primary: customColors.primary,
@@ -1139,8 +1123,6 @@ function BuilderContent() {
           componentOrder,
           heroStyle: "default",
         },
-        featuredProperties: [],
-        featuredProjects: [],
         products: cleanProducts,
         // No `services` key here on purpose (Task 13 / audit-dataflow
         // #1): this used to hardcode the top-level structured
@@ -1149,10 +1131,12 @@ function BuilderContent() {
         // agentInfo.services (the tag list, in filteredAgentInfo
         // above) is the one authoritative services source — see
         // lib/serviceCatalog.ts.
-        propertyListings: cleanPropertyListings,
-        inlineProjects: cleanInlineProjects,
-        digitalCard: digitalCard,
-        showStorefront: showStorefront,
+        property_listings: cleanPropertyListings,
+        inline_projects: cleanInlineProjects,
+        // digitalCard collapsed to a single skin (salvaged decision 1): the
+        // colours, gradients and drag positions are never created.
+        skin: digitalCard.skin,
+        show_storefront: showStorefront,
       });
       captureSnapshot();
       toast.success("Profile saved");
@@ -2519,216 +2503,41 @@ function BuilderContent() {
             </>
           )}
 
-          {/* Digital Business Card Design */}
+          {/* Card skin picker.
+              Replaces the freeform designer: arbitrary colours, gradients,
+              per-theme defaults and drag-positioning are gone, because
+              `skin` is the only thing that persists now (salvaged decision
+              1 -- profiles.digitalCard collapsed to a single enum). Four
+              art-directed skins guarantee a card that looks professional
+              the instant somebody taps it, which arbitrary colour pickers
+              actively worked against. */}
           {previewMode === "card" && (
             <div className="px-4 py-4 border-t border-border">
-              <Label className="text-sm font-semibold text-foreground mb-3 block">
-                Digital Card Design
-              </Label>
-              <div className="space-y-4">
-                {/* Theme Select */}
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1.5 block">
-                    Card Theme Style
-                  </label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {(["light", "dark", "glass", "carbon"] as const).map((t) => (
-                      <button
-                        type="button"
-                        key={t}
-                        onClick={() => handleCardThemeChange(t)}
-                        className={`min-h-11 lg:min-h-0 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
-                          digitalCard.theme === t
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-card border-border text-foreground hover:bg-muted"
-                        }`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Layout Select */}
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1.5 block">Card Layout</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {(["classic", "split", "centered"] as const).map((l) => (
-                      <button
-                        type="button"
-                        key={l}
-                        onClick={() => setDigitalCard({ ...digitalCard, layout: l })}
-                        className={`min-h-11 lg:min-h-0 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
-                          digitalCard.layout === l
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-card border-border text-foreground hover:bg-muted"
-                        }`}
-                      >
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* QR Code Toggle */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-foreground">Show QR Code</span>
-                  <Switch
-                    checked={digitalCard.showQrCode}
-                    onCheckedChange={(val) => setDigitalCard({ ...digitalCard, showQrCode: val })}
-                    aria-label="Show QR Code"
-                  />
-                </div>
-
-                {/* Color Customization */}
-                <div className="space-y-3 pt-2 border-t border-border/50">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-foreground">Background Type</span>
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDigitalCard({ ...digitalCard, cardBackgroundType: "solid" })
-                        }
-                        className={`min-h-11 lg:min-h-0 px-3 py-1 rounded-md text-xs font-semibold ${
-                          digitalCard.cardBackgroundType === "solid"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        Solid
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDigitalCard({ ...digitalCard, cardBackgroundType: "gradient" })
-                        }
-                        className={`min-h-11 lg:min-h-0 px-3 py-1 rounded-md text-xs font-semibold ${
-                          digitalCard.cardBackgroundType === "gradient"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        Gradient
-                      </button>
-                    </div>
-                  </div>
-
-                  {digitalCard.cardBackgroundType === "solid" ? (
-                    <div>
-                      <label
-                        htmlFor={`${uid}-card-bg-hex`}
-                        className="text-[10px] text-muted-foreground mb-1 block"
-                      >
-                        Solid Background Color
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          aria-label="Solid background color swatch"
-                          value={digitalCard.backgroundColor || "#ffffff"}
-                          onChange={(e) =>
-                            setDigitalCard({ ...digitalCard, backgroundColor: e.target.value })
-                          }
-                          className="size-11 rounded-lg border-0 cursor-pointer"
-                        />
-                        <Input
-                          id={`${uid}-card-bg-hex`}
-                          value={digitalCard.backgroundColor || ""}
-                          onChange={(e) =>
-                            setDigitalCard({ ...digitalCard, backgroundColor: e.target.value })
-                          }
-                          className="flex-1 text-xs h-11 lg:h-8"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label
-                          htmlFor={`${uid}-card-gradient-start-hex`}
-                          className="text-[10px] text-muted-foreground mb-1 block"
-                        >
-                          Gradient Start
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            aria-label="Gradient start color swatch"
-                            value={digitalCard.cardGradientStart || "#000000"}
-                            onChange={(e) =>
-                              setDigitalCard({ ...digitalCard, cardGradientStart: e.target.value })
-                            }
-                            className="size-11 rounded-lg border-0 cursor-pointer"
-                          />
-                          <Input
-                            id={`${uid}-card-gradient-start-hex`}
-                            value={digitalCard.cardGradientStart || ""}
-                            onChange={(e) =>
-                              setDigitalCard({ ...digitalCard, cardGradientStart: e.target.value })
-                            }
-                            className="flex-1 text-xs h-11 lg:h-8"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label
-                          htmlFor={`${uid}-card-gradient-end-hex`}
-                          className="text-[10px] text-muted-foreground mb-1 block"
-                        >
-                          Gradient End
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            aria-label="Gradient end color swatch"
-                            value={digitalCard.cardGradientEnd || "#000000"}
-                            onChange={(e) =>
-                              setDigitalCard({ ...digitalCard, cardGradientEnd: e.target.value })
-                            }
-                            className="size-11 rounded-lg border-0 cursor-pointer"
-                          />
-                          <Input
-                            id={`${uid}-card-gradient-end-hex`}
-                            value={digitalCard.cardGradientEnd || ""}
-                            onChange={(e) =>
-                              setDigitalCard({ ...digitalCard, cardGradientEnd: e.target.value })
-                            }
-                            className="flex-1 text-xs h-11 lg:h-8"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <label
-                      htmlFor={`${uid}-card-text-hex`}
-                      className="text-[10px] text-muted-foreground mb-1 block"
-                    >
-                      Text Color
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        aria-label="Text color swatch"
-                        value={digitalCard.textColor || "#000000"}
-                        onChange={(e) =>
-                          setDigitalCard({ ...digitalCard, textColor: e.target.value })
-                        }
-                        className="size-11 rounded-lg border-0 cursor-pointer"
-                      />
-                      <Input
-                        id={`${uid}-card-text-hex`}
-                        value={digitalCard.textColor || ""}
-                        onChange={(e) =>
-                          setDigitalCard({ ...digitalCard, textColor: e.target.value })
-                        }
-                        className="flex-1 text-xs h-11 lg:h-8"
-                      />
-                    </div>
-                  </div>
-                </div>
+              <Label className="text-sm font-semibold text-foreground mb-1 block">Card Skin</Label>
+              <p className="text-[11px] text-muted-foreground mb-3">
+                Pick the look for your digital card and printed front.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {CARD_SKINS.map((skin) => (
+                  <button
+                    key={skin.id}
+                    type="button"
+                    onClick={() => setDigitalCard({ ...digitalCard, skin: skin.id })}
+                    aria-pressed={digitalCard.skin === skin.id}
+                    className={`rounded-2xl border p-3 text-left transition-all ${
+                      digitalCard.skin === skin.id
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <span
+                      className="block h-10 rounded-lg mb-2 border border-border/50"
+                      style={{ background: skin.swatch }}
+                    />
+                    <span className="block text-xs font-bold text-foreground">{skin.label}</span>
+                    <span className="block text-[10px] text-muted-foreground">{skin.intent}</span>
+                  </button>
+                ))}
               </div>
             </div>
           )}
