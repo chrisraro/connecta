@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { useCart } from "@/contexts/CartContext";
+import { imageUrl as resolveImageUrl } from "@/lib/imageUrl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Loader2, Mail } from "lucide-react";
@@ -17,22 +16,21 @@ import { InquiryDialog } from "@/components/inquiry/InquiryDialog";
 const formatPrice = formatPHP;
 
 function CartItemImage({ storageId, alt }: { storageId: string; alt: string }) {
-  const imageUrl = useQuery(
-    api.images.getImageUrl,
-    storageId && !storageId.startsWith("http") ? { storageId } : "skip",
-  );
-
-  const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
+  // No query: the storage bucket is public, so the URL is derived from the
+  // path. The spinner this used to need went with it.
+  const displayUrl = resolveImageUrl(storageId);
 
   if (!displayUrl) {
     return (
-      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-        <Loader2 className="w-4 h-4 animate-spin" />
+      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+        No Image
       </div>
     );
   }
 
-  return <Image src={displayUrl} alt={alt} fill sizes="96px" className="object-cover" />;
+  return (
+    <Image src={displayUrl} alt={alt} fill sizes="96px" className="object-cover" unoptimized />
+  );
 }
 
 /**
@@ -152,7 +150,7 @@ export default function CartPage() {
             const imageStorageId = product?.images?.[0];
 
             return (
-              <Card key={`${item.productId}-${item.variationId || "default"}`}>
+              <Card key={`${item.productId}-${item.variationId ?? "default"}`}>
                 <CardContent className="p-4">
                   <div className="flex gap-4">
                     <Link href={`/shop/product/${product?.slug}`}>
@@ -195,7 +193,7 @@ export default function CartPage() {
                             onClick={() =>
                               handleUpdateQuantity(
                                 item.productId,
-                                item.variationId,
+                                item.variationId ?? undefined,
                                 item.quantity - 1,
                               )
                             }
@@ -212,7 +210,7 @@ export default function CartPage() {
                             onClick={() =>
                               handleUpdateQuantity(
                                 item.productId,
-                                item.variationId,
+                                item.variationId ?? undefined,
                                 item.quantity + 1,
                               )
                             }
@@ -225,7 +223,9 @@ export default function CartPage() {
                           variant="ghost"
                           size="sm"
                           className="text-destructive hover:text-destructive px-2 py-1 h-11"
-                          onClick={() => handleRemoveItem(item.productId, item.variationId)}
+                          onClick={() =>
+                            handleRemoveItem(item.productId, item.variationId ?? undefined)
+                          }
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           <span className="hidden sm:inline">Remove</span>

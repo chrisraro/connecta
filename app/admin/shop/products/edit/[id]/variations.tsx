@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id, Doc } from "@/convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +16,20 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Plus, Trash2, Pencil, X } from "lucide-react";
 import { formatPHP } from "@/lib/payment";
+import {
+  useProductVariations,
+  useCreateVariation,
+  useUpdateVariation,
+  useDeleteVariation,
+  type ProductVariation,
+} from "@/hooks/useAdminShop";
 
-type OptionRow = { optionName: string; optionValue: string };
+type OptionRow = { option_name: string; option_value: string };
+
+/** product_variations.options is jsonb; Postgres cannot type its shape. */
+function optionsOf(v: { options: unknown }): OptionRow[] {
+  return Array.isArray(v.options) ? (v.options as OptionRow[]) : [];
+}
 
 type VariationForm = {
   name: string;
@@ -38,20 +47,14 @@ const emptyForm: VariationForm = {
   options: [],
 };
 
-export function ProductVariationsManager({
-  clerkId,
-  productId,
-}: {
-  clerkId: string;
-  productId: Id<"products">;
-}) {
-  const variations = useQuery(api.adminShop.getProductVariations, { clerkId, productId });
-  const createVariation = useMutation(api.adminShop.createVariation);
-  const updateVariation = useMutation(api.adminShop.updateVariation);
-  const deleteVariation = useMutation(api.adminShop.deleteVariation);
+export function ProductVariationsManager({ productId }: { productId: string }) {
+  const { data: variations } = useProductVariations(productId);
+  const createVariation = useCreateVariation().mutateAsync;
+  const updateVariation = useUpdateVariation().mutateAsync;
+  const deleteVariation = useDeleteVariation().mutateAsync;
 
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<Id<"productVariations"> | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<VariationForm>(emptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -61,20 +64,20 @@ export function ProductVariationsManager({
     setOpen(true);
   };
 
-  const openEdit = (v: Doc<"productVariations">) => {
-    setEditingId(v._id);
+  const openEdit = (v: ProductVariation) => {
+    setEditingId(v.id);
     setForm({
       name: v.name,
       sku: v.sku,
       pricePesos: v.price / 100,
       inventory: v.inventory,
-      options: v.options || [],
+      options: (v.options as OptionRow[] | null) || [],
     });
     setOpen(true);
   };
 
   const addOption = () => {
-    setForm({ ...form, options: [...form.options, { optionName: "", optionValue: "" }] });
+    setForm({ ...form, options: [...form.options, { option_name: "", option_value: "" }] });
   };
 
   const updateOption = (idx: number, key: keyof OptionRow, value: string) => {
@@ -92,23 +95,23 @@ export function ProductVariationsManager({
       alert("Name and SKU are required");
       return;
     }
-    const cleanOptions = form.options.filter((o) => o.optionName.trim() && o.optionValue.trim());
+    const cleanOptions = form.options.filter((o) => o.option_name.trim() && o.option_value.trim());
     setSaving(true);
     try {
       if (editingId) {
         await updateVariation({
-          clerkId,
-          variationId: editingId,
-          name: form.name,
-          sku: form.sku,
-          price: Math.round(form.pricePesos * 100),
-          inventory: form.inventory,
-          options: cleanOptions,
+          id: editingId,
+          patch: {
+            name: form.name,
+            sku: form.sku,
+            price: Math.round(form.pricePesos * 100),
+            inventory: form.inventory,
+            options: cleanOptions,
+          },
         });
       } else {
         await createVariation({
-          clerkId,
-          productId,
+          product_id: productId,
           name: form.name,
           sku: form.sku,
           price: Math.round(form.pricePesos * 100),
@@ -127,10 +130,10 @@ export function ProductVariationsManager({
     }
   };
 
-  const handleDelete = async (variationId: Id<"productVariations">) => {
+  const handleDelete = async (variationId: string) => {
     if (!confirm("Delete this variation?")) return;
     try {
-      await deleteVariation({ clerkId, variationId });
+      await deleteVariation(variationId);
     } catch (error) {
       console.error("Failed to delete variation:", error);
       alert(error instanceof Error ? error.message : "Failed to delete variation");
@@ -174,12 +177,14 @@ export function ProductVariationsManager({
             </TableHeader>
             <TableBody>
               {variations.map((v) => (
-                <TableRow key={v._id}>
+                <TableRow key={v.id}>
                   <TableCell className="font-medium">{v.name}</TableCell>
                   <TableCell className="font-mono text-sm">{v.sku}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {v.options.length > 0
-                      ? v.options.map((o) => `${o.optionName}: ${o.optionValue}`).join(", ")
+                    {optionsOf(v).length > 0
+                      ? optionsOf(v)
+                          .map((o) => `${o.option_name}: ${o.option_value}`)
+                          .join(", ")
                       : "-"}
                   </TableCell>
                   <TableCell>{formatPHP(v.price)}</TableCell>
@@ -189,7 +194,7 @@ export function ProductVariationsManager({
                       <Button variant="ghost" size="icon" onClick={() => openEdit(v)}>
                         <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(v._id)}>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
@@ -255,13 +260,13 @@ export function ProductVariationsManager({
                 <div key={idx} className="flex items-center gap-2">
                   <Input
                     placeholder="Name (e.g. Size)"
-                    value={opt.optionName}
-                    onChange={(e) => updateOption(idx, "optionName", e.target.value)}
+                    value={opt.option_name}
+                    onChange={(e) => updateOption(idx, "option_name", e.target.value)}
                   />
                   <Input
                     placeholder="Value (e.g. XL)"
-                    value={opt.optionValue}
-                    onChange={(e) => updateOption(idx, "optionValue", e.target.value)}
+                    value={opt.option_value}
+                    onChange={(e) => updateOption(idx, "option_value", e.target.value)}
                   />
                   <Button
                     type="button"

@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,25 +15,28 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, AlertTriangle, Download, Plus, Package } from "lucide-react";
-import { Id } from "@/convex/_generated/dataModel";
+import {
+  useAdminProducts,
+  useUpdateProduct,
+  useLowStockProducts,
+  type Product,
+} from "@/hooks/useAdminShop";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function InventoryPage() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [restockMap, setRestockMap] = useState<Record<string, number>>({});
 
-  const products = useQuery(api.adminShop.getProducts, user?.id ? { clerkId: user.id } : "skip");
-  const lowStockProducts = useQuery(
-    api.adminShop.getLowStockProducts,
-    user?.id ? { clerkId: user.id } : "skip",
-  );
-  const updateProduct = useMutation(api.adminShop.updateProduct);
+  const { data: products } = useAdminProducts();
+  const { data: lowStockProducts } = useLowStockProducts();
+  const updateProduct = useUpdateProduct().mutateAsync;
 
   const isLoading = products === undefined || lowStockProducts === undefined;
 
-  const handleRestock = async (productId: Id<"products">) => {
+  const handleRestock = async (productId: string) => {
     if (!user?.id) return;
 
-    const product = products?.find((p) => p._id === productId);
+    const product = products?.find((p) => p.id === productId);
     if (!product) return;
 
     const additionalStock = restockMap[productId] || 0;
@@ -46,9 +46,8 @@ export default function InventoryPage() {
       // updateProduct patches only the supplied fields, so we only need to
       // send the new inventory count.
       await updateProduct({
-        clerkId: user.id,
-        productId,
-        inventory: product.inventory + additionalStock,
+        id: productId,
+        patch: { inventory: product.inventory + additionalStock },
       });
 
       setRestockMap({ ...restockMap, [productId]: 0 });
@@ -69,8 +68,8 @@ export default function InventoryPage() {
 
     const headers = ["Name", "SKU", "Inventory", "Threshold", "Status"];
     const rows = products.map((p) => {
-      const status = getStockStatus(p.inventory, p.lowStockThreshold);
-      return [p.name, p.sku, p.inventory, p.lowStockThreshold, status.label];
+      const status = getStockStatus(p.inventory, p.low_stock_threshold);
+      return [p.name, p.sku, p.inventory, p.low_stock_threshold, status.label];
     });
 
     const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -136,7 +135,7 @@ export default function InventoryPage() {
               </TableHeader>
               <TableBody>
                 {lowStockProducts.map((product) => (
-                  <TableRow key={product._id} className="border-border">
+                  <TableRow key={product.id} className="border-border">
                     <TableCell className="font-medium text-foreground">
                       <div className="flex items-center gap-2">
                         <Package className="w-4 h-4 text-muted-foreground" />
@@ -150,17 +149,17 @@ export default function InventoryPage() {
                       <Badge className="bg-red-600">{product.inventory}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {product.lowStockThreshold}
+                      {product.low_stock_threshold}
                     </TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         min="1"
-                        value={restockMap[product._id] || ""}
+                        value={restockMap[product.id] || ""}
                         onChange={(e) =>
                           setRestockMap({
                             ...restockMap,
-                            [product._id]: parseInt(e.target.value) || 0,
+                            [product.id]: parseInt(e.target.value) || 0,
                           })
                         }
                         className="w-24 bg-muted border-border"
@@ -170,9 +169,9 @@ export default function InventoryPage() {
                     <TableCell className="text-right">
                       <Button
                         size="sm"
-                        onClick={() => handleRestock(product._id)}
+                        onClick={() => handleRestock(product.id)}
                         className="bg-green-600 hover:bg-green-700"
-                        disabled={!restockMap[product._id] || restockMap[product._id] <= 0}
+                        disabled={!restockMap[product.id] || restockMap[product.id] <= 0}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Restock
@@ -204,9 +203,9 @@ export default function InventoryPage() {
             </TableHeader>
             <TableBody>
               {products?.map((product) => {
-                const status = getStockStatus(product.inventory, product.lowStockThreshold);
+                const status = getStockStatus(product.inventory, product.low_stock_threshold);
                 return (
-                  <TableRow key={product._id} className="border-border">
+                  <TableRow key={product.id} className="border-border">
                     <TableCell className="font-medium text-foreground">
                       <div className="flex items-center gap-2">
                         <Package className="w-4 h-4 text-muted-foreground" />
@@ -220,17 +219,17 @@ export default function InventoryPage() {
                       {product.inventory}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {product.lowStockThreshold}
+                      {product.low_stock_threshold}
                     </TableCell>
                     <TableCell>
                       <Badge className={status.color}>{status.label}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={product.trackInventory ? "default" : "secondary"}
-                        className={product.trackInventory ? "bg-blue-600" : "bg-secondary"}
+                        variant={product.track_inventory ? "default" : "secondary"}
+                        className={product.track_inventory ? "bg-blue-600" : "bg-secondary"}
                       >
-                        {product.trackInventory ? "Tracking" : "Not Tracking"}
+                        {product.track_inventory ? "Tracking" : "Not Tracking"}
                       </Badge>
                     </TableCell>
                   </TableRow>

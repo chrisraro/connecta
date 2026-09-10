@@ -74,3 +74,27 @@ export function useUpdateSetting() {
     },
   });
 }
+
+/**
+ * A single settings row, typed by the caller.
+ *
+ * Returns null when absent so callers fall back to their own defaults rather
+ * than rendering blanks -- a settings page showing empty inputs is
+ * indistinguishable from one showing a real zero.
+ */
+export function useSetting<T>(key: string) {
+  const supabase = useSupabase();
+
+  return useQuery({
+    queryKey: queryKeys.settings(key),
+    queryFn: async (): Promise<T | null> => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", key)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.value as T) ?? null;
+    },
+  });
+}

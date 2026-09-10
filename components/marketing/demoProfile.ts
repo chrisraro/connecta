@@ -65,6 +65,5 @@ export function buildDemoProfile(templateId: TemplateId): ProfileData {
     // per-image `getImageUrl` query entirely (see components/templates/
     // ProfileImage.tsx) instead of firing a real Convex lookup for a path
     // that was never a storage id.
-    resolvedImages: {},
   };
 }

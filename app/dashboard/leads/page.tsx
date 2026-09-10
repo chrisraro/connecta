@@ -1,6 +1,5 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMyLeads, useUpdateLeadStatus, type Lead } from "@/hooks/useLeads";
 import { toast } from "sonner";
@@ -28,7 +27,6 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Id } from "@/convex/_generated/dataModel";
 import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import Link from "next/link";
 import { CONNECTA } from "@/lib/brand";

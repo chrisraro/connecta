@@ -41,16 +41,8 @@ export function ProfileRenderer({
   /** Control floating Save Contact vCard button visibility */
   showSaveContact?: boolean;
 }) {
-  const {
-    agent,
-    projects,
-    ownerId,
-    products,
-    propertyListings,
-    inlineProjects,
-    componentOrder,
-    resolvedImages,
-  } = data;
+  const { agent, projects, ownerId, products, propertyListings, inlineProjects, componentOrder } =
+    data;
 
   const theme = resolveTheme(templateId, {
     primaryColor: data.theme.primaryColor,
@@ -77,14 +69,7 @@ export function ProfileRenderer({
       {
         hasContent: true,
         numbered: false,
-        render: () => (
-          <HeroSection
-            agent={agent}
-            theme={theme}
-            resolvedImages={resolvedImages}
-            headingLevel={headingLevel}
-          />
-        ),
+        render: () => <HeroSection agent={agent} theme={theme} headingLevel={headingLevel} />,
       },
     ],
     About: [
@@ -150,14 +135,7 @@ export function ProfileRenderer({
       {
         hasContent: !!projects?.length,
         render: (i) =>
-          projects?.length ? (
-            <ProjectsSection
-              projects={projects}
-              theme={theme}
-              index={i}
-              resolvedImages={resolvedImages}
-            />
-          ) : null,
+          projects?.length ? <ProjectsSection projects={projects} theme={theme} index={i} /> : null,
       },
     ],
     Products: [
@@ -190,12 +168,7 @@ export function ProfileRenderer({
         hasContent: !!agent.gallery?.length,
         render: (i) =>
           agent.gallery?.length ? (
-            <GallerySection
-              gallery={agent.gallery}
-              theme={theme}
-              index={i}
-              resolvedImages={resolvedImages}
-            />
+            <GallerySection gallery={agent.gallery} theme={theme} index={i} />
           ) : null,
       },
     ],

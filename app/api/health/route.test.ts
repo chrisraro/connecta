@@ -1,47 +1,38 @@
 import { afterEach, expect, test, vi } from "vitest";
 
-// Mock the Convex HTTP client so this test never makes a real network call.
-// `queryImpl` is reassigned per-test to drive the reachable/unreachable
-// branches through route.ts's actual wiring (queryConvex -> ConvexHttpClient).
-let queryImpl: (name: unknown) => unknown = () => {
-  throw new Error("queryImpl not configured for this test");
-};
+/**
+ * Route-level wiring test for GET /api/health.
+ *
+ * The Supabase server client is mocked so this never opens a socket. What is
+ * exercised is route.ts's own wiring: env presence, the reachability probe,
+ * and the status/headers it produces. The response-shape logic itself is
+ * tested in health-report.test.ts.
+ */
+let selectImpl: () => { error: unknown } = () => ({ error: null });
 
-vi.mock("convex/browser", () => ({
-  ConvexHttpClient: class {
-    query(name: unknown) {
-      return queryImpl(name);
-    }
-  },
-}));
-
-vi.mock("@/convex/_generated/api", () => ({
-  api: { health: { ping: "health:ping", checkConfig: "health:checkConfig" } },
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => ({
+    from: () => ({
+      select: () => selectImpl(),
+    }),
+  }),
 }));
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  queryImpl = () => {
-    throw new Error("queryImpl not configured for this test");
-  };
+  selectImpl = () => ({ error: null });
 });
 
-const ALL_PRESENT = {
-  RESEND_API_KEY: true,
-  CLERK_SECRET_KEY: true,
-  CLERK_WEBHOOK_SIGNING_SECRET: true,
-  NEXT_PUBLIC_APP_URL: true,
-};
-
 function stubHealthyEnv() {
-  vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "pk_test_abc");
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://connecta.example");
-  vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "https://nautical-tortoise-962.convex.cloud");
+  vi.stubEnv("RESEND_API_KEY", "re_test");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service_role_test");
 }
 
-test("GET /api/health returns 200, no-store, and healthy status when everything is configured", async () => {
+test("returns 200, no-store, and healthy when everything is configured", async () => {
   stubHealthyEnv();
-  queryImpl = (name) => (name === "health:ping" ? { ok: true } : ALL_PRESENT);
 
   const { GET } = await import("./route");
   const res = await GET();
@@ -49,46 +40,63 @@ test("GET /api/health returns 200, no-store, and healthy status when everything 
 
   expect(res.status).toBe(200);
   expect(res.headers.get("Cache-Control")).toBe("no-store");
-  expect(body).toEqual({
-    status: "healthy",
-    convex: true,
-    env: {
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: true,
-      NEXT_PUBLIC_APP_URL: true,
-      NEXT_PUBLIC_CONVEX_URL: true,
-    },
-    config: ALL_PRESENT,
-  });
+  expect(body.status).toBe("healthy");
+  expect(body.database).toBe(true);
 });
 
-test("GET /api/health returns 503 and no internal error detail when Convex is unreachable", async () => {
+test("returns 503 and no internal detail when the database is unreachable", async () => {
   stubHealthyEnv();
-  queryImpl = () => {
-    throw new Error("ECONNREFUSED 127.0.0.1:9999 (internal detail that must not leak)");
-  };
+  selectImpl = () => ({ error: { message: "connection refused at 10.0.0.5:5432" } });
 
   const { GET } = await import("./route");
   const res = await GET();
   const body = await res.json();
-  const raw = await (await GET()).text();
 
   expect(res.status).toBe(503);
   expect(body.status).toBe("unhealthy");
-  expect(body.convex).toBe(false);
-  expect(body.config).toBeNull();
-  expect(raw).not.toContain("ECONNREFUSED");
-  expect(raw).not.toContain("internal detail");
+  expect(body.database).toBe(false);
+  // Public endpoint: the underlying error must not reach the caller.
+  expect(JSON.stringify(body)).not.toContain("10.0.0.5");
+  expect(JSON.stringify(body)).not.toMatch(/error|stack|message/i);
 });
 
-test("GET /api/health returns 503 when NEXT_PUBLIC_CONVEX_URL itself is unset", async () => {
-  vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "pk_test_abc");
+// Short-circuits before constructing a client. Without the guard this would
+// throw rather than report, and an uptime monitor would see a 500 with a
+// stack instead of a clean 503.
+test("returns 503 when the Supabase URL itself is unset", async () => {
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://connecta.example");
-  vi.stubEnv("NEXT_PUBLIC_CONVEX_URL", "");
 
   const { GET } = await import("./route");
   const res = await GET();
   const body = await res.json();
 
   expect(res.status).toBe(503);
-  expect(body.convex).toBe(false);
+  expect(body.database).toBe(false);
+});
+
+test("stays 200 but degraded when a server-only secret is missing", async () => {
+  stubHealthyEnv();
+  vi.stubEnv("RESEND_API_KEY", "");
+
+  const { GET } = await import("./route");
+  const res = await GET();
+  const body = await res.json();
+
+  expect(res.status).toBe(200);
+  expect(body.status).toBe("degraded");
+  expect(body.config.RESEND_API_KEY).toBe(false);
+});
+
+test("never emits a secret value", async () => {
+  stubHealthyEnv();
+
+  const { GET } = await import("./route");
+  const res = await GET();
+  const body = await res.json();
+
+  const serialized = JSON.stringify(body);
+  expect(serialized).not.toContain("service_role_test");
+  expect(serialized).not.toContain("re_test");
 });

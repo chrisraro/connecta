@@ -1,5 +1,4 @@
 import { expect, test, vi } from "vitest";
-import { ConvexError } from "convex/values";
 import { classifyNfcWriteError, withRetries, isDuplicateRegistrationError } from "./nfc";
 
 function domException(name: string, message: string): Error {
@@ -136,39 +135,53 @@ test("withRetries resolves in one attempt when fn succeeds immediately", async (
   expect(fn).toHaveBeenCalledTimes(1);
 });
 
-// --- isDuplicateRegistrationError ------------------------------------------
+// The duplicate check must key off a STRUCTURED code, never message text.
 //
-// Regression coverage for a redaction bug: the admin factory page used to
-// detect a duplicate card registration by regex-matching `/already exists/i`
-// against a thrown Error's `.message`. On a real production Convex
-// deployment, plain Error messages thrown from a mutation are redacted
-// client-side to the fixed string "Server Error" — so that regex could never
-// fire in prod, and an admin re-tapping an already-registered card would
-// fall into the generic-retry path with the scan session left alive,
-// looping forever. convex/admin.ts now throws a ConvexError carrying
-// `{ code: "DUPLICATE_UUID", ... }` in its (unredacted) `.data` for exactly
-// this case; detection must key off that data code, never message text.
+// The original bug was a `/already exists/i` regex against the message. That
+// could not fire in production, where Convex redacted the message to a fixed
+// string -- so an admin re-tapping an already-registered card fell into the
+// generic retry path with the scan session still alive, looping forever on
+// the same tag.
+//
+// The transport changed but the discipline did not: admin_register_card
+// raises with `detail = DUPLICATE_UUID` beside a human sentence in `message`,
+// and errorCode() reads the former. Rewording the sentence must not change
+// behaviour.
 
-test("isDuplicateRegistrationError returns true for a ConvexError with data.code DUPLICATE_UUID", () => {
-  const err = new ConvexError({ code: "DUPLICATE_UUID", uuid: "04:a3:5b:12:6f:80:81" });
+test("returns true for the database duplicate code", () => {
+  const err = {
+    code: "P0001",
+    message: "Card with UUID 04:a3:5b:12:6f:80:81 already exists",
+    details: "DUPLICATE_UUID",
+    hint: "",
+  };
   expect(isDuplicateRegistrationError(err)).toBe(true);
 });
 
-test("isDuplicateRegistrationError returns false for a plain Error carrying the redacted production message shape", () => {
-  // This is the exact string a real production Convex deployment sends to
-  // the client for an uncaught, non-ConvexError throw — the literal text
-  // that broke the old `/already exists/i` regex check.
-  const err = new Error("[CONVEX M(admin:registerSingleCard)] Server Error");
+// The regression the code channel exists to prevent: the wording is right
+// there in the message, and a text match would pass.
+test("returns false when only the message says it, with no code", () => {
+  const err = {
+    code: "P0001",
+    message: "Card with UUID 04:a3:5b:12:6f:80:81 already exists",
+    details: "",
+    hint: "",
+  };
   expect(isDuplicateRegistrationError(err)).toBe(false);
 });
 
-test("isDuplicateRegistrationError returns false for a ConvexError with an unrelated data code", () => {
-  const err = new ConvexError({ code: "SOME_OTHER_ERROR" });
+test("returns false for an unrelated application code", () => {
+  const err = { code: "P0001", message: "Card not found.", details: "CARD_NOT_FOUND", hint: "" };
   expect(isDuplicateRegistrationError(err)).toBe(false);
 });
 
-test("isDuplicateRegistrationError returns false for a ConvexError whose data isn't an object with a code", () => {
-  const err = new ConvexError("plain string data");
+test("returns false for a raw Postgres error with diagnostic prose in details", () => {
+  const err = {
+    code: "23505",
+    message: "duplicate key value violates unique constraint cards_uuid_key",
+    details: "Key (uuid)=(04:a3:5b:12:6f:80:81) already exists.",
+    hint: "",
+  };
   expect(isDuplicateRegistrationError(err)).toBe(false);
 });
 

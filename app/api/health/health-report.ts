@@ -1,9 +1,8 @@
 /**
  * Pure health-report logic for GET /api/health, kept separate from
- * `route.ts` so it can be unit-tested without a live Convex deployment or a
- * running Next.js server: `buildHealthReport` takes its Convex dependency
- * as an injected `queryConvex` function instead of constructing a
- * `ConvexHttpClient` itself.
+ * `route.ts` so it can be unit-tested without a live database or a running
+ * Next.js server: `buildHealthReport` takes its reachability check as an
+ * injected `pingDatabase` function instead of constructing a client itself.
  *
  * SECURITY: every field below is a boolean. Nothing here may ever carry a
  * secret's value, length, or prefix, or an internal error message/stack —
@@ -13,34 +12,31 @@
 // Required NEXT_PUBLIC_* vars on the web (Next.js/Vercel) side. Keep in
 // sync with the README's env var table.
 const REQUIRED_WEB_ENV_VARS = [
-  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "NEXT_PUBLIC_APP_URL",
-  "NEXT_PUBLIC_CONVEX_URL",
 ] as const;
 
 export type WebEnvPresence = Record<(typeof REQUIRED_WEB_ENV_VARS)[number], boolean>;
 
-// Mirrors convex/health.ts's ConfigPresence shape. Duplicated (rather than
-// imported from convex/) because app/ and convex/ are separate bundling
-// roots in this project; the fields are kept in sync by convention and by
-// the route-level test that exercises the real Convex query.
+// Server-only secrets. These no longer need a round trip to ask about:
+// Convex ran in its own runtime with its own environment, so config presence
+// had to be queried from it. Everything server-side now runs in this process,
+// so process.env is the whole answer.
 export type ConfigPresence = {
   RESEND_API_KEY: boolean;
-  CLERK_SECRET_KEY: boolean;
-  CLERK_WEBHOOK_SIGNING_SECRET: boolean;
-  NEXT_PUBLIC_APP_URL: boolean;
+  SUPABASE_SERVICE_ROLE_KEY: boolean;
 };
 
-export interface ConvexReachability {
+export interface DatabaseReachability {
   reachable: boolean;
-  config: ConfigPresence | null;
 }
 
 export interface HealthReportBody {
   status: "healthy" | "degraded" | "unhealthy";
-  convex: boolean;
+  database: boolean;
   env: WebEnvPresence;
-  config: ConfigPresence | null;
+  config: ConfigPresence;
 }
 
 export interface HealthReport {
@@ -49,27 +45,32 @@ export interface HealthReport {
 }
 
 export interface BuildHealthReportDeps {
-  env: Record<string, string | undefined>;
-  queryConvex: () => Promise<ConvexReachability>;
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>;
+  pingDatabase: () => Promise<DatabaseReachability>;
 }
 
 /**
- * Builds the /api/health response. HTTP status only ever reflects whether
- * Convex — the one hard dependency an uptime monitor should page on — is
- * reachable: 200 when reachable, 503 when not. Missing web env vars or
- * missing Convex-side secrets don't 503 the route (auth/browsing can still
- * work), but they do surface as `status: "degraded"` in the body so the
- * misconfiguration is visible in the same response instead of silent.
+ * Builds the /api/health response. HTTP status only ever reflects whether the
+ * DATABASE — the one hard dependency an uptime monitor should page on — is
+ * reachable: 200 when reachable, 503 when not. Missing env vars or secrets do
+ * not 503 the route (browsing still works), but they surface as
+ * `status: "degraded"` in the body so the misconfiguration is visible in the
+ * same response rather than silent.
  */
 export async function buildHealthReport(deps: BuildHealthReportDeps): Promise<HealthReport> {
   const env = Object.fromEntries(
     REQUIRED_WEB_ENV_VARS.map((key) => [key, Boolean(deps.env[key]?.trim())]),
   ) as WebEnvPresence;
 
-  const { reachable, config } = await deps.queryConvex();
+  const { reachable } = await deps.pingDatabase();
+
+  const config: ConfigPresence = {
+    RESEND_API_KEY: Boolean(deps.env.RESEND_API_KEY?.trim()),
+    SUPABASE_SERVICE_ROLE_KEY: Boolean(deps.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
+  };
 
   const envOk = Object.values(env).every(Boolean);
-  const configOk = config !== null && Object.values(config).every(Boolean);
+  const configOk = Object.values(config).every(Boolean);
 
   const status: HealthReportBody["status"] = !reachable
     ? "unhealthy"
@@ -79,6 +80,6 @@ export async function buildHealthReport(deps: BuildHealthReportDeps): Promise<He
 
   return {
     status: reachable ? 200 : 503,
-    body: { status, convex: reachable, env, config },
+    body: { status, database: reachable, env, config },
   };
 }

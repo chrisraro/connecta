@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import type { IdentityDeletionResult } from "@/lib/accountDeletion";
-import { api } from "@/convex/_generated/api";
 import {
   Dialog,
   DialogContent,

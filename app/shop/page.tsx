@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,10 +141,7 @@ function ProductImage({
   alt: string;
   className?: string;
 }) {
-  const imageUrl = useQuery(
-    api.images.getImageUrl,
-    storageId && !storageId.startsWith("http") ? { storageId } : "skip",
-  );
+  const imageUrl = resolveImageUrl(storageId);
 
   const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
 
@@ -168,7 +163,6 @@ function ProductImage({
     />
   );
 }
-import { Id } from "@/convex/_generated/dataModel";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Select,
@@ -177,24 +171,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { imageUrl as resolveImageUrl } from "@/lib/imageUrl";
+import { useProductCategories, useProducts } from "@/hooks/useShop";
 
 export default function ShopPage() {
-  const categories = useQuery(api.shop.getCategories, {});
-  const [selectedCategory, setSelectedCategory] = useState<Id<"productCategories"> | null>(null);
+  const { data: categories } = useProductCategories();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [inStockOnly, setInStockOnly] = useState(false);
   const { addItem, isLoading: cartLoading } = useCart();
-  const [addedToCart, setAddedToCart] = useState<Id<"products"> | null>(null);
+  const [addedToCart, setAddedToCart] = useState<string | null>(null);
 
-  const products = useQuery(api.shop.getProducts, {
-    categoryId: selectedCategory || undefined,
-    search: searchQuery || undefined,
-    sortBy: sortBy as "newest" | "price_asc" | "price_desc" | "popular" | undefined,
-    inStockOnly: inStockOnly,
-  });
+  const { data: products } = useProducts();
 
-  const handleAddToCart = async (productId: Id<"products">) => {
+  const handleAddToCart = async (productId: string) => {
     try {
       await addItem(productId, undefined, 1);
       setAddedToCart(productId);
@@ -272,10 +263,10 @@ export default function ShopPage() {
                   </button>
                   {categories?.map((category) => (
                     <button
-                      key={category._id}
-                      onClick={() => setSelectedCategory(category._id)}
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                        selectedCategory === category._id
+                        selectedCategory === category.id
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted"
                       }`}
@@ -339,10 +330,10 @@ export default function ShopPage() {
                 </button>
                 {categories?.map((category) => (
                   <button
-                    key={category._id}
-                    onClick={() => setSelectedCategory(category._id)}
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                      selectedCategory === category._id
+                      selectedCategory === category.id
                         ? "bg-primary text-primary-foreground"
                         : "hover:bg-muted"
                     }`}
@@ -406,14 +397,14 @@ export default function ShopPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product) => (
-                  <Link href={`/shop/product/${product.slug}`} key={product._id}>
+                  <Link href={`/shop/product/${product.slug}`} key={product.id}>
                     <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col hover:-translate-y-1 border-border/50 hover:border-primary/50">
                       {/* Product Image */}
                       <div className="aspect-square bg-muted relative overflow-hidden rounded-t-lg">
                         {product.images.length > 0 ? (
                           <ProductImage
                             storageId={
-                              product.images[product.primaryImageIndex] || product.images[0]
+                              product.images[product.primary_image_index] || product.images[0]
                             }
                             alt={product.name}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -426,12 +417,13 @@ export default function ShopPage() {
 
                         {/* Badges */}
                         <div className="absolute top-2 left-2 flex flex-col gap-2">
-                          {product.compareAtPrice && product.compareAtPrice > product.basePrice && (
-                            <Badge className="bg-red-600 text-white animate-in fade-in slide-in-from-top-2 duration-300">
-                              Sale
-                            </Badge>
-                          )}
-                          {product.isFeatured && (
+                          {product.compare_at_price &&
+                            product.compare_at_price > product.base_price && (
+                              <Badge className="bg-red-600 text-white animate-in fade-in slide-in-from-top-2 duration-300">
+                                Sale
+                              </Badge>
+                            )}
+                          {product.is_featured && (
                             <Badge className="bg-amber-700 text-white animate-in fade-in slide-in-from-top-2 duration-300 delay-75">
                               Featured
                             </Badge>
@@ -439,7 +431,7 @@ export default function ShopPage() {
                         </div>
 
                         {/* Stock Status */}
-                        {product.trackInventory && product.inventory === 0 && (
+                        {product.track_inventory && product.inventory === 0 && (
                           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                             <Badge variant="secondary" className="text-sm">
                               Out of Stock
@@ -467,12 +459,12 @@ export default function ShopPage() {
                         <div className="mt-auto flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-xl font-bold">
-                              {formatPrice(product.basePrice)}
+                              {formatPrice(product.base_price)}
                             </span>
-                            {product.compareAtPrice &&
-                              product.compareAtPrice > product.basePrice && (
+                            {product.compare_at_price &&
+                              product.compare_at_price > product.base_price && (
                                 <span className="text-sm text-muted-foreground line-through">
-                                  {formatPrice(product.compareAtPrice)}
+                                  {formatPrice(product.compare_at_price)}
                                 </span>
                               )}
                           </div>
@@ -481,19 +473,19 @@ export default function ShopPage() {
                         {/* Add to Cart Button */}
                         <Button
                           className={`w-full h-11 mt-4 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
-                            addedToCart === product._id
+                            addedToCart === product.id
                               ? "bg-green-500 hover:bg-green-600 text-white"
                               : "bg-primary hover:bg-primary/90 text-primary-foreground"
                           }`}
                           onClick={(e) => {
                             e.preventDefault();
-                            handleAddToCart(product._id);
+                            handleAddToCart(product.id);
                           }}
                           disabled={
-                            cartLoading || (product.trackInventory && product.inventory === 0)
+                            cartLoading || (product.track_inventory && product.inventory === 0)
                           }
                         >
-                          {addedToCart === product._id ? (
+                          {addedToCart === product.id ? (
                             <>
                               <Check className="w-4 h-4 mr-2" />
                               Added!

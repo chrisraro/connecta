@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,51 +17,47 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Loader2, Plus, X } from "lucide-react";
 import Link from "next/link";
-import { Id } from "@/convex/_generated/dataModel";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { ProductVariationsManager } from "./variations";
+import { useAdminProduct, useAdminCategories, useUpdateProduct } from "@/hooks/useAdminShop";
+import { useAuth } from "@/components/auth/AuthProvider";
+
+/** products.dimensions is jsonb; Postgres cannot type its shape. */
+type ProductDimensions = { length: number; width: number; height: number; unit: "cm" | "in" };
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { user, isLoaded: userLoaded } = useUser();
+  const { user, isLoaded: userLoaded } = useAuth();
   const [productId, setProductId] = useState<string>("");
 
   useEffect(() => {
     params.then((p) => setProductId(p.id));
   }, [params]);
 
-  const categories = useQuery(
-    api.adminShop.getCategories,
-    user?.id ? { clerkId: user.id } : "skip",
-  );
+  const { data: categories } = useAdminCategories();
 
-  const allProducts = useQuery(
-    api.adminShop.getProducts,
-    user?.id && productId ? { clerkId: user.id } : "skip",
-  );
+  const { data: product } = useAdminProduct(productId);
 
-  const product = allProducts?.find((p) => p._id === productId);
-
-  const updateProduct = useMutation(api.adminShop.updateProduct);
+  const updateProduct = useUpdateProduct().mutateAsync;
 
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
-    categoryId: "",
-    basePrice: 0,
-    compareAtPrice: 0,
-    costPrice: 0,
+    category_id: "",
+    base_price: 0,
+    compare_at_price: 0,
+    cost_price: 0,
     sku: "",
     barcode: "",
     inventory: 0,
-    lowStockThreshold: 10,
-    trackInventory: true,
-    isPublished: false,
-    isFeatured: false,
+    low_stock_threshold: 10,
+    track_inventory: true,
+    is_published: false,
+    is_featured: false,
     tags: [] as string[],
     images: [] as string[],
-    shippingRequired: true,
+    shipping_required: true,
     weight: 0,
     dimensions: {
       length: 0,
@@ -83,22 +76,22 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         name: product.name,
         slug: product.slug,
         description: product.description || "",
-        categoryId: product.categoryId || "",
-        basePrice: product.basePrice / 100,
-        compareAtPrice: product.compareAtPrice ? product.compareAtPrice / 100 : 0,
-        costPrice: product.costPrice ? product.costPrice / 100 : 0,
+        category_id: product.category_id || "",
+        base_price: product.base_price / 100,
+        compare_at_price: product.compare_at_price ? product.compare_at_price / 100 : 0,
+        cost_price: product.cost_price ? product.cost_price / 100 : 0,
         sku: product.sku,
         barcode: product.barcode || "",
         inventory: product.inventory,
-        lowStockThreshold: product.lowStockThreshold,
-        trackInventory: product.trackInventory,
-        isPublished: product.isPublished,
-        isFeatured: product.isFeatured,
+        low_stock_threshold: product.low_stock_threshold,
+        track_inventory: product.track_inventory,
+        is_published: product.is_published,
+        is_featured: product.is_featured,
         tags: product.tags || [],
         images: product.images || [],
-        shippingRequired: product.shippingRequired,
+        shipping_required: product.shipping_required,
         weight: product.weight || 0,
-        dimensions: product.dimensions || {
+        dimensions: (product.dimensions as ProductDimensions | null) || {
           length: 0,
           width: 0,
           height: 0,
@@ -141,7 +134,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     e.preventDefault();
     if (!user?.id || !productId) return;
 
-    if (!formData.categoryId) {
+    if (!formData.category_id) {
       alert("Please select a category");
       return;
     }
@@ -155,39 +148,38 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
     try {
       await updateProduct({
-        clerkId: user.id,
-        productId: productId as Id<"products">,
-        name: formData.name,
-        slug: formData.slug,
-        description: formData.description || undefined,
-        categoryId: formData.categoryId
-          ? (formData.categoryId as Id<"productCategories">)
-          : undefined,
-        basePrice: Math.round(formData.basePrice * 100),
-        compareAtPrice:
-          formData.compareAtPrice > 0 ? Math.round(formData.compareAtPrice * 100) : undefined,
-        costPrice: formData.costPrice > 0 ? Math.round(formData.costPrice * 100) : undefined,
-        sku: formData.sku,
-        barcode: formData.barcode || undefined,
-        inventory: formData.inventory,
-        lowStockThreshold: formData.lowStockThreshold,
-        trackInventory: formData.trackInventory,
-        isPublished: formData.isPublished,
-        isFeatured: formData.isFeatured,
-        tags: formData.tags,
-        images: formData.images,
-        primaryImageIndex: 0,
-        weight: formData.weight > 0 ? formData.weight : undefined,
-        dimensions:
-          formData.dimensions.length > 0
-            ? {
-                length: formData.dimensions.length,
-                width: formData.dimensions.width,
-                height: formData.dimensions.height,
-                unit: formData.dimensions.unit,
-              }
-            : undefined,
-        shippingRequired: formData.shippingRequired,
+        id: productId,
+        patch: {
+          name: formData.name,
+          slug: formData.slug,
+          description: formData.description || undefined,
+          category_id: formData.category_id ? (formData.category_id as string) : undefined,
+          base_price: Math.round(formData.base_price * 100),
+          compare_at_price:
+            formData.compare_at_price > 0 ? Math.round(formData.compare_at_price * 100) : undefined,
+          cost_price: formData.cost_price > 0 ? Math.round(formData.cost_price * 100) : undefined,
+          sku: formData.sku,
+          barcode: formData.barcode || undefined,
+          inventory: formData.inventory,
+          low_stock_threshold: formData.low_stock_threshold,
+          track_inventory: formData.track_inventory,
+          is_published: formData.is_published,
+          is_featured: formData.is_featured,
+          tags: formData.tags,
+          images: formData.images,
+          primary_image_index: 0,
+          weight: formData.weight > 0 ? formData.weight : undefined,
+          dimensions:
+            formData.dimensions.length > 0
+              ? {
+                  length: formData.dimensions.length,
+                  width: formData.dimensions.width,
+                  height: formData.dimensions.height,
+                  unit: formData.dimensions.unit,
+                }
+              : undefined,
+          shipping_required: formData.shipping_required,
+        },
       });
 
       router.push("/admin/shop/products");
@@ -199,7 +191,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  const isLoading = !userLoaded || categories === undefined || allProducts === undefined;
+  const isLoading = !userLoaded || categories === undefined || product === undefined;
 
   if (isLoading || !product) {
     return (
@@ -266,15 +258,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <div className="space-y-2">
                 <Label>Category *</Label>
                 <Select
-                  value={formData.categoryId}
-                  onValueChange={(val) => setFormData({ ...formData, categoryId: val })}
+                  value={formData.category_id}
+                  onValueChange={(val) => setFormData({ ...formData, category_id: val })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories?.map((cat) => (
-                      <SelectItem key={cat._id} value={cat._id}>
+                      <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
                       </SelectItem>
                     ))}
@@ -312,9 +304,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.basePrice}
+                  value={formData.base_price}
                   onChange={(e) =>
-                    setFormData({ ...formData, basePrice: parseFloat(e.target.value) || 0 })
+                    setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })
                   }
                   required
                 />
@@ -326,11 +318,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.compareAtPrice}
+                  value={formData.compare_at_price}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      compareAtPrice: parseFloat(e.target.value) || 0,
+                      compare_at_price: parseFloat(e.target.value) || 0,
                     })
                   }
                 />
@@ -343,9 +335,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.costPrice}
+                  value={formData.cost_price}
                   onChange={(e) =>
-                    setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })
+                    setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })
                   }
                 />
                 <p className="text-xs text-muted-foreground">Your cost for profit tracking</p>
@@ -376,11 +368,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <Input
                   type="number"
                   min="0"
-                  value={formData.lowStockThreshold}
+                  value={formData.low_stock_threshold}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      lowStockThreshold: parseInt(e.target.value) || 0,
+                      low_stock_threshold: parseInt(e.target.value) || 0,
                     })
                   }
                 />
@@ -388,9 +380,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
               <div className="flex items-center space-x-2">
                 <Switch
-                  checked={formData.trackInventory}
+                  checked={formData.track_inventory}
                   onCheckedChange={(checked) =>
-                    setFormData({ ...formData, trackInventory: checked })
+                    setFormData({ ...formData, track_inventory: checked })
                   }
                 />
                 <Label>Track Inventory</Label>
@@ -482,9 +474,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Switch
-                  checked={formData.shippingRequired}
+                  checked={formData.shipping_required}
                   onCheckedChange={(checked) =>
-                    setFormData({ ...formData, shippingRequired: checked })
+                    setFormData({ ...formData, shipping_required: checked })
                   }
                 />
                 <Label>Requires Shipping</Label>
@@ -492,16 +484,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
               <div className="flex items-center space-x-2">
                 <Switch
-                  checked={formData.isPublished}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isPublished: checked })}
+                  checked={formData.is_published}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_published: checked })}
                 />
                 <Label>Published</Label>
               </div>
 
               <div className="flex items-center space-x-2">
                 <Switch
-                  checked={formData.isFeatured}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
+                  checked={formData.is_featured}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
                 />
                 <Label>Featured</Label>
               </div>
@@ -528,9 +520,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         </div>
       </form>
 
-      {user?.id && productId && (
-        <ProductVariationsManager clerkId={user.id} productId={productId as Id<"products">} />
-      )}
+      {user?.id && productId && <ProductVariationsManager productId={productId} />}
     </div>
   );
 }

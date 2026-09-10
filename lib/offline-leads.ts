@@ -106,19 +106,22 @@ export function getOrCreateLeadVisitorId(): string {
 }
 
 /**
- * Sync offline leads to Convex
+ * Flush locally-captured leads to the server.
+ *
+ * The callback takes the row shape the leads table actually uses. visitorId
+ * is gone: it existed to scope the Convex rate limit per browser, and the
+ * limiter now keys on the authenticated caller instead, which cannot be
+ * reset by clearing localStorage.
  */
-import { Id } from "@/convex/_generated/dataModel";
 
 export async function syncOfflineLeads(
   createLeadFn: (args: {
-    ownerId: Id<"users">;
-    inquirerName: string;
-    inquirerContact: string;
-    message?: string;
-    visitorId?: string;
+    owner_id: string;
+    inquirer_name: string;
+    inquirer_contact: string;
+    message?: string | null;
   }) => Promise<unknown>,
-  ownerId: Id<"users">,
+  ownerId: string,
 ): Promise<{ synced: number; failed: number; failures: string[] }> {
   const leads = getOfflineLeads().filter((lead) => !lead.synced);
 
@@ -127,8 +130,6 @@ export async function syncOfflineLeads(
   }
 
   console.log(`Syncing ${leads.length} offline leads...`);
-
-  const visitorId = getOrCreateLeadVisitorId();
   let synced = 0;
   let failed = 0;
   // Task 17 / I2: the caller used to get back only `{synced, failed}` —
@@ -140,11 +141,10 @@ export async function syncOfflineLeads(
   for (const lead of leads) {
     try {
       await createLeadFn({
-        ownerId,
-        inquirerName: lead.inquirerName,
-        inquirerContact: lead.inquirerContact,
+        owner_id: ownerId,
+        inquirer_name: lead.inquirerName,
+        inquirer_contact: lead.inquirerContact,
         message: lead.message,
-        visitorId,
       });
 
       markLeadSynced(lead.id);

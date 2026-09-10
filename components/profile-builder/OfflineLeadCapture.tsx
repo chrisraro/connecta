@@ -12,8 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useAction, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import {
@@ -23,6 +21,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useCreateLead } from "@/hooks/useLeads";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface OfflineLeadCaptureProps {
   /** Controlled: dialog visibility now lives with the caller (the single
@@ -45,11 +45,8 @@ export function OfflineLeadCapture({
   onOpenChange,
   onUnsyncedCountChange,
 }: OfflineLeadCaptureProps) {
-  // createLead is a Convex action (not a mutation) — see convex/leads.ts.
-  // useAction has the same calling convention as useMutation, so
-  // syncOfflineLeads's usage below is unaffected.
-  const createLead = useAction(api.leads.createLead);
-  const currentUser = useQuery(api.users.getUser);
+  const createLead = useCreateLead().mutateAsync;
+  const { data: currentUser } = useCurrentUser();
 
   const [online, setOnline] = useState(true);
   const [unsyncedCount, setUnsyncedCount] = useState(0);
@@ -88,7 +85,7 @@ export function OfflineLeadCapture({
       const autoSync = async () => {
         setSyncing(true);
         try {
-          const result = await syncOfflineLeads(createLead, currentUser._id);
+          const result = await syncOfflineLeads(createLead, currentUser.id);
           setUnsyncedCount(getUnsyncedCount());
           console.log(`Auto-synced ${result.synced} offline leads.`);
           // Task 17 / I2: syncOfflineLeads never throws — it
@@ -119,11 +116,10 @@ export function OfflineLeadCapture({
       if (online && currentUser) {
         // Online: save directly to Convex
         await createLead({
-          ownerId: currentUser._id,
-          inquirerName: name,
-          inquirerContact: contact,
+          owner_id: currentUser.id,
+          inquirer_name: name,
+          inquirer_contact: contact,
           message: message || undefined,
-          visitorId: getOrCreateLeadVisitorId(),
         });
 
         // Reset form
@@ -177,7 +173,7 @@ export function OfflineLeadCapture({
 
     setSyncing(true);
     try {
-      const result = await syncOfflineLeads(createLead, currentUser._id);
+      const result = await syncOfflineLeads(createLead, currentUser.id);
       setUnsyncedCount(getUnsyncedCount());
 
       // Task 17 / I2 fix: this used to report ONLY result.synced —

@@ -1,6 +1,5 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   useMyCards,
@@ -16,7 +15,6 @@ import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { isPlanLimitError } from "@/lib/plans";
 import { UpgradeGate } from "@/components/billing/UpgradeGate";
-import { Id } from "@/convex/_generated/dataModel";
 import { CONNECTA } from "@/lib/brand";
 import {
   SmartphoneNfc,

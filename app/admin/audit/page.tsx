@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Shield, Download, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,15 +14,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuditLogs, type AuditLogWithActor } from "@/hooks/useAdmin";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function AdminAuditPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuth();
   const [search, setSearch] = useState("");
 
-  const auditLogs = useQuery(
-    api.admin.getAuditLogs,
-    user?.id ? { clerkId: user.id, limit: 300 } : "skip",
-  );
+  const { data: auditLogs } = useAuditLogs();
 
   if (!isLoaded || auditLogs === undefined) {
     return (
@@ -35,7 +31,8 @@ export default function AdminAuditPage() {
     );
   }
 
-  const formatTimestamp = (timestamp: number) => new Date(timestamp).toLocaleString();
+  // Timestamps arrive as ISO 8601 strings from Postgres, not epoch millis.
+  const formatTimestamp = (timestamp: string) => new Date(timestamp).toLocaleString();
 
   const getActionColor = (action: string) => {
     if (action.includes("create") || action.includes("grant"))
@@ -57,7 +54,7 @@ export default function AdminAuditPage() {
     if (!searchLower) return true;
     return (
       log.action.toLowerCase().includes(searchLower) ||
-      log.resourceType.toLowerCase().includes(searchLower) ||
+      log.resource_type.toLowerCase().includes(searchLower) ||
       (log.actorEmail || "").toLowerCase().includes(searchLower) ||
       (log.actorName || "").toLowerCase().includes(searchLower)
     );
@@ -71,8 +68,8 @@ export default function AdminAuditPage() {
       l.actorName || "",
       l.actorEmail || "",
       l.action,
-      l.resourceType,
-      l.resourceId,
+      l.resource_type,
+      l.resource_id,
     ]);
     const escape = (v: unknown) => {
       const s = String(v);
@@ -150,7 +147,7 @@ export default function AdminAuditPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((log) => (
-                  <TableRow key={log._id} className="border-border hover:bg-muted/50">
+                  <TableRow key={log.id} className="border-border hover:bg-muted/50">
                     <TableCell className="text-xs text-muted-foreground font-mono">
                       {formatTimestamp(log.timestamp)}
                     </TableCell>
@@ -162,9 +159,9 @@ export default function AdminAuditPage() {
                         {log.action}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-foreground">{log.resourceType}</TableCell>
+                    <TableCell className="text-sm text-foreground">{log.resource_type}</TableCell>
                     <TableCell className="text-xs text-muted-foreground font-mono truncate max-w-[160px]">
-                      {log.resourceId}
+                      {log.resource_id}
                     </TableCell>
                   </TableRow>
                 ))}

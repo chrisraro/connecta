@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,28 +23,32 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Edit, Trash2, Loader2, FolderTree } from "lucide-react";
-import { Id, Doc } from "@/convex/_generated/dataModel";
+import {
+  useAdminCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+  type ProductCategory,
+} from "@/hooks/useAdminShop";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function CategoriesPage() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<Id<"productCategories"> | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const categories = useQuery(
-    api.adminShop.getCategories,
-    user?.id ? { clerkId: user.id } : "skip",
-  );
-  const createCategory = useMutation(api.adminShop.createCategory);
-  const updateCategory = useMutation(api.adminShop.updateCategory);
-  const deleteCategory = useMutation(api.adminShop.deleteCategory);
+  const { data: categories } = useAdminCategories();
+  const createCategory = useCreateCategory().mutateAsync;
+  const updateCategory = useUpdateCategory().mutateAsync;
+  const deleteCategory = useDeleteCategory().mutateAsync;
 
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
-    sortOrder: 0,
-    isActive: true,
-    parentId: "" as string | undefined,
+    sort_order: 0,
+    is_active: true,
+    parent_id: "" as string | undefined,
   });
 
   const isLoading = categories === undefined;
@@ -58,28 +59,28 @@ export default function CategoriesPage() {
 
     try {
       // Convert empty strings to undefined for optional fields
-      const parentId = formData.parentId || undefined;
+      const parentId = formData.parent_id || undefined;
 
       if (editingId) {
         await updateCategory({
-          clerkId: user.id,
-          categoryId: editingId,
-          name: formData.name,
-          slug: formData.slug,
-          description: formData.description,
-          sortOrder: formData.sortOrder,
-          isActive: formData.isActive,
-          parentId: parentId ? (parentId as Id<"productCategories">) : undefined,
+          id: editingId,
+          patch: {
+            name: formData.name,
+            slug: formData.slug,
+            description: formData.description,
+            sort_order: formData.sort_order,
+            is_active: formData.is_active,
+            parent_id: parentId ? (parentId as string) : undefined,
+          },
         });
       } else {
         await createCategory({
-          clerkId: user.id,
           name: formData.name,
           slug: formData.slug,
           description: formData.description,
-          sortOrder: formData.sortOrder,
-          isActive: formData.isActive,
-          parentId: parentId ? (parentId as Id<"productCategories">) : undefined,
+          sort_order: formData.sort_order,
+          is_active: formData.is_active,
+          parent_id: parentId ? (parentId as string) : undefined,
         });
       }
       resetForm();
@@ -89,25 +90,25 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleEdit = (category: Doc<"productCategories">) => {
-    setEditingId(category._id);
+  const handleEdit = (category: ProductCategory) => {
+    setEditingId(category.id);
     setFormData({
       name: category.name,
       slug: category.slug,
       description: category.description || "",
-      sortOrder: category.sortOrder,
-      isActive: category.isActive,
-      parentId: category.parentId || undefined,
+      sort_order: category.sort_order,
+      is_active: category.is_active,
+      parent_id: category.parent_id || undefined,
     });
     setOpen(true);
   };
 
-  const handleDelete = async (id: Id<"productCategories">) => {
+  const handleDelete = async (id: string) => {
     if (!user?.id) return;
     if (!confirm("Delete this category? Products will need reassignment.")) return;
 
     try {
-      await deleteCategory({ clerkId: user.id, categoryId: id });
+      await deleteCategory(id);
     } catch (error) {
       console.error("Failed to delete category:", error);
     }
@@ -118,9 +119,9 @@ export default function CategoriesPage() {
       name: "",
       slug: "",
       description: "",
-      sortOrder: 0,
-      isActive: true,
-      parentId: undefined,
+      sort_order: 0,
+      is_active: true,
+      parent_id: undefined,
     });
     setEditingId(null);
     setOpen(false);
@@ -195,15 +196,15 @@ export default function CategoriesPage() {
               <div className="space-y-2">
                 <Label>Parent Category (Optional)</Label>
                 <select
-                  value={formData.parentId || ""}
+                  value={formData.parent_id || ""}
                   onChange={(e) =>
-                    setFormData({ ...formData, parentId: e.target.value || undefined })
+                    setFormData({ ...formData, parent_id: e.target.value || undefined })
                   }
                   className="w-full px-3 py-2 bg-muted border border-border rounded-md"
                 >
                   <option value="">None (Top Level)</option>
                   {categories?.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
+                    <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>
                   ))}
@@ -213,17 +214,17 @@ export default function CategoriesPage() {
                 <Label>Sort Order</Label>
                 <Input
                   type="number"
-                  value={formData.sortOrder}
+                  value={formData.sort_order}
                   onChange={(e) =>
-                    setFormData({ ...formData, sortOrder: parseInt(e.target.value) })
+                    setFormData({ ...formData, sort_order: parseInt(e.target.value) })
                   }
                   className="bg-muted border-border"
                 />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                 />
                 <Label>Active</Label>
               </div>
@@ -258,9 +259,9 @@ export default function CategoriesPage() {
             </TableHeader>
             <TableBody>
               {categories?.map((category) => {
-                const parent = categories.find((c) => c._id === category.parentId);
+                const parent = categories.find((c) => c.id === category.parent_id);
                 return (
-                  <TableRow key={category._id} className="border-border">
+                  <TableRow key={category.id} className="border-border">
                     <TableCell className="font-medium text-foreground">
                       <div className="flex items-center gap-2">
                         <FolderTree className="w-4 h-4 text-muted-foreground" />
@@ -271,13 +272,13 @@ export default function CategoriesPage() {
                       {category.slug}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{parent?.name || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{category.sortOrder}</TableCell>
+                    <TableCell className="text-muted-foreground">{category.sort_order}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={category.isActive ? "default" : "secondary"}
-                        className={category.isActive ? "bg-green-600" : "bg-secondary"}
+                        variant={category.is_active ? "default" : "secondary"}
+                        className={category.is_active ? "bg-green-600" : "bg-secondary"}
                       >
-                        {category.isActive ? "Active" : "Inactive"}
+                        {category.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -285,11 +286,7 @@ export default function CategoriesPage() {
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(category)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(category._id)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(category.id)}>
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
                       </div>

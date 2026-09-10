@@ -10,12 +10,10 @@ export function GallerySection({
   gallery,
   theme,
   index,
-  resolvedImages,
 }: {
   gallery: Gallery;
   theme: TemplateTheme;
   index: number;
-  resolvedImages?: ProfileData["resolvedImages"];
 }) {
   return (
     <SectionShell
@@ -35,7 +33,6 @@ export function GallerySection({
               src={img}
               alt={`Gallery ${i + 1}`}
               className="w-full h-full object-cover"
-              resolvedImages={resolvedImages}
             />
           </div>
         ))}

@@ -32,3 +32,19 @@ export function imageUrl(pathOrUrl: string | null | undefined): string | null {
 }
 
 export const IMAGE_BUCKET = BUCKET;
+
+/**
+ * True when a URL points at our own public storage bucket.
+ *
+ * Next's image optimizer needs the host allow-listed in
+ * next.config.ts images.remotePatterns, and rejects SVG. Both hold for URLs
+ * this module built; neither is guaranteed for an arbitrary avatar URL from
+ * an OAuth provider or for the Dicebear SVG fallback, so those must be
+ * rendered unoptimized rather than throwing and taking the page down.
+ */
+export function isOwnStorageUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return false;
+  return url.startsWith(`${base.replace(/\/+$/, "")}/storage/v1/object/public/${BUCKET}/`);
+}

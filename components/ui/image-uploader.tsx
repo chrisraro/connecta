@@ -4,13 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, X, Loader2, Info } from "lucide-react";
-import { useAction, useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { resolveImageUrl } from "@/lib/utils";
 import { compressImage, formatFileSize } from "@/lib/image-compression";
-import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { imageUrl as resolveImageUrl } from "@/lib/imageUrl";
 
 interface ImageUploaderProps {
   value?: string;
@@ -27,21 +25,11 @@ export function ImageUploader({
   className,
   placeholder = "Upload Image",
 }: ImageUploaderProps) {
-  const { user } = useUser();
+  const uploadImage = useImageUpload();
   const [isLoading, setIsLoading] = useState(false);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
   const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const generateUploadUrl = useMutation(api.images.generateUploadUrl);
-  // validateUpload is a Convex action (not a mutation) — it needs
-  // ctx.storage.get() to read the bytes actually sitting in storage,
-  // which only actions can do (see convex/images.ts). This is the
-  // server-side enforcement of ALLOWED_CONTENT_TYPES/MAX_UPLOAD_BYTES —
-  // the client-side check in lib/image-compression.ts is UX only and
-  // trivially bypassable by posting straight to the upload URL, so a
-  // storageId must never be handed to onChange until this confirms it
-  // (Task 19 / I4).
-  const validateUpload = useAction(api.images.validateUpload);
 
   useEffect(() => {
     return () => {
@@ -51,13 +39,9 @@ export function ImageUploader({
     };
   }, [localPreviewUrl]);
 
-  // Get the actual URL for display from Convex storage
-  const storageUrl = useQuery(
-    api.images.getImageUrl,
-    value && !value.startsWith("http") && !value.startsWith("data:") && !value.startsWith("blob:")
-      ? { storageId: value }
-      : "skip",
-  );
+  // Derived, not queried: the bucket is public, so the display URL is a
+  // string built from the stored path.
+  const storageUrl = resolveImageUrl(value);
 
   // Determine the display URL
   const getDisplayUrl = () => {
@@ -118,43 +102,13 @@ export function ImageUploader({
       const localUrl = URL.createObjectURL(fileToUpload);
       setLocalPreviewUrl(localUrl);
 
-      // 1. Get a short-lived upload URL from Convex
-      if (!user?.id) {
-        throw new Error("User not authenticated");
-      }
+      // One call. The bucket rejects the wrong MIME type or an oversized
+      // file BEFORE the object exists, so the separate validate-and-delete
+      // step this used to need has nothing left to check. The client-side
+      // compression in lib/image-compression.ts stays what it always was:
+      // UX, not enforcement.
+      const storageId = await uploadImage.mutateAsync(fileToUpload);
 
-      const postUrl = await generateUploadUrl({
-        clerkId: user.id,
-      });
-      console.log("Got upload URL:", postUrl);
-
-      // 2. POST the file to the URL
-      const result = await fetch(postUrl, {
-        method: "POST",
-        headers: { "Content-Type": fileToUpload.type },
-        body: fileToUpload,
-      });
-
-      console.log("Upload response status:", result.status);
-
-      if (!result.ok) {
-        const errorText = await result.text();
-        console.error("Upload failed:", errorText);
-        throw new Error(`Upload failed: ${result.status} ${errorText}`);
-      }
-
-      const { storageId } = await result.json();
-      console.log("Upload successful, storageId:", storageId);
-
-      // 3. Confirm the upload passes server-side validation before
-      // it's usable anywhere — this deletes the blob and throws if it
-      // doesn't (wrong content type, too large).
-      if (!user?.id) {
-        throw new Error("User not authenticated");
-      }
-      await validateUpload({ storageId, clerkId: user.id });
-
-      // Clear local preview and set the storage ID
       setLocalPreviewUrl(null);
       URL.revokeObjectURL(localUrl);
       onChange(storageId);

@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,11 +16,12 @@ import {
   Loader2,
 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 import { formatPHP } from "@/lib/payment";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
+import { imageUrl as resolveImageUrl } from "@/lib/imageUrl";
+import { useProductBySlug } from "@/hooks/useShop";
 
 const formatPrice = formatPHP;
 
@@ -36,10 +35,7 @@ function ProductImage({
   alt: string;
   className?: string;
 }) {
-  const imageUrl = useQuery(
-    api.images.getImageUrl,
-    storageId && !storageId.startsWith("http") ? { storageId } : "skip",
-  );
+  const imageUrl = resolveImageUrl(storageId);
 
   const displayUrl = storageId?.startsWith("http") ? storageId : imageUrl;
 
@@ -68,12 +64,12 @@ export default function ProductPage() {
   const slug = params.slug as string;
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariation, setSelectedVariation] = useState<Id<"productVariations"> | undefined>(
-    undefined,
-  );
+  const [selectedVariation, setSelectedVariation] = useState<string | undefined>(undefined);
   const { addItem, isLoading } = useCart();
 
-  const product = useQuery(api.shop.getProduct, { slug });
+  const { data: productData, isPending: productPending } = useProductBySlug(slug);
+  const product = productData?.product;
+  const variations = productData?.variations ?? [];
 
   if (product === undefined) {
     return (
@@ -98,20 +94,22 @@ export default function ProductPage() {
   }
 
   const currentPrice = selectedVariation
-    ? product.variations.find((v) => v._id === selectedVariation)?.price || product.basePrice
-    : product.basePrice;
+    ? variations.find((v) => v.id === selectedVariation)?.price || product.base_price
+    : product.base_price;
 
   const currentInventory = selectedVariation
-    ? product.variations.find((v) => v._id === selectedVariation)?.inventory || 0
+    ? variations.find((v) => v.id === selectedVariation)?.inventory || 0
     : product.inventory;
 
-  const isInStock = !product.trackInventory || currentInventory > 0;
+  const isInStock = !product.track_inventory || currentInventory > 0;
   const isLowStock =
-    product.trackInventory && currentInventory <= product.lowStockThreshold && currentInventory > 0;
+    product.track_inventory &&
+    currentInventory <= product.low_stock_threshold &&
+    currentInventory > 0;
 
   const handleAddToCart = async () => {
     try {
-      await addItem(product._id, selectedVariation, quantity);
+      await addItem(product.id, selectedVariation, quantity);
       // There is no checkout — adding takes the shopper to their selection,
       // which is where the purchase inquiry is sent from.
       router.push("/shop/cart");
@@ -210,14 +208,14 @@ export default function ProductPage() {
               <span className="text-2xl sm:text-3xl font-bold text-primary">
                 {formatPrice(currentPrice)}
               </span>
-              {product.compareAtPrice && product.compareAtPrice > currentPrice && (
+              {product.compare_at_price && product.compare_at_price > currentPrice && (
                 <span className="text-xl text-muted-foreground line-through">
-                  {formatPrice(product.compareAtPrice)}
+                  {formatPrice(product.compare_at_price)}
                 </span>
               )}
-              {product.compareAtPrice && product.compareAtPrice > currentPrice && (
+              {product.compare_at_price && product.compare_at_price > currentPrice && (
                 <Badge className="bg-red-500 text-white">
-                  Save {formatPrice(product.compareAtPrice - currentPrice)}
+                  Save {formatPrice(product.compare_at_price - currentPrice)}
                 </Badge>
               )}
             </div>
@@ -249,17 +247,17 @@ export default function ProductPage() {
           )}
 
           {/* Variations */}
-          {product.variations.length > 0 && (
+          {variations.length > 0 && (
             <div className="space-y-3">
               <h3 className="font-semibold">Options</h3>
               <div className="grid grid-cols-2 gap-2">
-                {product.variations.map((variation) => (
+                {variations.map((variation) => (
                   <button
-                    key={variation._id}
-                    onClick={() => setSelectedVariation(variation._id)}
+                    key={variation.id}
+                    onClick={() => setSelectedVariation(variation.id)}
                     disabled={variation.inventory === 0}
                     className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                      selectedVariation === variation._id
+                      selectedVariation === variation.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-muted"
                     } ${variation.inventory === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -300,7 +298,7 @@ export default function ProductPage() {
               >
                 <Plus className="w-4 h-4" />
               </Button>
-              {product.trackInventory && (
+              {product.track_inventory && (
                 <span className="text-sm text-muted-foreground">
                   ({currentInventory} available)
                 </span>

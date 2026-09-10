@@ -28,7 +28,6 @@ const SOCIAL_ICONS: Record<string, React.ElementType> = {
 type Props = {
   agent: ProfileInfo;
   theme: TemplateTheme;
-  resolvedImages?: ProfileData["resolvedImages"];
   /**
    * The name is the page's primary heading everywhere ProfileRenderer is the
    * actual page (the public profile at app/p/[id]) — "h1" (the default)
@@ -54,36 +53,15 @@ type Props = {
  * - structured-split: a fixed-width photo column beside a text column,
  *   a strict two-cell grid — no image ever floats free of the grid.
  */
-export function HeroSection({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
+export function HeroSection({ agent, theme, headingLevel = "h1" }: Props) {
   switch (theme.composition.hero) {
     case "full-bleed-portrait":
-      return (
-        <FullBleedPortraitHero
-          agent={agent}
-          theme={theme}
-          resolvedImages={resolvedImages}
-          headingLevel={headingLevel}
-        />
-      );
+      return <FullBleedPortraitHero agent={agent} theme={theme} headingLevel={headingLevel} />;
     case "structured-split":
-      return (
-        <StructuredSplitHero
-          agent={agent}
-          theme={theme}
-          resolvedImages={resolvedImages}
-          headingLevel={headingLevel}
-        />
-      );
+      return <StructuredSplitHero agent={agent} theme={theme} headingLevel={headingLevel} />;
     case "editorial-stack":
     default:
-      return (
-        <EditorialStackHero
-          agent={agent}
-          theme={theme}
-          resolvedImages={resolvedImages}
-          headingLevel={headingLevel}
-        />
-      );
+      return <EditorialStackHero agent={agent} theme={theme} headingLevel={headingLevel} />;
   }
 }
 
@@ -122,7 +100,7 @@ function SocialLinks({
   );
 }
 
-function EditorialStackHero({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
+function EditorialStackHero({ agent, theme, headingLevel = "h1" }: Props) {
   const NameHeading = headingLevel;
   return (
     <section className="pt-12 pb-8" style={{ backgroundColor: theme.colors.background }}>
@@ -137,7 +115,6 @@ function EditorialStackHero({ agent, theme, resolvedImages, headingLevel = "h1" 
               alt={agent.fullName}
               fallbackSeed={agent.fullName}
               className="w-full h-full object-cover"
-              resolvedImages={resolvedImages}
             />
           </div>
         </div>
@@ -193,7 +170,7 @@ function EditorialStackHero({ agent, theme, resolvedImages, headingLevel = "h1" 
   );
 }
 
-function FullBleedPortraitHero({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
+function FullBleedPortraitHero({ agent, theme, headingLevel = "h1" }: Props) {
   const NameHeading = headingLevel;
   return (
     <section style={{ backgroundColor: theme.colors.background }}>
@@ -204,7 +181,6 @@ function FullBleedPortraitHero({ agent, theme, resolvedImages, headingLevel = "h
             alt={agent.fullName}
             fallbackSeed={agent.fullName}
             className="w-full h-full"
-            resolvedImages={resolvedImages}
           />
         </div>
         {/* Legibility scrim so the overlaid name/title clear contrast on any photo. */}
@@ -266,7 +242,7 @@ function FullBleedPortraitHero({ agent, theme, resolvedImages, headingLevel = "h
   );
 }
 
-function StructuredSplitHero({ agent, theme, resolvedImages, headingLevel = "h1" }: Props) {
+function StructuredSplitHero({ agent, theme, headingLevel = "h1" }: Props) {
   const NameHeading = headingLevel;
   return (
     <section style={{ backgroundColor: theme.colors.background }}>
@@ -282,7 +258,6 @@ function StructuredSplitHero({ agent, theme, resolvedImages, headingLevel = "h1"
                 alt={agent.fullName}
                 fallbackSeed={agent.fullName}
                 className="w-full h-full object-cover"
-                resolvedImages={resolvedImages}
               />
             </div>
             <div>

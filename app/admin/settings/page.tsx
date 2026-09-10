@@ -1,8 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,14 +17,20 @@ import {
   Store,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useSetting, useUpdateSetting, usePlanPricing } from "@/hooks/useSettings";
+import type { PlanPricing } from "@/lib/plans";
+import type { ShopSettings } from "@/lib/shopSettings";
 
 export default function AdminSettingsPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
 
   // ---- Shop settings (tax / shipping) ----
-  const shopSettings = useQuery(api.settings.getShopSettings, {});
-  const updateShopSettings = useMutation(api.settings.updateShopSettings);
+  const { data: shopSettings } = useSetting<ShopSettings>("shop");
+  const updateSetting = useUpdateSetting().mutateAsync;
+  const updateShopSettings = (value: ShopSettings) =>
+    updateSetting({ key: "shop", value, isPublic: true });
   const [shopSaving, setShopSaving] = useState(false);
   const [shopSavedAt, setShopSavedAt] = useState<number | null>(null);
   const [shopForm, setShopForm] = useState({
@@ -48,8 +51,9 @@ export default function AdminSettingsPage() {
   }, [shopSettings]);
 
   // ---- Plan pricing (Pro / Business monthly price in ₱) ----
-  const planPricing = useQuery(api.billing.getPlanPricing, {});
-  const updatePlanPricing = useMutation(api.billing.updatePlanPricing);
+  const { data: planPricing } = usePlanPricing();
+  const updatePlanPricing = (value: PlanPricing) =>
+    updateSetting({ key: "planPricing", value, isPublic: true });
   const [planSaving, setPlanSaving] = useState(false);
   const [planSavedAt, setPlanSavedAt] = useState<number | null>(null);
   const [planForm, setPlanForm] = useState({ proPesos: 299, businessPesos: 999 });
@@ -67,8 +71,8 @@ export default function AdminSettingsPage() {
     setPlanSaving(true);
     try {
       await updatePlanPricing({
-        proCentavos: Math.round(planForm.proPesos * 100),
-        businessCentavos: Math.round(planForm.businessPesos * 100),
+        pro: Math.round(planForm.proPesos * 100),
+        business: Math.round(planForm.businessPesos * 100),
       });
       setPlanSavedAt(Date.now());
     } catch (error) {
@@ -98,6 +102,7 @@ export default function AdminSettingsPage() {
         taxRatePercent: shopForm.taxRatePercent,
         shippingFlatRateCentavos: Math.round(shopForm.shippingFlatRatePesos * 100),
         freeShippingThresholdCentavos: Math.round(shopForm.freeShippingThresholdPesos * 100),
+        currency: "PHP",
       });
       setShopSavedAt(Date.now());
     } catch (error) {

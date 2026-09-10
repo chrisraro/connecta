@@ -2,13 +2,11 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useMyProfiles, useSaveOnboarding } from "@/hooks/useProfiles";
 import { useClaimCard, useLinkCardProfile } from "@/hooks/useCards";
 import { onboardingDataOf, agentInfoOf } from "@/lib/db/profile";
-import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";

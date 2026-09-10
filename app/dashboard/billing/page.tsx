@@ -4,7 +4,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useMyPlan } from "@/hooks/useCurrentUser";
 import { usePlanPricing } from "@/hooks/useSettings";
 import { DEFAULT_PLAN_PRICING } from "@/lib/plans";
-import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { formatPHP } from "@/lib/payment";

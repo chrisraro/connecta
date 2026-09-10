@@ -238,6 +238,20 @@ export function useAdminGrants() {
   });
 }
 
+export type AuditLogWithActor = AuditLogRow & {
+  actorName: string | null;
+  actorEmail: string | null;
+  /** Alias of created_at, kept because the console column is labelled Time. */
+  timestamp: string;
+};
+
+/**
+ * The audit trail, with the actor resolved.
+ *
+ * Joined in one query rather than looked up per row: an audit page renders
+ * a hundred entries, and a per-row lookup is a hundred round trips for a
+ * name. The FK to users makes this a single embedded select.
+ */
 export function useAuditLogs(limit = 100) {
   const supabase = useSupabase();
   const { user, isLoaded } = useAuth();
@@ -245,14 +259,25 @@ export function useAuditLogs(limit = 100) {
   return useQuery({
     queryKey: queryKeys.adminAudit(),
     enabled: isLoaded && Boolean(user),
-    queryFn: async (): Promise<AuditLogRow[]> => {
+    queryFn: async (): Promise<AuditLogWithActor[]> => {
       const { data, error } = await supabase
         .from("audit_logs")
-        .select("*")
+        .select("*, actor:users!audit_logs_user_id_fkey(name, email)")
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return data ?? [];
+
+      return (data ?? []).map((row) => {
+        const { actor, ...log } = row as typeof row & {
+          actor: { name: string | null; email: string | null } | null;
+        };
+        return {
+          ...(log as AuditLogRow),
+          actorName: actor?.name ?? null,
+          actorEmail: actor?.email ?? null,
+          timestamp: log.created_at,
+        };
+      });
     },
   });
 }

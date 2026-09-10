@@ -28,67 +28,81 @@ import userEvent from "@testing-library/user-event";
  * exactly as it does live.
  */
 
-// vi.mock factories are hoisted above every import/const in this file, so
-// anything they close over must itself be created inside vi.hoisted().
-const { API, push, replace, updateOnboarding, getOnboardingState, resetOnboardingState } =
-  vi.hoisted(() => {
-    const API = {
-      users: {
-        getOnboardingStatus: "users.getOnboardingStatus",
-        updateOnboarding: "users.updateOnboarding",
-      },
-      profiles: {
-        getMyProfiles: "profiles.getMyProfiles",
-      },
-      cards: {
-        claimCardByUuid: "cards.claimCardByUuid",
-        linkProfile: "cards.linkProfile",
-      },
-      // The wizard's photo step mounts <ImageUploader>, which calls
-      // useMutation/useAction against these directly — needed so that
-      // component doesn't crash on `api.images` being undefined.
-      images: {
-        generateUploadUrl: "images.generateUploadUrl",
-        validateUpload: "images.validateUpload",
-      },
-    };
+// vi.mock factories are hoisted above every import in this file, so anything
+// they close over must itself be created inside vi.hoisted().
+//
+// Ported from Convex: there is no api object or reactive query to fake any
+// more. The wizard reads its state from useCurrentUser (the public.users row)
+// and writes through useSaveOnboarding, so those are what get mocked -- and
+// the mocked save updates the mocked user row, which is what lets the
+// completed-state screen take over exactly as it does live.
+const { push, replace, updateOnboarding, getUserState, resetUserState } = vi.hoisted(() => {
+  let userState: {
+    id: string;
+    name: string;
+    email: string;
+    onboarding_completed: boolean;
+    onboarding_data: Record<string, unknown> | null;
+  } = {
+    id: "user_test",
+    name: "Test User",
+    email: "test@example.com",
+    onboarding_completed: false,
+    onboarding_data: null,
+  };
 
-    let onboardingState: { completed: boolean; data?: Record<string, unknown> } = {
-      completed: false,
-      data: undefined,
-    };
-
-    const updateOnboarding = vi.fn(async (args: { markCompleted: boolean }) => {
-      if (args.markCompleted) {
-        onboardingState = { completed: true, data: { ...args } };
-      }
-      return { profileId: "profile_new" };
-    });
-
-    return {
-      API,
-      push: vi.fn(),
-      replace: vi.fn(),
-      updateOnboarding,
-      getOnboardingState: () => onboardingState,
-      resetOnboardingState: () => {
-        onboardingState = { completed: false, data: undefined };
-      },
-    };
+  const updateOnboarding = vi.fn(async (args: { markCompleted: boolean }) => {
+    if (args.markCompleted) {
+      userState = { ...userState, onboarding_completed: true, onboarding_data: { ...args } };
+    }
+    return { profileId: "profile_new" };
   });
 
-vi.mock("@/convex/_generated/api", () => ({ api: API }));
-
-vi.mock("@clerk/nextjs", () => ({
-  useUser: () => ({
-    isLoaded: true,
-    user: {
-      id: "user_test",
-      fullName: "Test User",
-      imageUrl: "",
-      primaryEmailAddress: { emailAddress: "test@example.com" },
+  return {
+    push: vi.fn(),
+    replace: vi.fn(),
+    updateOnboarding,
+    getUserState: () => userState,
+    resetUserState: () => {
+      userState = {
+        id: "user_test",
+        name: "Test User",
+        email: "test@example.com",
+        onboarding_completed: false,
+        onboarding_data: null,
+      };
     },
+  };
+});
+
+vi.mock("@/components/auth/AuthProvider", () => ({
+  useAuth: () => ({
+    isLoaded: true,
+    isSignedIn: true,
+    user: { id: "user_test", email: "test@example.com", user_metadata: {} },
   }),
+}));
+
+vi.mock("@/hooks/useCurrentUser", () => ({
+  useCurrentUser: () => ({ data: getUserState(), isPending: false }),
+  useMyPlan: () => ({ plan: "free", limits: { maxProfiles: 1 }, isPending: false }),
+  useIsAdmin: () => ({ data: false, isPending: false }),
+}));
+
+vi.mock("@/hooks/useProfiles", () => ({
+  useMyProfiles: () => ({ data: [] }),
+  useSaveOnboarding: () => ({ mutateAsync: updateOnboarding }),
+}));
+
+vi.mock("@/hooks/useCards", () => ({
+  useClaimCard: () => ({ mutateAsync: vi.fn() }),
+  useLinkCardProfile: () => ({ mutateAsync: vi.fn() }),
+}));
+
+// The photo step mounts <ImageUploader>, which uploads through this hook.
+vi.mock("@/hooks/useImageUpload", () => ({
+  useImageUpload: () => ({ mutateAsync: vi.fn(async () => "user_test/photo.webp") }),
+  useImageDelete: () => ({ mutateAsync: vi.fn() }),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -98,19 +112,6 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
-}));
-
-vi.mock("convex/react", () => ({
-  useQuery: (ref: unknown) => {
-    if (ref === API.users.getOnboardingStatus) return getOnboardingState();
-    if (ref === API.profiles.getMyProfiles) return [];
-    return undefined;
-  },
-  useMutation: (ref: unknown) => {
-    if (ref === API.users.updateOnboarding) return updateOnboarding;
-    return vi.fn();
-  },
-  useAction: () => vi.fn(),
 }));
 
 import OnboardingPage from "./page";
@@ -126,7 +127,7 @@ async function goToLastStep(user: ReturnType<typeof userEvent.setup>) {
 
 describe("onboarding wizard completion (Task 21)", () => {
   beforeEach(() => {
-    resetOnboardingState();
+    resetUserState();
     updateOnboarding.mockClear();
     push.mockClear();
     replace.mockClear();

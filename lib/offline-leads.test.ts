@@ -6,7 +6,6 @@ import {
   syncOfflineLeads,
 } from "./offline-leads";
 import { LEAD_VISITOR_ID_KEY, OFFLINE_LEADS_KEY } from "./storage-keys";
-import { Id } from "@/convex/_generated/dataModel";
 
 // This project's test config runs plain `*.test.ts` files under
 // `edge-runtime`, which — like Node itself without `--localstorage-file` —
@@ -81,15 +80,15 @@ describe("getOrCreateLeadVisitorId", () => {
  * survive the change.
  */
 describe("syncOfflineLeads", () => {
-  const ownerId = "owner_1" as Id<"users">;
+  const ownerId = "owner_1" as string;
 
   test("reports failed count and per-lead reasons instead of only ever reporting synced", async () => {
     saveOfflineLead({ inquirerName: "Wins A", inquirerContact: "a@test.dev" });
     saveOfflineLead({ inquirerName: "Fails B", inquirerContact: "b@test.dev" });
     saveOfflineLead({ inquirerName: "Wins C", inquirerContact: "c@test.dev" });
 
-    const createLeadFn = async (args: { inquirerName: string }) => {
-      if (args.inquirerName === "Fails B") {
+    const createLeadFn = async (args: { inquirer_name: string }) => {
+      if (args.inquirer_name === "Fails B") {
         throw new Error("Too many requests. Please try again in a moment.");
       }
       return "lead_id";
@@ -125,20 +124,30 @@ describe("syncOfflineLeads", () => {
     expect(getOfflineLeads().filter((l) => !l.synced)).toHaveLength(0);
   });
 
-  test("passes the same visitorId used for the browser's rate-limit bucket on every call in the batch", async () => {
-    saveOfflineLead({ inquirerName: "One", inquirerContact: "one@test.dev" });
+  // Replaces the visitorId test. That id existed to scope the Convex rate
+  // limit to a browser; the limiter now keys on the authenticated caller,
+  // which cannot be reset by clearing localStorage. What still matters is
+  // that every queued lead reaches the server addressed to the right owner
+  // and with its fields mapped to the row shape.
+  test("sends every queued lead to the owner, in the row shape the table uses", async () => {
+    saveOfflineLead({ inquirerName: "One", inquirerContact: "one@test.dev", message: "hi" });
     saveOfflineLead({ inquirerName: "Two", inquirerContact: "two@test.dev" });
 
-    const seenVisitorIds: (string | undefined)[] = [];
-    const createLeadFn = async (args: { visitorId?: string }) => {
-      seenVisitorIds.push(args.visitorId);
+    const seen: { owner_id: string; inquirer_name: string; inquirer_contact: string }[] = [];
+    const createLeadFn = async (args: {
+      owner_id: string;
+      inquirer_name: string;
+      inquirer_contact: string;
+    }) => {
+      seen.push(args);
       return "lead_id";
     };
 
     await syncOfflineLeads(createLeadFn, ownerId);
 
-    expect(seenVisitorIds).toHaveLength(2);
-    expect(seenVisitorIds[0]).toBeTruthy();
-    expect(seenVisitorIds[0]).toBe(seenVisitorIds[1]);
+    expect(seen).toHaveLength(2);
+    expect(seen.every((a) => a.owner_id === ownerId)).toBe(true);
+    expect(seen.map((a) => a.inquirer_name).sort()).toEqual(["One", "Two"]);
+    expect(seen.map((a) => a.inquirer_contact).sort()).toEqual(["one@test.dev", "two@test.dev"]);
   });
 });

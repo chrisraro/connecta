@@ -1,6 +1,5 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   useMyNotifications,

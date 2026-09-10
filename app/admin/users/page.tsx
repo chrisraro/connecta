@@ -1,9 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import { Loader2, ShieldCheck, User, MoreHorizontal } from "lucide-react";
 import {
   Table,
@@ -23,26 +19,46 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import {
+  useAdminUsers,
+  useAdminGrants,
+  useAdminCards,
+  useGrantAdminRole,
+  useRevokeAdminRole,
+  useSetUserSuspended,
+  type AdminUserRow,
+} from "@/hooks/useAdmin";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function AdminUsersPage() {
-  const { user, isLoaded } = useUser();
-  const usersList = useQuery(api.admin.getAllUsers, user?.id ? { clerkId: user.id } : "skip");
-  const adminStatus = useQuery(
-    api.admin.checkAdminStatus,
-    user?.id ? { clerkId: user.id } : "skip",
-  );
+  const { user, isLoaded } = useAuth();
+  const { data: usersList } = useAdminUsers();
+  const { data: grants } = useAdminGrants();
+  // Cards per owner, counted from the same list the factory shows. The
+  // Convex query enriched each user row with this; one grouped read is
+  // cheaper than a per-row count and stays consistent across the table.
+  const { data: allCards } = useAdminCards();
+  const cardCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const card of allCards ?? []) {
+      if (card.owner_id) counts[card.owner_id] = (counts[card.owner_id] ?? 0) + 1;
+    }
+    return counts;
+  }, [allCards]);
 
-  const grantAdminRole = useMutation(api.admin.grantAdminRole);
-  const revokeAdminRole = useMutation(api.admin.revokeAdminRole);
-  const setUserSuspended = useMutation(api.admin.setUserSuspended);
+  const grantAdminRole = useGrantAdminRole().mutateAsync;
+  const revokeAdminRole = useRevokeAdminRole().mutateAsync;
+  const setUserSuspended = useSetUserSuspended().mutateAsync;
 
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const isSuperadmin = adminStatus?.role === "superadmin";
-  const myUserId = adminStatus?.userId;
+  // The caller's own live grant, from the roster we already load.
+  const myGrant = grants?.find((g) => g.user_id === user?.id);
+  const isSuperadmin = myGrant?.role === "superadmin";
+  const myUserId = user?.id;
 
-  if (!isLoaded || usersList === undefined || adminStatus === undefined) {
+  if (!isLoaded || !usersList || !grants) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="animate-spin text-red-600 w-8 h-8" />
@@ -62,17 +78,17 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleGrant = (targetUserId: Id<"users">, role: "superadmin" | "moderator") =>
-    run(targetUserId, () => grantAdminRole({ adminClerkId: user!.id, targetUserId, role }));
+  const handleGrant = (targetUserId: string, role: "superadmin" | "moderator") =>
+    run(targetUserId, () => grantAdminRole({ userId: targetUserId, role }));
 
-  const handleRevoke = (targetUserId: Id<"users">) => {
+  const handleRevoke = (targetUserId: string) => {
     if (!confirm("Revoke admin access for this user?")) return;
-    run(targetUserId, () => revokeAdminRole({ adminClerkId: user!.id, targetUserId }));
+    run(targetUserId, () => revokeAdminRole({ userId: targetUserId }));
   };
 
-  const handleSuspend = (targetUserId: Id<"users">, suspended: boolean) => {
+  const handleSuspend = (targetUserId: string, suspended: boolean) => {
     if (!confirm(suspended ? "Suspend this user?" : "Reactivate this user?")) return;
-    run(targetUserId, () => setUserSuspended({ adminClerkId: user!.id, targetUserId, suspended }));
+    run(targetUserId, () => setUserSuspended({ userId: targetUserId, suspended }));
   };
 
   return (
@@ -116,7 +132,7 @@ export default function AdminUsersPage() {
             ) : (
               usersList.map((u) => {
                 const isSelf = u.id === myUserId;
-                const isSuspended = u.subscriptionStatus === "suspended";
+                const isSuspended = u.subscription_status === "suspended";
                 return (
                   <TableRow
                     key={u.id}
@@ -134,7 +150,8 @@ export default function AdminUsersPage() {
                           variant="outline"
                           className="bg-red-500/10 text-red-500 border-red-500/20 gap-1"
                         >
-                          <ShieldCheck className="w-3 h-3" /> {u.adminRole || "Admin"}
+                          <ShieldCheck className="w-3 h-3" />{" "}
+                          {grants?.find((g) => g.user_id === u.id)?.role || "Admin"}
                         </Badge>
                       ) : (
                         <Badge
@@ -159,20 +176,22 @@ export default function AdminUsersPage() {
                         >
                           {u.plan}
                         </Badge>
-                        {u.plan !== "free" && u.planExpiresAt && (
+                        {u.plan !== "free" && u.plan_expires_at && (
                           <span className="mt-1 text-[10px] text-muted-foreground">
-                            until {new Date(u.planExpiresAt).toLocaleDateString()}
+                            until {new Date(u.plan_expires_at).toLocaleDateString()}
                           </span>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-foreground font-mono">{u.cardCount}</TableCell>
+                    <TableCell className="text-foreground font-mono">
+                      {cardCounts[u.id] ?? 0}
+                    </TableCell>
                     <TableCell>
                       {isSuspended ? (
                         <Badge className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">
                           Suspended
                         </Badge>
-                      ) : u.onboardingCompleted ? (
+                      ) : u.onboarding_completed ? (
                         <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20">
                           Onboarded
                         </Badge>
@@ -206,7 +225,7 @@ export default function AdminUsersPage() {
                             {u.role === "admin" ? (
                               <DropdownMenuItem
                                 disabled={isSelf}
-                                onClick={() => handleRevoke(u.id as Id<"users">)}
+                                onClick={() => handleRevoke(u.id as string)}
                                 className="text-red-400 focus:text-red-400"
                               >
                                 Revoke admin{isSelf ? " (self)" : ""}
@@ -214,12 +233,12 @@ export default function AdminUsersPage() {
                             ) : (
                               <>
                                 <DropdownMenuItem
-                                  onClick={() => handleGrant(u.id as Id<"users">, "moderator")}
+                                  onClick={() => handleGrant(u.id as string, "moderator")}
                                 >
                                   Grant moderator
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => handleGrant(u.id as Id<"users">, "superadmin")}
+                                  onClick={() => handleGrant(u.id as string, "superadmin")}
                                 >
                                   Grant superadmin
                                 </DropdownMenuItem>
@@ -229,14 +248,14 @@ export default function AdminUsersPage() {
                             {isSuspended ? (
                               <DropdownMenuItem
                                 disabled={isSelf}
-                                onClick={() => handleSuspend(u.id as Id<"users">, false)}
+                                onClick={() => handleSuspend(u.id as string, false)}
                               >
                                 Reactivate user
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem
                                 disabled={isSelf}
-                                onClick={() => handleSuspend(u.id as Id<"users">, true)}
+                                onClick={() => handleSuspend(u.id as string, true)}
                                 className="text-red-400 focus:text-red-400"
                               >
                                 Suspend user{isSelf ? " (self)" : ""}

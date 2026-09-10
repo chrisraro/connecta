@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
-import { Id } from "@/convex/_generated/dataModel";
 import { getOrCreateLeadVisitorId } from "@/lib/offline-leads";
 import { ProfileData } from "@/types/profile";
 import { ProfileImage } from "@/components/templates/ProfileImage";
@@ -38,6 +35,7 @@ import {
   CheckCircle2,
   MessageSquare,
 } from "lucide-react";
+import { useCreateLead } from "@/hooks/useLeads";
 
 interface StorefrontViewProps {
   data: ProfileData;
@@ -47,7 +45,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
   const { agent, products = [], ownerId } = data;
   // createLead is a Convex action (not a mutation) — see convex/leads.ts.
   // useAction has the same calling convention as useMutation.
-  const createLead = useAction(api.leads.createLead);
+  const createLead = useCreateLead().mutateAsync;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<"all" | "products" | "services">("all");
@@ -110,14 +108,10 @@ export function StorefrontView({ data }: StorefrontViewProps) {
     setIsSubmittingInquiry(true);
     try {
       await createLead({
-        ownerId: ownerId as Id<"users">,
-        inquirerName: inquiryForm.name,
-        inquirerContact: inquiryForm.contact,
+        owner_id: ownerId,
+        inquirer_name: inquiryForm.name,
+        inquirer_contact: inquiryForm.contact,
         message: inquiryForm.message,
-        // Task 17 / I2: scopes createLead's rate limit to this
-        // browser instead of every visitor to this profile sharing
-        // one bucket.
-        visitorId: getOrCreateLeadVisitorId(),
       });
 
       setInquirySuccess(true);

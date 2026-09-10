@@ -1,10 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useAction } from "convex/react";
 import { Loader2, CheckCircle2, Send, AlertCircle } from "lucide-react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import { getOrCreateLeadVisitorId } from "@/lib/offline-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { readableTextColor } from "@/lib/utils";
 import { TemplateTheme } from "../theme";
 import { SectionShell } from "./SectionShell";
+import { useCreateLead } from "@/hooks/useLeads";
 
 export function ContactSection({
   theme,
@@ -27,7 +25,7 @@ export function ContactSection({
   // back with it — see convex/leads.ts. useAction has the same calling
   // convention as useMutation (resolves on success, rejects on error), so
   // nothing else here changes.
-  const createLead = useAction(api.leads.createLead);
+  const createLead = useCreateLead().mutateAsync;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -50,13 +48,10 @@ export function ContactSection({
     setErrorMessage(null);
     try {
       await createLead({
-        ownerId: ownerId as Id<"users">,
-        inquirerName: form.name,
-        inquirerContact: form.email,
+        owner_id: ownerId,
+        inquirer_name: form.name,
+        inquirer_contact: form.email,
         message: form.message,
-        // Task 17 / I2: scopes createLead's rate limit to this browser
-        // instead of every visitor to this profile sharing one bucket.
-        visitorId: getOrCreateLeadVisitorId(),
       });
       setIsSuccess(true);
       setForm({ name: "", email: "", message: "" });

@@ -9,12 +9,10 @@ export function ProjectsSection({
   projects,
   theme,
   index,
-  resolvedImages,
 }: {
   projects: ProjectItem[];
   theme: TemplateTheme;
   index: number;
-  resolvedImages?: ProfileData["resolvedImages"];
 }) {
   return (
     <SectionShell
@@ -39,7 +37,6 @@ export function ProjectsSection({
                   src={project.images[0]}
                   alt={project.title}
                   className="w-full h-full object-cover"
-                  resolvedImages={resolvedImages}
                 />
               </div>
             )}

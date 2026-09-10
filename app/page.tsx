@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@/components/auth/AuthGate";
 import {
   ArrowRight,
   LayoutDashboard,
