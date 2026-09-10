@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_bootstrap_grants: {
+        Row: {
+          consumed_at: string | null
+          consumed_by: string | null
+          created_at: string
+          email: string
+          role: Database["public"]["Enums"]["admin_role"]
+        }
+        Insert: {
+          consumed_at?: string | null
+          consumed_by?: string | null
+          created_at?: string
+          email: string
+          role?: Database["public"]["Enums"]["admin_role"]
+        }
+        Update: {
+          consumed_at?: string | null
+          consumed_by?: string | null
+          created_at?: string
+          email?: string
+          role?: Database["public"]["Enums"]["admin_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_bootstrap_grants_consumed_by_fkey"
+            columns: ["consumed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admins: {
         Row: {
           granted_at: string
@@ -515,6 +547,7 @@ export type Database = {
           layout_config: Json
           name: string
           owner_id: string
+          owner_suspended: boolean
           products: Json
           profile_type: Database["public"]["Enums"]["profile_type"] | null
           property_listings: Json
@@ -532,6 +565,7 @@ export type Database = {
           layout_config: Json
           name: string
           owner_id: string
+          owner_suspended?: boolean
           products?: Json
           profile_type?: Database["public"]["Enums"]["profile_type"] | null
           property_listings?: Json
@@ -549,6 +583,7 @@ export type Database = {
           layout_config?: Json
           name?: string
           owner_id?: string
+          owner_suspended?: boolean
           products?: Json
           profile_type?: Database["public"]["Enums"]["profile_type"] | null
           property_listings?: Json
@@ -890,6 +925,48 @@ export type Database = {
     }
     Functions: {
       activate_card_by_code: { Args: { code: string }; Returns: string }
+      admin_dashboard_stats: { Args: never; Returns: Json }
+      admin_delete_cards: { Args: { card_ids: string[] }; Returns: number }
+      admin_grant_role: {
+        Args: {
+          grant_reason?: string
+          grant_role: Database["public"]["Enums"]["admin_role"]
+          target_user: string
+        }
+        Returns: undefined
+      }
+      admin_register_card: {
+        Args: {
+          card_uuid: string
+          skin?: Database["public"]["Enums"]["card_skin"]
+        }
+        Returns: {
+          activation_code: string
+          created_at: string
+          id: string
+          linked_profile_id: string | null
+          owner_id: string | null
+          skin: Database["public"]["Enums"]["card_skin"]
+          status: Database["public"]["Enums"]["card_status"]
+          tap_count: number
+          updated_at: string
+          uuid: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "cards"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_revoke_role: {
+        Args: { revoke_reason?: string; target_user: string }
+        Returns: undefined
+      }
+      admin_set_user_suspended: {
+        Args: { suspend: boolean; target_user: string }
+        Returns: undefined
+      }
       bootstrap_superadmin: { Args: { target_email: string }; Returns: string }
       check_rate_limit: {
         Args: { limit_key: string; max_hits: number; window_seconds: number }
@@ -899,7 +976,20 @@ export type Database = {
       current_team_id: { Args: never; Returns: string }
       is_admin: { Args: { check_user?: string }; Returns: boolean }
       is_superadmin: { Args: { check_user?: string }; Returns: boolean }
+      is_suspended: { Args: { check_user?: string }; Returns: boolean }
+      log_audit: {
+        Args: {
+          actor: string
+          audit_action: string
+          changes?: Json
+          resource_id: string
+          resource_type: string
+        }
+        Returns: undefined
+      }
       record_card_tap: { Args: { card_uuid: string }; Returns: undefined }
+      require_admin: { Args: never; Returns: string }
+      require_superadmin: { Args: never; Returns: string }
       resolve_card_for_tap: {
         Args: { card_uuid: string }
         Returns: {
