@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSupabase } from "@/lib/db/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { queryKeys } from "@/lib/db/keys";
@@ -91,4 +91,40 @@ export function useMyPlan() {
     limits: PLAN_LIMITS[plan] ?? PLAN_LIMITS.free,
     isPending,
   };
+}
+
+export type DeleteAccountResult = {
+  success: boolean;
+  deleted: {
+    profiles: number;
+    properties: number;
+    projects: number;
+    leads: number;
+    notifications: number;
+  };
+  cardsReleasedToInventory: number;
+};
+
+/**
+ * Delete the caller account data.
+ *
+ * Removes the public.users row, cascading to everything they own, and returns
+ * their cards to inventory rather than destroying them -- the physical object
+ * still exists and can be reissued.
+ *
+ * The auth identity is removed separately by the route handler, because that
+ * needs the service-role key. Callers must sign out afterwards: leaving a live
+ * session whose application record has gone renders every page as though the
+ * account were brand new.
+ */
+export function useDeleteAccount() {
+  const supabase = useSupabase();
+
+  return useMutation({
+    mutationFn: async (): Promise<DeleteAccountResult> => {
+      const { data, error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+      return data as unknown as DeleteAccountResult;
+    },
+  });
 }

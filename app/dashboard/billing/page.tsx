@@ -1,7 +1,9 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useMyPlan } from "@/hooks/useCurrentUser";
+import { usePlanPricing } from "@/hooks/useSettings";
+import { DEFAULT_PLAN_PRICING } from "@/lib/plans";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
@@ -28,9 +30,10 @@ function fmtDate(ts: number | null | undefined): string {
  * There is likewise no payment history to show.
  */
 export default function BillingPage() {
-  const { user } = useUser();
+  const { user } = useAuth();
 
-  const myPlan = useQuery(api.billing.getMyPlan, user?.id ? { clerkId: user.id } : {});
+  const myPlan = useMyPlan();
+  const { data: pricingData } = usePlanPricing();
 
   if (myPlan === undefined) {
     return (
@@ -41,7 +44,7 @@ export default function BillingPage() {
   }
 
   const currentPlan = myPlan.plan;
-  const pricing = myPlan.pricing;
+  const pricing = pricingData ?? DEFAULT_PLAN_PRICING;
   const priceFor = (p: PlanId) => (p === "free" ? 0 : p === "pro" ? pricing.pro : pricing.business);
 
   const tiers: PlanId[] = ["free", "pro", "business"];

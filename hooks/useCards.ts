@@ -138,3 +138,25 @@ export function useLinkCardProfile() {
     },
   });
 }
+
+/**
+ * Return a card to stock.
+ *
+ * Goes through an RPC because the transition writes columns that must move
+ * together: cards_inventory_is_unowned rejects a row that is inventory but
+ * still owned, so a client doing it in two updates fails on the first.
+ */
+export function useUnclaimCard() {
+  const supabase = useSupabase();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (cardId: string) => {
+      const { error } = await supabase.rpc("unclaim_card", { card_id: cardId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myCards() });
+    },
+  });
+}

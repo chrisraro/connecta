@@ -42,7 +42,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Id } from "@/convex/_generated/dataModel";
 import { CONNECTA } from "@/lib/brand";
 import { classifyNfcWriteError, withRetries, isDuplicateRegistrationError } from "@/lib/nfc";
 import { resolveNfcHost } from "@/lib/nfcHost";

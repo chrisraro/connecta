@@ -961,6 +961,33 @@ export type Database = {
         Args: { suspend: boolean; target_user: string };
         Returns: undefined;
       };
+      assign_profile_slug_for: {
+        Args: { row_in: Database["public"]["Tables"]["profiles"]["Row"] };
+        Returns: {
+          agent_info: Json;
+          created_at: string;
+          id: string;
+          inline_projects: Json;
+          layout_config: Json;
+          name: string;
+          owner_id: string;
+          owner_suspended: boolean;
+          products: Json;
+          profile_type: Database["public"]["Enums"]["profile_type"] | null;
+          property_listings: Json;
+          services: Json;
+          show_storefront: boolean;
+          skin: Database["public"]["Enums"]["card_skin"];
+          slug: string | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "profiles";
+          to: "profiles";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       bootstrap_superadmin: { Args: { target_email: string }; Returns: string };
       check_rate_limit: {
         Args: { limit_key: string; max_hits: number; window_seconds: number };
@@ -968,7 +995,13 @@ export type Database = {
       };
       claim_card_by_uuid: { Args: { card_uuid: string }; Returns: string };
       current_team_id: { Args: never; Returns: string };
+      delete_my_account: { Args: never; Returns: Json };
+      effective_plan: {
+        Args: { check_user?: string };
+        Returns: Database["public"]["Enums"]["plan_tier"];
+      };
       is_admin: { Args: { check_user?: string }; Returns: boolean };
+      is_reserved_slug: { Args: { candidate: string }; Returns: boolean };
       is_superadmin: { Args: { check_user?: string }; Returns: boolean };
       is_suspended: { Args: { check_user?: string }; Returns: boolean };
       log_audit: {
@@ -993,6 +1026,9 @@ export type Database = {
           uuid: string;
         }[];
       };
+      slugify: { Args: { input: string; suffix?: string }; Returns: string };
+      unaccent_fallback: { Args: { input: string }; Returns: string };
+      unclaim_card: { Args: { card_id: string }; Returns: undefined };
     };
     Enums: {
       admin_role: "superadmin" | "moderator";

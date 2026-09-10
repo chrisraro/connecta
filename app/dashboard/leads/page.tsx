@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useMyLeads, useUpdateLeadStatus, type Lead } from "@/hooks/useLeads";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
@@ -33,23 +33,12 @@ import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import Link from "next/link";
 import { CONNECTA } from "@/lib/brand";
 
-interface Lead {
-  _id: Id<"leads">;
-  ownerId: Id<"users">;
-  propertyId?: Id<"properties">;
-  propertyName?: string;
-  inquirerName: string;
-  inquirerContact: string;
-  message?: string;
-  status: "new" | "contacted" | "closed";
-  lastContactedAt?: number;
-  createdAt: number;
-}
-
 export default function LeadsPage() {
-  const { user } = useUser();
-  const leadsData = useQuery(api.leads.getLeads, user?.id ? { clerkId: user.id } : "skip");
-  const markContacted = useMutation(api.leads.markContacted);
+  const { user } = useAuth();
+  const { data: leadsData } = useMyLeads();
+  const updateStatus = useUpdateLeadStatus().mutateAsync;
+  const markContacted = ({ leadId }: { leadId: string }) =>
+    updateStatus({ id: leadId, status: "contacted" });
 
   const leads = leadsData?.leads;
   const lockedCount = leadsData?.lockedCount ?? 0;
@@ -66,9 +55,9 @@ export default function LeadsPage() {
 
   const handleFollowUpClick = (lead: Lead) => {
     setSelectedLead(lead);
-    const refText = lead.propertyName ? `about ${lead.propertyName}` : "from my profile";
+    const refText = lead.property_name ? `about ${lead.property_name}` : "from my profile";
     setFollowUpMsg(
-      `Hi ${lead.inquirerName},\n\nThanks for inquiring ${refText}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,\n[Your Name]`,
+      `Hi ${lead.inquirer_name},\n\nThanks for inquiring ${refText}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,\n[Your Name]`,
     );
   };
 
@@ -77,7 +66,7 @@ export default function LeadsPage() {
   // a rejected write is never left silent — without this a lead could
   // stay stuck showing "New" in the UI while the backend write actually
   // failed, with no signal to the user that anything went wrong.
-  const handleMarkContacted = async (leadId: Id<"leads">) => {
+  const handleMarkContacted = async (leadId: string) => {
     try {
       await markContacted({ leadId });
     } catch (err) {
@@ -88,10 +77,10 @@ export default function LeadsPage() {
 
   const handleSendAction = async () => {
     if (!selectedLead) return;
-    const subject = `Re: Inquiry ${selectedLead.propertyName ? `for ${selectedLead.propertyName}` : ""}`;
+    const subject = `Re: Inquiry ${selectedLead.property_name ? `for ${selectedLead.property_name}` : ""}`;
     const body = encodeURIComponent(followUpMsg);
-    window.open(`mailto:${selectedLead.inquirerContact}?subject=${subject}&body=${body}`);
-    await handleMarkContacted(selectedLead._id);
+    window.open(`mailto:${selectedLead.inquirer_contact}?subject=${subject}&body=${body}`);
+    await handleMarkContacted(selectedLead.id);
     setSelectedLead(null);
   };
 
@@ -107,9 +96,9 @@ export default function LeadsPage() {
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
-      lead.inquirerName.toLowerCase().includes(q) ||
-      lead.inquirerContact.toLowerCase().includes(q) ||
-      (lead.propertyName || "").toLowerCase().includes(q);
+      lead.inquirer_name.toLowerCase().includes(q) ||
+      lead.inquirer_contact.toLowerCase().includes(q) ||
+      (lead.property_name || "").toLowerCase().includes(q);
     return matchesChip && matchesSearch;
   });
 
@@ -117,12 +106,12 @@ export default function LeadsPage() {
     const rows = [
       ["Name", "Contact", "Regarding", "Message", "Status", "Date"],
       ...filteredLeads.map((l) => [
-        l.inquirerName,
-        l.inquirerContact,
-        l.propertyName || "General Inquiry",
+        l.inquirer_name,
+        l.inquirer_contact,
+        l.property_name || "General Inquiry",
         (l.message || "").replace(/\n/g, " "),
         l.status,
-        new Date(l.createdAt).toLocaleDateString(),
+        new Date(l.created_at).toLocaleDateString(),
       ]),
     ];
     const csv = rows
@@ -247,7 +236,7 @@ export default function LeadsPage() {
         ) : (
           filteredLeads.map((lead) => (
             <div
-              key={lead._id}
+              key={lead.id}
               className="group relative bg-card backdrop-blur-sm border border-border rounded-[2rem] p-5 hover:border-primary/20 transition-all duration-300"
             >
               {/* The `truncate` on the contact below only works if
@@ -270,17 +259,17 @@ export default function LeadsPage() {
                   </div>
                   <div className="min-w-0">
                     <h3 className="truncate font-black uppercase tracking-tight text-foreground">
-                      {lead.inquirerName}
+                      {lead.inquirer_name}
                     </h3>
                     <div className="flex min-w-0 items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                       <span className="shrink-0">
-                        {new Date(lead.createdAt).toLocaleDateString()}
+                        {new Date(lead.created_at).toLocaleDateString()}
                       </span>
                       <span aria-hidden="true" className="shrink-0">
                         •
                       </span>
                       <span className="truncate normal-case tracking-normal">
-                        {lead.inquirerContact}
+                        {lead.inquirer_contact}
                       </span>
                     </div>
                   </div>
@@ -296,7 +285,7 @@ export default function LeadsPage() {
                     Regarding
                   </p>
                   <p className="text-sm font-bold text-foreground uppercase">
-                    {lead.propertyName || "General Inquiry"}
+                    {lead.property_name || "General Inquiry"}
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed px-1 line-clamp-2">
@@ -312,7 +301,7 @@ export default function LeadsPage() {
                   <Mail className="w-4 h-4 mr-2" aria-hidden="true" />
                   Reply
                 </Button>
-                {isPhone(lead.inquirerContact) ? (
+                {isPhone(lead.inquirer_contact) ? (
                   <Button
                     asChild
                     variant="outline"
@@ -320,8 +309,8 @@ export default function LeadsPage() {
                     className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
                   >
                     <a
-                      href={`tel:${lead.inquirerContact.replace(/\s/g, "")}`}
-                      aria-label={`Call ${lead.inquirerName}`}
+                      href={`tel:${lead.inquirer_contact.replace(/\s/g, "")}`}
+                      aria-label={`Call ${lead.inquirer_name}`}
                     >
                       <Phone className="w-5 h-5" aria-hidden="true" />
                     </a>
@@ -334,8 +323,8 @@ export default function LeadsPage() {
                     className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
                   >
                     <a
-                      href={`mailto:${lead.inquirerContact}`}
-                      aria-label={`Email ${lead.inquirerName}`}
+                      href={`mailto:${lead.inquirer_contact}`}
+                      aria-label={`Email ${lead.inquirer_name}`}
                     >
                       <Mail className="w-5 h-5" aria-hidden="true" />
                     </a>
@@ -346,7 +335,7 @@ export default function LeadsPage() {
                     variant="outline"
                     size="icon"
                     className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
-                    onClick={() => handleMarkContacted(lead._id)}
+                    onClick={() => handleMarkContacted(lead.id)}
                     aria-label="Mark as contacted"
                   >
                     <CheckCircle2 className="w-5 h-5 text-emerald-500" aria-hidden="true" />
@@ -365,7 +354,7 @@ export default function LeadsPage() {
               Follow Up
             </DialogTitle>
             <DialogDescription className="text-muted-foreground font-medium tracking-tight">
-              Personalize your response to {selectedLead?.inquirerName}.
+              Personalize your response to {selectedLead?.inquirer_name}.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

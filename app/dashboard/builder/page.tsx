@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, useId, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMyPlan } from "@/hooks/useCurrentUser";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -90,7 +89,6 @@ import { EditableList, type FieldDef } from "@/components/profile-builder/Editab
 import { InspectorPanel } from "@/components/profile-builder/InspectorPanel";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
-import { Id } from "@/convex/_generated/dataModel";
 import { profilePath } from "@/lib/profileUrl";
 import { deriveBuilderProfileFields, getBlocksForProfileType } from "@/lib/profileSections";
 import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";

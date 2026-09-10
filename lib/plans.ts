@@ -119,3 +119,17 @@ export function isTemplateLocked(templateId: string, allowedTemplateIds: string[
 export function isPlanLimitError(err: unknown): boolean {
   return errorCode(err) === "PLAN_LIMIT";
 }
+
+/**
+ * Plan prices in centavos, overridable from the settings table.
+ *
+ * These constants are the fallback, not the source of truth: an admin can
+ * change pricing without a deploy, and a missing or malformed settings row
+ * falls back here rather than rendering a blank or NaN price.
+ */
+export type PlanPricing = Record<"pro" | "business", number>;
+
+export const DEFAULT_PLAN_PRICING: PlanPricing = {
+  pro: PLAN_LIMITS.pro.priceCentavos,
+  business: PLAN_LIMITS.business.priceCentavos,
+};

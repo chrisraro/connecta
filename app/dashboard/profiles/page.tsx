@@ -1,6 +1,5 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMyPlan } from "@/hooks/useCurrentUser";
 import { useMyProfiles, useDeleteProfile } from "@/hooks/useProfiles";
@@ -48,7 +47,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Id } from "@/convex/_generated/dataModel";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { profilePath } from "@/lib/profileUrl";
 import { resolveBuilderEntryRedirect } from "@/lib/builderEntry";

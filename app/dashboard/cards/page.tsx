@@ -1,8 +1,16 @@
 "use client";
 
-import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  useMyCards,
+  useActivateCardByCode,
+  useClaimCard,
+  useLinkCardProfile,
+  useUnclaimCard,
+} from "@/hooks/useCards";
+import { useMyProfiles } from "@/hooks/useProfiles";
+import { agentInfoOf } from "@/lib/db/profile";
 import { useState } from "react";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
@@ -52,18 +60,18 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function CardsPage() {
-  const { user, isLoaded } = useUser();
-  const myCards = useQuery(api.users.getMyCards, user?.id ? { clerkId: user.id } : "skip");
-  const myProfiles = useQuery(api.profiles.getMyProfiles, user?.id ? { clerkId: user.id } : "skip");
+  const { user, isLoaded } = useAuth();
+  const { data: myCards, isPending: cardsPending } = useMyCards();
+  const { data: myProfiles } = useMyProfiles();
   // activateCard/claimCardByUuid are Convex actions (not mutations) so
   // their rate-limit bookkeeping survives a wrong-code/wrong-uuid
   // rejection instead of being rolled back with it — see convex/cards.ts.
   // useAction has the same calling convention as useMutation (resolves on
   // success, rejects on error), so nothing else here changes.
-  const activateCard = useAction(api.cards.activateCard);
-  const linkProfile = useMutation(api.cards.linkProfile);
-  const unclaimCard = useMutation(api.cards.unclaimCard);
-  const claimCard = useAction(api.cards.claimCardByUuid);
+  const activateCard = useActivateCardByCode().mutateAsync;
+  const linkProfile = useLinkCardProfile().mutateAsync;
+  const unclaimCard = useUnclaimCard().mutateAsync;
+  const claimCard = useClaimCard().mutateAsync;
 
   const [isActivating, setIsActivating] = useState(false);
   const [activationCode, setActivationCode] = useState("");
@@ -77,17 +85,14 @@ export default function CardsPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [showActivationDialog, setShowActivationDialog] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
-  const [confirmUnclaimId, setConfirmUnclaimId] = useState<Id<"cards"> | null>(null);
+  const [confirmUnclaimId, setConfirmUnclaimId] = useState<string | null>(null);
 
-  const handleUnclaimCard = async (cardId: Id<"cards">) => {
+  const handleUnclaimCard = async (cardId: string) => {
     if (!user?.id) return;
 
     setDeletingCardId(cardId);
     try {
-      await unclaimCard({
-        clerkId: user.id,
-        cardId,
-      });
+      await unclaimCard(cardId);
       toast.success("Card un-paired and returned to inventory");
     } catch (err: unknown) {
       toast.error(toUserMessage(err));
@@ -113,10 +118,7 @@ export default function CardsPage() {
     setActivationError(null);
     setActivationLocked(false);
     try {
-      await activateCard({
-        clerkId: user.id,
-        activationCode: activationCode.toUpperCase().trim(),
-      });
+      await activateCard(activationCode.toUpperCase().trim());
       finishActivation();
     } catch (err: unknown) {
       // toUserMessage (not raw err.message) so this survives
@@ -139,9 +141,9 @@ export default function CardsPage() {
     setActivationLocked(false);
     try {
       if (result.kind === "uuid") {
-        await claimCard({ clerkId: user.id, uuid: result.uuid });
+        await claimCard(result.uuid);
       } else {
-        await activateCard({ clerkId: user.id, activationCode: result.code });
+        await activateCard(result.code);
       }
       finishActivation();
     } catch (err: unknown) {
@@ -152,13 +154,12 @@ export default function CardsPage() {
     }
   };
 
-  const handleLinkProfile = async (cardId: Id<"cards">, profileId: string) => {
+  const handleLinkProfile = async (cardId: string, profileId: string) => {
     if (!user?.id) return;
     try {
       await linkProfile({
-        clerkId: user.id,
         cardId,
-        profileId: profileId === "none" ? undefined : (profileId as Id<"profiles">),
+        profileId: profileId === "none" ? null : profileId,
       });
       toast.success(profileId === "none" ? "Card unlinked" : "Card linked to profile");
     } catch (err) {
@@ -167,7 +168,7 @@ export default function CardsPage() {
     }
   };
 
-  if (!isLoaded || myCards === undefined) {
+  if (!isLoaded || cardsPending || !myCards) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="animate-spin text-primary w-8 h-8" />
@@ -283,7 +284,7 @@ export default function CardsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myCards.map((card) => (
             <Card
-              key={card._id}
+              key={card.id}
               className="overflow-hidden border-border/50 hover:shadow-lg transition-shadow"
             >
               <CardHeader className="bg-muted/30 pb-4">
@@ -296,12 +297,12 @@ export default function CardsPage() {
                   </Badge>
                   <Badge
                     className={
-                      card.linkedProfileId
+                      card.linked_profile_id
                         ? "bg-green-500/10 text-green-600 border-green-500/20"
                         : "bg-amber-500/10 text-amber-600 border-amber-500/20"
                     }
                   >
-                    {card.linkedProfileId ? "Linked" : "Unlinked"}
+                    {card.linked_profile_id ? "Linked" : "Unlinked"}
                   </Badge>
                 </div>
                 <CardTitle className="flex items-center gap-2">
@@ -315,8 +316,8 @@ export default function CardsPage() {
                     Connected Profile
                   </label>
                   <Select
-                    defaultValue={card.linkedProfileId || "none"}
-                    onValueChange={(val) => handleLinkProfile(card._id, val)}
+                    defaultValue={card.linked_profile_id || "none"}
+                    onValueChange={(val) => handleLinkProfile(card.id, val)}
                   >
                     <SelectTrigger className="w-full h-11 rounded-xl">
                       <SelectValue placeholder="Select a profile" />
@@ -324,7 +325,7 @@ export default function CardsPage() {
                     <SelectContent>
                       <SelectItem value="none">Not Linked</SelectItem>
                       {myProfiles?.map((p) => (
-                        <SelectItem key={p._id} value={p._id}>
+                        <SelectItem key={p.id} value={p.id}>
                           {p.name}
                         </SelectItem>
                       ))}
@@ -337,7 +338,7 @@ export default function CardsPage() {
                     <div className="text-[10px] font-black uppercase text-muted-foreground">
                       Total Taps
                     </div>
-                    <div className="text-xl font-bold">{card.tapCount}</div>
+                    <div className="text-xl font-bold">{card.tap_count}</div>
                   </div>
                   <div className="text-center flex-1">
                     <div className="text-[10px] font-black uppercase text-muted-foreground">
@@ -361,11 +362,11 @@ export default function CardsPage() {
                   variant="ghost"
                   size="icon"
                   className="h-10 w-10 text-muted-foreground hover:text-destructive"
-                  disabled={deletingCardId === card._id}
-                  onClick={() => setConfirmUnclaimId(card._id)}
+                  disabled={deletingCardId === card.id}
+                  onClick={() => setConfirmUnclaimId(card.id)}
                   title="Un-pair / Return to inventory"
                 >
-                  {deletingCardId === card._id ? (
+                  {deletingCardId === card.id ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Trash2 className="w-4 h-4" />

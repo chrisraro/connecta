@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useMyProfiles } from "@/hooks/useProfiles";

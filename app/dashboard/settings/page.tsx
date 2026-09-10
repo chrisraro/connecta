@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUser, useClerk } from "@clerk/nextjs";
-import { useAction } from "convex/react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { createClient } from "@/lib/supabase/client";
+import type { IdentityDeletionResult } from "@/lib/accountDeletion";
 import { api } from "@/convex/_generated/api";
 import {
   Dialog,
@@ -22,10 +23,21 @@ import { toast } from "sonner";
 import { decideDeletionOutcome } from "@/lib/accountDeletion";
 
 export default function SettingsPage() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user } = useAuth();
+  const signOut = async () => {
+    await createClient().auth.signOut();
+    window.location.assign("/");
+  };
   const router = useRouter();
-  const deleteAccount = useAction(api.users.deleteMyAccount);
+  // Goes through a route handler rather than the RPC directly: removing the
+  // auth identity needs the service-role key, which must never reach the
+  // browser. See app/api/account/delete/route.ts.
+  const deleteAccount = async () => {
+    const res = await fetch("/api/account/delete", { method: "POST" });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body?.error ?? "Failed to delete account");
+    return body as { identityDeletion: IdentityDeletionResult };
+  };
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -75,7 +87,7 @@ export default function SettingsPage() {
         <div className="space-y-2">
           <Label className="text-muted-foreground">Full Name</Label>
           <Input
-            defaultValue={user?.fullName || ""}
+            defaultValue={user?.user_metadata?.full_name || ""}
             className="bg-muted/50 border-border focus:border-primary transition-colors"
             disabled
           />
@@ -85,7 +97,7 @@ export default function SettingsPage() {
         <div className="space-y-2">
           <Label className="text-muted-foreground">Email Address</Label>
           <Input
-            defaultValue={user?.primaryEmailAddress?.emailAddress || ""}
+            defaultValue={user?.email || ""}
             className="bg-muted/50 border-border focus:border-primary transition-colors"
             disabled
           />
