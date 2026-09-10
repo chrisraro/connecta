@@ -24,7 +24,12 @@
  *     this project ref and to the permissions listed in .mcp.env.example;
  *   - --project-ref confines the server to one project and disables the
  *     account-management tools (list_projects, organizations, billing);
- *   - --read-only blocks writes until the migration actually begins.
+ *   - --read-only blocks writes, and comes off only by setting
+ *     SUPABASE_MCP_ALLOW_WRITES=1 in .mcp.env.
+ *
+ * Write access is opt-in and lives in the same file as the token, so turning
+ * it on is a deliberate edit rather than a flag someone quietly drops from a
+ * command line and forgets. The launcher prints which mode it started in.
  */
 
 import { spawn } from "node:child_process";
@@ -83,7 +88,20 @@ if (!token || token.startsWith("sbp_your_")) {
 // whatever the machine happens to be carrying.
 const childEnv = { ...process.env, ...fileEnv };
 
-const args = ["/c", "npx", "-y", SERVER, "--read-only", `--project-ref=${PROJECT_REF}`];
+// Writes stay off unless .mcp.env says otherwise. Anything other than an
+// explicit "1"/"true" is treated as off, so a typo fails safe rather than
+// silently unlocking the database.
+const allowWrites = /^(1|true)$/i.test(fileEnv.SUPABASE_MCP_ALLOW_WRITES ?? "");
+
+const args = ["/c", "npx", "-y", SERVER, `--project-ref=${PROJECT_REF}`];
+if (!allowWrites) args.splice(4, 0, "--read-only");
+
+// Goes to stderr so it lands in the MCP client's log without corrupting the
+// JSON-RPC stream on stdout.
+console.error(
+  `[supabase-mcp] project ${PROJECT_REF}, ${allowWrites ? "READ-WRITE (SUPABASE_MCP_ALLOW_WRITES is set)" : "read-only"}`,
+);
+
 const child = spawn("cmd", args, { stdio: "inherit", env: childEnv });
 
 child.on("exit", (code, signal) => {
