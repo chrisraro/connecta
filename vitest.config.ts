@@ -7,7 +7,6 @@ import path from "path";
 // `*.test.tsx` files.
 export default defineConfig({
   test: {
-    server: { deps: { inline: ["convex-test"] } },
     setupFiles: ["./vitest.setup.ts"],
     projects: [
       {

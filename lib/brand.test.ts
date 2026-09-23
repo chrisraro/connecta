@@ -164,12 +164,12 @@ test("no user-facing source file still says either retired brand name", () => {
 // that no allowlist is needed at all.
 const CURRENT_BRAND_WORD = /\bConnecta\b/;
 
-// convex/** renders customer-facing brand copy (order-confirmation emails,
-// lead notifications — see convex/email.ts) and lib/** is where the brand
-// constant itself lives, so both need the same guard as app/** and
-// components/**: a hardcoded brand string anywhere in either is exactly
-// the bug this test exists to catch.
-const NEW_BRAND_STRING_SCAN_DIRS = ["app", "components", "convex", "lib"];
+// lib/** is where the brand constant itself lives, and hooks/** and
+// contexts/** produce toast and error copy, so all three need the same guard
+// as app/** and components/**: a hardcoded brand string anywhere in them is
+// exactly the bug this test exists to catch. (The lead-notification email
+// that once lived in convex/email.ts is now app/api/leads/route.ts.)
+const NEW_BRAND_STRING_SCAN_DIRS = ["app", "components", "contexts", "hooks", "lib"];
 
 const NEW_BRAND_STRING_EXCEPTIONS: Record<string, string[]> = {};
 
@@ -187,7 +187,7 @@ const NEW_BRAND_STRING_STRUCTURALLY_EXEMPT = [
   join("lib", "brand.test.ts"),
 ];
 
-test("no new hardcoded occurrence of the current brand name in app/**, components/**, convex/**, or lib/**", () => {
+test("no new hardcoded occurrence of the current brand name in app/**, components/**, contexts/**, hooks/**, or lib/**", () => {
   const offenders: string[] = [];
   for (const dir of NEW_BRAND_STRING_SCAN_DIRS) {
     const root = join(process.cwd(), dir);
