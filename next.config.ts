@@ -1,5 +1,18 @@
 import type { NextConfig } from "next";
 
+// The one backend origin the browser talks to: PostgREST, Auth and Storage
+// over https, Realtime over wss. Pinned to this project when the URL is known
+// at build time, so the CSP does not also bless every other Supabase project.
+// When the CSP omits it, every data call in the app fails in the browser --
+// while server-rendered pages, tests and curl all keep working.
+const supabaseHost = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host;
+  } catch {
+    return "*.supabase.co";
+  }
+})();
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   // Dev-only build indicator defaults to bottom-left, which sits directly on
@@ -15,7 +28,7 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "*.convex.cloud" },
+      { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
       { protocol: "https", hostname: "api.dicebear.com" },
     ],
   },
@@ -35,12 +48,12 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.com https://challenges.cloudflare.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.convex.cloud https://*.convex.site https://*.clerk.accounts.dev https://clerk.com wss://*.convex.cloud https://challenges.cloudflare.com",
-              "frame-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com",
+              `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+              "frame-src 'self'",
               "worker-src 'self' blob:",
               "frame-ancestors 'self'",
             ].join("; "),

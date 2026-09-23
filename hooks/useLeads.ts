@@ -5,8 +5,7 @@ import { useSupabase } from "@/lib/db/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { queryKeys } from "@/lib/db/keys";
 import type { Tables } from "@/lib/supabase/database.types";
-import { PLAN_LIMITS, type PlanId } from "@/lib/plans";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser, useMyPlan } from "@/hooks/useCurrentUser";
 
 export type Lead = Tables<"leads">;
 
@@ -36,8 +35,10 @@ export function useMyLeads() {
   const supabase = useSupabase();
   const { user, isLoaded } = useAuth();
   const { data: appUser } = useCurrentUser();
-  const plan = (appUser?.plan ?? "free") as PlanId;
-  const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
+  // The EFFECTIVE plan, not the stored one: an expired Pro past its grace
+  // period must fall back to the Free view cap, or the inbox stays unlocked
+  // forever after one payment.
+  const { plan, limits } = useMyPlan();
 
   return useQuery({
     queryKey: [...queryKeys.myLeads(), plan],
@@ -81,19 +82,29 @@ export type NewLead = {
 /**
  * Submit an inquiry from a public profile.
  *
- * Callable while signed out -- that is the point. anon holds INSERT on exactly
- * the six columns a contact form collects, and no SELECT at all, so a
- * submitter can leave a message yet can neither read the inbox nor pre-set
- * status to bury their own inquiry.
+ * Callable while signed out -- that is the point. It goes through /api/leads,
+ * not a direct insert: the route applies the per-visitor and per-owner rate
+ * limits and emails the owner, neither of which a browser can be trusted with
+ * (20260924000023). Clients hold no INSERT on leads at all.
+ *
+ * Failures arrive in PostgREST shape ({ message, details, code }), so
+ * toUserMessage and errorCode read them exactly as they would a direct call.
  */
 export function useCreateLead() {
-  const supabase = useSupabase();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (lead: NewLead) => {
-      const { error } = await supabase.from("leads").insert(lead);
-      if (error) throw error;
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead),
+      });
+      if (!res.ok) {
+        throw await res
+          .json()
+          .catch(() => ({ message: "Something went wrong. Please try again." }));
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myLeads() });

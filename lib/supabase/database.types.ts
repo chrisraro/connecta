@@ -1050,6 +1050,19 @@ export type Database = {
         Returns: Json;
       };
       slugify: { Args: { input: string; suffix?: string }; Returns: string };
+      submit_lead: {
+        Args: {
+          inquirer_contact: string;
+          inquirer_name: string;
+          lead_owner: string;
+          message?: string;
+          property_id?: string;
+          property_name?: string;
+          self_capture?: boolean;
+          visitor_key?: string;
+        };
+        Returns: Json;
+      };
       team_accept_invite: { Args: { invite_id: string }; Returns: undefined };
       team_invite_member: { Args: { invite_email: string }; Returns: string };
       team_remove_member: { Args: { member_id: string }; Returns: undefined };
