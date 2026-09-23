@@ -231,6 +231,8 @@ export function useGrantAdminRole() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      // The roster is what the Users page reads admin status from.
+      queryClient.invalidateQueries({ queryKey: ["admin", "grants"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.adminStats() });
     },
   });
@@ -250,6 +252,8 @@ export function useRevokeAdminRole() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      // The roster is what the Users page reads admin status from.
+      queryClient.invalidateQueries({ queryKey: ["admin", "grants"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.adminStats() });
     },
   });

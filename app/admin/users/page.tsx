@@ -171,6 +171,13 @@ export default function AdminUsersPage() {
               usersList.map((u) => {
                 const isSelf = u.id === myUserId;
                 const isSuspended = u.subscription_status === "suspended";
+                // Admin status comes from the admins roster, never users.role:
+                // no grant path writes users.role (see app/admin/layout.tsx),
+                // so reading it showed every admin as an Agent, hid "Revoke
+                // admin", and offered "Grant moderator" on a superadmin's own
+                // row -- which, since granting updates an existing role, was
+                // a one-click self-demotion.
+                const grant = grants.find((g) => g.user_id === u.id);
                 return (
                   <TableRow
                     key={u.id}
@@ -183,13 +190,12 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {u.role === "admin" ? (
+                      {grant ? (
                         <Badge
                           variant="outline"
                           className="bg-red-500/10 text-red-500 border-red-500/20 gap-1"
                         >
-                          <ShieldCheck className="w-3 h-3" />{" "}
-                          {grants?.find((g) => g.user_id === u.id)?.role || "Admin"}
+                          <ShieldCheck className="w-3 h-3" /> {grant.role}
                         </Badge>
                       ) : (
                         <Badge
@@ -269,7 +275,7 @@ export default function AdminUsersPage() {
                           >
                             <DropdownMenuLabel>Manage</DropdownMenuLabel>
                             <DropdownMenuSeparator className="bg-muted" />
-                            {u.role === "admin" ? (
+                            {grant ? (
                               <DropdownMenuItem
                                 disabled={isSelf}
                                 onClick={() => handleRevoke(u.id as string)}
