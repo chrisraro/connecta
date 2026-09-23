@@ -1,6 +1,18 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/*
+ * Tailwind scans every file git does not ignore for class names, prose
+ * included. docs/ quotes design tokens like `rounded-[var(--r-sm|md|lg)]`,
+ * which Tailwind turned into a real rule with `|` inside var() -- invalid
+ * CSS that Turbopack's dev parser rejects, 500ing every page under
+ * `npm run dev`. Only code can contain classes the app actually uses.
+ */
+@source not "../docs";
+@source not "../.superpowers";
+@source not "../supabase";
+@source not "../*.md";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
