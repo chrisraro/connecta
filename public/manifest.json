@@ -1,12 +1,17 @@
 {
   "name": "Connecta",
   "short_name": "Connecta",
-  "description": "Premium NFC digital business cards for modern professionals.",
+  "description": "NFC + QR business cards that open a professional profile on any phone and send every enquiry back to you. Built for Naga first.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#030609",
-  "theme_color": "#8a2f22",
+  "background_color": "#EEF1F4",
+  "theme_color": "#2B3F8F",
   "icons": [
+    {
+      "src": "/brand/connecta-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
     {
       "src": "/favicon.ico",
       "sizes": "16x16 32x32 48x48",

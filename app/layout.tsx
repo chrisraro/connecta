@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { allFontVariables } from "@/lib/fonts";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
@@ -16,31 +16,42 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${CONNECTA.domain}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
-  title: `${CONNECTA.name} — Your business card, reinvented`,
+  title: `${CONNECTA.name} — One tap. They have your number.`,
   description:
-    "Premium NFC digital business cards for modern professionals. Tap to share a stunning profile and capture leads instantly.",
+    "NFC + QR business cards that open a professional profile on any phone, with no app to install, and send every enquiry back to you. Built for Naga first.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      // The vector lot mark first; the rasters are exported from the same
+      // artwork for browsers and platforms without SVG icon support.
+      { url: "/brand/connecta-icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico?v=2", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png?v=2", sizes: "512x512", type: "image/png" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: "/apple-touch-icon.png?v=2",
   },
   manifest: "/manifest.json",
   // Default OG/Twitter card for every page that doesn't generate its own
   // (the /p/[id] and /[slug] profile routes each have their own dynamic
   // opengraph-image.tsx, which Next uses in place of this per-route).
   openGraph: {
-    title: `${CONNECTA.name} — Your business card, reinvented`,
+    title: `${CONNECTA.name} — One tap. They have your number.`,
     description:
-      "Premium NFC digital business cards for modern professionals. Tap to share a stunning profile and capture leads instantly.",
-    images: ["/og-fallback.png"],
+      "NFC + QR business cards that open a professional profile on any phone, with no app to install, and send every enquiry back to you. Built for Naga first.",
+    images: ["/og-fallback.png?v=2"],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/og-fallback.png"],
+    images: ["/og-fallback.png?v=2"],
   },
+};
+
+// The browser chrome takes the sheet colour: whiteprint, or graphite in dark.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#EEF1F4" },
+    { media: "(prefers-color-scheme: dark)", color: "#12161F" },
+  ],
 };
 
 export default function RootLayout({
@@ -54,7 +65,7 @@ export default function RootLayout({
         <AppProviders>
           <ThemeProvider
             attribute="class"
-            defaultTheme="dark"
+            defaultTheme="light"
             enableSystem
             disableTransitionOnChange
           >

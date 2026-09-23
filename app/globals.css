@@ -23,9 +23,11 @@
      are actually loaded via next/font in lib/fonts.ts, or every one of those
      surfaces silently renders in the browser's system fallback (this was
      exactly Task 1's bug class, surviving here in the shell instead of the
-     templates). --font-body/--font-tpl-editorial are set on <html> by
-     `allFontVariables` in app/layout.tsx. */
-  --font-sans: var(--font-body), "Arial", sans-serif;
+     templates). --font-survey/--font-tpl-editorial are set on <html> by
+     `allFontVariables` in app/layout.tsx. The app shell speaks the Survey
+     Plan world's one family (Archivo); mono is for prices and dates only. */
+  --font-sans: var(--font-survey), "Arial", sans-serif;
+  --font-mono: var(--font-survey-mono), ui-monospace, monospace;
   --font-serif: var(--font-tpl-editorial), "Times New Roman", Times, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -57,117 +59,139 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* Square corners everywhere: the plan draws boundaries, not pills. Every
+     named radius collapses to --radius (0). rounded-full is left alone for
+     true circles (avatars, dots). */
+  --radius-xs: var(--radius);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: var(--radius);
 }
 
+/*
+ * Survey Plan tokens. Light is the whiteprint sheet, dark is the graphite
+ * sheet: the same values as components/survey/sheet.ts (lib/design-tokens
+ * test keeps them in step). Plan blue carries the lines and actions; red is
+ * reserved for the mark's dot and status tags, so destructive uses the
+ * sheet's AA-safe red text colour, never a large red fill.
+ */
 :root {
-  --radius: 0.5rem;
+  --radius: 0;
 
-  /* Premium Warm Slate - Light Mode */
-  --background: oklch(0.985 0.004 80);
-  --foreground: oklch(0.16 0.01 80);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.01 80);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.01 80);
-  --primary: oklch(0.18 0.012 80);
-  --primary-foreground: oklch(0.985 0.004 80);
-  --secondary: oklch(0.96 0.006 80);
-  --secondary-foreground: oklch(0.18 0.012 80);
-  --muted: oklch(0.96 0.006 80);
-  --muted-foreground: oklch(0.45 0.01 80);
-  --accent: oklch(0.96 0.006 80);
-  --accent-foreground: oklch(0.18 0.012 80);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.93 0.008 80);
-  --input: oklch(0.93 0.008 80);
-  --ring: oklch(0.5 0.02 80);
+  --background: #EEF1F4;
+  --foreground: #12161F;
+  --card: #EEF1F4;
+  --card-foreground: #12161F;
+  --popover: #F6F8FA;
+  --popover-foreground: #12161F;
+  --primary: #2B3F8F;
+  --primary-foreground: #EEF1F4;
+  --secondary: #E2E6EF;
+  --secondary-foreground: #12161F;
+  --muted: #E2E6EF;
+  --muted-foreground: #4A5468;
+  --accent: #DDE2F0;
+  --accent-foreground: #12161F;
+  --destructive: #C42A26;
+  --destructive-foreground: #EEF1F4;
+  /* Dividers are the plan's hairline rule; fields and focus get full line. */
+  --border: rgb(43 63 143 / 0.38);
+  --input: #2B3F8F;
+  --ring: #2B3F8F;
 
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* Charts draw in the plan's inks: line, soft, a pale line, ink, then red. */
+  --chart-1: #2B3F8F;
+  --chart-2: #4A5468;
+  --chart-3: #808CBC;
+  --chart-4: #12161F;
+  --chart-5: #D0312D;
 
-  --sidebar: oklch(0.985 0.004 80);
-  --sidebar-foreground: oklch(0.16 0.01 80);
-  --sidebar-primary: oklch(0.18 0.012 80);
-  --sidebar-primary-foreground: oklch(0.985 0.004 80);
-  --sidebar-accent: oklch(0.96 0.006 80);
-  --sidebar-accent-foreground: oklch(0.18 0.012 80);
-  --sidebar-border: oklch(0.93 0.008 80);
-  --sidebar-ring: oklch(0.5 0.02 80);
+  --sidebar: #EEF1F4;
+  --sidebar-foreground: #12161F;
+  --sidebar-primary: #2B3F8F;
+  --sidebar-primary-foreground: #EEF1F4;
+  --sidebar-accent: #DDE2F0;
+  --sidebar-accent-foreground: #12161F;
+  --sidebar-border: rgb(43 63 143 / 0.38);
+  --sidebar-ring: #2B3F8F;
 
-  /* Enforced scales. Exactly three radii, exactly two elevations. */
-  --r-sm: 6px;
-  --r-md: 12px;
-  --r-lg: 20px;
-  --e-raised: 0 1px 2px rgb(28 22 20 / 0.04), 0 2px 8px rgb(28 22 20 / 0.06);
-  --e-overlay: 0 4px 12px rgb(28 22 20 / 0.08), 0 12px 32px rgb(28 22 20 / 0.12);
+  /* Enforced scales. Corners are square; the two elevations stay for
+     overlays only (menus, dialogs), everything on the sheet is drawn flat. */
+  --r-sm: 0;
+  --r-md: 0;
+  --r-lg: 0;
+  --e-raised: 0 1px 0 rgb(43 63 143 / 0.12);
+  --e-overlay: 0 12px 32px -12px rgb(18 22 31 / 0.35);
 
-  /* Brand identity — the lettermark struck into a disc. Committed color
-     strategy: one saturated brand color carrying real surface area, warm
-     neutrals tinted toward its own hue rather than toward generic warmth. */
-  --connecta-brand: oklch(0.44 0.132 27);
-  --connecta-brand-hover: oklch(0.39 0.138 27);
-  --connecta-ink: oklch(0.22 0.012 40);
-  --connecta-ink-soft: oklch(0.46 0.014 40);
-  --connecta-paper: oklch(0.985 0.003 60);
-  --connecta-surface: oklch(0.96 0.005 55);
-  --connecta-line: oklch(0.9 0.008 50);
+  /* The drafting sheet: grid, rule weight, chamfer size. */
+  --sv-grid: rgb(43 63 143 / 0.07);
+  --rule: 1.5px;
+  --chamfer: 12px;
+
+  /* Brand roles, kept under their old names so existing screens inherit the
+     new identity. brand = plan blue; paper/surface = the sheet. */
+  --connecta-brand: #2B3F8F;
+  --connecta-brand-hover: #1F2F6E;
+  --connecta-mark: #D0312D;
+  --connecta-mark-text: #C42A26;
+  --connecta-ink: #12161F;
+  --connecta-ink-soft: #4A5468;
+  --connecta-paper: #EEF1F4;
+  --connecta-surface: #E2E6EF;
+  --connecta-line: rgb(43 63 143 / 0.38);
 }
 
 .dark {
-  /* Premium Obsidian - Dark Mode */
-  --background: oklch(0.12 0.01 240);
-  --foreground: oklch(0.97 0.008 240);
+  --background: #12161F;
+  --foreground: #EEF1F4;
+  --card: #12161F;
+  --card-foreground: #EEF1F4;
+  --popover: #181D28;
+  --popover-foreground: #EEF1F4;
+  --primary: #EEF1F4;
+  --primary-foreground: #12161F;
+  --secondary: #1C2230;
+  --secondary-foreground: #EEF1F4;
+  --muted: #1C2230;
+  --muted-foreground: #A7B0C0;
+  --accent: #222A3C;
+  --accent-foreground: #EEF1F4;
+  --destructive: #FF7A73;
+  --destructive-foreground: #12161F;
+  --border: rgb(143 163 224 / 0.4);
+  --input: #8FA3E0;
+  --ring: #8FA3E0;
 
-  --card: oklch(0.15 0.012 240);
-  --card-foreground: oklch(0.97 0.008 240);
+  --chart-1: #8FA3E0;
+  --chart-2: #A7B0C0;
+  --chart-3: #4B5CA0;
+  --chart-4: #EEF1F4;
+  --chart-5: #FF5A52;
 
-  --popover: oklch(0.15 0.012 240);
-  --popover-foreground: oklch(0.97 0.008 240);
+  --sidebar: #12161F;
+  --sidebar-foreground: #EEF1F4;
+  --sidebar-primary: #EEF1F4;
+  --sidebar-primary-foreground: #12161F;
+  --sidebar-accent: #222A3C;
+  --sidebar-accent-foreground: #EEF1F4;
+  --sidebar-border: rgb(143 163 224 / 0.4);
+  --sidebar-ring: #8FA3E0;
 
-  --primary: oklch(0.97 0.008 240);
-  --primary-foreground: oklch(0.12 0.01 240);
+  --sv-grid: rgb(143 163 224 / 0.08);
 
-  --secondary: oklch(0.18 0.012 240);
-  --secondary-foreground: oklch(0.97 0.008 240);
-
-  --muted: oklch(0.18 0.012 240);
-  --muted-foreground: oklch(0.65 0.01 240);
-
-  --accent: oklch(0.18 0.012 240);
-  --accent-foreground: oklch(0.97 0.008 240);
-
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.97 0.008 240);
-
-  --border: oklch(0.22 0.012 240);
-  --input: oklch(0.22 0.012 240);
-  --ring: oklch(0.45 0.025 240);
-
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-
-  --sidebar: oklch(0.13 0.01 240);
-  --sidebar-foreground: oklch(0.97 0.008 240);
-  --sidebar-primary: oklch(0.45 0.025 240);
-  --sidebar-primary-foreground: oklch(0.97 0.008 240);
-  --sidebar-accent: oklch(0.18 0.012 240);
-  --sidebar-accent-foreground: oklch(0.97 0.008 240);
-  --sidebar-border: oklch(0.22 0.012 240);
-  --sidebar-ring: oklch(0.45 0.025 240);
+  --connecta-brand: #8FA3E0;
+  --connecta-brand-hover: #B5C2EA;
+  --connecta-mark: #FF5A52;
+  --connecta-mark-text: #FF7A73;
+  --connecta-ink: #EEF1F4;
+  --connecta-ink-soft: #A7B0C0;
+  --connecta-paper: #12161F;
+  --connecta-surface: #1C2230;
+  --connecta-line: rgb(143 163 224 / 0.4);
 }
 
 @layer base {
