@@ -20,7 +20,19 @@ import { UpgradeGate } from "@/components/billing/UpgradeGate";
  * the tag, so /t/<uuid> must resolve.
  */
 export default function TapRedirectPage({ params }: { params: Promise<{ uuid: string }> }) {
-  const { uuid } = use(params);
+  const { uuid: rawUuid } = use(params);
+  // Tag serials are colon-separated hex ("43:45:08:03"). If anything along
+  // the way percent-encodes the colons, the database lookup would receive
+  // "43%3A45..." -- which no normalization there can repair -- and a valid
+  // card would read as "not found". Decoding is a no-op when nothing was
+  // encoded; a malformed sequence falls back to the raw value.
+  const uuid = (() => {
+    try {
+      return decodeURIComponent(rawUuid);
+    } catch {
+      return rawUuid;
+    }
+  })();
   const router = useRouter();
 
   const { data: card, isPending: cardPending, isError: cardError } = useCardByUuid(uuid);

@@ -193,7 +193,7 @@ export default function AdminFactoryPage() {
           setNdefStatus("NDEF Write Success!");
           console.log("Successfully wrote URL to NFC tag");
 
-          // Register the card in Convex
+          // Register the card
           if (!user?.id) {
             setScanError("User not authenticated.");
             return;
