@@ -27,14 +27,34 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // OAuth and magic-link flows arrive with a code to trade for a session.
+  // Back to sign-in with a named notice, keeping the card the visitor tapped.
+  // A key rather than the auth server's text: the page owns the wording, and
+  // nothing from the query string is echoed back as content.
+  const backToSignIn = (notice: "confirmed" | "link_invalid") => {
+    const back = new URL("/auth", origin);
+    back.searchParams.set("mode", "signin");
+    back.searchParams.set("notice", notice);
+    if (cardUuid) back.searchParams.set("card_uuid", cardUuid);
+    return NextResponse.redirect(back);
+  };
+
+  // The auth server redirects here WITH error params when a confirmation link
+  // is expired or already used. Ignoring them left the person on a bare
+  // sign-up page with no idea what happened.
+  if (searchParams.get("error") || searchParams.get("error_description")) {
+    return backToSignIn("link_invalid");
+  }
+
+  // OAuth and email-link flows arrive with a code to trade for a session.
   // Password sign-in already has one, so a missing code is not an error.
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      const back = new URL("/auth", origin);
-      back.searchParams.set("error", error.message);
-      return NextResponse.redirect(back);
+      // The exchange needs a verifier stored by the browser that signed up,
+      // so it fails when the confirmation email is opened on another device.
+      // A code only exists if the auth server already VERIFIED the link, so
+      // the email is confirmed -- the person just has to sign in here.
+      return backToSignIn("confirmed");
     }
   }
 

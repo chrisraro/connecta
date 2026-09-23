@@ -94,8 +94,9 @@ export function AuthForm({ mode, redirectUrl, cardUuid }: Props) {
         </div>
         <h2 className="text-lg font-bold text-foreground">Confirm your email</h2>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          We sent a confirmation link to <span className="font-semibold">{email}</span>. Open it and
-          you will be signed in automatically.
+          We sent a confirmation link to <span className="font-semibold">{email}</span>. Open it on
+          this device and you will be signed in automatically; on another device, open it there and
+          then sign in here.
           {cardUuid ? " Your card will be linked once you are in." : ""}
         </p>
       </div>

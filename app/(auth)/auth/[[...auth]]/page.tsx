@@ -5,10 +5,18 @@ import { Suspense } from "react";
 import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { CONNECTA } from "@/lib/brand";
 
+const AUTH_NOTICES: Record<string, string> = {
+  // The link was verified, but it was opened on a different device or browser
+  // from the one that signed up, so the session could not be finished there.
+  confirmed: "Your email is confirmed. Sign in to continue.",
+  link_invalid:
+    "That link has expired or was already used. If you have confirmed your email, sign in; otherwise create your account again to get a new link.",
+};
+
 export default function AuthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; card_uuid?: string }>;
+  searchParams: Promise<{ mode?: string; card_uuid?: string; notice?: string }>;
 }) {
   return (
     <Suspense
@@ -26,13 +34,17 @@ export default function AuthPage({
 async function AuthContent({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; card_uuid?: string }>;
+  searchParams: Promise<{ mode?: string; card_uuid?: string; notice?: string }>;
 }) {
   const params = await searchParams;
   const mode = params.mode;
   const cardUuid = params.card_uuid;
 
   const isSignIn = mode === "signin";
+
+  // Set by /auth/callback when an email link could not finish signing in.
+  // Only known keys render; anything else in the query string is ignored.
+  const notice = params.notice ? AUTH_NOTICES[params.notice] : undefined;
 
   // Build redirect URL - always route to callback which redirects to /dashboard (or /admin).
   // card_uuid MUST ride along: the QR on a physical card lands on
@@ -103,6 +115,15 @@ async function AuthContent({
             Create Account
           </Link>
         </div>
+
+        {notice && (
+          <p
+            role="status"
+            className="w-full mb-4 text-xs font-medium text-foreground bg-primary/10 border border-primary/20 rounded-2xl px-4 py-3 text-center"
+          >
+            {notice}
+          </p>
+        )}
 
         {/* Auth Form Box with 2026 Trend Design System Styling */}
         <div className="w-full">
