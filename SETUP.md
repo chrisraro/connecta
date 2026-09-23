@@ -13,7 +13,7 @@ project: **no GCP credentials are needed** (see
 
 ## 1. Supabase project
 
-Project ref: `szfkysqinjowmgdzonje` (in `package.json` → `db:types`).
+Project ref: `jsnswnnzzqkpwrmijxhx` (in `package.json` → `db:types`).
 
 ### 1.1 Keep it awake
 
@@ -106,7 +106,7 @@ in `.env.example`, which you copy to `.env.local` for local development.
 
 | Variable                               | Value                                      | Environments        | Notes                                                                                                                  |
 | -------------------------------------- | ------------------------------------------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | `https://szfkysqinjowmgdzonje.supabase.co` | All                 |                                                                                                                        |
+| `NEXT_PUBLIC_SUPABASE_URL`             | `https://jsnswnnzzqkpwrmijxhx.supabase.co` | All                 |                                                                                                                        |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | publishable key from 1.6                   | All                 | Safe in the browser.                                                                                                   |
 | `SUPABASE_SERVICE_ROLE_KEY`            | secret key from 1.6                        | Production, Preview | Mark **Sensitive**. **Without it, every inquiry form returns an error** and account deletion cannot remove the login.  |
 | `NEXT_PUBLIC_APP_URL`                  | production URL, no trailing slash          | Production          | Also the host **burned into NFC tags** by the factory. See the warning below.                                          |
@@ -199,7 +199,7 @@ take:
 
 1. Google Cloud Console → APIs & Services → Credentials → **OAuth client ID**
    (Web application), with the authorized redirect URI
-   `https://szfkysqinjowmgdzonje.supabase.co/auth/v1/callback`.
+   `https://jsnswnnzzqkpwrmijxhx.supabase.co/auth/v1/callback`.
 2. Supabase → Authentication → Providers → **Google**, pasting that client ID
    and secret.
 3. A "Continue with Google" button calling

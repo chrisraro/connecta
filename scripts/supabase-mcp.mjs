@@ -41,7 +41,7 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const envPath = join(repoRoot, ".mcp.env");
 
 const SERVER = "@supabase/mcp-server-supabase@0.12.0";
-const PROJECT_REF = "szfkysqinjowmgdzonje";
+const PROJECT_REF = "jsnswnnzzqkpwrmijxhx";
 
 if (!existsSync(envPath)) {
   console.error(
