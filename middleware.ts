@@ -10,10 +10,13 @@ import { updateSession } from "@/lib/supabase/middleware";
 const PROTECTED_PREFIXES = ["/dashboard", "/admin"];
 
 // All /api routes require auth EXCEPT webhooks (called by third parties with
-// no session, verified by their own signatures) and the health check, which
+// no session, verified by their own signatures), the health check, which
 // must be reachable by uptime monitoring with no credentials -- that is the
-// entire point of a health endpoint.
-const PUBLIC_API_PREFIXES = ["/api/webhooks", "/api/health"];
+// entire point of a health endpoint -- and lead submission, whose callers
+// are by definition signed-out visitors to a public profile. /api/leads
+// carries its own protection: per-visitor and per-owner rate limits inside
+// submit_lead(), and it only ever writes, never reads.
+const PUBLIC_API_PREFIXES = ["/api/webhooks", "/api/health", "/api/leads"];
 
 function hasPrefix(pathname: string, prefixes: string[]) {
   return prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
