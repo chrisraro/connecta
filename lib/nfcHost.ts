@@ -16,7 +16,7 @@
  * tag. It's now validated with `new URL()` and must be an absolute
  * `http:`/`https:` URL or this returns `null` the same way an empty value
  * does. `localhost` is deliberately NOT rejected here — it's exactly what
- * `.env.example` / `DEVELOPMENT_SETUP.md` tell every developer to set for
+ * `.env.example` / `SETUP.md` tell every developer to set for
  * local dev, and Web NFC works fine against port-forwarded localhost on
  * Chrome for Android. The caller is responsible for making that host
  * visible to the operator before it's burned into a tag — see the

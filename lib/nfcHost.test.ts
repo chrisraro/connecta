@@ -41,7 +41,7 @@ describe("resolveNfcHost", () => {
 
   // Task: presence isn't usability. `http://localhost:3000` used to pass
   // this function (it's non-empty), which is exactly what .env.example and
-  // DEVELOPMENT_SETUP.md tell every developer to set — so a scheme-less or
+  // SETUP.md tell every developer to set — so a scheme-less or
   // otherwise unparseable value must be rejected the same way an empty one
   // is, forcing the caller to refuse to write instead of encoding garbage.
   test("returns null for a scheme-less host", () => {
@@ -63,7 +63,7 @@ describe("resolveNfcHost", () => {
   });
 
   // Deliberately NOT blocked — localhost is exactly what local dev sets
-  // (see .env.example / DEVELOPMENT_SETUP.md), and Web NFC works on
+  // (see .env.example / SETUP.md), and Web NFC works on
   // port-forwarded localhost on Chrome for Android. The caller is
   // responsible for surfacing this visibly, not this function for
   // rejecting it.

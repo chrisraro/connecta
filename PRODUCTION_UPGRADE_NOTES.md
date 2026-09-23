@@ -1,5 +1,9 @@
 # Connecta — Production Upgrade Notes (June 2026)
 
+> **Historical.** These notes describe the Convex + Clerk + PayRex stack as of
+> June 2026. All three have since been removed; for setup and deployment
+> today, see [SETUP.md](SETUP.md).
+
 This document summarizes the full production overhaul completed across four phases, and everything you must do before going live.
 
 ---
