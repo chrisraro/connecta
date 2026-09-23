@@ -207,6 +207,12 @@ function OnboardingContent() {
   // it silently wiped live-only fields on save).
   useEffect(() => {
     if (hasPrefilled) return;
+    // Wait for the users row. The auth session arrives first, but the name
+    // and onboarding snapshot live on public.users, which is a separate
+    // fetch -- prefilling before it lands locked in a blank Full Name (and
+    // skipped any saved snapshot), because hasPrefilled never lets it retry.
+    // Clerk used to hand the name over with the session itself.
+    if (!appUser) return;
     const prefill = resolveOnboardingPrefill({
       isEditMode,
       onboardingData: onboardingDataOf(onboarding?.data),
@@ -235,7 +241,7 @@ function OnboardingContent() {
     setAvatarUrl(prefill.avatarUrl);
     setServices(prefill.services);
     setHasPrefilled(true);
-  }, [onboarding, hasPrefilled, authUser, isEditMode, profiles]);
+  }, [onboarding, hasPrefilled, authUser, appUser, isEditMode, profiles]);
 
   // Claim card when user is authenticated and card_uuid is present
   useEffect(() => {
