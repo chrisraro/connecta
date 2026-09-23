@@ -189,8 +189,8 @@ export default function TeamPage() {
                 </Button>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Existing {CONNECTA.name} users join instantly. Others join when they sign in with
-                that email.
+                Existing {CONNECTA.name} users join instantly. Anyone else joins as soon as they
+                sign up and confirm that email address.
               </p>
             </div>
           )}
