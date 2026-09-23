@@ -21,6 +21,8 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { ProductVariationsManager } from "./variations";
 import { useAdminProduct, useAdminCategories, useUpdateProduct } from "@/hooks/useAdminShop";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 /** products.dimensions is jsonb; Postgres cannot type its shape. */
 type ProductDimensions = { length: number; width: number; height: number; unit: "cm" | "in" };
@@ -135,12 +137,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     if (!user?.id || !productId) return;
 
     if (!formData.category_id) {
-      alert("Please select a category");
+      toast.error("Please select a category");
       return;
     }
 
     if (formData.images.length === 0) {
-      alert("Please add at least one image URL");
+      toast.error("Please add at least one image URL");
       return;
     }
 
@@ -185,7 +187,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       router.push("/admin/shop/products");
     } catch (error) {
       console.error("Failed to update product:", error);
-      alert("Failed to update product. Check console for details.");
+      toast.error(toUserMessage(error));
     } finally {
       setIsSubmitting(false);
     }

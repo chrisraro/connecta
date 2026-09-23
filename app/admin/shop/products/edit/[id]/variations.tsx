@@ -23,6 +23,8 @@ import {
   useDeleteVariation,
   type ProductVariation,
 } from "@/hooks/useAdminShop";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 type OptionRow = { option_name: string; option_value: string };
 
@@ -92,7 +94,7 @@ export function ProductVariationsManager({ productId }: { productId: string }) {
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.sku.trim()) {
-      alert("Name and SKU are required");
+      toast.error("Name and SKU are required");
       return;
     }
     const cleanOptions = form.options.filter((o) => o.option_name.trim() && o.option_value.trim());
@@ -124,7 +126,7 @@ export function ProductVariationsManager({ productId }: { productId: string }) {
       setEditingId(null);
     } catch (error) {
       console.error("Failed to save variation:", error);
-      alert(error instanceof Error ? error.message : "Failed to save variation");
+      toast.error(toUserMessage(error));
     } finally {
       setSaving(false);
     }
@@ -136,7 +138,7 @@ export function ProductVariationsManager({ productId }: { productId: string }) {
       await deleteVariation(variationId);
     } catch (error) {
       console.error("Failed to delete variation:", error);
-      alert(error instanceof Error ? error.message : "Failed to delete variation");
+      toast.error(toUserMessage(error));
     }
   };
 

@@ -957,6 +957,14 @@ export type Database = {
         Args: { revoke_reason?: string; target_user: string };
         Returns: undefined;
       };
+      admin_set_user_plan: {
+        Args: {
+          new_plan: Database["public"]["Enums"]["plan_tier"];
+          period_days?: number;
+          target_user: string;
+        };
+        Returns: Json;
+      };
       admin_set_user_suspended: {
         Args: { suspend: boolean; target_user: string };
         Returns: undefined;

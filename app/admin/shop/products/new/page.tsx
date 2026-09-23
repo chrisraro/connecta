@@ -20,6 +20,8 @@ import Link from "next/link";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useAdminCategories, useCreateProduct } from "@/hooks/useAdminShop";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -93,12 +95,12 @@ export default function NewProductPage() {
     if (!user?.id) return;
 
     if (!formData.category_id) {
-      alert("Please select a category");
+      toast.error("Please select a category");
       return;
     }
 
     if (formData.images.length === 0) {
-      alert("Please add at least one image URL");
+      toast.error("Please add at least one image URL");
       return;
     }
 
@@ -140,7 +142,7 @@ export default function NewProductPage() {
       router.push("/admin/shop/products");
     } catch (error) {
       console.error("Failed to create product:", error);
-      alert("Failed to create product. Check console for details.");
+      toast.error(toUserMessage(error));
     } finally {
       setIsSubmitting(false);
     }

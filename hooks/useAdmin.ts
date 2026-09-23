@@ -175,6 +175,39 @@ export function useSetUserSuspended() {
   });
 }
 
+/**
+ * Set a customer's plan by hand -- the only upgrade path while there is no
+ * payment gateway (20260924000024). A paid plan extends from the later of
+ * today and the current expiry; a first Business upgrade creates the team.
+ */
+export function useSetUserPlan() {
+  const supabase = useSupabase();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      plan,
+      periodDays = 30,
+    }: {
+      userId: string;
+      plan: "free" | "pro" | "business";
+      periodDays?: number;
+    }) => {
+      const { error } = await supabase.rpc("admin_set_user_plan", {
+        target_user: userId,
+        new_plan: plan,
+        period_days: periodDays,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminStats() });
+    },
+  });
+}
+
 export function useGrantAdminRole() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();

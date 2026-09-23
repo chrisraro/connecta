@@ -20,16 +20,35 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
 import {
   useAdminUsers,
   useAdminGrants,
   useAdminCards,
   useGrantAdminRole,
   useRevokeAdminRole,
+  useSetUserPlan,
   useSetUserSuspended,
   type AdminUserRow,
 } from "@/hooks/useAdmin";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { toUserMessage } from "@/lib/errors";
+import { PLAN_GRACE_DAYS } from "@/lib/plans";
+
+// Paid-plan grants offered in the Manage menu. Renewing the same plan extends
+// from the current expiry, so "30 days" on an active Pro adds 30 more.
+const PLAN_GRANTS = [
+  { plan: "pro", days: 30, label: "Pro · 30 days" },
+  { plan: "pro", days: 365, label: "Pro · 1 year" },
+  { plan: "business", days: 30, label: "Business · 30 days" },
+  { plan: "business", days: 365, label: "Business · 1 year" },
+] as const;
+
+/** Past expiry plus grace: the account is served as Free whatever it stores. */
+function planLapsed(u: AdminUserRow) {
+  if (u.plan === "free" || !u.plan_expires_at) return false;
+  return Date.parse(u.plan_expires_at) + PLAN_GRACE_DAYS * 86_400_000 < Date.now();
+}
 
 export default function AdminUsersPage() {
   const { user, isLoaded } = useAuth();
@@ -50,6 +69,7 @@ export default function AdminUsersPage() {
   const grantAdminRole = useGrantAdminRole().mutateAsync;
   const revokeAdminRole = useRevokeAdminRole().mutateAsync;
   const setUserSuspended = useSetUserSuspended().mutateAsync;
+  const setUserPlan = useSetUserPlan().mutateAsync;
 
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -66,16 +86,34 @@ export default function AdminUsersPage() {
     );
   }
 
-  const run = async (id: string, fn: () => Promise<unknown>) => {
+  // Errors go through toUserMessage, not error.message: a raw PostgREST
+  // failure names tables and policies, and alert() blocked the whole console.
+  const run = async (id: string, fn: () => Promise<unknown>, done?: string) => {
     setBusyId(id);
     try {
       await fn();
+      if (done) toast.success(done);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : "Action failed");
+      toast.error(toUserMessage(error));
     } finally {
       setBusyId(null);
     }
+  };
+
+  const handleSetPlan = (u: AdminUserRow, plan: "free" | "pro" | "business", days = 30) => {
+    const who = u.name || u.email || "this user";
+    const question =
+      plan === "free"
+        ? `Downgrade ${who} to Free? Paid features stop immediately; their team is kept.`
+        : `Give ${who} ${plan === "pro" ? "Pro" : "Business"} for ${days} days?` +
+          (u.plan === plan && !planLapsed(u) ? " This extends their current expiry." : "");
+    if (!confirm(question)) return;
+    run(
+      u.id,
+      () => setUserPlan({ userId: u.id, plan, periodDays: days }),
+      plan === "free" ? `${who} is now on Free` : `${who} is now on ${plan} for ${days} days`,
+    );
   };
 
   const handleGrant = (targetUserId: string, role: "superadmin" | "moderator") =>
@@ -176,11 +214,20 @@ export default function AdminUsersPage() {
                         >
                           {u.plan}
                         </Badge>
-                        {u.plan !== "free" && u.plan_expires_at && (
-                          <span className="mt-1 text-[10px] text-muted-foreground">
-                            until {new Date(u.plan_expires_at).toLocaleDateString()}
-                          </span>
-                        )}
+                        {u.plan !== "free" &&
+                          u.plan_expires_at &&
+                          (planLapsed(u) ? (
+                            // Stored plan says paid, but it is served as Free.
+                            // Saying "until <past date>" would contradict what
+                            // the customer actually gets.
+                            <span className="mt-1 text-[10px] text-amber-500">
+                              lapsed {new Date(u.plan_expires_at).toLocaleDateString()} · on Free
+                            </span>
+                          ) : (
+                            <span className="mt-1 text-[10px] text-muted-foreground">
+                              until {new Date(u.plan_expires_at).toLocaleDateString()}
+                            </span>
+                          ))}
                       </div>
                     </TableCell>
                     <TableCell className="text-foreground font-mono">
@@ -245,6 +292,23 @@ export default function AdminUsersPage() {
                               </>
                             )}
                             <DropdownMenuSeparator className="bg-muted" />
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">
+                              Plan
+                            </DropdownMenuLabel>
+                            {PLAN_GRANTS.map((g) => (
+                              <DropdownMenuItem
+                                key={g.label}
+                                onClick={() => handleSetPlan(u, g.plan, g.days)}
+                              >
+                                {g.label}
+                              </DropdownMenuItem>
+                            ))}
+                            {u.plan !== "free" && (
+                              <DropdownMenuItem onClick={() => handleSetPlan(u, "free")}>
+                                Downgrade to Free
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator className="bg-muted" />
                             {isSuspended ? (
                               <DropdownMenuItem
                                 disabled={isSelf}
@@ -277,7 +341,7 @@ export default function AdminUsersPage() {
 
       {!isSuperadmin && (
         <p className="text-xs text-muted-foreground mt-4">
-          Admin grants, revocations, and user suspension require superadmin access.
+          Admin grants, plan changes, and user suspension require superadmin access.
         </p>
       )}
     </div>

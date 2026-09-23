@@ -4,27 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  Loader2,
-  Settings,
-  Mail,
-  Bell,
-  Shield,
-  Database,
-  AlertTriangle,
-  Save,
-  Store,
-} from "lucide-react";
+import { Loader2, Settings, Save, Store } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useSetting, useUpdateSetting, usePlanPricing } from "@/hooks/useSettings";
 import type { PlanPricing } from "@/lib/plans";
 import type { ShopSettings } from "@/lib/shopSettings";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 export default function AdminSettingsPage() {
-  const { user, isLoaded } = useAuth();
-  const [isSaving, setIsSaving] = useState(false);
+  const { isLoaded } = useAuth();
 
   // ---- Shop settings (tax / shipping) ----
   const { data: shopSettings } = useSetting<ShopSettings>("shop");
@@ -76,7 +66,7 @@ export default function AdminSettingsPage() {
       });
       setPlanSavedAt(Date.now());
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to save plan pricing");
+      toast.error(toUserMessage(error));
     } finally {
       setPlanSaving(false);
     }
@@ -90,11 +80,6 @@ export default function AdminSettingsPage() {
     );
   }
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    setTimeout(() => setIsSaving(false), 1000);
-  };
-
   const handleSaveShopSettings = async () => {
     setShopSaving(true);
     try {
@@ -107,7 +92,7 @@ export default function AdminSettingsPage() {
       setShopSavedAt(Date.now());
     } catch (error) {
       console.error("Failed to save shop settings:", error);
-      alert(error instanceof Error ? error.message : "Failed to save shop settings");
+      toast.error(toUserMessage(error));
     } finally {
       setShopSaving(false);
     }
@@ -293,240 +278,62 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
+      {/*
+        The Email, Notifications, Security, Data Management and Danger Zone
+        cards that used to sit here were decoration: SMTP fields the app never
+        read (mail goes through Resend), switches bound to no state, and
+        disabled buttons. A switch labelled "Two-Factor Authentication" that
+        flips and saves nothing tells an admin a protection is on when it is
+        not. This card says where each of those things actually lives.
+      */}
       <Card className="bg-card border-border text-foreground">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-              <Mail className="w-5 h-5 text-blue-500" />
+            <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+              <Settings className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle className="text-lg">Email Configuration</CardTitle>
+              <CardTitle className="text-lg">Configured outside this console</CardTitle>
               <CardDescription className="text-muted-foreground">
-                SMTP settings and notification templates
+                These are deployment settings, not database settings, so they are changed where they
+                live.
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="smtp-host">SMTP Host</Label>
-              <Input
-                id="smtp-host"
-                placeholder="smtp.gmail.com"
-                className="bg-background border-border text-foreground"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="smtp-port">SMTP Port</Label>
-              <Input
-                id="smtp-port"
-                placeholder="587"
-                className="bg-background border-border text-foreground"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="smtp-user">SMTP Username</Label>
-              <Input
-                id="smtp-user"
-                type="email"
-                placeholder="notifications@yourdomain.com"
-                className="bg-background border-border text-foreground"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="smtp-pass">SMTP Password</Label>
-              <Input
-                id="smtp-pass"
-                type="password"
-                placeholder="••••••••"
-                className="bg-background border-border text-foreground"
-              />
-            </div>
-          </div>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-foreground" disabled>
-            <Save className="w-4 h-4 mr-2" />
-            Save Email Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border-border text-foreground">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-              <Bell className="w-5 h-5 text-green-500" />
+        <CardContent>
+          <dl className="grid gap-4 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="font-medium text-foreground">Lead emails</dt>
+              <dd className="text-muted-foreground mt-1">
+                Resend, via <code>RESEND_API_KEY</code> and <code>RESEND_FROM_EMAIL</code> in the
+                Vercel environment.
+              </dd>
             </div>
             <div>
-              <CardTitle className="text-lg">Notifications</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                System alerts and user notifications
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Label className="text-foreground">New User Registration Alerts</Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Get notified when new users sign up
-              </p>
-            </div>
-            <Switch defaultChecked className="shrink-0" />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Label className="text-foreground">NFC Card Activation Alerts</Label>
-              <p className="text-xs text-muted-foreground mt-1">Track card activation events</p>
-            </div>
-            <Switch defaultChecked className="shrink-0" />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Label className="text-foreground">Lead Generation Notifications</Label>
-              <p className="text-xs text-muted-foreground mt-1">Alert on new lead submissions</p>
-            </div>
-            <Switch defaultChecked className="shrink-0" />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Label className="text-foreground">Weekly Analytics Report</Label>
-              <p className="text-xs text-muted-foreground mt-1">Receive weekly platform summary</p>
-            </div>
-            <Switch className="shrink-0" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border-border text-foreground">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-orange-500" />
+              <dt className="font-medium text-foreground">Sign-in, sessions, 2FA</dt>
+              <dd className="text-muted-foreground mt-1">
+                Supabase dashboard → Authentication (providers, email confirmation, MFA, session
+                limits).
+              </dd>
             </div>
             <div>
-              <CardTitle className="text-lg">Security</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Authentication and access control
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Label className="text-foreground">Two-Factor Authentication (2FA)</Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Require 2FA for all admin accounts
-              </p>
-            </div>
-            <Switch className="shrink-0" />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Label className="text-foreground">Session Timeout</Label>
-              <p className="text-xs text-muted-foreground mt-1">Auto-logout after inactivity</p>
-            </div>
-            <Switch defaultChecked className="shrink-0" />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Label className="text-foreground">IP Whitelisting</Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Restrict admin access to specific IPs
-              </p>
-            </div>
-            <Switch className="shrink-0" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border-border text-foreground">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
-              <Database className="w-5 h-5 text-purple-500" />
+              <dt className="font-medium text-foreground">Backups and exports</dt>
+              <dd className="text-muted-foreground mt-1">
+                Supabase dashboard → Database → Backups. Owners export their own leads from the
+                dashboard.
+              </dd>
             </div>
             <div>
-              <CardTitle className="text-lg">Data Management</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Export, backup, and data retention
-              </CardDescription>
+              <dt className="font-medium text-foreground">Deployment health</dt>
+              <dd className="text-muted-foreground mt-1">
+                <a className="underline" href="/api/health" target="_blank" rel="noreferrer">
+                  /api/health
+                </a>{" "}
+                reports database reachability and which keys are configured.
+              </dd>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant="outline"
-              className="bg-background border-border text-foreground hover:bg-muted"
-              disabled
-            >
-              Export All Users
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-background border-border text-foreground hover:bg-muted"
-              disabled
-            >
-              Export All Leads
-            </Button>
-            <Button
-              variant="outline"
-              className="bg-background border-border text-foreground hover:bg-muted"
-              disabled
-            >
-              Backup Database
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border-red-500/20 text-foreground">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
-            </div>
-            <div>
-              <CardTitle className="text-lg text-red-500">Danger Zone</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Irreversible actions - proceed with caution
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <Label className="text-foreground font-medium">Reset All NFC Cards</Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Return all cards to inventory status
-              </p>
-            </div>
-            <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
-              Reset Cards
-            </Button>
-          </div>
-          <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <Label className="text-foreground font-medium">Purge All Leads</Label>
-              <p className="text-xs text-muted-foreground mt-1">Delete all lead data permanently</p>
-            </div>
-            <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
-              Purge Leads
-            </Button>
-          </div>
-          <div className="flex flex-col gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <Label className="text-foreground font-medium">Delete All User Data</Label>
-              <p className="text-xs text-muted-foreground mt-1">This action cannot be undone</p>
-            </div>
-            <Button variant="destructive" disabled className="w-full shrink-0 sm:w-auto">
-              Delete Everything
-            </Button>
-          </div>
+          </dl>
         </CardContent>
       </Card>
     </div>

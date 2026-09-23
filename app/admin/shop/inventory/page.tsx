@@ -22,6 +22,8 @@ import {
   type Product,
 } from "@/hooks/useAdminShop";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 export default function InventoryPage() {
   const { user } = useAuth();
@@ -53,7 +55,7 @@ export default function InventoryPage() {
       setRestockMap({ ...restockMap, [productId]: 0 });
     } catch (error) {
       console.error("Failed to restock:", error);
-      alert(error instanceof Error ? error.message : "Failed to restock");
+      toast.error(toUserMessage(error));
     }
   };
 

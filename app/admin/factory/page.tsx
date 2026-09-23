@@ -292,7 +292,7 @@ export default function AdminFactoryPage() {
 
     if (!uuid) return;
     if (!user?.id) {
-      alert("User not authenticated.");
+      toast.error("User not authenticated.");
       return;
     }
 
@@ -313,8 +313,7 @@ export default function AdminFactoryPage() {
       setShowPrintDialog(true);
       (e.target as HTMLFormElement).reset();
     } catch (err) {
-      const error = err as Error;
-      alert(error.message);
+      toast.error(toUserMessage(err));
     }
   };
 
@@ -340,7 +339,7 @@ export default function AdminFactoryPage() {
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
     if (!user?.id) {
-      alert("User not authenticated.");
+      toast.error("User not authenticated.");
       return;
     }
     if (!confirm(`Are you sure you want to delete ${selectedIds.size} card(s)?`)) return;
@@ -370,7 +369,7 @@ export default function AdminFactoryPage() {
 
   const handleDeleteSingle = async (id: string) => {
     if (!user?.id) {
-      alert("User not authenticated.");
+      toast.error("User not authenticated.");
       return;
     }
     if (!confirm("Are you sure you want to delete this card?")) return;

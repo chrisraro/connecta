@@ -31,6 +31,8 @@ import {
   type ProductCategory,
 } from "@/hooks/useAdminShop";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 export default function CategoriesPage() {
   const { user } = useAuth();
@@ -86,7 +88,7 @@ export default function CategoriesPage() {
       resetForm();
     } catch (error) {
       console.error("Failed to save category:", error);
-      alert("Failed to save category. Check console for details.");
+      toast.error(toUserMessage(error));
     }
   };
 

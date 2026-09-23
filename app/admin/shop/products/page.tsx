@@ -30,6 +30,8 @@ import {
 } from "@/hooks/useAdminShop";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { imageUrl as resolveImageUrl } from "@/lib/imageUrl";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 function formatPrice(priceInCents: number): string {
   const amount = (priceInCents / 100).toFixed(2);
@@ -87,7 +89,7 @@ export default function AdminProductsPage() {
       await deleteProduct(productId);
     } catch (error) {
       console.error("Failed to delete product:", error);
-      alert("Failed to delete product");
+      toast.error(toUserMessage(error));
     }
   };
 
