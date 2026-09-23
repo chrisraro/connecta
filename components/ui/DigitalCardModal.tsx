@@ -158,7 +158,16 @@ export function DigitalCardModal({
           </Button>
 
           {isOwner && (
-            <Link href="/dashboard/builder?tab=card" onClick={() => onOpenChange(false)}>
+            <Link
+              // The card being shown, not create mode: a bare builder URL made
+              // a new profile on a paid plan instead of editing this one.
+              href={
+                profileId
+                  ? `/dashboard/builder?id=${profileId}&tab=card`
+                  : "/dashboard/builder?tab=card"
+              }
+              onClick={() => onOpenChange(false)}
+            >
               <Button
                 variant="ghost"
                 size="sm"

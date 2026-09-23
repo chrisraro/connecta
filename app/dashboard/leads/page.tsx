@@ -30,10 +30,17 @@ import { Input } from "@/components/ui/input";
 import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import Link from "next/link";
 import { CONNECTA } from "@/lib/brand";
+import { useMyProfiles } from "@/hooks/useProfiles";
+import { newestProfileId } from "@/lib/builderEntry";
 
 export default function LeadsPage() {
   const { user } = useAuth();
   const { data: leadsData } = useMyLeads();
+  // "Edit your profile" must name a profile: the bare builder URL means CREATE,
+  // which on a paid plan made a duplicate profile instead of editing one.
+  const { data: myProfiles } = useMyProfiles();
+  const newestId = myProfiles ? newestProfileId(myProfiles) : null;
+  const editProfileHref = newestId ? `/dashboard/builder?id=${newestId}` : "/dashboard/builder";
   const updateStatus = useUpdateLeadStatus().mutateAsync;
   const markContacted = ({ leadId }: { leadId: string }) =>
     updateStatus({ id: leadId, status: "contacted" });
@@ -229,7 +236,7 @@ export default function LeadsPage() {
                 ? "Try a different search or filter."
                 : "Share your profile via NFC tap or QR code, and the leads you capture will appear here."
             }
-            action={search ? undefined : { label: "Edit your profile", href: "/dashboard/builder" }}
+            action={search ? undefined : { label: "Edit your profile", href: editProfileHref }}
           />
         ) : (
           filteredLeads.map((lead) => (

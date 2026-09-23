@@ -32,6 +32,8 @@ import { isFullScreenDashboardRoute } from "@/lib/dashboardChrome";
 import { shouldRedirectAdminOnFirstLanding } from "@/lib/adminRedirect";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
+import { useMyProfiles } from "@/hooks/useProfiles";
+import { newestProfileId } from "@/lib/builderEntry";
 
 // Shared between the mobile header and the desktop sidebar footer so the
 // account avatar looks identical in both places (same component in two
@@ -57,6 +59,10 @@ function DashboardFabs() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [unsyncedCount, setUnsyncedCount] = useState(0);
+  // Edit the newest profile when there is one. The bare builder URL means
+  // CREATE, which for a paid plan silently made a duplicate profile on Save.
+  const { data: profiles } = useMyProfiles();
+  const editProfileId = profiles ? newestProfileId(profiles) : null;
 
   return (
     <>
@@ -105,7 +111,7 @@ function DashboardFabs() {
               }}
             />
             <QuickActionItem
-              href="/dashboard/builder"
+              href={editProfileId ? `/dashboard/builder?id=${editProfileId}` : "/dashboard/builder"}
               icon={LayoutTemplate}
               label="Profile Builder"
               desc="Create or edit your digital card"
