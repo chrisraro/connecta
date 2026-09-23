@@ -1,0 +1,719 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-23T22:24:23.470Z",
+  "title": "Design System: Connecta",
+  "extensions": {
+    "colorMeta": {
+      "whiteprint-ground": {
+        "role": "neutral",
+        "displayName": "Whiteprint Paper",
+        "canonical": "#EEF1F4",
+        "tonalRamp": [
+          "#474849",
+          "#77797A",
+          "#A7A9AB",
+          "#D1D4D7",
+          "#F1F3F6",
+          "#F5F7F8",
+          "#F9FAFB",
+          "#FDFDFE"
+        ]
+      },
+      "whiteprint-ink": {
+        "role": "neutral",
+        "displayName": "Drafting Ink",
+        "canonical": "#12161F",
+        "tonalRamp": [
+          "#050709",
+          "#090B10",
+          "#0D0F16",
+          "#10131B",
+          "#363941",
+          "#717379",
+          "#ACADB1",
+          "#E3E3E4"
+        ]
+      },
+      "whiteprint-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "canonical": "#4A5468",
+        "tonalRamp": [
+          "#16191F",
+          "#252A34",
+          "#343B49",
+          "#414A5C",
+          "#656E7F",
+          "#9298A4",
+          "#C0C3CA",
+          "#E9EAED"
+        ]
+      },
+      "whiteprint-line": {
+        "role": "primary",
+        "displayName": "Plan Blue",
+        "canonical": "#2B3F8F",
+        "tonalRamp": [
+          "#0D132B",
+          "#162048",
+          "#1E2C64",
+          "#26377E",
+          "#4B5CA0",
+          "#808CBC",
+          "#B5BCD8",
+          "#E6E8F2"
+        ]
+      },
+      "whiteprint-grid": {
+        "role": "neutral",
+        "displayName": "Grid (line at 7%)",
+        "canonical": "rgb(43 63 143 / 0.07)",
+        "tonalRamp": [
+          "#0D132B",
+          "#162048",
+          "#1E2C64",
+          "#26377E",
+          "#4B5CA0",
+          "#808CBC",
+          "#B5BCD8",
+          "#E6E8F2"
+        ]
+      },
+      "whiteprint-mark": {
+        "role": "secondary",
+        "displayName": "Survey Red",
+        "canonical": "#D0312D",
+        "tonalRamp": [
+          "#3E0F0E",
+          "#681917",
+          "#92221F",
+          "#B72B28",
+          "#D7504D",
+          "#E38381",
+          "#EFB7B6",
+          "#F9E6E6"
+        ]
+      },
+      "whiteprint-mark-text": {
+        "role": "secondary",
+        "displayName": "Survey Red, text",
+        "canonical": "#C42A26",
+        "tonalRamp": [
+          "#3B0D0B",
+          "#621513",
+          "#891D1B",
+          "#AC2521",
+          "#CD4A47",
+          "#DC7F7D",
+          "#EAB4B3",
+          "#F8E5E5"
+        ]
+      },
+      "whiteprint-action-bg": {
+        "role": "primary",
+        "displayName": "Plan Blue, action",
+        "canonical": "#2B3F8F",
+        "tonalRamp": [
+          "#0D132B",
+          "#162048",
+          "#1E2C64",
+          "#26377E",
+          "#4B5CA0",
+          "#808CBC",
+          "#B5BCD8",
+          "#E6E8F2"
+        ]
+      },
+      "whiteprint-action-ink": {
+        "role": "neutral",
+        "displayName": "Whiteprint Paper, on action",
+        "canonical": "#EEF1F4",
+        "tonalRamp": [
+          "#474849",
+          "#77797A",
+          "#A7A9AB",
+          "#D1D4D7",
+          "#F1F3F6",
+          "#F5F7F8",
+          "#F9FAFB",
+          "#FDFDFE"
+        ]
+      },
+      "whiteprint-duotone": {
+        "role": "primary",
+        "displayName": "Plan Blue, portrait ink",
+        "canonical": "#2B3F8F",
+        "tonalRamp": [
+          "#0D132B",
+          "#162048",
+          "#1E2C64",
+          "#26377E",
+          "#4B5CA0",
+          "#808CBC",
+          "#B5BCD8",
+          "#E6E8F2"
+        ]
+      },
+      "blueprint-ground": {
+        "role": "primary",
+        "displayName": "Plan Blue ground",
+        "canonical": "#2B3F8F",
+        "tonalRamp": [
+          "#0D132B",
+          "#162048",
+          "#1E2C64",
+          "#26377E",
+          "#4B5CA0",
+          "#808CBC",
+          "#B5BCD8",
+          "#E6E8F2"
+        ]
+      },
+      "blueprint-ink": {
+        "role": "neutral",
+        "displayName": "Plan Ink Light",
+        "canonical": "#F4F6FA",
+        "tonalRamp": [
+          "#494A4B",
+          "#7A7B7D",
+          "#ABACAF",
+          "#D7D8DC",
+          "#F6F7FB",
+          "#F8FAFC",
+          "#FBFCFD",
+          "#FEFEFE"
+        ]
+      },
+      "blueprint-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink on blueprint",
+        "canonical": "#C9D3F2",
+        "tonalRamp": [
+          "#3C3F49",
+          "#656A79",
+          "#8D94A9",
+          "#B1BAD5",
+          "#D1DAF4",
+          "#DFE5F7",
+          "#ECF0FA",
+          "#F9FAFD"
+        ]
+      },
+      "blueprint-line": {
+        "role": "neutral",
+        "displayName": "Whiteprint Paper, line",
+        "canonical": "#EEF1F4",
+        "tonalRamp": [
+          "#474849",
+          "#77797A",
+          "#A7A9AB",
+          "#D1D4D7",
+          "#F1F3F6",
+          "#F5F7F8",
+          "#F9FAFB",
+          "#FDFDFE"
+        ]
+      },
+      "blueprint-grid": {
+        "role": "neutral",
+        "displayName": "Grid (line at 9%)",
+        "canonical": "rgb(238 241 244 / 0.09)",
+        "tonalRamp": [
+          "#474849",
+          "#77797A",
+          "#A7A9AB",
+          "#D1D4D7",
+          "#F1F3F6",
+          "#F5F7F8",
+          "#F9FAFB",
+          "#FDFDFE"
+        ]
+      },
+      "blueprint-mark": {
+        "role": "secondary",
+        "displayName": "Survey Red, bright",
+        "canonical": "#FF5A52",
+        "tonalRamp": [
+          "#4D1B19",
+          "#802D29",
+          "#B33F39",
+          "#E04F48",
+          "#FF736C",
+          "#FF9C97",
+          "#FFC5C2",
+          "#FFEBEA"
+        ]
+      },
+      "blueprint-mark-text": {
+        "role": "secondary",
+        "displayName": "Survey Red, text on blueprint",
+        "canonical": "#FFB3AD",
+        "tonalRamp": [
+          "#4D3634",
+          "#805A57",
+          "#B37D79",
+          "#E09E98",
+          "#FFBEB9",
+          "#FFD1CE",
+          "#FFE4E2",
+          "#FFF6F5"
+        ]
+      },
+      "blueprint-action-bg": {
+        "role": "neutral",
+        "displayName": "Whiteprint Paper, action",
+        "canonical": "#EEF1F4",
+        "tonalRamp": [
+          "#474849",
+          "#77797A",
+          "#A7A9AB",
+          "#D1D4D7",
+          "#F1F3F6",
+          "#F5F7F8",
+          "#F9FAFB",
+          "#FDFDFE"
+        ]
+      },
+      "blueprint-action-ink": {
+        "role": "primary",
+        "displayName": "Deep Plan Blue",
+        "canonical": "#1F2F6E",
+        "tonalRamp": [
+          "#090E21",
+          "#101837",
+          "#16214D",
+          "#1B2961",
+          "#414E84",
+          "#7982A8",
+          "#B1B6CC",
+          "#E4E6EE"
+        ]
+      },
+      "blueprint-duotone": {
+        "role": "primary",
+        "displayName": "Deep Plan Blue, portrait ink",
+        "canonical": "#1A2860",
+        "tonalRamp": [
+          "#080C1D",
+          "#0D1430",
+          "#121C43",
+          "#172354",
+          "#3C4878",
+          "#767EA0",
+          "#AFB4C7",
+          "#E4E5EC"
+        ]
+      },
+      "graphite-ground": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "#12161F",
+        "tonalRamp": [
+          "#050709",
+          "#090B10",
+          "#0D0F16",
+          "#10131B",
+          "#363941",
+          "#717379",
+          "#ACADB1",
+          "#E3E3E4"
+        ]
+      },
+      "graphite-ink": {
+        "role": "neutral",
+        "displayName": "Plan Ink Light",
+        "canonical": "#EEF1F4",
+        "tonalRamp": [
+          "#474849",
+          "#77797A",
+          "#A7A9AB",
+          "#D1D4D7",
+          "#F1F3F6",
+          "#F5F7F8",
+          "#F9FAFB",
+          "#FDFDFE"
+        ]
+      },
+      "graphite-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink on graphite",
+        "canonical": "#A7B0C0",
+        "tonalRamp": [
+          "#32353A",
+          "#545860",
+          "#757B86",
+          "#939BA9",
+          "#B4BCC9",
+          "#CAD0D9",
+          "#E0E3E9",
+          "#F4F6F7"
+        ]
+      },
+      "graphite-line": {
+        "role": "primary",
+        "displayName": "Lifted Plan Blue",
+        "canonical": "#8FA3E0",
+        "tonalRamp": [
+          "#2B3143",
+          "#485270",
+          "#64729D",
+          "#7E8FC5",
+          "#A0B1E5",
+          "#BCC8EC",
+          "#D8DFF4",
+          "#F2F4FB"
+        ]
+      },
+      "graphite-grid": {
+        "role": "neutral",
+        "displayName": "Grid (line at 8%)",
+        "canonical": "rgb(143 163 224 / 0.08)",
+        "tonalRamp": [
+          "#2B3143",
+          "#485270",
+          "#64729D",
+          "#7E8FC5",
+          "#A0B1E5",
+          "#BCC8EC",
+          "#D8DFF4",
+          "#F2F4FB"
+        ]
+      },
+      "graphite-mark": {
+        "role": "secondary",
+        "displayName": "Survey Red, bright",
+        "canonical": "#FF5A52",
+        "tonalRamp": [
+          "#4D1B19",
+          "#802D29",
+          "#B33F39",
+          "#E04F48",
+          "#FF736C",
+          "#FF9C97",
+          "#FFC5C2",
+          "#FFEBEA"
+        ]
+      },
+      "graphite-mark-text": {
+        "role": "secondary",
+        "displayName": "Survey Red, text on graphite",
+        "canonical": "#FF7A73",
+        "tonalRamp": [
+          "#4D2523",
+          "#803D3A",
+          "#B35551",
+          "#E06B65",
+          "#FF8E88",
+          "#FFAFAB",
+          "#FFD0CE",
+          "#FFEFEE"
+        ]
+      },
+      "graphite-action-bg": {
+        "role": "neutral",
+        "displayName": "Whiteprint Paper, action",
+        "canonical": "#EEF1F4",
+        "tonalRamp": [
+          "#474849",
+          "#77797A",
+          "#A7A9AB",
+          "#D1D4D7",
+          "#F1F3F6",
+          "#F5F7F8",
+          "#F9FAFB",
+          "#FDFDFE"
+        ]
+      },
+      "graphite-action-ink": {
+        "role": "neutral",
+        "displayName": "Graphite, on action",
+        "canonical": "#12161F",
+        "tonalRamp": [
+          "#050709",
+          "#090B10",
+          "#0D0F16",
+          "#10131B",
+          "#363941",
+          "#717379",
+          "#ACADB1",
+          "#E3E3E4"
+        ]
+      },
+      "graphite-duotone": {
+        "role": "primary",
+        "displayName": "Night Plan Blue, portrait ink",
+        "canonical": "#1C2A5E",
+        "tonalRamp": [
+          "#080D1C",
+          "#0E152F",
+          "#141D42",
+          "#192553",
+          "#3E4A76",
+          "#777F9E",
+          "#B0B4C7",
+          "#E4E5EC"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The owner's name in the title block, Archivo wdth 125. One per page."
+      },
+      "headline": {
+        "displayName": "Lot Heading",
+        "purpose": "Section headings sitting on the lot boundary, wdth 112."
+      },
+      "action": {
+        "displayName": "Action",
+        "purpose": "Save contact, Send my details and form submit, wdth 112."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Role line, item and experience titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "About text and descriptions, max 62ch."
+      },
+      "body-sm": {
+        "displayName": "Body Small",
+        "purpose": "Secondary descriptions, form labels, company line."
+      },
+      "label": {
+        "displayName": "Cell Label",
+        "purpose": "Quick-cell captions under icons."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Prices, in JetBrains Mono with tabular numerals."
+      },
+      "data-sm": {
+        "displayName": "Data Small",
+        "purpose": "Dates, periods, attributions; 11px uppercase for status tags."
+      }
+    },
+    "shadows": [],
+    "lines": [
+      {
+        "name": "neatline",
+        "value": "border: 2px solid var(--sv-line); outline: 1px solid color-mix(in srgb, var(--sv-line) 55%, transparent); outline-offset: -9px",
+        "purpose": "Desktop (>=1024px) double neatline around the whole plan sheet."
+      },
+      {
+        "name": "lot-line",
+        "value": "1.5px solid var(--sv-line)",
+        "purpose": "Lot boundaries, portrait outline, title block, cell dividers, fields."
+      },
+      {
+        "name": "rule",
+        "value": "1px solid color-mix(in srgb, var(--sv-line) 38%, transparent)",
+        "purpose": "Rows inside a lot and between social link rows."
+      },
+      {
+        "name": "grid",
+        "value": "linear-gradient(var(--sv-grid) 1px, transparent 1px), linear-gradient(90deg, var(--sv-grid) 1px, transparent 1px); background-size: 32px 32px; background-position: -1px -1px",
+        "purpose": "The drafting grid; the sheet surface itself."
+      },
+      {
+        "name": "unsurveyed",
+        "value": "1.5px dashed var(--sv-line)",
+        "purpose": "Empty section boundary, owner previews only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "lot-draw",
+        "value": "stroke-dashoffset 1 -> 0, 1100ms cubic-bezier(0.16, 1, 0.3, 1), 120ms delay",
+        "purpose": "The one authored moment: the portrait's lot outline draws closed on load. Skipped under prefers-reduced-motion; the outline is fully drawn."
+      },
+      {
+        "name": "ease-expo-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All state transitions."
+      },
+      {
+        "name": "state",
+        "value": "180ms",
+        "purpose": "Cell hover fill (line at 10%) and primary hover brightness(1.12)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "390px",
+        "note": "design width; single column, max 560px, 16px gutter"
+      },
+      {
+        "name": "desktop",
+        "value": "1024px",
+        "note": "plan sheet: max 1180px, 56px padding, neatline, 440px + 640px columns, 64px gap"
+      }
+    ],
+    "sheets": {
+      "note": "Sheet colours are set as --sv-* custom properties on the page root by sheetVars() in components/survey/SurveyProfile.tsx, from components/survey/sheet.ts.",
+      "templateMap": {
+        "editorial": "whiteprint",
+        "kinetic": "blueprint",
+        "architectural": "graphite"
+      },
+      "default": "whiteprint",
+      "contrast": {
+        "whiteprint": {
+          "ink": 15.97,
+          "soft": 6.71,
+          "line": 8.38,
+          "mark": 4.45,
+          "markText": 5,
+          "action": 8.38
+        },
+        "blueprint": {
+          "ink": 8.78,
+          "soft": 6.37,
+          "line": 8.38,
+          "mark": 3.09,
+          "markText": 5.57,
+          "action": 10.96
+        },
+        "graphite": {
+          "ink": 15.97,
+          "soft": 8.29,
+          "line": 7.31,
+          "mark": 5.89,
+          "markText": 7.14,
+          "action": 15.97
+        }
+      }
+    },
+    "legacy": {
+      "status": "legacy shell, pending rebuild",
+      "source": "app/globals.css (--connecta-brand, shadcn --primary / --sidebar-* etc.) and the Fraunces / Geist / Newsreader / Space Grotesk / Manrope faces in lib/fonts.ts",
+      "note": "Still powers dashboard, admin, shop and landing. Not part of this system; do not extend into new surfaces."
+    }
+  },
+  "components": [
+    {
+      "name": "Save Contact (Primary)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one filled cell in the title block; also the lead form's submit.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><path d=\"M7 10l5 5 5-5\"/><path d=\"M12 15V3\"/></svg>Save contact</button>",
+      "css": ".ds-btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:56px;border:0;border-radius:0;background:var(--sv-action-bg, #2B3F8F);color:var(--sv-action-ink, #EEF1F4);font-family:var(--font-survey, Archivo), system-ui, sans-serif;font-variation-settings:\"wdth\" 112;font-size:17px;font-weight:700;cursor:pointer;transition:filter 180ms cubic-bezier(0.16, 1, 0.3, 1)}.ds-btn-primary:hover{filter:brightness(1.12)}.ds-btn-primary:focus-visible{outline:2px solid var(--sv-mark, #D0312D);outline-offset:3px}.ds-btn-primary:disabled{opacity:.65}"
+    },
+    {
+      "name": "Send My Details (Cell)",
+      "kind": "button",
+      "refersTo": "button-cell",
+      "description": "Unfilled action cell, the title block's last cell, separated by a lot line.",
+      "html": "<a class=\"ds-btn-cell\" href=\"#\">Send my details</a>",
+      "css": ".ds-btn-cell{display:flex;align-items:center;justify-content:center;width:100%;height:56px;border:1.5px solid var(--sv-line, #2B3F8F);border-radius:0;color:var(--sv-ink, #12161F);background:transparent;text-decoration:none;font-family:var(--font-survey, Archivo), system-ui, sans-serif;font-variation-settings:\"wdth\" 112;font-size:17px;font-weight:700;transition:background-color 180ms cubic-bezier(0.16, 1, 0.3, 1)}.ds-btn-cell:hover{background-color:color-mix(in srgb, var(--sv-line, #2B3F8F) 10%, transparent)}.ds-btn-cell:focus-visible{outline:2px solid var(--sv-mark, #D0312D);outline-offset:3px}"
+    },
+    {
+      "name": "Quick Cells",
+      "kind": "nav",
+      "refersTo": "quick-cell",
+      "description": "Equal-width row of Call / Email / Website / QR cells divided by lot lines; only present actions render.",
+      "html": "<div class=\"ds-quick\"><a href=\"#\" class=\"ds-quick-cell\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\"><path d=\"M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z\"/></svg><span>Call</span></a><a href=\"#\" class=\"ds-quick-cell\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\"><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\"/><path d=\"M22 7l-10 6L2 7\"/></svg><span>Email</span></a><a href=\"#\" class=\"ds-quick-cell\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20\"/></svg><span>Website</span></a></div>",
+      "css": ".ds-quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1.5px solid var(--sv-line, #2B3F8F);background:var(--sv-ground, #EEF1F4)}.ds-quick-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:64px;color:var(--sv-ink, #12161F);text-decoration:none;font-family:var(--font-survey, Archivo), system-ui, sans-serif;font-size:12px;font-weight:600;transition:background-color 180ms cubic-bezier(0.16, 1, 0.3, 1)}.ds-quick-cell+.ds-quick-cell{border-left:1.5px solid var(--sv-line, #2B3F8F)}.ds-quick-cell:hover{background-color:color-mix(in srgb, var(--sv-line, #2B3F8F) 10%, transparent)}.ds-quick-cell:focus-visible{outline:2px solid var(--sv-mark, #D0312D);outline-offset:3px}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Lead form field: square, lot-line border, survey red on focus.",
+      "html": "<label class=\"ds-field-wrap\"><span class=\"ds-field-label\">Your name</span><input class=\"ds-field\" /></label>",
+      "css": ".ds-field-wrap{display:flex;flex-direction:column;gap:8px;font-family:var(--font-survey, Archivo), system-ui, sans-serif;color:var(--sv-ink, #12161F)}.ds-field-label{font-size:15px;font-weight:600}.ds-field{width:100%;min-height:48px;padding:10px 14px;border:1.5px solid var(--sv-line, #2B3F8F);border-radius:0;background:transparent;color:var(--sv-ink, #12161F);font:inherit;font-size:16px;caret-color:var(--sv-mark, #D0312D)}.ds-field:focus{outline:none;border-color:var(--sv-mark, #D0312D);box-shadow:0 0 0 1px var(--sv-mark, #D0312D)}"
+    },
+    {
+      "name": "Status Tag",
+      "kind": "chip",
+      "refersTo": "status-tag",
+      "description": "The only chip: a listing's status, in mono and survey red.",
+      "html": "<span class=\"ds-tag\">For sale</span>",
+      "css": ".ds-tag{display:inline-block;padding:2px 8px;border:1px solid var(--sv-mark, #D0312D);border-radius:0;color:var(--sv-mark-text, #C42A26);font-family:var(--font-survey-mono, 'JetBrains Mono'), ui-monospace, monospace;font-size:11px;text-transform:uppercase;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Lot",
+      "kind": "card",
+      "refersTo": "lot-heading",
+      "description": "A section as a surveyed parcel: heading on the boundary line, rows divided by 1px rules at 38%, one chamfered plan corner.",
+      "html": "<div class=\"ds-plan\"><section class=\"ds-lot\"><h2 class=\"ds-lot-h\">Services</h2><ul class=\"ds-rows\"><li><i></i>House &amp; lot sales</li><li><i></i>Rentals</li></ul></section><svg class=\"ds-chamfer\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M24 0V24H0Z\" fill=\"#EEF1F4\"/><path d=\"M23.25 0L0 23.25\" fill=\"none\" stroke=\"#2B3F8F\" stroke-width=\"1.5\"/></svg></div>",
+      "css": ".ds-plan{position:relative;margin-top:16px;border:1.5px solid var(--sv-line, #2B3F8F);border-top:0;background:var(--sv-ground, #EEF1F4);font-family:var(--font-survey, Archivo), system-ui, sans-serif;color:var(--sv-ink, #12161F)}.ds-lot{position:relative;border-top:1.5px solid var(--sv-line, #2B3F8F);padding:32px 16px 28px}.ds-lot-h{position:absolute;left:12px;top:0;transform:translateY(-50%);margin:0;padding:0 8px;background:var(--sv-ground, #EEF1F4);font-variation-settings:\"wdth\" 112;font-size:19px;font-weight:700;line-height:1}.ds-rows{list-style:none;margin:0;padding:0}.ds-rows li{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid color-mix(in srgb, var(--sv-line, #2B3F8F) 38%, transparent);font-size:17px;font-weight:500}.ds-rows li:first-child{padding-top:0}.ds-rows i{width:8px;height:8px;background:var(--sv-line, #2B3F8F);flex-shrink:0}.ds-chamfer{position:absolute;right:-1.5px;bottom:-1.5px}"
+    },
+    {
+      "name": "Portrait Lot",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Signature: the person inside the eight-corner chamfered lot, printed in one ink; the outline draws closed on load.",
+      "html": "<div class=\"ds-portrait\"><div class=\"ds-portrait-clip\"><div class=\"ds-portrait-ph\">NB</div></div><svg viewBox=\"0 0 100 120\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path class=\"ds-portrait-line\" d=\"M14 0.75H86L99.25 14V106L86 119.25H14L0.75 106V14Z\" pathLength=\"1\"/></svg></div>",
+      "css": ".ds-portrait{position:relative;width:220px;aspect-ratio:100/120;background:var(--sv-ground, #EEF1F4)}.ds-portrait-clip{position:absolute;inset:0;clip-path:polygon(14% 0,86% 0,100% 11.7%,100% 88.3%,86% 100%,14% 100%,0 88.3%,0 11.7%);background:var(--sv-duotone, #2B3F8F);isolation:isolate}.ds-portrait-clip img{filter:grayscale(1) contrast(1.08) brightness(1.04);mix-blend-mode:screen}.ds-portrait-ph{display:flex;height:100%;align-items:center;justify-content:center;background:var(--sv-ground, #EEF1F4);color:var(--sv-line, #2B3F8F);font-family:var(--font-survey, Archivo), system-ui, sans-serif;font-variation-settings:\"wdth\" 125;font-size:56px;font-weight:700}.ds-portrait svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}.ds-portrait-line{fill:none;stroke:var(--sv-line, #2B3F8F);stroke-width:1.5;vector-effect:non-scaling-stroke}@media (prefers-reduced-motion:no-preference){.ds-portrait-line{stroke-dasharray:1;animation:ds-draw 1100ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both}}@keyframes ds-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Survey Plan",
+    "overview": "A Connecta profile is drawn as a surveyed lot on a drafting sheet: a calm, credible plan that puts the face, the name and the save action first. The sheet is a drafting grid; the person stands inside an eight-corner, 45°-chamfered lot outline; the title block below is square-cornered linework; every section after it is a parcel on one plan, sharing its boundary lines with its neighbours. Content is never boxed into cards. It is bounded by lines, the way a surveyor bounds land.\n\nThe world refuses the category default of a round avatar over a stack of pill link buttons on dark glass, and it refuses decorative annotation. Earlier drafts carried bearings, distances, corner numbers, leader lines, a tie line and a point-of-beginning stamp; all of that was retired on 2026-09-24 at the founder's direction. The only survey cue left on a profile is structure: lines, lots, chamfers and the grid. The tap moment is dramatised only on the marketing homepage, never on a profile.\n\nSurvey Plan is the **default template**. Its three colourways (whiteprint, blueprint, graphite) are selected by the stored template ids editorial, kinetic and architectural. Industry-specific templates (real estate, MSMEs, professionals, students) will follow and must be variants inside this world, not new worlds. The world lives in `components/survey/` (`sheet.ts` is the colour source of truth, `survey.module.css` the material).\n\n**Legacy shell, pending rebuild.** The warm slate / obsidian tokens in `app/globals.css` (`--connecta-brand`, shadcn `--primary`, `--sidebar-*`, etc.) and the Fraunces / Geist / Newsreader / Space Grotesk / Manrope faces in `lib/fonts.ts` still power the dashboard, admin, shop and landing. They are not this system and must not be extended into new surfaces; they will be replaced as each surface is rebuilt in the Survey Plan world.",
+    "keyCharacteristics": [
+      "Drafting-grid sheet (32px) as the page surface itself, in three colourways.",
+      "One line colour per sheet carries every boundary; weight, not colour, sets hierarchy.",
+      "Portraits print in one ink (screen-blend duotone) inside the chamfered lot outline; listing and product photos stay in true colour.",
+      "Archivo on its width axis: expanded (125) for the name, semi-expanded (112) for lot headings and actions. JetBrains Mono only for real data.",
+      "Square corners everywhere. No pills, no rounded cards, no shadows.",
+      "One authored motion: the lot outline draws closed around the person."
+    ],
+    "rules": [
+      {
+        "name": "The One Line Rule",
+        "body": "Each sheet has exactly one line colour. Every boundary, rule, outline, icon and square bullet uses it; hierarchy comes from line weight and alpha, never from a second line hue.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Point Rule",
+        "body": "Red is never a surface or decoration. It marks the brand's point of beginning, status tags on listings, and interaction state (focus ring, active field, caret, errors, link hover). Nothing else is red.",
+        "section": "colors"
+      },
+      {
+        "name": "The Soft Floor Rule",
+        "body": "Soft text never drops below 6.2:1 against its sheet's ground. A new sheet is not valid until ink, soft and mark-text are measured.",
+        "section": "colors"
+      },
+      {
+        "name": "The Width Axis Rule",
+        "body": "Emphasis comes from Archivo's width axis: 125 for the name, 112 for headings and actions. Do not add a second display family.",
+        "section": "typography"
+      },
+      {
+        "name": "The Real Data Rule",
+        "body": "JetBrains Mono is used only for real data: prices, dates and periods, status tags, attributions. Never for decoration, kickers or labels that are not data.",
+        "section": "typography"
+      },
+      {
+        "name": "The Drawn Depth Rule",
+        "body": "If something needs to stand apart, give it a heavier line, never a shadow, a tint panel or a blur.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Chamfer Rule",
+        "body": "A plan gets one chamfered corner. Chamfering every corner turns a boundary into a badge.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do set every colour through the sheet's custom properties (`--sv-ground`, `--sv-line`, …) from `sheet.ts`; a new colourway is a new entry there, measured against the Soft Floor Rule.",
+      "Do bound content with lines: 1.5px lot lines, 1px rules at 38%, a 2px + 1px neatline on desktop.",
+      "Do put lot headings on the boundary line, semi-expanded, backed by the ground.",
+      "Do print portraits in one ink and keep listing and product photos in true colour.",
+      "Do keep the first viewport to portrait, name, role, company, quick cells and Save contact.",
+      "Do keep everything visible under reduced motion."
+    ],
+    "donts": [
+      "Don't use rounded corners, pills or rounded cards anywhere on a profile.",
+      "Don't use shadows, glass, blur or tinted panels for depth.",
+      "Don't use red for fills, headings or decoration; it is for the mark's dot, status tags and interaction state.",
+      "Don't use JetBrains Mono for anything but real data.",
+      "Don't add survey annotation to profiles: no bearings, coordinates, corner numbers, leader lines, tie lines, point-of-beginning stamps or tap annotations.",
+      "Don't put a language toggle on a profile; EN | FIL lives on the marketing site.",
+      "Don't show empty sections to visitors; dashed lots are for owner previews only.",
+      "Don't extend the legacy shell tokens in `app/globals.css` into new surfaces."
+    ]
+  }
+}

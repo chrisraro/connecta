@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
-import { StorefrontView } from "@/components/templates/StorefrontView";
-import { ProfileData, ProfileType, DigitalCardConfig } from "@/types/profile";
-import { Loader2, SearchX, QrCode, Store, UserCheck } from "lucide-react";
-import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import { StorefrontView } from "@/components/templates/StorefrontView";
+import { ProfileData, ProfileType } from "@/types/profile";
+import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { CONNECTA } from "@/lib/brand";
-import { Button } from "@/components/ui/button";
 import { usePublicProfile } from "@/hooks/useProfiles";
 import { jsonArrayOf, type LayoutConfig } from "@/lib/db/profile";
+import { SurveyFooter, SurveyProfile, sheetVars, surveyStyles } from "@/components/survey/SurveyProfile";
+import { sheetFor, SHEETS } from "@/components/survey/sheet";
+import { PROFILE_COPY as t } from "@/components/survey/copy";
 import type {
   ProfileInfo,
   ProductItem,
@@ -24,8 +25,7 @@ import type {
  * Client renderer for a public profile, shared by both the `/p/<id>`
  * back-compat route and the `/<slug>` vanity route. The parent server
  * component owns data-fetching for `generateMetadata`; this component
- * re-fetches reactively via `useQuery` so edits made in the builder show
- * up live without a full page reload.
+ * re-fetches reactively so edits made in the builder show up live.
  */
 export function ProfileView({
   lookup,
@@ -38,38 +38,48 @@ export function ProfileView({
   const { data: profile, isPending } = usePublicProfile(lookup);
   const profileIdForCard = lookup.by === "id" ? lookup.profileId : (profile?.id ?? "");
 
-  if (isPending) {
+  if (isPending || !profile) {
+    const sheet = SHEETS.whiteprint;
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-        <span className="sr-only">Loading profile…</span>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center text-foreground">
-        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted text-muted-foreground">
-          <SearchX className="h-8 w-8" aria-hidden="true" />
+      <div className={surveyStyles.sheet} style={sheetVars(sheet)}>
+        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+          {isPending ? (
+            <>
+              <Loader2 className="h-7 w-7 animate-spin" style={{ color: sheet.line }} aria-hidden="true" />
+              <span className="sr-only">{t.loading}</span>
+            </>
+          ) : (
+            <>
+              <svg aria-hidden="true" width="96" height="96" viewBox="0 0 96 96">
+                <path
+                  d="M30 6 H66 L90 30 V66 L66 90 H30 L6 66 V30 Z"
+                  fill="none"
+                  stroke={sheet.line}
+                  strokeWidth="1.5"
+                  strokeDasharray="6 5"
+                />
+              </svg>
+              <h1 className={`${surveyStyles.expanded} mt-6 text-[26px] font-bold`}>{t.notFoundTitle}</h1>
+              <p className="mt-2 max-w-sm text-[16px]" style={{ color: sheet.soft }}>
+                {t.notFoundBody}
+              </p>
+              <Link
+                href="/"
+                className={`${surveyStyles.primary} mt-7 flex h-12 items-center gap-2 px-5 text-[15px] font-bold`}
+              >
+                <ConnectaMark className="h-5 w-5" dotColor="#FF5A52" />
+                {t.goHome(CONNECTA.name)}
+              </Link>
+            </>
+          )}
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Profile not found</h1>
-        <p className="mt-2 max-w-sm text-muted-foreground">
-          This profile may have been removed or the link is incorrect.
-        </p>
-        <Link
-          href="/"
-          className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          <ConnectaMark className="h-4 w-4" />
-          Go to {CONNECTA.name}
-        </Link>
       </div>
     );
   }
 
   const layoutConfig = profile.layoutConfig as unknown as LayoutConfig;
   const agentInfo = profile.agentInfo as unknown as ProfileInfo;
+  const sheet = sheetFor(layoutConfig.themeId);
 
   const data: ProfileData = {
     ownerId: profile.ownerId,
@@ -94,93 +104,65 @@ export function ProfileView({
     showStorefront: profile.showStorefront,
   };
 
-  // `profile.services` (the top-level structured catalog) is never
-  // populated by anything in the product — agentInfo.services (the
-  // builder's actual "Services" tag editor) is the authoritative source
-  // (Task 13 / audit-dataflow.md #1). Checking the dead field here meant a
-  // profile with only tag-based services (no products) never auto-showed
-  // its Storefront tab even though StorefrontView renders those tags fine.
+  // agentInfo.services (the builder's "Services" tag editor) is the
+  // authoritative source; the top-level `profile.services` catalog is never
+  // populated (Task 13 / audit-dataflow.md #1).
   const hasCatalogItems =
     data.products!.length > 0 || (agentInfo.services && agentInfo.services.length > 0);
   const isStorefrontEnabled =
     profile.showStorefront !== false && (profile.showStorefront || hasCatalogItems);
 
-  return (
-    <div
-      className="min-h-screen flex flex-col relative"
-      style={{ backgroundColor: layoutConfig.colorPalette.background }}
+  const tab = (id: "portfolio" | "storefront", label: string) => (
+    <button
+      type="button"
+      onClick={() => setActiveTab(id)}
+      aria-pressed={activeTab === id}
+      className={`${surveyStyles.cell} flex h-11 flex-1 items-center justify-center px-3 text-[14px] font-bold`}
+      style={
+        activeTab === id
+          ? { backgroundColor: "var(--sv-line)", color: "var(--sv-ground)" }
+          : { color: "var(--sv-ink)" }
+      }
     >
-      {/* ─── Top Navigation Header (Portfolio vs. Storefront) ─── */}
-      {isStorefrontEnabled && (
-        <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-xl border-b border-border/60 py-2.5 px-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-1.5 p-1 bg-muted/70 rounded-2xl border border-border/80 mx-auto">
-            <button
-              onClick={() => setActiveTab("portfolio")}
-              className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
-                activeTab === "portfolio"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              Portfolio
-            </button>
-            <button
-              onClick={() => setActiveTab("storefront")}
-              className={`px-4 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
-                activeTab === "storefront"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Store className="w-3.5 h-3.5" />
-              Storefront &amp; Services
-            </button>
-          </div>
+      {label}
+    </button>
+  );
 
-          <Button
-            onClick={() => setShowCardModal(true)}
-            size="sm"
-            className="hidden sm:flex items-center gap-1.5 text-xs font-bold rounded-xl bg-yellow-500 hover:bg-yellow-600 text-black shadow-md"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            Digital Card
-          </Button>
-        </div>
+  return (
+    <div className={surveyStyles.sheet} style={sheetVars(sheet)}>
+      {isStorefrontEnabled && (
+        <nav
+          aria-label={t.profileTab}
+          className="sticky top-0 z-40 w-full border-b-[1.5px] px-4 py-2"
+          style={{ backgroundColor: "var(--sv-ground)", borderColor: "var(--sv-line)" }}
+        >
+          <div className="mx-auto flex max-w-[560px] border-[1.5px]" style={{ borderColor: "var(--sv-line)" }}>
+            {tab("portfolio", t.profileTab)}
+            {tab("storefront", t.storefrontTab)}
+          </div>
+        </nav>
       )}
 
-      {/* ─── Digital Card Modal ─────────────────────────────── */}
       <DigitalCardModal
         open={showCardModal}
         onOpenChange={setShowCardModal}
         agent={agentInfo}
         profileId={profileIdForCard}
         profileSlug={profile.slug}
-
         isOwner={false}
       />
 
-      {/* ─── Content Render (Portfolio OR Storefront) ───────── */}
       {activeTab === "storefront" && isStorefrontEnabled ? (
         <StorefrontView data={data} />
       ) : (
-        <ProfileRenderer data={data} templateId={layoutConfig.themeId} />
+        <SurveyProfile
+          data={data}
+          t={t}
+          onShowQr={() => setShowCardModal(true)}
+        />
       )}
 
-      {profile.showBranding !== false && (
-        <div
-          className="py-6 text-center text-xs mt-auto"
-          style={{ color: layoutConfig.colorPalette.text }}
-        >
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity"
-          >
-            <span>Powered by</span>
-            <span className="font-bold">{CONNECTA.name}</span>
-          </Link>
-        </div>
-      )}
+      {profile.showBranding !== false && <SurveyFooter sheet={sheet} t={t} />}
     </div>
   );
 }

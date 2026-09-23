@@ -1,4 +1,29 @@
-import { Fraunces, Geist, Geist_Mono, Manrope, Space_Grotesk, Newsreader } from "next/font/google";
+import {
+  Archivo,
+  Fraunces,
+  Geist,
+  Geist_Mono,
+  JetBrains_Mono,
+  Manrope,
+  Space_Grotesk,
+  Newsreader,
+} from "next/font/google";
+
+/** Survey Plan world: title-block lettering and UI. The width axis carries the
+ *  expanded display cut, so one family covers both. */
+export const surveyFont = Archivo({
+  subsets: ["latin"],
+  display: "swap",
+  axes: ["wdth"],
+  variable: "--font-survey",
+});
+
+/** Survey Plan world: real data only (prices, dates, codes). */
+export const surveyMonoFont = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-survey-mono",
+});
 
 /** The product's own display face — high-contrast variable serif with real character. */
 export const displayFont = Fraunces({
@@ -49,4 +74,6 @@ export const allFontVariables = [
   editorialSerif.variable,
   kineticGrotesk.variable,
   architecturalSans.variable,
+  surveyFont.variable,
+  surveyMonoFont.variable,
 ].join(" ");

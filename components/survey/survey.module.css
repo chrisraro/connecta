@@ -1,0 +1,163 @@
+/* Survey Plan world: the public profile sheet.
+   Colours arrive as --sv-* custom properties set per sheet (sheet.ts). */
+
+.sheet {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sv-ground);
+  /* The plan's drafting grid: this page is a survey sheet, so the grid is the
+     surface itself, not decoration laid over one. */
+  background-image:
+    linear-gradient(var(--sv-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--sv-grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  color: var(--sv-ink);
+  font-family: var(--font-survey), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sheet ::selection {
+  background: var(--sv-line);
+  color: var(--sv-ground);
+}
+
+.sheet :focus-visible {
+  outline: 2px solid var(--sv-mark);
+  outline-offset: 3px;
+}
+
+.mono {
+  font-family: var(--font-survey-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Archivo's width axis: title-block lettering runs expanded. */
+.expanded {
+  font-variation-settings: "wdth" 125;
+}
+
+.semiExpanded {
+  font-variation-settings: "wdth" 112;
+}
+
+/* Monofrequency: every portrait prints in the sheet's one ink. Shadows take
+   the ink colour, highlights stay paper. */
+.duotone {
+  background-color: var(--sv-duotone);
+  isolation: isolate;
+}
+
+.duotone img {
+  filter: grayscale(1) contrast(1.08) brightness(1.04);
+  mix-blend-mode: screen;
+}
+
+.lotClip {
+  clip-path: polygon(14% 0, 86% 0, 100% 11.7%, 100% 88.3%, 86% 100%, 14% 100%, 0 88.3%, 0 11.7%);
+}
+
+.frameClip {
+  clip-path: polygon(8% 0, 92% 0, 100% 11%, 100% 89%, 92% 100%, 8% 100%, 0 89%, 0 11%);
+}
+
+.strip {
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sv-line) transparent;
+}
+
+.strip > * {
+  scroll-snap-align: start;
+}
+
+/* On a desktop the page becomes one plan sheet: a double neatline around the
+   drawing, the drafting grid still showing through inside it. */
+@media (min-width: 1024px) {
+  .neatline {
+    border: 2px solid var(--sv-line);
+    outline: 1px solid color-mix(in srgb, var(--sv-line) 55%, transparent);
+    outline-offset: -9px;
+  }
+
+
+}
+
+.rule {
+  border-color: color-mix(in srgb, var(--sv-line) 38%, transparent);
+}
+
+.cell {
+  transition:
+    background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cell:hover {
+  background-color: color-mix(in srgb, var(--sv-line) 10%, transparent);
+}
+
+.primary {
+  background-color: var(--sv-action-bg);
+  color: var(--sv-action-ink);
+  transition: filter 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.primary:hover {
+  filter: brightness(1.12);
+}
+
+.primary:disabled {
+  opacity: 0.65;
+}
+
+.field {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--sv-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--sv-ink);
+  font: inherit;
+  font-size: 16px;
+  caret-color: var(--sv-mark);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--sv-mark);
+  box-shadow: 0 0 0 1px var(--sv-mark);
+}
+
+.link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.link:hover {
+  color: var(--sv-mark-text);
+}
+
+/* The one authored moment: the lot boundary draws closed around the person.
+   Everything is drawn and visible when motion is reduced. */
+@media (prefers-reduced-motion: no-preference) {
+  .drawLot {
+    stroke-dasharray: 1;
+    animation: draw 1100ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+  }
+
+
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+

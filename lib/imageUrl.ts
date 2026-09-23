@@ -21,6 +21,11 @@ export function imageUrl(pathOrUrl: string | null | undefined): string | null {
 
   // Already absolute: an OAuth avatar or a seeded asset. Left alone.
   if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  // A root-relative app asset ("/marketing/demo-avatar.svg") or an inline
+  // upload preview. Storage paths never start with "/" ("<user-uuid>/<file>"),
+  // so these would otherwise become a storage URL for an object that doesn't
+  // exist and render as a broken image.
+  if (value.startsWith("/") || value.startsWith("data:") || value.startsWith("blob:")) return value;
 
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!base) return null;

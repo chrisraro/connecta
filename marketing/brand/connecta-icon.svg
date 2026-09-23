@@ -1,13 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!--
-    PLACEHOLDER ARTWORK — this is not the final app icon.
-
-    The sigma-in-a-disc geometry below is carried over unchanged from the
-    product's previous identity. It has not been replaced with Connecta's
-    own icon yet — treat this as provisional, not a finished design
-    decision. See components/brand/ConnectaMark.tsx for the same warning
-    on this identity's monogram counterpart, and marketing/README.md for
-    how this file is used.
+    App icon: the lot mark in whiteprint on a plan-blue tile, with a heavier
+    stroke so the open side and the point of beginning survive at 16-32px.
   -->
-  <path fill="#8a2f22" fill-rule="evenodd" d="M32 0a32 32 0 1 0 0 64 32 32 0 0 0 0-64ZM16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"/>
+  <rect width="64" height="64" rx="14" fill="#2B3F8F"/>
+  <g transform="translate(9 11) scale(0.66)">
+    <path d="M50 23 L37 10 H19 L6 23 V41 L19 54 H37 L50 41" fill="none" stroke="#EEF1F4" stroke-width="8" stroke-linejoin="miter"/>
+    <circle cx="57" cy="32" r="6" fill="#FF5A52"/>
+  </g>
 </svg>

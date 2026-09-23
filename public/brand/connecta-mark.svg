@@ -1,21 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Connecta">
   <title>Connecta</title>
   <!--
-    PLACEHOLDER ARTWORK — this is not the final mark.
-
-    The geometry below (a solid Greek sigma) is carried over unchanged from
-    the product's previous identity. It has not been replaced with
-    Connecta's own lettermark yet — treat this as provisional, not a
-    finished design decision. See components/brand/ConnectaMark.tsx, which
-    carries the same warning on the inline-delivery version of this
-    artwork, and marketing/README.md for how this file is used.
-
-    Drawn in currentColor so it inherits from context and needs no network
-    request when inlined.
+    The mark: a surveyed lot. An eight-corner boundary with 45-degree
+    chamfers, its right side left open, drawn in currentColor so it inherits
+    from context when inlined. The red dot in the gap is the point of
+    beginning; it is always red. Source of truth for
+    components/brand/ConnectaMark.tsx.
   -->
-  <path
-    fill="currentColor"
-    fill-rule="evenodd"
-    d="M16 10 H50 V18 H32 L44 30 V34 L32 46 H50 V54 H16 V46 L30 32 L16 18 Z"
-  />
+  <path d="M50 23 L37 10 H19 L6 23 V41 L19 54 H37 L50 41" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="miter"/>
+  <circle cx="57" cy="32" r="4.5" fill="#D0312D"/>
 </svg>

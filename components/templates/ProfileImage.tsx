@@ -11,6 +11,9 @@ interface ProfileImageProps {
   fill?: boolean;
   width?: number;
   height?: number;
+  /** Load eagerly and at high priority: for the one image that is the page's
+   *  largest element (a profile's portrait), never for lists of images. */
+  priority?: boolean;
 }
 
 // next/image requires an absolute URL or a root-relative path — anything
@@ -34,6 +37,7 @@ export function ProfileImage({
   fill = true,
   width,
   height,
+  priority = false,
 }: ProfileImageProps) {
   // One pure derivation, no query. The bucket is public, so a stored path
   // resolves to a URL by string concatenation -- which is why the batch
@@ -75,6 +79,7 @@ export function ProfileImage({
           sizes="(max-width: 768px) 100vw, 400px"
           className="object-cover"
           unoptimized={unoptimized}
+          priority={priority}
         />
       </div>
     );
@@ -88,6 +93,7 @@ export function ProfileImage({
       height={height ?? 200}
       className={className}
       unoptimized={unoptimized}
+      priority={priority}
     />
   );
 }
