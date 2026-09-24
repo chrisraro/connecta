@@ -11,7 +11,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
+import { DigitalBusinessCard, type CardOrientation } from "@/components/ui/digital-business-card";
 import { ProfileInfo, DigitalCardConfig } from "@/types/profile";
 import { downloadVCard } from "@/lib/vcard";
 import { Download, Share2, Check, Copy, Loader2, QrCode } from "lucide-react";
@@ -27,6 +27,8 @@ interface DigitalCardModalProps {
   profileSlug?: string | null;
   digitalCardConfig?: Partial<DigitalCardConfig>;
   isOwner?: boolean;
+  /** Which view opens first; the viewer can switch. Not a saved setting. */
+  defaultOrientation?: CardOrientation;
 }
 
 export function DigitalCardModal({
@@ -37,8 +39,10 @@ export function DigitalCardModal({
   profileSlug,
   digitalCardConfig,
   isOwner = false,
+  defaultOrientation = "landscape",
 }: DigitalCardModalProps) {
   const cardWrapperRef = useRef<HTMLDivElement>(null);
+  const [orientation, setOrientation] = useState<CardOrientation>(defaultOrientation);
   const [isDownloading, setIsDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -85,7 +89,7 @@ export function DigitalCardModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-4 sm:p-6 bg-background overflow-hidden">
+      <DialogContent className="sm:max-w-[480px] max-h-[92dvh] overflow-y-auto p-4 sm:p-6 bg-background">
         <DialogHeader className="text-center sm:text-left mb-2">
           <DialogTitle className="text-xl font-bold [font-stretch:112%] flex items-center gap-2 text-foreground">
             <ConnectaMark className="w-6 h-6 text-primary" />
@@ -96,11 +100,31 @@ export function DigitalCardModal({
           </DialogDescription>
         </DialogHeader>
 
+        {/* One card, two views: landscape like the printed card, portrait
+            (the Access card) for holding up a big QR to be scanned. */}
+        <div role="group" aria-label="Card orientation" className="flex border-[1.5px] border-input">
+          {(["landscape", "portrait"] as const).map((o) => (
+            <button
+              key={o}
+              type="button"
+              aria-pressed={orientation === o}
+              onClick={() => setOrientation(o)}
+              className={`h-10 flex-1 text-sm font-bold capitalize [font-stretch:112%] transition-colors ${
+                orientation === o ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+              } ${o === "portrait" ? "border-l-[1.5px] border-input" : ""}`}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+
         {/* Card Container */}
         <div className="flex flex-col items-center justify-center my-4">
           <div
             ref={cardWrapperRef}
-            className="sheet-grid w-full flex justify-center border-[1.5px] border-input p-4"
+            className={`sheet-grid w-full flex justify-center border-[1.5px] border-input p-4 ${
+              orientation === "portrait" ? "[&>[data-digital-card]]:max-w-[260px]" : ""
+            }`}
           >
             <DigitalBusinessCard
               fullName={agent.fullName}
@@ -114,7 +138,9 @@ export function DigitalCardModal({
               about={agent.about}
               profileId={profileId}
               profileSlug={profileSlug}
+              avatarUrl={agent.avatarUrl}
               config={digitalCardConfig}
+              orientation={orientation}
             />
           </div>
         </div>

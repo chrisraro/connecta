@@ -17,10 +17,12 @@ export interface CardSkin {
   /** The mark's point of beginning. */
   dotColor: string;
   /**
-   * Split skins: the card's right half is a second ground (the QR sits on
-   * it) with its own ink. Undefined for single-ground skins.
+   * Split skins: two grounds. `primary` is the dark ground the swatch starts
+   * with; `ground` is the second, light ground with its own `ink` and
+   * `line`. Landscape splits left/right, portrait splits top/bottom.
+   * Undefined for single-ground skins.
    */
-  split?: { ground: string; ink: string; line: string };
+  split?: { primary: string; ground: string; ink: string; soft: string; line: string };
 }
 
 /**
@@ -32,7 +34,8 @@ export interface CardSkin {
  * Plan access (confirmed 2026-09-24): the default skin is free; every other
  * skin is subscription-only, as a digital card as well as in print
  * (lib/plans.ts allowedCardSkins). Portrait versions and more skins and
- * colourways are planned; see PRODUCT.md.
+ * colourways are planned; see PRODUCT.md. Every skin renders in both the
+ * landscape and portrait orientation (components/ui/digital-business-card.tsx).
  */
 export const CARD_SKINS: CardSkin[] = [
   {
@@ -64,7 +67,7 @@ export const CARD_SKINS: CardSkin[] = [
     softColor: "#F2C9CE",
     lineColor: "#FFFFFF",
     dotColor: "#FF5A52",
-    split: { ground: "#EEF1F4", ink: "#12161F", line: "#2B3F8F" },
+    split: { primary: "#7A1420", ground: "#EEF1F4", ink: "#12161F", soft: "#4A5468", line: "#2B3F8F" },
   },
   {
     id: "gradient",

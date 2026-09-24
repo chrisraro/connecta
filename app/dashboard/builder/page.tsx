@@ -89,7 +89,7 @@ import { ImageUploader } from "@/components/ui/image-uploader";
 import { EditableList, type FieldDef } from "@/components/profile-builder/EditableList";
 import { InspectorPanel } from "@/components/profile-builder/InspectorPanel";
 import { ProfileImage } from "@/components/templates/ProfileImage";
-import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
+import { DigitalBusinessCard, type CardOrientation } from "@/components/ui/digital-business-card";
 import { profilePath } from "@/lib/profileUrl";
 import { deriveBuilderProfileFields, getBlocksForProfileType } from "@/lib/profileSections";
 import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
@@ -578,6 +578,8 @@ function BuilderContent() {
   const [additionalEmails, setAdditionalEmails] = useState<string[]>([]);
   const [digitalCard, setDigitalCard] = useState<DigitalCardConfig>(DEFAULT_DIGITAL_CARD);
   const [previewMode, setPreviewMode] = useState<"page" | "card" | "storefront">("page");
+  // A view of the card, not a saved setting: both orientations use the skin.
+  const [cardOrientation, setCardOrientation] = useState<CardOrientation>("landscape");
   const [showStorefront, setShowStorefront] = useState<boolean>(true);
   const [projects] = useState<ProjectItem[]>([]);
 
@@ -1419,7 +1421,27 @@ function BuilderContent() {
               <div className="overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]">
                 {previewMode === "card" ? (
                   <div className="sheet-grid p-4 flex flex-col justify-center min-h-[360px] items-center space-y-4">
-                    <div ref={builderCardRef} className="w-full flex justify-center">
+                    <div role="group" aria-label="Card orientation" className="flex w-full max-w-[420px] border-[1.5px] border-input bg-background">
+                      {(["landscape", "portrait"] as const).map((o) => (
+                        <button
+                          key={o}
+                          type="button"
+                          aria-pressed={cardOrientation === o}
+                          onClick={() => setCardOrientation(o)}
+                          className={`h-10 flex-1 text-sm font-bold capitalize [font-stretch:112%] transition-colors ${
+                            cardOrientation === o ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                          } ${o === "portrait" ? "border-l-[1.5px] border-input" : ""}`}
+                        >
+                          {o}
+                        </button>
+                      ))}
+                    </div>
+                    <div
+                      ref={builderCardRef}
+                      className={`w-full flex justify-center ${
+                        cardOrientation === "portrait" ? "[&>[data-digital-card]]:max-w-[280px]" : ""
+                      }`}
+                    >
                       <DigitalBusinessCard
                         fullName={agentInfo.fullName}
                         title={agentInfo.title}
@@ -1432,7 +1454,9 @@ function BuilderContent() {
                         about={agentInfo.about}
                         profileId={editingId || undefined}
                         profileSlug={existingProfile?.slug}
+                        avatarUrl={agentInfo.avatarUrl}
                         config={digitalCard}
+                        orientation={cardOrientation}
                       />
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-2 pt-2">

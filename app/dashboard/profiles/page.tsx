@@ -18,7 +18,6 @@ import {
   ExternalLink,
   QrCode,
   Search,
-  Users,
   Trash2,
   Edit2,
   MoreVertical,
@@ -28,14 +27,12 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
-import { AccessCard } from "@/components/profile-builder/AccessCard";
+import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
@@ -48,6 +45,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { ProfileImage } from "@/components/templates/ProfileImage";
+import { sheetFor } from "@/components/survey/sheet";
 import { profilePath } from "@/lib/profileUrl";
 import { resolveBuilderEntryRedirect } from "@/lib/builderEntry";
 
@@ -63,6 +61,8 @@ export default function ProfilesPage() {
 
   const [activeChip, setActiveChip] = useState("All");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  // The profile whose digital card is open (portrait first, from "Card").
+  const [cardProfileId, setCardProfileId] = useState<string | null>(null);
 
   if (profiles === undefined || myPlan === undefined) {
     return (
@@ -116,10 +116,7 @@ export default function ProfilesPage() {
                         free-plan user into a "Create Profile" form that
                         could never save (Task 12). */}
           <Link href={createProfileHref} className="md:hidden">
-            <Button
-              size="icon"
-              className="h-10 w-10 bg-primary text-primary-foreground"
-            >
+            <Button size="icon" className="h-10 w-10 bg-primary text-primary-foreground">
               <Plus className="w-5 h-5" />
             </Button>
           </Link>
@@ -173,138 +170,150 @@ export default function ProfilesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profiles.map((profile) => (
-            <Card
-              key={profile.id}
-              className="overflow-hidden border-border bg-card hover:border-primary/20 transition-colors duration-300 group relative"
-            >
-              <div
-                className="h-32 w-full relative"
-                style={{ backgroundColor: layoutConfigOf(profile).colorPalette.primary }}
+          {profiles.map((profile) => {
+            // The stored template id selects a Survey Plan sheet colourway;
+            // the banner is that sheet, not the retired template's palette.
+            const sheet = sheetFor(layoutConfigOf(profile).themeId);
+            return (
+              <Card
+                key={profile.id}
+                className="overflow-hidden border-border bg-card hover:border-primary/20 transition-colors duration-300 group relative"
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/20 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-white font-bold text-sm">
-                    {layoutConfigOf(profile).themeId}
-                  </span>
-                </div>
-
-                {/* Actions Dropdown */}
-                <div className="absolute top-4 right-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full bg-black/20 hover:bg-black/40 text-white border-none"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40 rounded-2xl p-2">
-                      <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                        <Link href={`/dashboard/builder?id=${profile.id}`}>
-                          <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="rounded-xl cursor-pointer text-destructive focus:text-destructive"
-                        onClick={() => setIsDeleting(profile.id)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-
-              {agentInfoOf(profile).avatarUrl && (
-                <div className="flex justify-center -mt-8 relative z-10">
-                  <ProfileImage
-                    src={agentInfoOf(profile).avatarUrl}
-                    alt="avatar"
-                    fallbackSeed={agentInfoOf(profile).fullName || profile.name}
-                    className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card"
-                  />
-                </div>
-              )}
-              {!agentInfoOf(profile).avatarUrl && (
-                <div className="flex justify-center -mt-8 relative z-10">
-                  <ProfileImage
-                    src={undefined}
-                    alt="avatar"
-                    fallbackSeed={agentInfoOf(profile).fullName || profile.name}
-                    className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card"
-                  />
-                </div>
-              )}
-
-              <CardHeader className="pt-2 pb-2 text-center">
-                <CardTitle className="text-xl font-bold [font-stretch:112%] text-foreground">
-                  {profile.name}
-                </CardTitle>
-                <CardDescription className="text-muted-foreground font-medium">
-                  {agentInfoOf(profile).fullName}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-6 text-center">
-                <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                  Live Profile
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-wrap gap-3 pt-0 pb-6 px-6">
-                <Link href={profilePath(profile)} target="_blank" className="flex-1 min-w-[100px]">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-2xl border-border hover:bg-muted transition-colors h-11"
+                <div
+                  className="h-32 w-full relative border-b-[1.5px] border-input"
+                  style={{
+                    backgroundColor: sheet.ground,
+                    backgroundImage: `linear-gradient(${sheet.grid} 1px, transparent 1px), linear-gradient(90deg, ${sheet.grid} 1px, transparent 1px)`,
+                    backgroundSize: "16px 16px",
+                  }}
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 120 64"
+                    className="absolute right-6 top-1/2 h-16 w-28 -translate-y-1/2"
                   >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View
-                  </Button>
-                </Link>
+                    <path
+                      d="M6 6 H96 L114 24 V58 H6 Z"
+                      fill="none"
+                      stroke={sheet.line}
+                      strokeWidth="1.5"
+                    />
+                    <circle cx="104" cy="50" r="3" fill={sheet.mark} />
+                  </svg>
+                  <span
+                    className="absolute bottom-4 left-4 border-[1.5px] px-2 py-0.5 text-[13px] font-bold capitalize"
+                    style={{
+                      borderColor: sheet.line,
+                      color: sheet.ink,
+                      backgroundColor: sheet.ground,
+                    }}
+                  >
+                    {sheet.id}
+                  </span>
 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      className="flex-1 min-w-[100px] rounded-2xl bg-muted text-foreground hover:bg-muted/80 transition-colors h-11"
-                    >
-                      <QrCode className="w-4 h-4 mr-2" />
-                      Card
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px] bg-card/90 border-border p-0 overflow-hidden border-0 shadow-none flex flex-col items-center justify-center gap-6">
-                    <DialogHeader className="sr-only">
-                      <DialogTitle>Access Card for {profile.name}</DialogTitle>
-                    </DialogHeader>
-
-                    <div className="w-full flex justify-center pt-8 px-4">
-                      <AccessCard
-                        profileId={profile.id}
-                        profileSlug={profile.slug}
-                        agent={agentInfoOf(profile)}
-                      />
-                    </div>
-
-                    <div className="pb-8 px-4 w-full flex justify-center">
-                      <DialogClose asChild>
+                  {/* Actions Dropdown */}
+                  <div className="absolute top-4 right-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <Button
-                          variant="outline"
-                          className="px-10 h-12 bg-muted border-border text-foreground hover:bg-muted/80 font-bold text-xs"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full bg-black/20 hover:bg-black/40 text-white border-none"
                         >
-                          Dismiss
+                          <MoreVertical className="w-4 h-4" />
                         </Button>
-                      </DialogClose>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </CardFooter>
-            </Card>
-          ))}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40 rounded-2xl p-2">
+                        <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
+                          <Link href={`/dashboard/builder?id=${profile.id}`}>
+                            <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                          onClick={() => setIsDeleting(profile.id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+
+                {agentInfoOf(profile).avatarUrl && (
+                  <div className="flex justify-center -mt-8 relative z-10">
+                    <ProfileImage
+                      src={agentInfoOf(profile).avatarUrl}
+                      alt="avatar"
+                      fallbackSeed={agentInfoOf(profile).fullName || profile.name}
+                      className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card"
+                    />
+                  </div>
+                )}
+                {!agentInfoOf(profile).avatarUrl && (
+                  <div className="flex justify-center -mt-8 relative z-10">
+                    <ProfileImage
+                      src={undefined}
+                      alt="avatar"
+                      fallbackSeed={agentInfoOf(profile).fullName || profile.name}
+                      className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card"
+                    />
+                  </div>
+                )}
+
+                <CardHeader className="pt-2 pb-2 text-center">
+                  <CardTitle className="text-xl font-bold [font-stretch:112%] text-foreground">
+                    {profile.name}
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground font-medium">
+                    {agentInfoOf(profile).fullName}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-6 text-center">
+                  <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    Live Profile
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-wrap gap-3 pt-0 pb-6 px-6">
+                  <Link
+                    href={profilePath(profile)}
+                    target="_blank"
+                    className="flex-1 min-w-[100px]"
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-2xl border-border hover:bg-muted transition-colors h-11"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View
+                    </Button>
+                  </Link>
+
+                  <Button
+                    variant="secondary"
+                    className="flex-1 min-w-[100px] h-11"
+                    onClick={() => setCardProfileId(profile.id)}
+                  >
+                    <QrCode className="w-4 h-4 mr-2" />
+                    Card
+                  </Button>
+                  {cardProfileId === profile.id && (
+                    <DigitalCardModal
+                      open
+                      onOpenChange={(open) => !open && setCardProfileId(null)}
+                      agent={agentInfoOf(profile)}
+                      profileId={profile.id}
+                      profileSlug={profile.slug}
+                      digitalCardConfig={{ skin: profile.skin }}
+                      defaultOrientation="portrait"
+                      isOwner
+                    />
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       )}
 
