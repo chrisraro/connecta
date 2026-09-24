@@ -395,7 +395,7 @@ export default function AdminFactoryPage() {
   if (!isLoaded || cardsPending || !cardsList) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-destructive w-8 h-8" />
+        <Loader2 className="animate-spin text-primary w-8 h-8" />
       </div>
     );
   }
@@ -427,7 +427,7 @@ export default function AdminFactoryPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 text-foreground">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <SmartphoneNfc className="text-destructive w-8 h-8" />
+            <SmartphoneNfc className="text-primary w-8 h-8" />
             NFC Factory
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -441,7 +441,7 @@ export default function AdminFactoryPage() {
               variant="destructive"
               onClick={handleDeleteSelected}
               disabled={isDeleting}
-              className="bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive hover:text-foreground h-12 px-6 rounded-2xl transition-all"
+              className="h-12 px-6"
             >
               {isDeleting ? (
                 <Loader2 className="animate-spin w-4 h-4 mr-2" />
@@ -460,8 +460,8 @@ export default function AdminFactoryPage() {
             aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
             className={
               isScanning
-                ? "bg-muted text-foreground border border-border hover:bg-accent h-12 px-6 rounded-2xl"
-                : "bg-destructive hover:bg-destructive text-foreground font-bold h-12 px-8 rounded-2xl"
+                ? "border-[1.5px] border-input bg-transparent text-foreground hover:bg-accent h-12 px-6"
+                : "h-12 px-8"
             }
           >
             {isScanning ? (
@@ -515,15 +515,15 @@ export default function AdminFactoryPage() {
       )}
 
       {/* How It Works Info */}
-      <div className="mb-8 bg-card/50 border border-border rounded-3xl p-6">
+      <div className="mb-8 bg-background border-[1.5px] border-input p-6">
         <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-destructive" />
+          <ShieldCheck className="w-5 h-5 text-primary" />
           How Card Activation Works
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-background/50 rounded-2xl p-4 border border-border">
-            <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center mb-3">
-              <span className="text-destructive font-bold">1</span>
+            <div className="w-8 h-8 border-[1.5px] border-input flex items-center justify-center mb-3">
+              <span className="text-primary font-bold font-mono">1</span>
             </div>
             <h4 className="font-bold text-foreground text-sm mb-2">Register Card</h4>
             <p className="text-xs text-muted-foreground">
@@ -531,8 +531,8 @@ export default function AdminFactoryPage() {
             </p>
           </div>
           <div className="bg-background/50 rounded-2xl p-4 border border-border">
-            <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center mb-3">
-              <span className="text-destructive font-bold">2</span>
+            <div className="w-8 h-8 border-[1.5px] border-input flex items-center justify-center mb-3">
+              <span className="text-primary font-bold font-mono">2</span>
             </div>
             <h4 className="font-bold text-foreground text-sm mb-2">Customer Taps</h4>
             <p className="text-xs text-muted-foreground">
@@ -540,8 +540,8 @@ export default function AdminFactoryPage() {
             </p>
           </div>
           <div className="bg-background/50 rounded-2xl p-4 border border-border">
-            <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center mb-3">
-              <span className="text-destructive font-bold">3</span>
+            <div className="w-8 h-8 border-[1.5px] border-input flex items-center justify-center mb-3">
+              <span className="text-primary font-bold font-mono">3</span>
             </div>
             <h4 className="font-bold text-foreground text-sm mb-2">Card Activated</h4>
             <p className="text-xs text-muted-foreground">
@@ -552,16 +552,16 @@ export default function AdminFactoryPage() {
       </div>
 
       {isScanning && (
-        <div className="mb-8 p-12 bg-card/50 border-2 border-dashed border-destructive/30 flex flex-col items-center justify-center text-center animate-pulse">
-          <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
-            <SmartphoneNfc className="w-10 h-10 text-destructive" />
+        <div className="mb-8 p-12 bg-background border-[1.5px] border-dashed border-input flex flex-col items-center justify-center text-center animate-pulse">
+          <div className="w-20 h-20 border-[1.5px] border-input flex items-center justify-center mb-6">
+            <SmartphoneNfc className="w-10 h-10 text-primary" />
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-2">Ready to Scan</h2>
           <p className="text-muted-foreground max-w-sm">
             Bring a physical NFC card close to your device&apos;s NFC reader to register it.
           </p>
           {ndefStatus && (
-            <div className="mt-4 px-4 py-1 bg-primary/10 border border-primary/20 rounded-full text-primary text-xs font-bold animate-pulse">
+            <div className="mt-4 px-3 py-1 border-[1.5px] border-input text-primary text-xs font-bold animate-pulse">
               {ndefStatus}
             </div>
           )}
@@ -569,7 +569,7 @@ export default function AdminFactoryPage() {
       )}
 
       {scanError && (
-        <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-center gap-3 text-destructive">
+        <div className="mb-8 p-4 border-[1.5px] border-destructive flex items-center gap-3 text-destructive">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <p className="text-sm font-medium">{scanError}</p>
           <Button
@@ -586,14 +586,14 @@ export default function AdminFactoryPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Registration & Recent */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-card border border-border rounded-3xl p-6">
+          <div className="bg-background border-[1.5px] border-input p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-destructive" />
+              <Plus className="w-5 h-5 text-primary" />
               Manual Register
             </h3>
             <form onSubmit={handleManualRegister} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-muted-foreground ml-1">
+                <label className="text-[13px] font-semibold text-muted-foreground ml-1">
                   Card UID / Serial
                 </label>
                 <Input
@@ -684,7 +684,7 @@ export default function AdminFactoryPage() {
                       <Checkbox
                         checked={cardsList.length > 0 && selectedIds.size === cardsList.length}
                         onCheckedChange={toggleSelectAll}
-                        className="border-border data-[state=checked]:bg-destructive data-[state=checked]:border-destructive"
+                        className="border-border"
                       />
                     </TableHead>
                     <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
@@ -715,20 +715,20 @@ export default function AdminFactoryPage() {
                     cardsList.map((card) => (
                       <TableRow
                         key={card.id}
-                        className={`border-border transition-colors group ${selectedIds.has(card.id) ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-accent/30"}`}
+                        className={`border-border transition-colors group ${selectedIds.has(card.id) ? "bg-accent hover:bg-accent" : "hover:bg-accent/30"}`}
                       >
                         <TableCell className="pl-6">
                           <Checkbox
                             checked={selectedIds.has(card.id)}
                             onCheckedChange={() => toggleSelect(card.id)}
-                            className="border-border data-[state=checked]:bg-destructive data-[state=checked]:border-destructive"
+                            className="border-border"
                           />
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-xs text-foreground">{card.uuid}</span>
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono font-bold text-destructive tracking-wider">
+                          <span className="font-mono font-bold text-primary">
                             {card.activation_code}
                           </span>
                         </TableCell>
@@ -743,14 +743,14 @@ export default function AdminFactoryPage() {
                           ) : card.status === "active" ? (
                             <Badge
                               variant="outline"
-                              className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold uppercase tracking-tight"
+                              className="bg-primary/10 text-primary border-primary/40 text-[12px] font-bold"
                             >
                               Active
                             </Badge>
                           ) : (
                             <Badge
                               variant="destructive"
-                              className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] font-bold uppercase tracking-tight"
+                              className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] text-[12px] font-bold"
                             >
                               Lost
                             </Badge>
@@ -882,7 +882,7 @@ export default function AdminFactoryPage() {
             <Button
               type="button"
               onClick={handlePrint}
-              className="rounded-xl bg-destructive hover:bg-destructive text-foreground font-bold"
+              
             >
               <Printer className="w-4 h-4 mr-2" />
               Print Label

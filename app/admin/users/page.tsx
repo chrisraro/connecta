@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
   if (!isLoaded || !usersList || !grants) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-destructive w-8 h-8" />
+        <Loader2 className="animate-spin text-primary w-8 h-8" />
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
           )}
         </div>
         {isSuperadmin && (
-          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 gap-1">
+          <Badge variant="outline" className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1">
             <ShieldCheck className="w-3 h-3" /> Superadmin
           </Badge>
         )}
@@ -193,7 +193,7 @@ export default function AdminUsersPage() {
                       {grant ? (
                         <Badge
                           variant="outline"
-                          className="bg-destructive/10 text-destructive border-destructive/20 gap-1"
+                          className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1"
                         >
                           <ShieldCheck className="w-3 h-3" /> {grant.role}
                         </Badge>
@@ -241,7 +241,7 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>
                       {isSuspended ? (
-                        <Badge className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
+                        <Badge className="bg-transparent text-destructive border-destructive">
                           Suspended
                         </Badge>
                       ) : u.onboarding_completed ? (

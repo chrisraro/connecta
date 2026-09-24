@@ -75,7 +75,7 @@ export default function AdminSettingsPage() {
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-destructive w-8 h-8" />
+        <Loader2 className="animate-spin text-primary w-8 h-8" />
       </div>
     );
   }

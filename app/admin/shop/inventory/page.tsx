@@ -86,7 +86,7 @@ export default function InventoryPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-destructive" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function InventoryPage() {
       </div>
 
       {lowStockProducts && lowStockProducts.length > 0 && (
-        <Alert className="bg-destructive/20 border-destructive text-foreground">
+        <Alert className="border-destructive text-foreground">
           <AlertTriangle className="h-4 w-4 text-destructive" />
           <AlertTitle className="text-destructive">Low Stock Alert</AlertTitle>
           <AlertDescription>
@@ -116,7 +116,7 @@ export default function InventoryPage() {
       )}
 
       {lowStockProducts && lowStockProducts.length > 0 && (
-        <Card className="bg-card border-destructive/50">
+        <Card className="bg-card border-destructive">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-destructive" />
@@ -148,7 +148,7 @@ export default function InventoryPage() {
                       {product.sku}
                     </TableCell>
                     <TableCell>
-                      <Badge className="bg-destructive">{product.inventory}</Badge>
+                      <Badge variant="destructive">{product.inventory}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {product.low_stock_threshold}

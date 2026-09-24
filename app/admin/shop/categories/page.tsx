@@ -139,7 +139,7 @@ export default function CategoriesPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-destructive" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -153,7 +153,7 @@ export default function CategoriesPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-destructive hover:bg-destructive">
+            <Button>
               <Plus className="w-4 h-4 mr-2" />
               Add Category
             </Button>
@@ -231,7 +231,7 @@ export default function CategoriesPage() {
                 <Label>Active</Label>
               </div>
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1 bg-destructive hover:bg-destructive">
+                <Button type="submit" className="flex-1">
                   {editingId ? "Update" : "Create"} Category
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>

@@ -198,7 +198,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   if (isLoading || !product) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-destructive" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -453,7 +453,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 {formData.tags.map((tag) => (
                   <div
                     key={tag}
-                    className="flex items-center gap-1 px-3 py-1 bg-primary/10 rounded-full text-sm"
+                    className="flex items-center gap-1 px-2 py-0.5 border-[1.5px] border-input text-sm"
                   >
                     <span>{tag}</span>
                     <button

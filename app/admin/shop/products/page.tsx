@@ -96,7 +96,7 @@ export default function AdminProductsPage() {
   if (!isLoaded || products === undefined) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-destructive" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -104,7 +104,7 @@ export default function AdminProductsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground mt-1">Manage your product catalog</p>
@@ -117,9 +117,9 @@ export default function AdminProductsPage() {
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
+      {/* Filters: search full width on phones, the two selects share a row */}
+      <div className="grid grid-cols-2 gap-3 md:flex md:gap-4">
+        <div className="relative col-span-2 md:flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
@@ -129,7 +129,7 @@ export default function AdminProductsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -142,7 +142,7 @@ export default function AdminProductsPage() {
           value={categoryId || "all"}
           onValueChange={(val) => setCategoryId(val === "all" ? undefined : val)}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -222,9 +222,9 @@ export default function AdminProductsPage() {
                           variant="secondary"
                           className={
                             product.inventory === 0
-                              ? "bg-destructive/10 text-destructive"
+                              ? "bg-transparent text-destructive border-destructive"
                               : product.inventory <= product.low_stock_threshold
-                                ? "bg-[var(--connecta-mark)]/10 text-[var(--connecta-mark-text)]"
+                                ? "bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)]"
                                 : "bg-primary/10 text-primary"
                           }
                         >

@@ -33,7 +33,7 @@ export default function AdminDashboardPage() {
   if (!isLoaded || !stats) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-destructive w-8 h-8" />
+        <Loader2 className="animate-spin text-primary w-8 h-8" />
       </div>
     );
   }
@@ -45,7 +45,7 @@ export default function AdminDashboardPage() {
           <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
           <p className="text-muted-foreground mt-1">Welcome back, {appUser?.name || user?.email}</p>
         </div>
-        <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 gap-1">
+        <Badge variant="outline" className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1">
           <Shield className="w-3 h-3" />
           {myRole}
         </Badge>

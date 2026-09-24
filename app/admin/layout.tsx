@@ -79,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isLoaded || verifiedAdmin === null) {
     return (
       <div className="dark h-screen w-full flex items-center justify-center bg-background text-foreground">
-        <Loader2 className="animate-spin text-destructive w-10 h-10" />
+        <Loader2 className="animate-spin text-primary w-10 h-10" />
       </div>
     );
   }
@@ -113,11 +113,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="dark flex flex-col md:flex-row min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
-      <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-background sticky top-0 z-40">
-        <div className="flex items-center gap-2 font-bold text-lg text-destructive">
-          <ConnectaMark className="h-5 w-5" />
-          <span>{CONNECTA.name} Admin</span>
-        </div>
+      <header className="md:hidden flex items-center justify-between p-4 border-b-[1.5px] border-input bg-background sticky top-0 z-40">
+        <Link href="/admin" className="flex items-center gap-2.5">
+          <ConnectaMark className="h-7 w-7 text-primary" />
+          <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+            {CONNECTA.name.toUpperCase()}
+          </span>
+          {/* Red is reserved for status; being in the staff console is one. */}
+          <span className="border-[1.5px] border-[var(--connecta-mark)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--connecta-mark-text)]">
+            Admin
+          </span>
+        </Link>
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -138,9 +144,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           but unused.
                         */}
             <SheetHeader className="p-6 border-b border-border space-y-0">
-              <SheetTitle className="flex items-center gap-2 font-bold text-xl text-destructive">
-                <ConnectaMark className="h-5 w-5" />
-                <span>{CONNECTA.name} Admin</span>
+              <SheetTitle className="flex items-center gap-2.5">
+                <ConnectaMark className="h-7 w-7 text-primary" />
+                <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+                  {CONNECTA.name.toUpperCase()}
+                </span>
+                {/* Red is reserved for status; being in the staff console is one. */}
+                <span className="border-[1.5px] border-[var(--connecta-mark)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--connecta-mark-text)]">
+                  Admin
+                </span>
               </SheetTitle>
             </SheetHeader>
             <nav className="p-4 space-y-2">
@@ -160,7 +172,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                               className={cn(
                                 "w-full justify-start gap-2 text-sm",
                                 pathname === child.href
-                                  ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
                                   : "text-muted-foreground hover:text-foreground hover:bg-card",
                               )}
                             >
@@ -180,7 +192,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       className={cn(
                         "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                         pathname === item.href
-                          ? "bg-destructive/10 text-destructive"
+                          ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:text-foreground hover:bg-card",
                       )}
                     >
@@ -214,23 +226,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </header>
 
       {/* Admin Sidebar (Desktop) */}
-      <aside className="w-64 bg-background border-r border-border hidden md:flex flex-col">
-        <div className="p-6 flex items-center gap-2 font-bold text-xl text-destructive">
-          <ConnectaMark className="h-5 w-5" />
-          <span>{CONNECTA.name} Admin</span>
-        </div>
+      <aside className="sticky top-0 h-screen w-64 shrink-0 overflow-y-auto bg-background border-r-[1.5px] border-input hidden md:flex flex-col">
+        <Link href="/admin" className="p-6 flex items-center gap-2.5">
+          <ConnectaMark className="h-7 w-7 text-primary" />
+          <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+            {CONNECTA.name.toUpperCase()}
+          </span>
+          {/* Red is reserved for status; being in the staff console is one. */}
+          <span className="border-[1.5px] border-[var(--connecta-mark)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--connecta-mark-text)]">
+            Admin
+          </span>
+        </Link>
 
-        <div className="px-6 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          Super User Control
-        </div>
+        <p className="px-6 text-[13px] font-semibold text-muted-foreground">Super User Control</p>
 
         <nav className="flex-1 px-4 space-y-2 py-4">
           {navItems.map((item) => {
             if ("children" in item) {
               return (
                 <div key={item.label} className="space-y-1">
-                  <div className="flex items-center gap-3 px-4 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    <item.icon className="w-3 h-3" />
+                  <div className="flex items-center gap-3 px-4 py-2 text-[13px] font-semibold text-muted-foreground">
+                    <item.icon className="w-4 h-4" />
                     <span>{item.label}</span>
                   </div>
                   <div className="ml-4 space-y-1">
@@ -240,7 +256,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           className={cn(
                             "flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                             pathname === child.href
-                              ? "bg-destructive/10 text-destructive"
+                              ? "bg-primary text-primary-foreground"
                               : "text-muted-foreground hover:text-foreground hover:bg-card",
                           )}
                         >
@@ -259,7 +275,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                     pathname === item.href
-                      ? "bg-destructive/10 text-destructive"
+                      ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-card",
                   )}
                 >
@@ -298,12 +314,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-background/50 pb-24 md:pb-8">
+      <main className="sheet-grid flex-1 min-w-0 p-4 md:p-8 pb-24 md:pb-8">
         {children}
       </main>
 
       {/* Mobile Bottom Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border flex items-center justify-around px-2 z-40">
+      <nav aria-label="Admin" className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t-[1.5px] border-input flex items-center justify-around px-2 z-40">
         {navItems
           .filter((item) => !("children" in item))
           .slice(0, 4)
@@ -316,13 +332,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <item.icon
                 className={cn(
                   "h-5 w-5",
-                  pathname === item.href ? "text-destructive" : "text-muted-foreground",
+                  pathname === item.href ? "text-foreground" : "text-muted-foreground",
                 )}
               />
               <span
                 className={cn(
-                  "text-[10px] font-bold uppercase tracking-tight",
-                  pathname === item.href ? "text-destructive" : "text-muted-foreground",
+                  "text-[12px] font-bold",
+                  pathname === item.href ? "text-foreground" : "text-muted-foreground",
                 )}
               >
                 {item.label.split(" ")[0]}

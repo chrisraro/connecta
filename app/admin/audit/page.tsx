@@ -26,7 +26,7 @@ export default function AdminAuditPage() {
   if (!isLoaded || auditLogs === undefined) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-destructive w-8 h-8" />
+        <Loader2 className="animate-spin text-primary w-8 h-8" />
       </div>
     );
   }
@@ -125,7 +125,7 @@ export default function AdminAuditPage() {
         <CardContent>
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <div className="w-16 h-16 border-[1.5px] border-input flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-bold mb-2">No audit entries</h3>
