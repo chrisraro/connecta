@@ -59,11 +59,11 @@ export function InspectorPanel({ isOpen, onClose, title, children, onSave }: Ins
       ref={panelRef}
       role="dialog"
       aria-label={title}
-      className="fixed inset-x-0 bottom-0 z-[60] flex max-h-[70dvh] flex-col rounded-t-[var(--r-lg)] border border-border bg-background motion-safe:animate-in motion-safe:slide-in-from-bottom motion-safe:duration-200
-                lg:static lg:z-auto lg:max-h-none lg:h-full lg:rounded-[var(--r-md)] lg:border lg:motion-safe:animate-none"
+      className="fixed inset-x-0 bottom-0 z-[60] flex max-h-[70dvh] flex-col border border-border bg-background motion-safe:animate-in motion-safe:slide-in-from-bottom motion-safe:duration-200
+                lg:static lg:z-auto lg:max-h-none lg:h-full  lg:border lg:motion-safe:animate-none"
       style={{ boxShadow: "var(--e-overlay)" }}
     >
-      <div className="flex items-center justify-between gap-3 p-4 border-b border-border bg-background rounded-t-[var(--r-lg)] lg:rounded-t-[var(--r-md)]">
+      <div className="flex items-center justify-between gap-3 p-4 border-b border-border bg-background">
         <h2 className="font-semibold text-foreground">{title}</h2>
         <div className="flex items-center gap-1">
           {onSave && (

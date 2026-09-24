@@ -178,7 +178,7 @@ export function QrClaimScanner({
           Scan QR with camera
         </Button>
         {error && (
-          <p role="alert" className="text-xs text-red-600 text-center">
+          <p role="alert" className="text-xs text-destructive text-center">
             {error}
           </p>
         )}

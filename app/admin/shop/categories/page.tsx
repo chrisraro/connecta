@@ -139,7 +139,7 @@ export default function CategoriesPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-red-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-destructive" />
       </div>
     );
   }
@@ -153,7 +153,7 @@ export default function CategoriesPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-red-600 hover:bg-red-700">
+            <Button className="bg-destructive hover:bg-destructive">
               <Plus className="w-4 h-4 mr-2" />
               Add Category
             </Button>
@@ -231,7 +231,7 @@ export default function CategoriesPage() {
                 <Label>Active</Label>
               </div>
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700">
+                <Button type="submit" className="flex-1 bg-destructive hover:bg-destructive">
                   {editingId ? "Update" : "Create"} Category
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
@@ -278,7 +278,7 @@ export default function CategoriesPage() {
                     <TableCell>
                       <Badge
                         variant={category.is_active ? "default" : "secondary"}
-                        className={category.is_active ? "bg-green-600" : "bg-secondary"}
+                        className={category.is_active ? "bg-primary" : "bg-secondary"}
                       >
                         {category.is_active ? "Active" : "Inactive"}
                       </Badge>
@@ -289,7 +289,7 @@ export default function CategoriesPage() {
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(category.id)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>

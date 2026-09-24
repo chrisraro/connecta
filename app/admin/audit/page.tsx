@@ -26,7 +26,7 @@ export default function AdminAuditPage() {
   if (!isLoaded || auditLogs === undefined) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-red-600 w-8 h-8" />
+        <Loader2 className="animate-spin text-destructive w-8 h-8" />
       </div>
     );
   }
@@ -36,16 +36,16 @@ export default function AdminAuditPage() {
 
   const getActionColor = (action: string) => {
     if (action.includes("create") || action.includes("grant"))
-      return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+      return "bg-primary text-primary-foreground border-primary";
     if (
       action.includes("delete") ||
       action.includes("revoke") ||
       action.includes("suspend") ||
       action.includes("refund")
     )
-      return "bg-red-500/10 text-red-500 border-red-500/20";
+      return "bg-destructive/10 text-destructive border-destructive/20";
     if (action.includes("update") || action.includes("reactivate"))
-      return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      return "bg-primary/10 text-primary border-primary/20";
     return "bg-muted text-muted-foreground border-border";
   };
 

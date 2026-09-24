@@ -231,7 +231,7 @@ export default function TeamPage() {
                             disabled={busy}
                             onClick={() => setConfirmRemoveMemberId(m.userId as string)}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>

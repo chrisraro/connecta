@@ -84,10 +84,10 @@ export function DigitalCardModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-4 sm:p-6 bg-background/95 backdrop-blur-2xl border-border rounded-3xl overflow-hidden shadow-2xl">
+      <DialogContent className="sm:max-w-[480px] p-4 sm:p-6 bg-background border-border rounded-3xl overflow-hidden">
         <DialogHeader className="text-center sm:text-left mb-2">
           <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
-            <Sparkles className="w-5 h-5 text-yellow-500" />
+            <Sparkles className="w-5 h-5 text-primary" />
             Digital Business Card
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -138,7 +138,7 @@ export function DigitalCardModal({
             variant="outline"
             className="w-full font-semibold gap-2 border-border rounded-xl hover:bg-muted"
           >
-            <Share2 className="w-4 h-4 text-emerald-500" />
+            <Share2 className="w-4 h-4 text-primary" />
             Save Contact (.vcf)
           </Button>
         </div>
@@ -150,7 +150,7 @@ export function DigitalCardModal({
             className="flex-1 font-medium gap-2 text-xs rounded-xl"
           >
             {copied ? (
-              <Check className="w-3.5 h-3.5 text-green-500" />
+              <Check className="w-3.5 h-3.5 text-primary" />
             ) : (
               <Copy className="w-3.5 h-3.5" />
             )}

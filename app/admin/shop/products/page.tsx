@@ -96,7 +96,7 @@ export default function AdminProductsPage() {
   if (!isLoaded || products === undefined) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-red-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-destructive" />
       </div>
     );
   }
@@ -198,7 +198,7 @@ export default function AdminProductsPage() {
                         <div>
                           <p className="font-medium">{product.name}</p>
                           {product.is_featured && (
-                            <Badge className="mt-1 bg-amber-500 text-xs">Featured</Badge>
+                            <Badge className="mt-1 bg-[var(--connecta-mark)] text-xs">Featured</Badge>
                           )}
                         </div>
                       </div>
@@ -222,10 +222,10 @@ export default function AdminProductsPage() {
                           variant="secondary"
                           className={
                             product.inventory === 0
-                              ? "bg-red-500/10 text-red-600"
+                              ? "bg-destructive/10 text-destructive"
                               : product.inventory <= product.low_stock_threshold
-                                ? "bg-yellow-500/10 text-yellow-600"
-                                : "bg-green-500/10 text-green-600"
+                                ? "bg-[var(--connecta-mark)]/10 text-[var(--connecta-mark-text)]"
+                                : "bg-primary/10 text-primary"
                           }
                         >
                           {product.inventory}

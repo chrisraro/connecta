@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
   if (!isLoaded || !usersList || !grants) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-red-600 w-8 h-8" />
+        <Loader2 className="animate-spin text-destructive w-8 h-8" />
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
           )}
         </div>
         {isSuperadmin && (
-          <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 gap-1">
+          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 gap-1">
             <ShieldCheck className="w-3 h-3" /> Superadmin
           </Badge>
         )}
@@ -193,7 +193,7 @@ export default function AdminUsersPage() {
                       {grant ? (
                         <Badge
                           variant="outline"
-                          className="bg-red-500/10 text-red-500 border-red-500/20 gap-1"
+                          className="bg-destructive/10 text-destructive border-destructive/20 gap-1"
                         >
                           <ShieldCheck className="w-3 h-3" /> {grant.role}
                         </Badge>
@@ -212,7 +212,7 @@ export default function AdminUsersPage() {
                           variant="outline"
                           className={
                             u.plan === "business"
-                              ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 w-fit capitalize"
+                              ? "bg-primary text-primary-foreground border-primary w-fit capitalize"
                               : u.plan === "pro"
                                 ? "bg-primary/10 text-primary border-primary/20 w-fit capitalize"
                                 : "bg-muted text-foreground border-border w-fit capitalize"
@@ -226,7 +226,7 @@ export default function AdminUsersPage() {
                             // Stored plan says paid, but it is served as Free.
                             // Saying "until <past date>" would contradict what
                             // the customer actually gets.
-                            <span className="mt-1 text-[10px] text-amber-500">
+                            <span className="mt-1 text-[10px] text-[var(--connecta-mark-text)]">
                               lapsed {new Date(u.plan_expires_at).toLocaleDateString()} · on Free
                             </span>
                           ) : (
@@ -241,17 +241,17 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>
                       {isSuspended ? (
-                        <Badge className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20">
+                        <Badge className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20">
                           Suspended
                         </Badge>
                       ) : u.onboarding_completed ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20">
+                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
                           Onboarded
                         </Badge>
                       ) : (
                         <Badge
                           variant="secondary"
-                          className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-amber-500/20"
+                          className="bg-[var(--connecta-mark)]/10 text-[var(--connecta-mark-text)] hover:bg-[var(--connecta-mark)]/20 border-[var(--connecta-mark-text)]/20"
                         >
                           Pending Setup
                         </Badge>
@@ -279,7 +279,7 @@ export default function AdminUsersPage() {
                               <DropdownMenuItem
                                 disabled={isSelf}
                                 onClick={() => handleRevoke(u.id as string)}
-                                className="text-red-400 focus:text-red-400"
+                                className="text-destructive focus:text-destructive"
                               >
                                 Revoke admin{isSelf ? " (self)" : ""}
                               </DropdownMenuItem>
@@ -326,7 +326,7 @@ export default function AdminUsersPage() {
                               <DropdownMenuItem
                                 disabled={isSelf}
                                 onClick={() => handleSuspend(u.id as string, true)}
-                                className="text-red-400 focus:text-red-400"
+                                className="text-destructive focus:text-destructive"
                               >
                                 Suspend user{isSelf ? " (self)" : ""}
                               </DropdownMenuItem>

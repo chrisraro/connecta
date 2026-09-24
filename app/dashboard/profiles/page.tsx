@@ -118,7 +118,7 @@ export default function ProfilesPage() {
           <Link href={createProfileHref} className="md:hidden">
             <Button
               size="icon"
-              className="rounded-full h-10 w-10 bg-primary text-primary-foreground shadow-lg"
+              className="rounded-full h-10 w-10 bg-primary text-primary-foreground"
             >
               <Plus className="w-5 h-5" />
             </Button>
@@ -151,7 +151,7 @@ export default function ProfilesPage() {
             onClick={() => setActiveChip(chip)}
             className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 border ${
               activeChip === chip
-                ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105"
+                ? "bg-primary border-primary text-primary-foreground scale-105"
                 : "bg-muted border-border text-muted-foreground hover:border-primary/50"
             }`}
           >
@@ -161,7 +161,7 @@ export default function ProfilesPage() {
       </div>
 
       {profiles.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border rounded-3xl bg-card backdrop-blur-sm">
+        <div className="text-center py-20 border border-dashed border-border rounded-3xl bg-card">
           <p className="text-muted-foreground mb-6 font-medium">
             You haven&apos;t created any profiles yet.
           </p>
@@ -176,7 +176,7 @@ export default function ProfilesPage() {
           {profiles.map((profile) => (
             <Card
               key={profile.id}
-              className="overflow-hidden border-border bg-card backdrop-blur-sm hover:border-primary/20 transition-all duration-300 group rounded-[2rem] relative"
+              className="overflow-hidden border-border bg-card hover:border-primary/20 transition-all duration-300 group relative"
             >
               <div
                 className="h-32 w-full relative"
@@ -184,7 +184,7 @@ export default function ProfilesPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/20 flex items-center justify-center">
                     <Users className="w-5 h-5 text-white" />
                   </div>
                   <span className="text-white font-bold text-sm uppercase tracking-wider">
@@ -227,7 +227,7 @@ export default function ProfilesPage() {
                     src={agentInfoOf(profile).avatarUrl}
                     alt="avatar"
                     fallbackSeed={agentInfoOf(profile).fullName || profile.name}
-                    className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card shadow-lg"
+                    className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card"
                   />
                 </div>
               )}
@@ -237,13 +237,13 @@ export default function ProfilesPage() {
                     src={undefined}
                     alt="avatar"
                     fallbackSeed={agentInfoOf(profile).fullName || profile.name}
-                    className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card shadow-lg"
+                    className="w-16 h-16 rounded-full overflow-hidden object-cover border-4 border-card"
                   />
                 </div>
               )}
 
               <CardHeader className="pt-2 pb-2 text-center">
-                <CardTitle className="text-xl font-black uppercase tracking-tight text-foreground">
+                <CardTitle className="text-xl font-bold uppercase tracking-tight text-foreground">
                   {profile.name}
                 </CardTitle>
                 <CardDescription className="text-muted-foreground font-medium">
@@ -252,7 +252,7 @@ export default function ProfilesPage() {
               </CardHeader>
               <CardContent className="pb-6 text-center">
                 <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                   Live Profile
                 </div>
               </CardContent>
@@ -277,7 +277,7 @@ export default function ProfilesPage() {
                       Card
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px] bg-card/90 backdrop-blur-2xl border-border p-0 overflow-hidden border-0 shadow-none flex flex-col items-center justify-center gap-6">
+                  <DialogContent className="sm:max-w-[425px] bg-card/90 border-border p-0 overflow-hidden border-0 shadow-none flex flex-col items-center justify-center gap-6">
                     <DialogHeader className="sr-only">
                       <DialogTitle>Access Card for {profile.name}</DialogTitle>
                     </DialogHeader>
@@ -294,7 +294,7 @@ export default function ProfilesPage() {
                       <DialogClose asChild>
                         <Button
                           variant="outline"
-                          className="rounded-full px-10 h-12 bg-muted border-border text-foreground hover:bg-muted/80 font-black uppercase tracking-widest text-xs"
+                          className="rounded-full px-10 h-12 bg-muted border-border text-foreground hover:bg-muted/80 font-bold uppercase tracking-widest text-xs"
                         >
                           Dismiss
                         </Button>
@@ -310,7 +310,7 @@ export default function ProfilesPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!isDeleting} onOpenChange={(open) => !open && setIsDeleting(null)}>
-        <DialogContent className="rounded-[2rem] border-border bg-card p-6 sm:max-w-md">
+        <DialogContent className="border-border bg-card p-6 sm:max-w-md">
           <DialogHeader className="flex flex-col items-center text-center">
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
               <AlertCircle className="w-6 h-6 text-destructive" />

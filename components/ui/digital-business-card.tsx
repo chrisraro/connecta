@@ -114,13 +114,15 @@ export function DigitalBusinessCard({
   };
 
   // Calculate resolved background and text colors dynamically
+  // Defaults are the Survey Plan sheets: whiteprint for light, graphite for
+  // dark. An owner's own colours (config) always win over these.
   const defaultBg =
     activeTheme === "light"
-      ? "#f8fafc"
+      ? "#EEF1F4"
       : activeTheme === "glass"
         ? "rgba(255, 255, 255, 0.12)"
-        : "#121214";
-  const defaultText = activeTheme === "light" ? "#1e293b" : "#f5f5f5";
+        : "#12161F";
+  const defaultText = activeTheme === "light" ? "#12161F" : "#EEF1F4";
 
   const resolvedBgColor = resolveColor(config?.backgroundColor, defaultBg);
   const resolvedTextColor = resolveColor(config?.textColor, defaultText);
@@ -330,13 +332,9 @@ export function DigitalBusinessCard({
     <div
       ref={cardRef}
       style={inlineStyles}
-      className={`w-full aspect-[1.65] max-w-[420px] rounded-3xl p-5 relative overflow-hidden transition-all duration-300 select-none ${themeClasses}`}
+      className={`w-full aspect-[1.65] max-w-[420px] rounded-[12px] p-5 relative overflow-hidden transition-all duration-300 select-none ${themeClasses}`}
     >
       {/* Glass theme overlays */}
-      {activeTheme === "glass" && (
-        <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-      )}
-
       {/* Drag instruction overlay only when in builder mode */}
       {isEditable && (
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full px-2 py-0.5 text-[8px] text-white flex items-center gap-1 z-10 pointer-events-none opacity-50">
@@ -368,7 +366,7 @@ export function DigitalBusinessCard({
           <Sparkles className="w-2.5 h-2.5 shrink-0" />
           {company || "Digital Card"}
         </span>
-        <h3 className="text-base font-bold tracking-tight font-serif text-current mt-0.5 truncate">
+        <h3 className="text-base font-bold [font-stretch:112%] text-current mt-0.5 truncate">
           {fullName || "Your Name"}
         </h3>
         <p className="text-[11px] opacity-90 font-medium truncate mt-0.5">

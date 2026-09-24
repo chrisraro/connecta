@@ -78,7 +78,7 @@ export function NotificationsPopover() {
         >
           <Bell className="w-5 h-5 text-muted-foreground" />
           {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[var(--connecta-mark)] rounded-full" />
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -114,7 +114,7 @@ export function NotificationsPopover() {
                 <div className="flex items-start justify-between w-full">
                   <span className="font-semibold text-sm leading-none">{notification.title}</span>
                   {!notification.read && (
-                    <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-0.5" />
+                    <span className="w-2 h-2 bg-[var(--connecta-mark)] rounded-full flex-shrink-0 mt-0.5" />
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground line-clamp-2">

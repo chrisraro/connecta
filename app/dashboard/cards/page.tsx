@@ -186,7 +186,7 @@ export default function CardsPage() {
 
         <Dialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
           <DialogTrigger asChild>
-            <Button className="font-bold h-12 px-6 rounded-2xl shadow-lg shadow-primary/20">
+            <Button className="font-bold h-12 px-6 rounded-2xl">
               <Plus className="w-5 h-5 mr-2" />
               Activate New Card
             </Button>
@@ -201,7 +201,7 @@ export default function CardsPage() {
 
             {isSuccess ? (
               <div className="py-10 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-bold text-foreground">Card Activated!</h3>
@@ -218,7 +218,7 @@ export default function CardsPage() {
                       placeholder="E.G. AB12CD"
                       value={activationCode}
                       onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
-                      className="h-14 text-2xl font-black tracking-[0.3em] text-center uppercase"
+                      className="h-14 text-2xl font-bold tracking-[0.3em] text-center uppercase"
                       maxLength={6}
                       autoFocus
                     />
@@ -228,7 +228,7 @@ export default function CardsPage() {
                     <UpgradeGate locked reason={activationError} variant="banner" />
                   )}
                   {activationError && !activationLocked && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 text-sm">
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2 text-destructive text-sm">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       {activationError}
                     </div>
@@ -283,7 +283,7 @@ export default function CardsPage() {
           {myCards.map((card) => (
             <Card
               key={card.id}
-              className="overflow-hidden border-border/50 hover:shadow-lg transition-shadow"
+              className="overflow-hidden border-border/50 transition-shadow"
             >
               <CardHeader className="bg-muted/30 pb-4">
                 <div className="flex justify-between items-start mb-2">
@@ -296,8 +296,8 @@ export default function CardsPage() {
                   <Badge
                     className={
                       card.linked_profile_id
-                        ? "bg-green-500/10 text-green-600 border-green-500/20"
-                        : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                        ? "bg-primary/10 text-primary border-primary/20"
+                        : "bg-[var(--connecta-mark)]/10 text-[var(--connecta-mark-text)] border-[var(--connecta-mark-text)]/20"
                     }
                   >
                     {card.linked_profile_id ? "Linked" : "Unlinked"}
@@ -310,7 +310,7 @@ export default function CardsPage() {
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+                  <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
                     Connected Profile
                   </label>
                   <Select
@@ -333,16 +333,16 @@ export default function CardsPage() {
 
                 <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl border">
                   <div className="text-center flex-1 border-r">
-                    <div className="text-[10px] font-black uppercase text-muted-foreground">
+                    <div className="text-[10px] font-bold uppercase text-muted-foreground">
                       Total Taps
                     </div>
                     <div className="text-xl font-bold">{card.tap_count}</div>
                   </div>
                   <div className="text-center flex-1">
-                    <div className="text-[10px] font-black uppercase text-muted-foreground">
+                    <div className="text-[10px] font-bold uppercase text-muted-foreground">
                       Status
                     </div>
-                    <div className="text-xs font-bold text-green-600 uppercase">Active</div>
+                    <div className="text-xs font-bold text-primary uppercase">Active</div>
                   </div>
                 </div>
               </CardContent>

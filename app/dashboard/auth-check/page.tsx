@@ -92,8 +92,8 @@ export default function AuthCheckPage() {
                 row.ok === null
                   ? "bg-muted-foreground/40"
                   : row.ok
-                    ? "bg-emerald-500"
-                    : "bg-red-500"
+                    ? "bg-primary"
+                    : "bg-destructive"
               }`}
             />
             <div className="min-w-0">

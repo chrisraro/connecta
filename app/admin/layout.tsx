@@ -79,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isLoaded || verifiedAdmin === null) {
     return (
       <div className="dark h-screen w-full flex items-center justify-center bg-background text-foreground">
-        <Loader2 className="animate-spin text-red-600 w-10 h-10" />
+        <Loader2 className="animate-spin text-destructive w-10 h-10" />
       </div>
     );
   }
@@ -114,7 +114,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="dark flex flex-col md:flex-row min-h-screen bg-background text-foreground">
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between p-4 border-b border-border bg-background sticky top-0 z-40">
-        <div className="flex items-center gap-2 font-bold text-lg text-red-600">
+        <div className="flex items-center gap-2 font-bold text-lg text-destructive">
           <ConnectaMark className="h-5 w-5" />
           <span>{CONNECTA.name} Admin</span>
         </div>
@@ -138,7 +138,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           but unused.
                         */}
             <SheetHeader className="p-6 border-b border-border space-y-0">
-              <SheetTitle className="flex items-center gap-2 font-bold text-xl text-red-600">
+              <SheetTitle className="flex items-center gap-2 font-bold text-xl text-destructive">
                 <ConnectaMark className="h-5 w-5" />
                 <span>{CONNECTA.name} Admin</span>
               </SheetTitle>
@@ -160,7 +160,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                               className={cn(
                                 "w-full justify-start gap-2 text-sm",
                                 pathname === child.href
-                                  ? "bg-red-600/10 text-red-600 hover:bg-red-600/20"
+                                  ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
                                   : "text-muted-foreground hover:text-foreground hover:bg-card",
                               )}
                             >
@@ -180,7 +180,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       className={cn(
                         "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                         pathname === item.href
-                          ? "bg-red-600/10 text-red-500"
+                          ? "bg-destructive/10 text-destructive"
                           : "text-muted-foreground hover:text-foreground hover:bg-card",
                       )}
                     >
@@ -202,7 +202,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Button>
               <Button
                 variant="ghost"
-                className="w-full justify-start min-h-11 text-muted-foreground hover:text-red-500"
+                className="w-full justify-start min-h-11 text-muted-foreground hover:text-destructive"
                 onClick={() => signOut()}
               >
                 <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -215,7 +215,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Admin Sidebar (Desktop) */}
       <aside className="w-64 bg-background border-r border-border hidden md:flex flex-col">
-        <div className="p-6 flex items-center gap-2 font-bold text-xl text-red-600">
+        <div className="p-6 flex items-center gap-2 font-bold text-xl text-destructive">
           <ConnectaMark className="h-5 w-5" />
           <span>{CONNECTA.name} Admin</span>
         </div>
@@ -240,7 +240,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           className={cn(
                             "flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                             pathname === child.href
-                              ? "bg-red-600/10 text-red-500"
+                              ? "bg-destructive/10 text-destructive"
                               : "text-muted-foreground hover:text-foreground hover:bg-card",
                           )}
                         >
@@ -259,7 +259,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                     pathname === item.href
-                      ? "bg-red-600/10 text-red-500"
+                      ? "bg-destructive/10 text-destructive"
                       : "text-muted-foreground hover:text-foreground hover:bg-card",
                   )}
                 >
@@ -288,7 +288,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     */}
           <Button
             variant="ghost"
-            className="w-full justify-start min-h-11 text-muted-foreground hover:text-red-500"
+            className="w-full justify-start min-h-11 text-muted-foreground hover:text-destructive"
             onClick={() => signOut()}
           >
             <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -316,13 +316,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <item.icon
                 className={cn(
                   "h-5 w-5",
-                  pathname === item.href ? "text-red-500" : "text-muted-foreground",
+                  pathname === item.href ? "text-destructive" : "text-muted-foreground",
                 )}
               />
               <span
                 className={cn(
                   "text-[10px] font-bold uppercase tracking-tight",
-                  pathname === item.href ? "text-red-500" : "text-muted-foreground",
+                  pathname === item.href ? "text-destructive" : "text-muted-foreground",
                 )}
               >
                 {item.label.split(" ")[0]}

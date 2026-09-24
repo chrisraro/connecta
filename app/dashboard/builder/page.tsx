@@ -227,7 +227,7 @@ function GalleryUploader({
             />
             <button
               aria-label={`Remove gallery image ${i + 1}`}
-              className="absolute -top-1 -right-1 flex size-11 items-center justify-center rounded-full bg-red-500 text-white shadow-md"
+              className="absolute -top-1 -right-1 flex size-11 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
               onClick={() => onRemove(i)}
             >
               <X className="w-3.5 h-3.5" />
@@ -298,7 +298,7 @@ function SortableBlockItem({ block, onToggle }: { block: Block; onToggle: (id: s
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border shadow-sm"
+      className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border"
     >
       <div
         {...attributes}
@@ -1405,7 +1405,7 @@ function BuilderContent() {
                 onClick={() => setPreviewMode("page")}
                 className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                   previewMode === "page"
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -1416,7 +1416,7 @@ function BuilderContent() {
                 onClick={() => setPreviewMode("card")}
                 className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                   previewMode === "card"
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -1427,7 +1427,7 @@ function BuilderContent() {
                 onClick={() => setPreviewMode("storefront")}
                 className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
                   previewMode === "storefront"
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -1439,10 +1439,10 @@ function BuilderContent() {
           {/* Phone Preview */}
           <div className="p-4 lg:px-0">
             <div
-              className="bg-gray-900 rounded-[var(--r-lg)] p-3"
+              className="bg-gray-900 p-3"
               style={{ boxShadow: "var(--e-overlay)" }}
             >
-              <div className="rounded-[var(--r-lg)] overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]">
+              <div className="overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]">
                 {previewMode === "card" ? (
                   <div className="p-4 flex flex-col justify-center bg-neutral-900/5 min-h-[360px] items-center space-y-4">
                     <div ref={builderCardRef} className="w-full flex justify-center">
@@ -1620,7 +1620,7 @@ function BuilderContent() {
                           </span>
                           <div className="flex items-center gap-2">
                             {block.isEnabled ? (
-                              <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                              <span className="text-xs text-primary bg-primary/10 px-2 py-1">
                                 Visible
                               </span>
                             ) : (
@@ -1729,7 +1729,7 @@ function BuilderContent() {
                             onClick={() =>
                               setAdditionalPhones(additionalPhones.filter((_, i) => i !== idx))
                             }
-                            className="flex size-11 shrink-0 items-center justify-center text-red-500 hover:text-red-600"
+                            className="flex size-11 shrink-0 items-center justify-center text-destructive hover:text-destructive"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1776,7 +1776,7 @@ function BuilderContent() {
                             onClick={() =>
                               setAdditionalEmails(additionalEmails.filter((_, i) => i !== idx))
                             }
-                            className="flex size-11 shrink-0 items-center justify-center text-red-500 hover:text-red-600"
+                            className="flex size-11 shrink-0 items-center justify-center text-destructive hover:text-destructive"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1827,7 +1827,7 @@ function BuilderContent() {
                               newLinks.splice(idx, 1);
                               setAgentInfo({ ...agentInfo, socialLinks: newLinks });
                             }}
-                            className="flex size-11 shrink-0 items-center justify-center text-red-500"
+                            className="flex size-11 shrink-0 items-center justify-center text-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1912,7 +1912,7 @@ function BuilderContent() {
                     {agentInfo.services?.map((service, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary text-sm"
                       >
                         {service}
                         <button
@@ -2545,7 +2545,7 @@ function BuilderContent() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <Label className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Store className="w-4 h-4 text-yellow-500" />
+                  <Store className="w-4 h-4 text-[var(--connecta-mark-text)]" />
                   Public Storefront &amp; Offered Services Page
                 </Label>
                 <p className="text-[11px] text-muted-foreground mt-0.5">

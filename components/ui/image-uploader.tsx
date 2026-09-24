@@ -191,7 +191,7 @@ export function ImageUploader({
         )}
       </Button>
       {compressionInfo && (
-        <div className="mt-2 flex items-start gap-1.5 text-xs text-blue-600 dark:text-blue-400">
+        <div className="mt-2 flex items-start gap-1.5 text-xs text-primary dark:text-primary">
           <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
           <span>{compressionInfo}</span>
         </div>

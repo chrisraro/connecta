@@ -77,11 +77,11 @@ function ToastNotification({
 
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
-      <div className="bg-card border border-border rounded-lg shadow-xl overflow-hidden">
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
         {/* Progress bar with time indicator */}
         <div className="relative h-2 bg-muted">
           <div
-            className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-100 ease-linear"
+            className="h-full bg-primary transition-all duration-100 ease-linear"
             style={{ width: `${progress}%` }}
           />
           <div className="absolute inset-0 flex items-center justify-center px-2">
@@ -93,8 +93,8 @@ function ToastNotification({
 
         <div className="p-4">
           <div className="flex items-start gap-3">
-            <div className="bg-green-500/10 rounded-full p-2 flex-shrink-0">
-              <Check className="w-5 h-5 text-green-500" />
+            <div className="bg-primary/10 rounded-full p-2 flex-shrink-0">
+              <Check className="w-5 h-5 text-primary" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -398,7 +398,7 @@ export default function ShopPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product) => (
                   <Link href={`/shop/product/${product.slug}`} key={product.id}>
-                    <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer h-full flex flex-col hover:-translate-y-1 border-border/50 hover:border-primary/50">
+                    <Card className="group transition-all duration-300 cursor-pointer h-full flex flex-col hover:-translate-y-1 border-border/50 hover:border-primary/50">
                       {/* Product Image */}
                       <div className="aspect-square bg-muted relative overflow-hidden rounded-t-lg">
                         {product.images.length > 0 ? (
@@ -419,12 +419,12 @@ export default function ShopPage() {
                         <div className="absolute top-2 left-2 flex flex-col gap-2">
                           {product.compare_at_price &&
                             product.compare_at_price > product.base_price && (
-                              <Badge className="bg-red-600 text-white animate-in fade-in slide-in-from-top-2 duration-300">
+                              <Badge className="bg-destructive text-destructive-foreground animate-in fade-in slide-in-from-top-2 duration-300">
                                 Sale
                               </Badge>
                             )}
                           {product.is_featured && (
-                            <Badge className="bg-amber-700 text-white animate-in fade-in slide-in-from-top-2 duration-300 delay-75">
+                            <Badge className="bg-[var(--connecta-mark)] text-[var(--connecta-mark-ink)] animate-in fade-in slide-in-from-top-2 duration-300 delay-75">
                               Featured
                             </Badge>
                           )}
@@ -474,7 +474,7 @@ export default function ShopPage() {
                         <Button
                           className={`w-full h-11 mt-4 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
                             addedToCart === product.id
-                              ? "bg-green-500 hover:bg-green-600 text-white"
+                              ? "bg-primary hover:bg-primary text-primary-foreground"
                               : "bg-primary hover:bg-primary/90 text-primary-foreground"
                           }`}
                           onClick={(e) => {

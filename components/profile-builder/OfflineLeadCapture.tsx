@@ -210,12 +210,12 @@ export function OfflineLeadCapture({
           <DialogTitle className="flex items-center gap-2">
             {!online ? (
               <>
-                <WifiOff className="w-5 h-5 text-orange-500" />
+                <WifiOff className="w-5 h-5 text-[var(--connecta-mark-text)]" />
                 Offline Lead Capture
               </>
             ) : (
               <>
-                <Wifi className="w-5 h-5 text-green-500" />
+                <Wifi className="w-5 h-5 text-primary" />
                 Capture Lead
               </>
             )}

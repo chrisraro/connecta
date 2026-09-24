@@ -60,9 +60,9 @@ export default function InventoryPage() {
   };
 
   const getStockStatus = (inventory: number, threshold: number) => {
-    if (inventory === 0) return { label: "Out of Stock", color: "bg-red-600" };
-    if (inventory <= threshold) return { label: "Low Stock", color: "bg-yellow-600" };
-    return { label: "In Stock", color: "bg-green-600" };
+    if (inventory === 0) return { label: "Out of Stock", color: "bg-destructive" };
+    if (inventory <= threshold) return { label: "Low Stock", color: "bg-[var(--connecta-mark)]" };
+    return { label: "In Stock", color: "bg-primary" };
   };
 
   const exportToCSV = () => {
@@ -86,7 +86,7 @@ export default function InventoryPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-red-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-destructive" />
       </div>
     );
   }
@@ -105,9 +105,9 @@ export default function InventoryPage() {
       </div>
 
       {lowStockProducts && lowStockProducts.length > 0 && (
-        <Alert className="bg-red-900/20 border-red-600 text-foreground">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertTitle className="text-red-600">Low Stock Alert</AlertTitle>
+        <Alert className="bg-destructive/20 border-destructive text-foreground">
+          <AlertTriangle className="h-4 w-4 text-destructive" />
+          <AlertTitle className="text-destructive">Low Stock Alert</AlertTitle>
           <AlertDescription>
             {lowStockProducts.length} product{lowStockProducts.length > 1 ? "s" : ""} need
             {lowStockProducts.length === 1 ? "s" : ""} restocking.
@@ -116,10 +116,10 @@ export default function InventoryPage() {
       )}
 
       {lowStockProducts && lowStockProducts.length > 0 && (
-        <Card className="bg-card border-red-600/50">
+        <Card className="bg-card border-destructive/50">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <AlertTriangle className="w-5 h-5 text-destructive" />
               Needs Attention
             </CardTitle>
           </CardHeader>
@@ -148,7 +148,7 @@ export default function InventoryPage() {
                       {product.sku}
                     </TableCell>
                     <TableCell>
-                      <Badge className="bg-red-600">{product.inventory}</Badge>
+                      <Badge className="bg-destructive">{product.inventory}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {product.low_stock_threshold}
@@ -172,7 +172,7 @@ export default function InventoryPage() {
                       <Button
                         size="sm"
                         onClick={() => handleRestock(product.id)}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-primary hover:bg-primary"
                         disabled={!restockMap[product.id] || restockMap[product.id] <= 0}
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -229,7 +229,7 @@ export default function InventoryPage() {
                     <TableCell>
                       <Badge
                         variant={product.track_inventory ? "default" : "secondary"}
-                        className={product.track_inventory ? "bg-blue-600" : "bg-secondary"}
+                        className={product.track_inventory ? "bg-primary" : "bg-secondary"}
                       >
                         {product.track_inventory ? "Tracking" : "Not Tracking"}
                       </Badge>

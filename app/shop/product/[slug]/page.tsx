@@ -214,7 +214,7 @@ export default function ProductPage() {
                 </span>
               )}
               {product.compare_at_price && product.compare_at_price > currentPrice && (
-                <Badge className="bg-red-500 text-white">
+                <Badge className="bg-destructive text-destructive-foreground">
                   Save {formatPrice(product.compare_at_price - currentPrice)}
                 </Badge>
               )}
@@ -225,15 +225,15 @@ export default function ProductPage() {
           <div>
             {isInStock ? (
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                <span className="text-sm font-medium text-green-600">
+                <div className="w-2 h-2 bg-primary rounded-full" />
+                <span className="text-sm font-medium text-primary">
                   {isLowStock ? `Low Stock - Only ${currentInventory} left` : "In Stock"}
                 </span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full" />
-                <span className="text-sm font-medium text-red-600">Out of Stock</span>
+                <div className="w-2 h-2 bg-destructive rounded-full" />
+                <span className="text-sm font-medium text-destructive">Out of Stock</span>
               </div>
             )}
           </div>

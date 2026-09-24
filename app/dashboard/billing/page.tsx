@@ -65,7 +65,7 @@ export default function BillingPage() {
               Current Plan
             </h3>
             <div className="mt-1 flex items-center gap-3">
-              <span className="text-3xl font-black tracking-tight">
+              <span className="text-3xl font-bold tracking-tight">
                 {PLAN_LIMITS[currentPlan].name}
               </span>
               {currentPlan !== "free" && (
@@ -89,8 +89,8 @@ export default function BillingPage() {
         </div>
 
         {myPlan.inGrace && (
-          <div className="mt-5 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-[var(--connecta-mark-text)]/30 bg-[var(--connecta-mark)]/10 px-4 py-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--connecta-mark-text)]" />
             <p className="text-sm text-foreground">
               Your plan expired on {fmtDate(myPlan.planExpiresAt)}. You&apos;re in a 3-day grace
               period — renew now to avoid downgrading to Free.
@@ -119,7 +119,7 @@ export default function BillingPage() {
               )}
               <h3 className="text-lg font-bold tracking-tight">{limits.name}</h3>
               <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-3xl font-black tracking-tighter">
+                <span className="text-3xl font-bold tracking-tighter">
                   {priceFor(p) === 0 ? "₱0" : formatPHP(priceFor(p))}
                 </span>
                 <span className="text-sm text-muted-foreground">

@@ -23,7 +23,7 @@ export function AccessCard({ profileId, profileSlug, agent, className }: AccessC
   return (
     <div
       className={cn(
-        "relative w-full aspect-[2/3] max-w-[340px] mx-auto rounded-[2.5rem] overflow-hidden bg-zinc-950 flex flex-col p-8 text-white shadow-2xl border border-zinc-800/50",
+        "relative w-full aspect-[2/3] max-w-[340px] mx-auto overflow-hidden bg-zinc-950 flex flex-col p-8 text-white border border-zinc-800/50",
         "bg-gradient-to-br from-zinc-900 via-zinc-950 to-black",
         className,
       )}
@@ -45,7 +45,7 @@ export function AccessCard({ profileId, profileSlug, agent, className }: AccessC
 
       {/* Middle: Large Prominent QR Code */}
       <div className="flex-1 flex items-center justify-center relative z-10">
-        <div className="bg-white p-4 rounded-[2rem] shadow-2xl shadow-white/10 w-full aspect-square max-w-[240px] flex items-center justify-center">
+        <div className="bg-white p-4 shadow-white/10 w-full aspect-square max-w-[240px] flex items-center justify-center">
           <QRCodeSVG
             value={profileUrl}
             size={200}
@@ -66,7 +66,7 @@ export function AccessCard({ profileId, profileSlug, agent, className }: AccessC
               {agent.company}
             </p>
           )}
-          <h3 className="text-2xl font-black tracking-tight uppercase leading-none mb-1">
+          <h3 className="text-2xl font-bold tracking-tight uppercase leading-none mb-1">
             {agent.fullName}
           </h3>
           <p className="text-[11px] tracking-[0.1em] font-medium text-zinc-400 uppercase">
@@ -77,7 +77,7 @@ export function AccessCard({ profileId, profileSlug, agent, className }: AccessC
         {/* Profile Pic moved to bottom right */}
         <div className="flex-shrink-0">
           {agent.avatarUrl ? (
-            <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/10 bg-zinc-900 shadow-xl">
+            <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/10 bg-zinc-900">
               <ProfileImage
                 src={agent.avatarUrl}
                 alt={agent.fullName}

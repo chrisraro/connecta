@@ -43,7 +43,7 @@ function FieldControl<T>({
 }) {
   const stringValue = value === undefined || value === null ? "" : String(value);
   const baseClassName =
-    "w-full rounded-[var(--r-sm)] border border-border bg-background px-3 py-2 text-sm text-foreground";
+    "w-full border border-border bg-background px-3 py-2 text-sm text-foreground";
 
   if (field.type === "textarea") {
     return (
@@ -116,7 +116,7 @@ export function EditableList<T extends object>({
       {items.map((item, index) => (
         <div
           key={index}
-          className="p-3 bg-muted rounded-[var(--r-md)] space-y-3"
+          className="p-3 bg-muted space-y-3"
           style={{ boxShadow: "var(--e-raised)" }}
         >
           <div className="flex items-start justify-between gap-2">
@@ -142,7 +142,7 @@ export function EditableList<T extends object>({
               type="button"
               aria-label={`Remove ${itemLabel} ${index + 1}`}
               onClick={() => removeItem(index)}
-              className="flex items-center justify-center size-11 shrink-0 rounded-[var(--r-sm)] text-red-500 hover:bg-red-500/10"
+              className="flex items-center justify-center size-11 shrink-0 text-destructive hover:bg-destructive/10"
             >
               <Trash2 className="w-4 h-4" />
             </button>

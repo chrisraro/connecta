@@ -395,7 +395,7 @@ export default function AdminFactoryPage() {
   if (!isLoaded || cardsPending || !cardsList) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-red-600 w-8 h-8" />
+        <Loader2 className="animate-spin text-destructive w-8 h-8" />
       </div>
     );
   }
@@ -427,7 +427,7 @@ export default function AdminFactoryPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 text-foreground">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <SmartphoneNfc className="text-red-500 w-8 h-8" />
+            <SmartphoneNfc className="text-destructive w-8 h-8" />
             NFC Factory
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -441,7 +441,7 @@ export default function AdminFactoryPage() {
               variant="destructive"
               onClick={handleDeleteSelected}
               disabled={isDeleting}
-              className="bg-red-600/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-foreground h-12 px-6 rounded-2xl transition-all"
+              className="bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive hover:text-foreground h-12 px-6 rounded-2xl transition-all"
             >
               {isDeleting ? (
                 <Loader2 className="animate-spin w-4 h-4 mr-2" />
@@ -461,7 +461,7 @@ export default function AdminFactoryPage() {
             className={
               isScanning
                 ? "bg-muted text-foreground border border-border hover:bg-accent h-12 px-6 rounded-2xl"
-                : "bg-red-600 hover:bg-red-700 text-foreground font-bold h-12 px-8 rounded-2xl shadow-lg shadow-red-900/20"
+                : "bg-destructive hover:bg-destructive text-foreground font-bold h-12 px-8 rounded-2xl"
             }
           >
             {isScanning ? (
@@ -517,13 +517,13 @@ export default function AdminFactoryPage() {
       {/* How It Works Info */}
       <div className="mb-8 bg-card/50 border border-border rounded-3xl p-6">
         <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-red-500" />
+          <ShieldCheck className="w-5 h-5 text-destructive" />
           How Card Activation Works
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-background/50 rounded-2xl p-4 border border-border">
-            <div className="w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center mb-3">
-              <span className="text-red-500 font-black">1</span>
+            <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center mb-3">
+              <span className="text-destructive font-bold">1</span>
             </div>
             <h4 className="font-bold text-foreground text-sm mb-2">Register Card</h4>
             <p className="text-xs text-muted-foreground">
@@ -531,8 +531,8 @@ export default function AdminFactoryPage() {
             </p>
           </div>
           <div className="bg-background/50 rounded-2xl p-4 border border-border">
-            <div className="w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center mb-3">
-              <span className="text-red-500 font-black">2</span>
+            <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center mb-3">
+              <span className="text-destructive font-bold">2</span>
             </div>
             <h4 className="font-bold text-foreground text-sm mb-2">Customer Taps</h4>
             <p className="text-xs text-muted-foreground">
@@ -540,8 +540,8 @@ export default function AdminFactoryPage() {
             </p>
           </div>
           <div className="bg-background/50 rounded-2xl p-4 border border-border">
-            <div className="w-8 h-8 bg-red-500/10 rounded-full flex items-center justify-center mb-3">
-              <span className="text-red-500 font-black">3</span>
+            <div className="w-8 h-8 bg-destructive/10 rounded-full flex items-center justify-center mb-3">
+              <span className="text-destructive font-bold">3</span>
             </div>
             <h4 className="font-bold text-foreground text-sm mb-2">Card Activated</h4>
             <p className="text-xs text-muted-foreground">
@@ -552,16 +552,16 @@ export default function AdminFactoryPage() {
       </div>
 
       {isScanning && (
-        <div className="mb-8 p-12 bg-card/50 border-2 border-dashed border-red-500/30 rounded-[2.5rem] flex flex-col items-center justify-center text-center animate-pulse">
-          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
-            <SmartphoneNfc className="w-10 h-10 text-red-500" />
+        <div className="mb-8 p-12 bg-card/50 border-2 border-dashed border-destructive/30 flex flex-col items-center justify-center text-center animate-pulse">
+          <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
+            <SmartphoneNfc className="w-10 h-10 text-destructive" />
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-2">Ready to Scan</h2>
           <p className="text-muted-foreground max-w-sm">
             Bring a physical NFC card close to your device&apos;s NFC reader to register it.
           </p>
           {ndefStatus && (
-            <div className="mt-4 px-4 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-500 text-xs font-bold animate-pulse">
+            <div className="mt-4 px-4 py-1 bg-primary/10 border border-primary/20 rounded-full text-primary text-xs font-bold animate-pulse">
               {ndefStatus}
             </div>
           )}
@@ -569,13 +569,13 @@ export default function AdminFactoryPage() {
       )}
 
       {scanError && (
-        <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500">
+        <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-center gap-3 text-destructive">
           <AlertCircle className="w-5 h-5 shrink-0" />
           <p className="text-sm font-medium">{scanError}</p>
           <Button
             variant="ghost"
             size="icon"
-            className="ml-auto text-red-500 hover:bg-red-500/10"
+            className="ml-auto text-destructive hover:bg-destructive/10"
             onClick={() => setScanError(null)}
           >
             <X className="w-4 h-4" />
@@ -588,7 +588,7 @@ export default function AdminFactoryPage() {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-card border border-border rounded-3xl p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-red-500" />
+              <Plus className="w-5 h-5 text-destructive" />
               Manual Register
             </h3>
             <form onSubmit={handleManualRegister} className="space-y-4">
@@ -618,25 +618,25 @@ export default function AdminFactoryPage() {
           </div>
 
           {lastRegistered && (
-            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-6 relative overflow-hidden group">
+            <div className="bg-primary/5 border border-primary/20 rounded-3xl p-6 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <ShieldCheck className="w-12 h-12 text-emerald-500" />
+                <ShieldCheck className="w-12 h-12 text-primary" />
               </div>
-              <h3 className="text-emerald-500 font-bold mb-4 flex items-center gap-2">
+              <h3 className="text-primary font-bold mb-4 flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5" />
                 Just Registered
               </h3>
               <div className="space-y-3">
                 <div>
-                  <div className="text-[10px] uppercase font-black text-emerald-500/60 tracking-widest">
+                  <div className="text-[10px] uppercase font-bold text-primary/60 tracking-widest">
                     Activation Code
                   </div>
-                  <div className="text-2xl font-black text-foreground tracking-[0.2em]">
+                  <div className="text-2xl font-bold text-foreground tracking-[0.2em]">
                     {lastRegistered.activationCode}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase font-black text-emerald-500/60 tracking-widest">
+                  <div className="text-[10px] uppercase font-bold text-primary/60 tracking-widest">
                     Card ID (UID)
                   </div>
                   <div className="text-xs font-mono text-muted-foreground truncate">
@@ -651,7 +651,7 @@ export default function AdminFactoryPage() {
                   disabled={!nfcHost}
                   title={!nfcHost ? "No NFC host configured — see the notice above." : undefined}
                   aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
-                  className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-foreground rounded-xl"
+                  className="w-full mt-2 bg-primary hover:bg-primary text-foreground rounded-xl"
                 >
                   <Printer className="w-4 h-4 mr-2" />
                   Print Sticker
@@ -663,7 +663,7 @@ export default function AdminFactoryPage() {
 
         {/* Right: Records Table */}
         <div className="lg:col-span-2">
-          <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-2xl">
+          <div className="bg-card border border-border rounded-3xl overflow-hidden">
             <div className="p-6 border-b border-border flex justify-between items-center bg-background/30">
               <div>
                 <h2 className="font-bold text-foreground text-lg">Inventory Database</h2>
@@ -684,7 +684,7 @@ export default function AdminFactoryPage() {
                       <Checkbox
                         checked={cardsList.length > 0 && selectedIds.size === cardsList.length}
                         onCheckedChange={toggleSelectAll}
-                        className="border-border data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                        className="border-border data-[state=checked]:bg-destructive data-[state=checked]:border-destructive"
                       />
                     </TableHead>
                     <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
@@ -715,20 +715,20 @@ export default function AdminFactoryPage() {
                     cardsList.map((card) => (
                       <TableRow
                         key={card.id}
-                        className={`border-border transition-colors group ${selectedIds.has(card.id) ? "bg-red-500/5 hover:bg-red-500/10" : "hover:bg-accent/30"}`}
+                        className={`border-border transition-colors group ${selectedIds.has(card.id) ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-accent/30"}`}
                       >
                         <TableCell className="pl-6">
                           <Checkbox
                             checked={selectedIds.has(card.id)}
                             onCheckedChange={() => toggleSelect(card.id)}
-                            className="border-border data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                            className="border-border data-[state=checked]:bg-destructive data-[state=checked]:border-destructive"
                           />
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-xs text-foreground">{card.uuid}</span>
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono font-black text-red-500 tracking-wider">
+                          <span className="font-mono font-bold text-destructive tracking-wider">
                             {card.activation_code}
                           </span>
                         </TableCell>
@@ -736,21 +736,21 @@ export default function AdminFactoryPage() {
                           {card.status === "inventory" ? (
                             <Badge
                               variant="outline"
-                              className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] font-bold uppercase tracking-tight"
+                              className="bg-[var(--connecta-mark)]/10 text-[var(--connecta-mark-text)] border-[var(--connecta-mark-text)]/20 text-[10px] font-bold uppercase tracking-tight"
                             >
                               In Stock
                             </Badge>
                           ) : card.status === "active" ? (
                             <Badge
                               variant="outline"
-                              className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] font-bold uppercase tracking-tight"
+                              className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold uppercase tracking-tight"
                             >
                               Active
                             </Badge>
                           ) : (
                             <Badge
                               variant="destructive"
-                              className="bg-red-500/10 text-red-500 border-red-500/20 text-[10px] font-bold uppercase tracking-tight"
+                              className="bg-destructive/10 text-destructive border-destructive/20 text-[10px] font-bold uppercase tracking-tight"
                             >
                               Lost
                             </Badge>
@@ -782,7 +782,7 @@ export default function AdminFactoryPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-foreground hover:text-red-500 hover:bg-red-500/10"
+                              className="h-8 w-8 text-foreground hover:text-destructive hover:bg-destructive/10"
                               onClick={() => handleDeleteSingle(card.id)}
                               title="Delete Card"
                             >
@@ -802,9 +802,9 @@ export default function AdminFactoryPage() {
 
       {/* Print Preview Dialog */}
       <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
-        <DialogContent className="sm:max-w-md bg-background border-border text-foreground rounded-[2rem]">
+        <DialogContent className="sm:max-w-md bg-background border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black italic tracking-tighter uppercase">
+            <DialogTitle className="text-2xl font-bold italic tracking-tighter uppercase">
               Label Preview
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
@@ -816,10 +816,10 @@ export default function AdminFactoryPage() {
             {/* The Actual Label Template */}
             <div
               id="print-section"
-              className="bg-white p-4 rounded-lg flex flex-col items-center justify-center shadow-2xl"
+              className="bg-white p-4 rounded-lg flex flex-col items-center justify-center"
               style={{ width: "200px", height: "200px" }}
             >
-              <div className="mb-2 text-black font-black text-xs tracking-[0.2em] uppercase">
+              <div className="mb-2 text-black font-bold text-xs tracking-[0.2em] uppercase">
                 {CONNECTA.name}
               </div>
 
@@ -849,7 +849,7 @@ export default function AdminFactoryPage() {
                                 6-character code found on your card or its
                                 packaging" — so the code has to actually BE on
                                 the label, not only in the admin table. */}
-              <div className="mt-1 text-black font-black text-[13px] tracking-[0.25em]">
+              <div className="mt-1 text-black font-bold text-[13px] tracking-[0.25em]">
                 {selectedCard?.activationCode}
               </div>
             </div>
@@ -882,7 +882,7 @@ export default function AdminFactoryPage() {
             <Button
               type="button"
               onClick={handlePrint}
-              className="rounded-xl bg-red-600 hover:bg-red-700 text-foreground font-bold"
+              className="rounded-xl bg-destructive hover:bg-destructive text-foreground font-bold"
             >
               <Printer className="w-4 h-4 mr-2" />
               Print Label

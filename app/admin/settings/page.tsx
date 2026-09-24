@@ -75,7 +75,7 @@ export default function AdminSettingsPage() {
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-red-600 w-8 h-8" />
+        <Loader2 className="animate-spin text-destructive w-8 h-8" />
       </div>
     );
   }
@@ -108,8 +108,8 @@ export default function AdminSettingsPage() {
       <Card className="bg-card border-border text-foreground">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-              <Store className="w-5 h-5 text-emerald-500" />
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Store className="w-5 h-5 text-primary" />
             </div>
             <div>
               <CardTitle className="text-lg">Shop Settings</CardTitle>
@@ -123,7 +123,7 @@ export default function AdminSettingsPage() {
         <CardContent className="space-y-6">
           {shopSettings === undefined ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="animate-spin text-emerald-500 w-6 h-6" />
+              <Loader2 className="animate-spin text-primary w-6 h-6" />
             </div>
           ) : (
             <>
@@ -182,7 +182,7 @@ export default function AdminSettingsPage() {
               </div>
               <div className="flex items-center gap-4">
                 <Button
-                  className="bg-emerald-600 hover:bg-emerald-700 text-foreground"
+                  className="bg-primary hover:bg-primary text-foreground"
                   onClick={handleSaveShopSettings}
                   disabled={shopSaving}
                 >
@@ -197,7 +197,7 @@ export default function AdminSettingsPage() {
                   )}
                 </Button>
                 {shopSavedAt && !shopSaving && (
-                  <span className="text-xs text-emerald-500">Saved</span>
+                  <span className="text-xs text-primary">Saved</span>
                 )}
               </div>
             </>

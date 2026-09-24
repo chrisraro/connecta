@@ -82,7 +82,7 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Manage your personal information.</p>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-8 space-y-6 shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-8 space-y-6">
         <div className="space-y-2">
           <Label className="text-muted-foreground">Full Name</Label>
           <Input
