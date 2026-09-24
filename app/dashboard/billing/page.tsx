@@ -61,7 +61,7 @@ export default function BillingPage() {
       <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-sm font-medium text-muted-foreground">
               Current Plan
             </h3>
             <div className="mt-1 flex items-center gap-3">
@@ -69,7 +69,7 @@ export default function BillingPage() {
                 {PLAN_LIMITS[currentPlan].name}
               </span>
               {currentPlan !== "free" && (
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary">
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                   Active
                 </span>
               )}

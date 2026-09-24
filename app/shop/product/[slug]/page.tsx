@@ -256,7 +256,7 @@ export default function ProductPage() {
                     key={variation.id}
                     onClick={() => setSelectedVariation(variation.id)}
                     disabled={variation.inventory === 0}
-                    className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                    className={`p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       selectedVariation === variation.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-muted"

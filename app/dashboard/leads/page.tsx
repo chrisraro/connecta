@@ -199,9 +199,9 @@ export default function LeadsPage() {
             key={chip}
             onClick={() => setActiveChip(chip)}
             aria-pressed={activeChip === chip}
-            className={`px-6 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 border ${
+            className={`px-6 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors duration-300 border ${
               activeChip === chip
-                ? "bg-primary border-primary text-primary-foreground scale-105"
+                ? "bg-primary border-primary text-primary-foreground"
                 : "bg-muted border-border text-muted-foreground hover:border-primary/50"
             }`}
           >
@@ -242,7 +242,7 @@ export default function LeadsPage() {
           filteredLeads.map((lead) => (
             <div
               key={lead.id}
-              className="group relative bg-card border border-border p-5 hover:border-primary/20 transition-all duration-300"
+              className="group relative bg-card border border-border p-5 hover:border-primary/20 transition-colors duration-300"
             >
               {/* The `truncate` on the contact below only works if
                                 every flex ancestor can shrink. Without min-w-0
@@ -263,10 +263,10 @@ export default function LeadsPage() {
                     <MessageSquare className="w-6 h-6" aria-hidden="true" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="truncate font-bold uppercase tracking-tight text-foreground">
+                    <h3 className="truncate font-bold [font-stretch:112%] text-foreground">
                       {lead.inquirer_name}
                     </h3>
-                    <div className="flex min-w-0 items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    <div className="flex min-w-0 items-center gap-2 text-[12px] font-bold text-muted-foreground">
                       <span className="shrink-0">
                         {new Date(lead.created_at).toLocaleDateString()}
                       </span>
@@ -300,7 +300,7 @@ export default function LeadsPage() {
 
               <div className="flex items-center gap-2">
                 <Button
-                  className="flex-1 rounded-2xl h-12 font-bold uppercase tracking-widest text-[10px] bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="flex-1 rounded-2xl h-12 font-bold text-[12px] bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={() => handleFollowUpClick(lead)}
                 >
                   <Mail className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -355,7 +355,7 @@ export default function LeadsPage() {
       <Dialog open={!!selectedLead} onOpenChange={(open) => !open && setSelectedLead(null)}>
         <DialogContent className="bg-card border-border sm:max-w-md p-6">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold uppercase tracking-tight">
+            <DialogTitle className="text-xl font-bold [font-stretch:112%]">
               Follow Up
             </DialogTitle>
             <DialogDescription className="text-muted-foreground font-medium tracking-tight">
@@ -378,13 +378,13 @@ export default function LeadsPage() {
             <Button
               variant="ghost"
               onClick={() => setSelectedLead(null)}
-              className="rounded-xl font-bold uppercase tracking-widest text-[10px]"
+              className="rounded-xl font-bold text-[12px]"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSendAction}
-              className="rounded-xl bg-primary hover:bg-primary/90 font-bold uppercase tracking-widest text-[10px] px-8 h-12 text-primary-foreground"
+              className="rounded-xl bg-primary hover:bg-primary/90 font-bold text-[12px] px-8 h-12 text-primary-foreground"
             >
               <ArrowRight className="w-4 h-4 mr-2" aria-hidden="true" /> Send Message
             </Button>
@@ -407,7 +407,7 @@ function StatusChip({ status }: { status: "new" | "contacted" | "closed" }) {
   const { label, className } = map[status];
   return (
     <span
-      className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${className}`}
+      className={`shrink-0 rounded-full border px-3 py-1 text-[12px] font-bold  ${className}`}
     >
       {label}
     </span>

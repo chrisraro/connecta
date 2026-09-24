@@ -289,7 +289,7 @@ export default function CardsPage() {
                 <div className="flex justify-between items-start mb-2">
                   <Badge
                     variant="outline"
-                    className="bg-background font-mono text-[10px] tracking-tighter"
+                    className="bg-background font-mono text-[12px] tracking-tighter"
                   >
                     ID: {card.uuid.slice(-8).toUpperCase()}
                   </Badge>
@@ -310,7 +310,7 @@ export default function CardsPage() {
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
+                  <label className="text-[12px] font-bold uppercase text-muted-foreground">
                     Connected Profile
                   </label>
                   <Select
@@ -333,13 +333,13 @@ export default function CardsPage() {
 
                 <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl border">
                   <div className="text-center flex-1 border-r">
-                    <div className="text-[10px] font-bold uppercase text-muted-foreground">
+                    <div className="text-[12px] font-bold uppercase text-muted-foreground">
                       Total Taps
                     </div>
                     <div className="text-xl font-bold">{card.tap_count}</div>
                   </div>
                   <div className="text-center flex-1">
-                    <div className="text-[10px] font-bold uppercase text-muted-foreground">
+                    <div className="text-[12px] font-bold uppercase text-muted-foreground">
                       Status
                     </div>
                     <div className="text-xs font-bold text-primary uppercase">Active</div>

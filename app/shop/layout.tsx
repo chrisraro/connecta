@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { usePathname } from "next/navigation";
 import { ShoppingCart, ChevronRight, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
@@ -39,16 +40,20 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-background">
       {/* Shop Header */}
-      <header className="sticky top-0 z-50 bg-background/80 border-b border-border">
+      <header className="sticky top-0 z-50 bg-background border-b-[1.5px] border-input">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo & Navigation */}
             <div className="flex items-center gap-6">
               <Link
                 href="/"
-                className="flex min-h-11 items-center gap-2 font-bold text-xl tracking-tight"
+                className="flex min-h-11 items-center gap-2.5"
+                aria-label={`${CONNECTA.name} home`}
               >
-                {CONNECTA.name}
+                <ConnectaMark className="h-7 w-7 text-primary" />
+                <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+                  {CONNECTA.name.toUpperCase()}
+                </span>
               </Link>
 
               <nav className="hidden md:flex items-center gap-1" aria-label="Shop">
@@ -104,7 +109,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
 
       {/* Breadcrumbs */}
       {breadcrumbs.length > 1 && (
-        <div className="bg-muted/30 border-b border-border">
+        <div className="border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
               {breadcrumbs.map((crumb, index) => (

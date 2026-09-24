@@ -149,9 +149,9 @@ export default function ProfilesPage() {
           <button
             key={chip}
             onClick={() => setActiveChip(chip)}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 border ${
+            className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors duration-300 border ${
               activeChip === chip
-                ? "bg-primary border-primary text-primary-foreground scale-105"
+                ? "bg-primary border-primary text-primary-foreground"
                 : "bg-muted border-border text-muted-foreground hover:border-primary/50"
             }`}
           >
@@ -176,7 +176,7 @@ export default function ProfilesPage() {
           {profiles.map((profile) => (
             <Card
               key={profile.id}
-              className="overflow-hidden border-border bg-card hover:border-primary/20 transition-all duration-300 group relative"
+              className="overflow-hidden border-border bg-card hover:border-primary/20 transition-colors duration-300 group relative"
             >
               <div
                 className="h-32 w-full relative"
@@ -187,7 +187,7 @@ export default function ProfilesPage() {
                   <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/20 flex items-center justify-center">
                     <Users className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-white font-bold text-sm uppercase tracking-wider">
+                  <span className="text-white font-bold text-sm">
                     {layoutConfigOf(profile).themeId}
                   </span>
                 </div>
@@ -243,7 +243,7 @@ export default function ProfilesPage() {
               )}
 
               <CardHeader className="pt-2 pb-2 text-center">
-                <CardTitle className="text-xl font-bold uppercase tracking-tight text-foreground">
+                <CardTitle className="text-xl font-bold [font-stretch:112%] text-foreground">
                   {profile.name}
                 </CardTitle>
                 <CardDescription className="text-muted-foreground font-medium">
@@ -260,7 +260,7 @@ export default function ProfilesPage() {
                 <Link href={profilePath(profile)} target="_blank" className="flex-1 min-w-[100px]">
                   <Button
                     variant="outline"
-                    className="w-full rounded-2xl border-border hover:bg-muted transition-all h-11"
+                    className="w-full rounded-2xl border-border hover:bg-muted transition-colors h-11"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View
@@ -271,7 +271,7 @@ export default function ProfilesPage() {
                   <DialogTrigger asChild>
                     <Button
                       variant="secondary"
-                      className="flex-1 min-w-[100px] rounded-2xl bg-muted text-foreground hover:bg-muted/80 transition-all h-11"
+                      className="flex-1 min-w-[100px] rounded-2xl bg-muted text-foreground hover:bg-muted/80 transition-colors h-11"
                     >
                       <QrCode className="w-4 h-4 mr-2" />
                       Card
@@ -294,7 +294,7 @@ export default function ProfilesPage() {
                       <DialogClose asChild>
                         <Button
                           variant="outline"
-                          className="rounded-full px-10 h-12 bg-muted border-border text-foreground hover:bg-muted/80 font-bold uppercase tracking-widest text-xs"
+                          className="rounded-full px-10 h-12 bg-muted border-border text-foreground hover:bg-muted/80 font-bold text-xs"
                         >
                           Dismiss
                         </Button>
@@ -324,14 +324,14 @@ export default function ProfilesPage() {
             <Button
               variant="ghost"
               onClick={() => setIsDeleting(null)}
-              className="rounded-xl flex-1 h-12 font-bold uppercase tracking-widest text-[10px]"
+              className="rounded-xl flex-1 h-12 font-bold text-[12px]"
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={() => isDeleting && handleDelete(isDeleting)}
-              className="rounded-xl flex-1 h-12 font-bold uppercase tracking-widest text-[10px]"
+              className="rounded-xl flex-1 h-12 font-bold text-[12px]"
             >
               Delete Forever
             </Button>

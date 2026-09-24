@@ -81,11 +81,11 @@ function ToastNotification({
         {/* Progress bar with time indicator */}
         <div className="relative h-2 bg-muted">
           <div
-            className="h-full bg-primary transition-all duration-100 ease-linear"
+            className="h-full bg-primary transition-[width] duration-100 ease-linear"
             style={{ width: `${progress}%` }}
           />
           <div className="absolute inset-0 flex items-center justify-center px-2">
-            <span className="text-[10px] font-semibold text-foreground/80">
+            <span className="text-[12px] font-semibold text-foreground/80">
               {secondsLeft}s remaining
             </span>
           </div>
@@ -398,7 +398,7 @@ export default function ShopPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product) => (
                   <Link href={`/shop/product/${product.slug}`} key={product.id}>
-                    <Card className="group transition-all duration-300 cursor-pointer h-full flex flex-col hover:-translate-y-1 border-border/50 hover:border-primary/50">
+                    <Card className="group transition-colors duration-300 cursor-pointer h-full flex flex-col border-border/50 hover:border-input">
                       {/* Product Image */}
                       <div className="aspect-square bg-muted relative overflow-hidden rounded-t-lg">
                         {product.images.length > 0 ? (
@@ -407,7 +407,7 @@ export default function ShopPage() {
                               product.images[product.primary_image_index] || product.images[0]
                             }
                             alt={product.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            className="w-full h-full object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -472,7 +472,7 @@ export default function ShopPage() {
 
                         {/* Add to Cart Button */}
                         <Button
-                          className={`w-full h-11 mt-4 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${
+                          className={`w-full h-11 mt-4 transition-colors duration-300 ${
                             addedToCart === product.id
                               ? "bg-primary hover:bg-primary text-primary-foreground"
                               : "bg-primary hover:bg-primary/90 text-primary-foreground"
