@@ -27,6 +27,7 @@ import { profilePath } from "@/lib/profileUrl";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import { newestProfileId } from "@/lib/builderEntry";
+import { sheetFor } from "@/components/survey/sheet";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -73,7 +74,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold mb-1">
+        <h1 className="text-3xl font-bold mb-1 [font-stretch:112%]">
           Welcome{appUser?.name ? `, ${appUser.name.split(" ")[0]}` : " back"}
         </h1>
         <p className="text-muted-foreground">
@@ -83,7 +84,7 @@ export default function DashboardPage() {
 
       {/* ─── Digital Business Card Banner ──────────────────────────── */}
       {primaryProfile && (
-        <div className="rounded-[var(--r-lg)] border border-border bg-card p-5 shadow-[var(--e-raised)] flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="border-[1.5px] border-input bg-background p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/*
                       `min-w-0` is load-bearing. A flex child defaults to
                       min-width:auto, so it refuses to shrink below its own
@@ -94,17 +95,17 @@ export default function DashboardPage() {
                       horizontal space.
                     */}
           <div className="flex min-w-0 items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-[var(--r-md)] bg-primary/10 text-primary">
+            <div className="flex size-12 shrink-0 items-center justify-center bg-primary text-primary-foreground">
               <QrCode className="size-6" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <h2 className="text-base font-bold text-foreground">Digital business card</h2>
-                <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-500">
+                <h2 className="text-base font-bold text-foreground [font-stretch:112%]">Digital business card</h2>
+                <span className="border-[1.5px] border-input px-1.5 py-0.5 text-[11px] font-bold">
                   Instant web access
                 </span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Present your card on screen, download it as a high-res PNG, or save the contact as a
                 .vcf.
               </p>
@@ -114,7 +115,7 @@ export default function DashboardPage() {
           <div className="flex w-full shrink-0 items-center gap-2 md:w-auto">
             <Button
               onClick={() => setShowDigitalCardModal(true)}
-              className="min-h-11 flex-1 gap-2 rounded-[var(--r-md)] font-semibold md:flex-initial"
+              className="min-h-11 flex-1 gap-2 md:flex-initial"
             >
               <QrCode className="size-4" aria-hidden="true" />
               Show card
@@ -123,7 +124,7 @@ export default function DashboardPage() {
             <Button
               onClick={() => setShowDigitalCardModal(true)}
               variant="outline"
-              className="min-h-11 gap-1.5 rounded-[var(--r-md)] font-medium"
+              className="min-h-11 gap-1.5"
             >
               <Download className="size-4" aria-hidden="true" />
               Save image
@@ -149,21 +150,21 @@ export default function DashboardPage() {
 
       {/* ─── Onboarding Banner ─────────────────────────────────────── */}
       {!isOnboardingComplete && onboarding !== undefined && (
-        <div className="rounded-2xl overflow-hidden border border-primary/30 bg-gradient-to-r from-primary/10 to-primary/5 p-5 shadow-sm">
+        <div className="border-[1.5px] border-input bg-accent/50 p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles className="w-5 h-5 text-primary" aria-hidden="true" />
+              <div className="w-10 h-10 bg-primary text-primary-foreground flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <h2 className="font-semibold text-base">Complete your profile setup</h2>
+                <h2 className="font-bold text-base [font-stretch:112%]">Complete your profile setup</h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   Add your contact info, services, and photo so clients know who you are.
                 </p>
               </div>
             </div>
             <Link href="/dashboard/onboarding">
-              <Button size="sm" className="shrink-0 gap-1 rounded-xl">
+              <Button size="sm" className="shrink-0 gap-1">
                 Continue Setup <ChevronRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -175,11 +176,11 @@ export default function DashboardPage() {
       {statsLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 rounded-[2rem]" />
+            <Skeleton key={i} className="h-32" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-[1.5px] border-[1.5px] border-input bg-input">
           <StatCard
             label="Total Taps"
             value={totalTaps.toString()}
@@ -201,14 +202,14 @@ export default function DashboardPage() {
           <StatCard
             label="New Leads"
             value={newLeadsCount.toString()}
-            color="text-emerald-500"
+            color="text-primary"
             icon={<Sparkles className="w-4 h-4" />}
           />
         </div>
       )}
 
       {/* ─── Quick Actions ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[1.5px] border-[1.5px] border-input bg-input">
         <QuickAction href="/dashboard/cards" icon={SmartphoneNfc} label="Activate a card" />
         {/* When a profile already exists, link straight to editing
                     it — routing to the bare no-id builder here used to send
@@ -231,7 +232,7 @@ export default function DashboardPage() {
       {/* ─── Profiles Section ───────────────────────────────────────── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight">Recent Profiles</h2>
+          <h2 className="text-xl font-bold [font-stretch:112%]">Recent Profiles</h2>
           {activeProfilesCount > 0 && (
             <Button
               variant="ghost"
@@ -248,8 +249,8 @@ export default function DashboardPage() {
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Skeleton className="h-24 rounded-3xl" />
-            <Skeleton className="h-24 rounded-3xl" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
           </div>
         ) : activeProfilesCount === 0 ? (
           <EmptyState
@@ -263,9 +264,9 @@ export default function DashboardPage() {
             {profiles.slice(0, 4).map((profile) => (
               <div
                 key={profile.id}
-                className="group bg-card border border-border p-4 rounded-3xl hover:border-primary/30 transition-all duration-300 flex items-center gap-4 relative overflow-hidden"
+                className="group bg-background border-[1.5px] border-input p-4 hover:bg-accent/40 transition-colors flex items-center gap-4 relative overflow-hidden"
               >
-                <div className="w-14 h-14 rounded-2xl overflow-hidden border border-border bg-muted shrink-0">
+                <div className="w-14 h-14 overflow-hidden border-[1.5px] border-input bg-muted shrink-0">
                   <ProfileImage
                     src={agentInfoOf(profile).avatarUrl}
                     alt={`${profile.name} profile avatar`}
@@ -274,14 +275,15 @@ export default function DashboardPage() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-sm truncate uppercase tracking-tight">
+                  <h3 className="font-bold text-sm truncate">
                     {profile.name}
                   </h3>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] font-bold uppercase py-0.5 px-2 bg-primary/10 text-primary rounded-full">
-                      {layoutConfigOf(profile).themeId}
+                    {/* The stored template id picks a sheet colourway. */}
+                    <span className="border border-input px-1.5 py-0.5 text-[11px] font-bold capitalize">
+                      {sheetFor(layoutConfigOf(profile).themeId).id}
                     </span>
-                    <span className="text-[10px] font-medium text-muted-foreground italic">
+                    <span className="font-mono text-[11px] text-muted-foreground">
                       {new Date(profile.created_at).toLocaleDateString()}
                     </span>
                   </div>
@@ -291,7 +293,7 @@ export default function DashboardPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-11 rounded-full hover:bg-yellow-500/10 hover:text-yellow-500 transition-colors"
+                    className="size-11"
                     onClick={() => {
                       setSelectedModalProfile(profile);
                       setShowDigitalCardModal(true);
@@ -303,7 +305,7 @@ export default function DashboardPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-11 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                    className="size-11"
                     asChild
                     title="Preview"
                   >
@@ -318,7 +320,7 @@ export default function DashboardPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-11 rounded-full hover:bg-blue-500/10 hover:text-blue-500 transition-colors"
+                    className="size-11"
                     asChild
                     title="Edit"
                   >
@@ -339,7 +341,7 @@ export default function DashboardPage() {
       {/* ─── Recent Leads ──────────────────────────────────────────── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight">Recent Leads</h2>
+          <h2 className="text-xl font-bold [font-stretch:112%]">Recent Leads</h2>
           {totalLeadsCount > 0 && (
             <Button
               variant="ghost"
@@ -356,8 +358,8 @@ export default function DashboardPage() {
 
         {leads === undefined ? (
           <div className="space-y-3">
-            <Skeleton className="h-16 rounded-2xl" />
-            <Skeleton className="h-16 rounded-2xl" />
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
           </div>
         ) : recentLeads.length === 0 ? (
           <EmptyState
@@ -371,18 +373,18 @@ export default function DashboardPage() {
               <Link
                 key={lead.id}
                 href="/dashboard/leads"
-                className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/30"
+                className="flex items-center gap-4 border-[1.5px] border-input bg-background p-4 transition-colors hover:bg-accent/40"
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center border-[1.5px] border-input text-primary">
                   <MessageSquare className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{lead.inquirer_name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="truncate text-sm text-muted-foreground">
                     {lead.message || lead.property_name || lead.inquirer_contact}
                   </p>
                 </div>
-                <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
+                <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
                   {new Date(lead.created_at).toLocaleDateString()}
                 </span>
               </Link>
@@ -409,12 +411,12 @@ function QuickAction({
     <Link
       href={href}
       target={external ? "_blank" : undefined}
-      className="flex flex-col items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/30"
+      className="flex flex-col items-start gap-3 bg-background p-4 transition-colors hover:bg-accent"
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <Icon className="h-5 w-5" aria-hidden="true" />
+      <span className="flex h-10 w-10 items-center justify-center border-[1.5px] border-input text-primary">
+        <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
       </span>
-      <span className="text-sm font-semibold tracking-tight">{label}</span>
+      <span className="text-sm font-bold">{label}</span>
     </Link>
   );
 }
@@ -431,11 +433,8 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-[var(--r-lg)] border border-border bg-card p-5 transition-colors hover:border-primary/20 sm:p-6">
-      <div
-        className="pointer-events-none absolute right-4 top-4 opacity-5 transition-opacity group-hover:opacity-10 sm:right-6 sm:top-6"
-        aria-hidden="true"
-      >
+    <div className="relative bg-background p-5 sm:p-6">
+      <div className="absolute right-4 top-4 text-primary sm:right-6 sm:top-6" aria-hidden="true">
         {icon}
       </div>
       {/*
@@ -445,10 +444,10 @@ function StatCard({
               `wide` rather than `widest` so two-word labels ("Total Leads")
               still fit on one line in a half-width grid cell.
             */}
-      <h3 className="mb-2 pr-7 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+      <h3 className="mb-2 pr-7 text-[13px] font-semibold text-muted-foreground">
         {label}
       </h3>
-      <div className={`text-4xl font-black tracking-tight ${color}`}>{value}</div>
+      <div className={`text-4xl font-bold [font-stretch:125%] ${color}`}>{value}</div>
     </div>
   );
 }

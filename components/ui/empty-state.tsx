@@ -33,7 +33,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   const renderAction = (a: EmptyStateAction, variant: "default" | "outline") => {
     const btn = (
-      <Button variant={variant} className="rounded-2xl px-6" onClick={a.onClick} type="button">
+      <Button variant={variant} className="px-6" onClick={a.onClick} type="button">
         {a.label}
       </Button>
     );
@@ -43,11 +43,11 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center rounded-[2rem] border border-dashed border-border bg-card/50 px-6 py-14",
+        "flex flex-col items-center justify-center text-center border-[1.5px] border-dashed border-input bg-background px-6 py-14",
         className,
       )}
     >
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-muted text-muted-foreground">
+      <div className="mb-5 flex h-16 w-16 items-center justify-center border-[1.5px] border-input text-primary">
         <Icon className="h-8 w-8" aria-hidden="true" />
       </div>
       <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>

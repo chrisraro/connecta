@@ -71,12 +71,12 @@ function DashboardFabs() {
           <Button
             size="icon"
             aria-label="Quick actions"
-            className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 rounded-2xl shadow-[var(--e-overlay)] bg-primary text-primary-foreground hover:scale-105 transition-transform md:hidden"
+            className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 shadow-[var(--e-overlay)] bg-primary text-primary-foreground md:hidden"
           >
-            <Sparkles className="w-7 h-7" />
+            <Zap className="w-7 h-7" aria-hidden="true" />
             {unsyncedCount > 0 && (
               <span
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center animate-pulse"
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[var(--connecta-mark)] text-[var(--connecta-mark-ink)] text-[10px] font-bold flex items-center justify-center"
                 aria-hidden="true"
               >
                 {unsyncedCount}
@@ -86,11 +86,11 @@ function DashboardFabs() {
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="rounded-t-[2.5rem] border-border bg-card p-0 overflow-hidden pb-10"
+          className="bg-background p-0 overflow-hidden pb-10"
         >
-          <SheetHeader className="p-6 border-b border-border">
-            <SheetTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-              <Zap className="w-5 h-5 text-primary" />
+          <SheetHeader className="p-6 border-b-[1.5px] border-input">
+            <SheetTitle className="text-xl font-bold [font-stretch:112%] flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary" aria-hidden="true" />
               Quick Actions
             </SheetTitle>
           </SheetHeader>
@@ -103,7 +103,6 @@ function DashboardFabs() {
                   ? `${unsyncedCount} unsynced — log a new contact`
                   : "Log a new contact you just met"
               }
-              color="bg-rose-500"
               badge={unsyncedCount > 0 ? unsyncedCount : undefined}
               onClick={() => {
                 setSheetOpen(false);
@@ -115,28 +114,24 @@ function DashboardFabs() {
               icon={LayoutTemplate}
               label="Profile Builder"
               desc="Create or edit your digital card"
-              color="bg-blue-500"
             />
             <QuickActionItem
               href="/dashboard/leads"
               icon={MessageSquare}
               label="View Leads"
               desc="Check recent inquiries"
-              color="bg-green-500"
             />
             <QuickActionItem
               href="/dashboard/cards"
               icon={SmartphoneNfc}
               label="Activate Card"
               desc="Sync new physical NFC card"
-              color="bg-purple-500"
             />
             <QuickActionItem
               href="/dashboard/billing"
               icon={CreditCard}
               label="Upgrade Pro"
               desc="Unlock unlimited profiles"
-              color="bg-amber-500"
             />
           </div>
         </SheetContent>
@@ -160,21 +155,17 @@ function QuickActionItem({
   icon: Icon,
   label,
   desc,
-  color,
 }: {
   href: string;
   icon: React.ElementType;
   label: string;
   desc: string;
-  color: string;
 }) {
   return (
     <Link href={href}>
-      <div className="flex items-center gap-4 p-4 rounded-3xl bg-muted/50 border border-border hover:bg-muted transition-colors group">
-        <div
-          className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-white shadow-lg shadow-black/5`}
-        >
-          <Icon className="w-6 h-6" />
+      <div className="flex items-center gap-4 p-4 border-[1.5px] border-input hover:bg-accent transition-colors group">
+        <div className="w-12 h-12 border-[1.5px] border-input flex items-center justify-center text-primary">
+          <Icon className="w-6 h-6" strokeWidth={1.75} aria-hidden="true" />
         </div>
         <div className="flex-1">
           <div className="font-bold text-sm tracking-tight">{label}</div>
@@ -193,14 +184,12 @@ function QuickActionButton({
   icon: Icon,
   label,
   desc,
-  color,
   badge,
   onClick,
 }: {
   icon: React.ElementType;
   label: string;
   desc: string;
-  color: string;
   badge?: number;
   onClick: () => void;
 }) {
@@ -208,14 +197,12 @@ function QuickActionButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-4 p-4 rounded-3xl bg-muted/50 border border-border hover:bg-muted transition-colors group w-full text-left"
+      className="flex items-center gap-4 p-4 border-[1.5px] border-input bg-accent/40 hover:bg-accent transition-colors group w-full text-left"
     >
-      <div
-        className={`relative w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-white shadow-lg shadow-black/5`}
-      >
-        <Icon className="w-6 h-6" />
+      <div className="relative w-12 h-12 bg-primary text-primary-foreground flex items-center justify-center">
+        <Icon className="w-6 h-6" strokeWidth={1.75} aria-hidden="true" />
         {badge !== undefined && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[var(--connecta-mark)] text-[var(--connecta-mark-ink)] text-[10px] font-bold flex items-center justify-center">
             {badge}
           </span>
         )}
@@ -252,26 +239,28 @@ function DashboardSidebar({ className }: { className?: string }) {
 
   return (
     <aside
-      className={`flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground ${className}`}
+      className={`flex flex-col h-full bg-sidebar border-r-[1.5px] border-input text-sidebar-foreground ${className}`}
     >
-      <div className="p-6 flex items-center gap-2 font-bold text-xl">
-        <ConnectaMark className="h-6 w-6 text-primary" />
-        <span className="text-foreground font-black tracking-tight">{CONNECTA.name}</span>
-      </div>
-      <nav className="flex-1 px-4 space-y-2 py-4">
+      <Link href="/dashboard" className="p-6 flex items-center gap-2.5">
+        <ConnectaMark className="h-7 w-7 text-primary" />
+        <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+          {CONNECTA.name.toUpperCase()}
+        </span>
+      </Link>
+      <nav aria-label="Dashboard" className="flex-1 px-4 space-y-1 py-2">
         {menuItems.map((item) => {
           const isActive =
             pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
           return (
-            <Link key={item.url} href={item.url}>
+            <Link key={item.url} href={item.url} aria-current={isActive ? "page" : undefined}>
               <div
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]" : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"}`}
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors ${isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"}`}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon className="h-5 w-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
                 <span className="flex-1">{item.title}</span>
                 {(item as { badge?: boolean }).badge && (
                   <span
-                    className="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse"
+                    className="w-2 h-2 rounded-full bg-[var(--connecta-mark)] shrink-0"
                     title="Incomplete"
                   />
                 )}
@@ -280,10 +269,10 @@ function DashboardSidebar({ className }: { className?: string }) {
           );
         })}
       </nav>
-      <div className="p-6 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 bg-sidebar-accent/50 p-3 rounded-2xl border border-sidebar-border">
+      <div className="p-6 border-t-[1.5px] border-input">
+        <div className="flex items-center gap-3 p-3 border-[1.5px] border-input">
           <UserMenu />
-          <div className="flex-1 text-xs text-muted-foreground font-medium">Manage Account</div>
+          <div className="flex-1 text-[13px] text-muted-foreground font-medium">Manage Account</div>
           <ThemeToggle />
           <NotificationsPopover />
         </div>
@@ -313,27 +302,26 @@ function MobileBottomNav() {
                 fixed label height (opacity toggles visibility, not layout),
                 so the pill's height is constant and there's nothing left
                 for overflow-hidden to need to clip. */}
-      <nav className="bg-background/80 backdrop-blur-2xl border border-border rounded-full p-2 flex items-center justify-between shadow-[var(--e-overlay)] ring-1 ring-border/50">
+      <nav aria-label="Dashboard" className="bg-background border-[1.5px] border-input p-1.5 flex items-center justify-between shadow-[var(--e-overlay)]">
         {navItems.map((item) => {
           const isActive =
             pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
           return (
-            <Link key={item.url} href={item.url} className="relative flex-1 group">
+            <Link
+              key={item.url}
+              href={item.url}
+              aria-current={isActive ? "page" : undefined}
+              className="relative flex-1 group"
+            >
               <div
-                className={`flex flex-col items-center justify-center gap-1 py-2.5 rounded-full transition-colors duration-300 ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                <item.icon
-                  className={`h-6 w-6 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-105"}`}
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
+                <item.icon className="h-6 w-6" strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
                 <span
                   className={`text-[10px] leading-none font-bold tracking-wide transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}
                 >
                   {item.title}
                 </span>
-                {isActive && (
-                  <div className="absolute -bottom-1 w-1 h-1 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary),0.8)]" />
-                )}
               </div>
             </Link>
           );
@@ -357,7 +345,7 @@ function MobileHeader() {
   };
 
   return (
-    <header className="md:hidden sticky top-0 z-40 w-full px-6 py-4 flex items-center justify-between bg-background/80 backdrop-blur-xl border-b border-border">
+    <header className="md:hidden sticky top-0 z-40 w-full px-6 py-4 flex items-center justify-between bg-background border-b-[1.5px] border-input">
       <div className="flex flex-col justify-center">
         {/* The "2026 Edition" kicker that used to sit here was removed:
                     it dated the product in the chrome of every screen, and a
@@ -370,7 +358,7 @@ function MobileHeader() {
                     literal <h1> always present in the DOM (this bar is only
                     CSS-hidden above md, not unmounted) duplicated the page's
                     real h1 and broke "exactly one h1 per page". */}
-        <p className="text-xl font-black tracking-tight text-foreground">{getPageTitle()}</p>
+        <p className="text-xl font-bold [font-stretch:112%] text-foreground">{getPageTitle()}</p>
       </div>
       <div className="flex items-center gap-2">
         <ThemeToggle />
@@ -440,7 +428,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground selection:bg-primary/30">
+    <div className="sheet-grid flex min-h-screen text-foreground selection:bg-primary/30">
       {/* Desktop Sidebar */}
       <DashboardSidebar className="hidden md:flex w-72" />
 

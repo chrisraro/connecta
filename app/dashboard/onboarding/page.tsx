@@ -31,6 +31,9 @@ import {
   Loader2,
   SmartphoneNfc,
   AlertCircle,
+  BriefcaseBusiness,
+  Inbox,
+  Palette,
 } from "lucide-react";
 import { CONNECTA } from "@/lib/brand";
 import { resolveOnboardingPrefill } from "@/lib/onboardingPrefill";
@@ -416,27 +419,27 @@ function OnboardingContent() {
     const d = onboardingDataOf(onboarding.data);
     const cat = PROFILE_CATEGORIES.find((c) => c.id === d?.profileCategory);
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">
+      <div className="sheet-grid min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-lg">
-          <div className="bg-card rounded-3xl shadow-xl border border-border/50 overflow-hidden">
+          <div className="border-[1.5px] border-input bg-background">
             <div className="p-6 md:p-8 space-y-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 flex items-center justify-center bg-primary text-primary-foreground">
+                  <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">Profile Setup Complete</h1>
+                  <h1 className="text-2xl font-bold [font-stretch:112%]">Profile Setup Complete</h1>
                   <p className="text-sm text-muted-foreground">Your profile is ready to use.</p>
                 </div>
               </div>
 
-              <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+              <div className="border-[1.5px] border-input p-4 space-y-3">
                 {d?.avatarUrl && (
                   <div className="flex justify-center">
                     <ProfileImage
                       src={d.avatarUrl}
                       alt="avatar"
-                      className="w-20 h-20 rounded-full overflow-hidden border-2 border-border"
+                      className="w-20 h-20 overflow-hidden border-[1.5px] border-input"
                     />
                   </div>
                 )}
@@ -444,7 +447,7 @@ function OnboardingContent() {
                   <h2 className="text-lg font-semibold">{d?.fullName}</h2>
                   <p className="text-sm text-muted-foreground">{d?.title}</p>
                   {cat && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
+                    <span className="inline-flex items-center gap-1 border-[1.5px] border-input px-2 py-0.5 text-[13px] font-bold">
                       {cat.emoji} {cat.label}
                     </span>
                   )}
@@ -453,11 +456,11 @@ function OnboardingContent() {
                   <div className="text-sm text-muted-foreground text-center">{d.email}</div>
                 )}
                 {d?.services && d.services.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 justify-center pt-2 border-t border-border/50">
+                  <div className="flex flex-wrap gap-1.5 justify-center pt-3 border-t border-border">
                     {d.services.map((s) => (
                       <span
                         key={s}
-                        className="text-xs bg-muted px-2.5 py-1 rounded-full font-medium"
+                        className="border border-border px-2 py-0.5 text-[13px] font-medium"
                       >
                         {s}
                       </span>
@@ -467,12 +470,12 @@ function OnboardingContent() {
               </div>
 
               {cardClaimed && (
-                <div className="w-full bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                    <SmartphoneNfc className="w-5 h-5 text-primary" />
+                <div className="w-full border-[1.5px] border-input p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                    <SmartphoneNfc className="w-5 h-5" aria-hidden="true" />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-semibold text-primary">Card Activated!</p>
+                    <p className="text-sm font-bold">Card Activated!</p>
                     <p className="text-xs text-muted-foreground">
                       Your physical {CONNECTA.name} card is now live and linked to your profile.
                     </p>
@@ -529,12 +532,12 @@ function OnboardingContent() {
 
   // ─── WIZARD MODE ─────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-4">
+    <div className="sheet-grid min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {/* Card Detection Alert */}
         {cardUuid && (
-          <div className="mb-4 bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+          <div className="mb-4 border-[1.5px] border-input bg-background p-4 flex items-center gap-3">
+            <div className="w-10 h-10 border-[1.5px] border-input flex items-center justify-center shrink-0">
               {cardClaimed ? (
                 <CheckCircle2 className="w-5 h-5 text-primary" />
               ) : claimError ? (
@@ -579,7 +582,7 @@ function OnboardingContent() {
           </div>
         )}
         <div className="mb-8">
-          <div className="flex justify-between text-xs text-muted-foreground mb-2">
+          <div className="flex justify-between text-[13px] font-medium text-muted-foreground mb-2">
             <span>
               Step {step + 1} of {STEPS.length}
             </span>
@@ -590,10 +593,11 @@ function OnboardingContent() {
               Skip for now <ChevronRight className="w-3 h-3" />
             </button>
           </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          {/* Progress is a survey rule drawn along the line. */}
+          <div className="h-1.5 border border-input bg-background">
             <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${progress}%`, backgroundColor: "hsl(var(--primary))" }}
+              className="h-full bg-primary transition-[width] duration-500"
+              style={{ width: `${progress}%` }}
             />
           </div>
           <div className="flex justify-between mt-2">
@@ -602,7 +606,7 @@ function OnboardingContent() {
               return (
                 <div
                   key={s.id}
-                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                  className={`w-7 h-7 flex items-center justify-center border-[1.5px] border-input transition-colors ${i <= step ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                 </div>
@@ -611,9 +615,9 @@ function OnboardingContent() {
           </div>
         </div>
 
-        <div className="bg-card rounded-3xl shadow-xl border border-border/50 overflow-hidden">
+        <div className="border-[1.5px] border-input bg-background">
           <div className="p-6 md:p-8 min-h-[360px] flex flex-col">
-            <h1 className="text-2xl font-bold mb-1">{STEPS[step].title}</h1>
+            <h1 className="text-2xl font-bold mb-1 [font-stretch:112%]">{STEPS[step].title}</h1>
 
             {step === 0 && (
               <div className="flex-1 flex flex-col justify-center space-y-4">
@@ -623,16 +627,16 @@ function OnboardingContent() {
                 </p>
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   {[
-                    { emoji: "🎨", label: "Showcase your work" },
-                    { emoji: "📇", label: "Share via NFC & QR" },
-                    { emoji: "📥", label: "Capture leads" },
-                    { emoji: "✨", label: "Built for any profession" },
-                  ].map(({ emoji, label }) => (
+                    { icon: Palette, label: "Showcase your work" },
+                    { icon: SmartphoneNfc, label: "Share via NFC & QR" },
+                    { icon: Inbox, label: "Capture leads" },
+                    { icon: BriefcaseBusiness, label: "Built for any profession" },
+                  ].map(({ icon: Icon, label }) => (
                     <div
                       key={label}
-                      className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl text-sm font-medium"
+                      className="flex items-center gap-2 border-[1.5px] border-input p-3 text-sm font-medium"
                     >
-                      <span className="text-xl">{emoji}</span> {label}
+                      <Icon className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.75} aria-hidden="true" /> {label}
                     </div>
                   ))}
                 </div>
@@ -652,10 +656,11 @@ function OnboardingContent() {
                       <button
                         key={cat.id}
                         onClick={() => setProfileCategory(cat.id)}
-                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                        aria-pressed={isSelected}
+                        className={`flex items-center gap-4 p-4 border-[1.5px] transition-colors text-left ${
                           isSelected
-                            ? "border-primary bg-primary/5 shadow-sm"
-                            : "border-border hover:border-primary/40 hover:bg-muted/30"
+                            ? "border-input bg-accent"
+                            : "border-border hover:border-input hover:bg-accent/50"
                         }`}
                       >
                         <span className="text-3xl">{cat.emoji}</span>
@@ -742,7 +747,7 @@ function OnboardingContent() {
                 <div className="space-y-2">
                   <Label>About / Bio</Label>
                   <textarea
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex min-h-[80px] w-full border-[1.5px] border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     placeholder="Tell clients what you do and what makes you unique..."
                     value={about}
                     onChange={(e) => setAbout(e.target.value)}
@@ -777,22 +782,26 @@ function OnboardingContent() {
                         <button
                           key={s}
                           onClick={() => addService(s)}
-                          className="text-xs px-2.5 py-1 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                          className="text-[13px] px-2 py-1 border border-dashed border-input text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                         >
                           + {s}
                         </button>
                       ))}
                   </div>
                   {services.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border/50">
+                    <div className="flex flex-wrap gap-1.5 mt-2 pt-3 border-t border-border">
                       {services.map((s) => (
                         <span
                           key={s}
-                          className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium"
+                          className="flex items-center gap-1 border-[1.5px] border-input px-2 py-0.5 text-[13px] font-medium"
                         >
                           {s}
-                          <button onClick={() => removeService(s)} className="hover:text-red-500">
-                            <X className="w-3 h-3" />
+                          <button
+                            onClick={() => removeService(s)}
+                            aria-label={`Remove ${s}`}
+                            className="hover:text-destructive"
+                          >
+                            <X className="w-3 h-3" aria-hidden="true" />
                           </button>
                         </span>
                       ))}
@@ -832,7 +841,7 @@ function OnboardingContent() {
                         STATE" screen above takes over on its own (it's
                         gated on the live `onboarding` query, which that
                         mutation just flipped). */}
-          <div className="px-6 md:px-8 pb-6 md:pb-8 flex justify-between items-center border-t border-border/50 pt-4">
+          <div className="px-6 md:px-8 pb-6 md:pb-8 flex justify-between items-center border-t-[1.5px] border-input pt-4">
             <Button
               variant="ghost"
               onClick={() => setStep((s) => Math.max(0, s - 1))}
