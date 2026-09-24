@@ -47,7 +47,34 @@ export function buildConnecta(env: Record<string, string | undefined>) {
   };
 }
 
-export const CONNECTA = buildConnecta(typeof process !== "undefined" ? process.env : {});
+// Each variable is read by its full literal name: Next.js inlines
+// NEXT_PUBLIC_* values into client bundles only for direct
+// `process.env.NAME` reads, so passing `process.env` as a whole left the
+// browser with an empty object while the server had the real values, and
+// every client component that rendered CONNECTA.domain failed to hydrate.
+// SUPPORT_EMAIL is server-only; NEXT_PUBLIC_SUPPORT_EMAIL (when set) is the
+// one that reaches client-rendered pages.
+export const CONNECTA = buildConnecta({
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || process.env.SUPPORT_EMAIL,
+});
+
+/** The .ph domain is planned but not yet bought (see FALLBACK_DOMAIN above). */
+const PLANNED_PUBLIC_HOST = "connecta.ph";
+
+/**
+ * The host to show visitors in marketing and demo UI. A development or
+ * placeholder host (localhost, a LAN IP, the .example fallback) is never
+ * shown; the planned public domain stands in until a real one is set.
+ */
+export function publicHost(brand: { domain: string }): string {
+  const host = brand.domain.replace(/:\d+$/, "");
+  const local =
+    host === "localhost" ||
+    host.endsWith(".example") ||
+    /^(127|10|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(host);
+  return local ? PLANNED_PUBLIC_HOST : brand.domain;
+}
 
 export function parseHex(hex: string): { r: number; g: number; b: number } | null {
   let c = hex.trim().toLowerCase().replace(/^#/, "");

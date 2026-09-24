@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { contrastRatio, meetsAA, CONNECTA, buildConnecta } from "./brand";
+import { contrastRatio, meetsAA, CONNECTA, buildConnecta, publicHost } from "./brand";
 
 test("contrastRatio computes the WCAG ratio for black on white", () => {
   expect(contrastRatio("#000000", "#ffffff")).toBeCloseTo(21, 0);
@@ -208,4 +208,14 @@ test("no new hardcoded occurrence of the current brand name in app/**, component
     offenders,
     `hardcoded "Connecta" outside CONNECTA constant in:\n${offenders.join("\n")}`,
   ).toEqual([]);
+});
+
+test("publicHost shows a configured public domain as is", () => {
+  expect(publicHost(buildConnecta({ NEXT_PUBLIC_APP_URL: "https://connecta.ph" }))).toBe("connecta.ph");
+});
+
+test("publicHost never shows a local or placeholder host to visitors", () => {
+  for (const url of [undefined, "http://localhost:3000", "http://127.0.0.1:3000", "http://192.168.1.4:3000"]) {
+    expect(publicHost(buildConnecta({ NEXT_PUBLIC_APP_URL: url }))).toBe("connecta.ph");
+  }
 });

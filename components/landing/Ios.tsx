@@ -18,7 +18,7 @@ import {
   StickyNote,
   Wallet,
 } from "lucide-react";
-import { CONNECTA } from "@/lib/brand";
+import { CONNECTA, publicHost } from "@/lib/brand";
 import styles from "./landing.module.css";
 
 /*
@@ -27,9 +27,9 @@ import styles from "./landing.module.css";
  * iOS; app icons are generic glyph tiles, not Apple's artwork.
  */
 
-// The host shown in the banner and Safari's address bar. The .ph domain is
-// planned but not bought yet (lib/brand.ts), so the demo shows it until then.
-export const DEMO_HOST = CONNECTA.domain.endsWith(".example") ? `${CONNECTA.name.toLowerCase()}.ph` : CONNECTA.domain;
+// The host shown in the banner and Safari's address bar: the real public
+// domain once configured, never a dev or placeholder host (lib/brand.ts).
+export const DEMO_HOST = publicHost(CONNECTA);
 
 const IOS_FONT: CSSProperties = {
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", system-ui, sans-serif',

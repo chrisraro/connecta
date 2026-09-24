@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { SignedIn, SignedOut } from "@/components/auth/AuthGate";
 import { ConnectaMark } from "@/components/brand/ConnectaMark";
-import { CONNECTA } from "@/lib/brand";
+import { CONNECTA, publicHost } from "@/lib/brand";
 import { SHEETS } from "@/components/survey/sheet";
 import { sheetVars } from "@/components/survey/SurveyProfile";
 import survey from "@/components/survey/survey.module.css";
@@ -178,8 +178,8 @@ export function LandingPage() {
           <div className="flex gap-5" style={{ color: "var(--sv-soft)" }}>
             <Link href="/privacy" className={survey.link}>{t.privacy}</Link>
             <Link href="/terms" className={survey.link}>{t.terms}</Link>
-            {/* Shown only once a real domain is configured; the fallback is a placeholder. */}
-            {!CONNECTA.domain.endsWith(".example") && (
+            {/* Shown only once a real public domain is configured (not localhost or the placeholder). */}
+            {publicHost(CONNECTA) === CONNECTA.domain && (
               <a href={`mailto:${CONNECTA.supportEmail}`} className={survey.link}>{CONNECTA.supportEmail}</a>
             )}
           </div>
