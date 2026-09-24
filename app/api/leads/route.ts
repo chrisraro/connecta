@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import { Resend } from "resend";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { CONNECTA } from "@/lib/brand";
+import { appOrigin } from "@/lib/appUrl";
 import { GENERIC_ERROR_MESSAGE } from "@/lib/errors";
 
 /**
@@ -65,7 +66,8 @@ async function sendLeadEmail(args: {
   }
 
   const regarding = args.propertyName ? `regarding ${args.propertyName}` : "from your profile";
-  const dashboard = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/leads`;
+  // A bare-host NEXT_PUBLIC_APP_URL used to produce a scheme-less link here.
+  const dashboard = `${appOrigin(process.env.NEXT_PUBLIC_APP_URL) ?? ""}/dashboard/leads`;
 
   const { error } = await new Resend(key).emails.send({
     // Until a sending domain is verified in Resend, the resend.dev sender only

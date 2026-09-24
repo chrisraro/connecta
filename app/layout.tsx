@@ -5,6 +5,7 @@ import { AppProviders } from "@/components/providers/AppProviders";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { CONNECTA } from "@/lib/brand";
+import { appOrigin } from "@/lib/appUrl";
 import { Toaster } from "@/components/ui/toaster";
 
 // Without a metadataBase, every relative OG/Twitter image URL (e.g. the
@@ -12,7 +13,9 @@ import { Toaster } from "@/components/ui/toaster";
 // default in production, breaking link previews. NEXT_PUBLIC_APP_URL is the
 // same var used for payment redirect URLs (see README/.env.example) — reuse
 // it here rather than introduce a second "what's my public URL" setting.
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${CONNECTA.domain}`;
+// appOrigin tolerates a bare host (Vercel's env UI allows one; new URL() doesn't,
+// which failed a production build) and falls back to the brand domain.
+const appUrl = appOrigin(process.env.NEXT_PUBLIC_APP_URL) ?? `https://${CONNECTA.domain}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
