@@ -1,5 +1,5 @@
 import { AuthForm } from "@/components/auth/AuthForm";
-import { ArrowLeft, Loader2, Sparkles, ShieldCheck, Zap, SmartphoneNfc } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, SmartphoneNfc, Zap } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ConnectaMark } from "@/components/brand/ConnectaMark";
@@ -22,7 +22,7 @@ export default function AuthPage({
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <Loader2 className="w-10 h-10 animate-spin text-yellow-500" />
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
         </div>
       }
     >
@@ -65,102 +65,97 @@ async function AuthContent({
     ? `/auth?mode=signin&card_uuid=${encodeURIComponent(cardUuid)}`
     : "/auth?mode=signin";
 
+  const tab = (active: boolean) =>
+    `flex h-11 flex-1 items-center justify-center text-[14px] font-bold [font-stretch:112%] transition-colors ${
+      active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
+    }`;
+
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground relative overflow-hidden px-4 py-12 selection:bg-yellow-500/30">
-      {/* 2026 Trend Ambient Background Glow Gradients */}
-      <div className="absolute top-[-20%] left-[-10%] w-[120%] h-[140%] bg-gradient-to-br from-yellow-500/15 via-amber-500/5 to-transparent blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[90%] bg-gradient-to-tl from-yellow-500/10 via-primary/5 to-transparent blur-[100px] pointer-events-none" />
+    <div className="flex w-full max-w-md flex-col items-center text-foreground">
+      {/* Title block: the mark and wordmark, as on the homepage nav. */}
+      <div className="mb-8 w-full text-center">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2.5"
+          aria-label={`${CONNECTA.name} home`}
+        >
+          <ConnectaMark className="h-9 w-9 text-primary" />
+          <span className="text-[19px] font-bold tracking-[0.1em] [font-stretch:125%]">
+            {CONNECTA.name.toUpperCase()}
+          </span>
+        </Link>
+        <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-muted-foreground">
+          Elevate your digital business card, manage leads CRM &amp; share via NFC instantly.
+        </p>
 
-      <div className="w-full max-w-md relative z-10 flex flex-col items-center">
-        {/* Brand Branding & Header */}
-        <div className="w-full text-center mb-6 space-y-3">
-          <div className="inline-flex items-center justify-center p-3 rounded-3xl bg-primary/10 border border-primary/20 shadow-xl mb-1">
-            <ConnectaMark className="w-10 h-10 text-primary" />
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-            {CONNECTA.name}
-          </h1>
-          <p className="text-xs text-muted-foreground font-medium max-w-xs mx-auto leading-relaxed">
-            Elevate your digital business card, manage leads CRM &amp; share via NFC instantly.
-          </p>
-
-          {cardUuid && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold mt-2">
-              <SmartphoneNfc className="w-3.5 h-3.5" />
-              NFC Hardware Card Linked
-            </div>
-          )}
-        </div>
-
-        {/* Mode Switcher Pills */}
-        <div className="flex bg-muted/80 p-1 rounded-2xl border border-border/80 w-full mb-6 shadow-sm">
-          <Link
-            href={signInUrl}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl text-center transition-all ${
-              isSignIn
-                ? "bg-background text-foreground shadow-md"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Sign In
-          </Link>
-          <Link
-            href={signUpUrl}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl text-center transition-all ${
-              !isSignIn
-                ? "bg-background text-foreground shadow-md"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Create Account
-          </Link>
-        </div>
-
-        {notice && (
-          <p
-            role="status"
-            className="w-full mb-4 text-xs font-medium text-foreground bg-primary/10 border border-primary/20 rounded-2xl px-4 py-3 text-center"
-          >
-            {notice}
+        {cardUuid && (
+          <p className="mt-4 inline-flex items-center gap-1.5 border-[1.5px] border-input px-2.5 py-1 text-[13px] font-bold">
+            <SmartphoneNfc className="h-4 w-4 text-primary" aria-hidden="true" />
+            NFC Hardware Card Linked
           </p>
         )}
-
-        {/* Auth Form Box with 2026 Trend Design System Styling */}
-        <div className="w-full">
-          <AuthForm
-            mode={isSignIn ? "signin" : "signup"}
-            redirectUrl={redirectUrl}
-            cardUuid={cardUuid}
-          />
-        </div>
-
-        {/* Feature Highlights */}
-        <div className="w-full grid grid-cols-3 gap-2 mt-6 text-center">
-          <div className="p-2.5 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm">
-            <Zap className="w-4 h-4 text-yellow-500 mx-auto mb-1" />
-            <span className="text-[10px] font-bold text-foreground block">Fast Setup</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm">
-            <ShieldCheck className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-            <span className="text-[10px] font-bold text-foreground block">Encrypted</span>
-          </div>
-          <div className="p-2.5 rounded-2xl bg-card/40 border border-border/50 backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 text-amber-500 mx-auto mb-1" />
-            <span className="text-[10px] font-bold text-foreground block">NFC Powered</span>
-          </div>
-        </div>
-
-        {/* Exit Link */}
-        <div className="w-full mt-6 text-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Homepage
-          </Link>
-        </div>
       </div>
+
+      {/* Mode switch: two cells on one boundary. */}
+      <nav aria-label="Account" className="mb-8 flex w-full border-[1.5px] border-input">
+        <Link
+          href={signInUrl}
+          aria-current={isSignIn ? "page" : undefined}
+          className={tab(isSignIn)}
+        >
+          Sign In
+        </Link>
+        <Link
+          href={signUpUrl}
+          aria-current={!isSignIn ? "page" : undefined}
+          className={`${tab(!isSignIn)} border-l-[1.5px] border-input`}
+        >
+          Create Account
+        </Link>
+      </nav>
+
+      {notice && (
+        <p
+          role="status"
+          className="mb-6 w-full border-[1.5px] border-input px-4 py-3 text-[14px] font-medium"
+        >
+          {notice}
+        </p>
+      )}
+
+      <div className="w-full">
+        <AuthForm
+          mode={isSignIn ? "signin" : "signup"}
+          redirectUrl={redirectUrl}
+          cardUuid={cardUuid}
+        />
+      </div>
+
+      {/* Feature strip: three cells sharing their boundaries, one ink. */}
+      <ul className="mt-8 grid w-full grid-cols-3 border-[1.5px] border-input text-center">
+        {[
+          { icon: Zap, label: "Fast Setup" },
+          { icon: ShieldCheck, label: "Encrypted" },
+          { icon: SmartphoneNfc, label: "NFC Powered" },
+        ].map(({ icon: Icon, label }, i) => (
+          <li key={label} className={`px-2 py-3 ${i > 0 ? "border-l-[1.5px] border-input" : ""}`}>
+            <Icon
+              className="mx-auto mb-1.5 h-4 w-4 text-primary"
+              strokeWidth={1.75}
+              aria-hidden="true"
+            />
+            <span className="block text-[12px] font-bold">{label}</span>
+          </li>
+        ))}
+      </ul>
+
+      <Link
+        href="/"
+        className="mt-6 inline-flex items-center gap-1.5 py-2 text-[14px] font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Back to Homepage
+      </Link>
     </div>
   );
 }

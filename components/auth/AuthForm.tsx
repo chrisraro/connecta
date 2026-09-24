@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PlanPanel } from "@/components/survey/PlanPanel";
 import { toUserMessage } from "@/lib/errors";
 
 type Props = {
@@ -88,104 +89,93 @@ export function AuthForm({ mode, redirectUrl, cardUuid }: Props) {
 
   if (checkEmail) {
     return (
-      <div className="bg-card/80 backdrop-blur-2xl border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8 text-center space-y-3">
-        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-          <Mail className="w-6 h-6 text-emerald-500" />
+      <PlanPanel heading="Confirm your email" level={1}>
+        <div className="flex gap-3">
+          <Mail className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <p className="text-[15px] leading-relaxed">
+            We sent a confirmation link to <span className="font-semibold">{email}</span>. Open it
+            on this device and you will be signed in automatically; on another device, open it there
+            and then sign in here.
+            {cardUuid ? " Your card will be linked once you are in." : ""}
+          </p>
         </div>
-        <h2 className="text-lg font-bold text-foreground">Confirm your email</h2>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          We sent a confirmation link to <span className="font-semibold">{email}</span>. Open it on
-          this device and you will be signed in automatically; on another device, open it there and
-          then sign in here.
-          {cardUuid ? " Your card will be linked once you are in." : ""}
-        </p>
-      </div>
+      </PlanPanel>
     );
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-card/80 backdrop-blur-2xl border border-border/80 shadow-2xl rounded-3xl p-6 sm:p-8 space-y-4"
-    >
-      <div className="space-y-1 text-center mb-2">
-        <h2 className="text-lg font-bold text-foreground">
-          {isSignIn ? "Welcome back" : "Create your account"}
-        </h2>
-        <p className="text-xs text-muted-foreground">
+    <PlanPanel heading={isSignIn ? "Welcome back" : "Create your account"} level={1}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <p className="text-[15px] text-muted-foreground">
           {isSignIn ? "Sign in to manage your card." : "A few seconds and your card is live."}
         </p>
-      </div>
 
-      {!isSignIn && (
+        {!isSignIn && (
+          <div className="space-y-1.5">
+            <Label htmlFor="fullName" className="text-[14px] font-semibold">
+              Full name
+            </Label>
+            <Input
+              id="fullName"
+              name="fullName"
+              autoComplete="name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Juan dela Cruz"
+              className="h-12 text-[15px]"
+            />
+          </div>
+        )}
+
         <div className="space-y-1.5">
-          <Label htmlFor="fullName" className="text-xs font-semibold">
-            Full name
+          <Label htmlFor="email" className="text-[14px] font-semibold">
+            Email
           </Label>
           <Input
-            id="fullName"
-            name="fullName"
-            autoComplete="name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Juan dela Cruz"
-            className="rounded-xl text-xs"
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="h-12 text-[15px]"
           />
         </div>
-      )}
 
-      <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-xs font-semibold">
-          Email
-        </Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          className="rounded-xl text-xs"
-        />
-      </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="password" className="text-[14px] font-semibold">
+            Password
+          </Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            autoComplete={isSignIn ? "current-password" : "new-password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={isSignIn ? "Your password" : "At least 8 characters"}
+            className="h-12 text-[15px]"
+          />
+        </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-xs font-semibold">
-          Password
-        </Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          required
-          minLength={8}
-          autoComplete={isSignIn ? "current-password" : "new-password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={isSignIn ? "Your password" : "At least 8 characters"}
-          className="rounded-xl text-xs"
-        />
-      </div>
+        {error && (
+          <p
+            role="alert"
+            className="border-[1.5px] border-destructive px-3 py-2 text-[14px] font-medium text-destructive"
+          >
+            {error}
+          </p>
+        )}
 
-      {error && (
-        <p
-          role="alert"
-          className="text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2"
-        >
-          {error}
-        </p>
-      )}
-
-      <Button
-        type="submit"
-        disabled={busy}
-        className="w-full rounded-xl font-bold text-xs py-3 shadow-md hover:shadow-lg"
-      >
-        {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        {isSignIn ? "Sign In" : "Create Account"}
-      </Button>
-    </form>
+        <Button type="submit" disabled={busy} className="h-12 w-full text-[15px] font-bold">
+          {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {isSignIn ? "Sign In" : "Create Account"}
+        </Button>
+      </form>
+    </PlanPanel>
   );
 }

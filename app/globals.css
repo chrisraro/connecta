@@ -138,6 +138,9 @@
   --connecta-brand-hover: #1F2F6E;
   --connecta-mark: #D0312D;
   --connecta-mark-text: #C42A26;
+  /* Text set on a mark fill: white on #D0312D is 5.05:1; graphite's brighter
+     mark needs dark ink (#12161F on #FF5A52 is 5.89:1). */
+  --connecta-mark-ink: #FFFFFF;
   --connecta-ink: #12161F;
   --connecta-ink-soft: #4A5468;
   --connecta-paper: #EEF1F4;
@@ -187,6 +190,7 @@
   --connecta-brand-hover: #B5C2EA;
   --connecta-mark: #FF5A52;
   --connecta-mark-text: #FF7A73;
+  --connecta-mark-ink: #12161F;
   --connecta-ink: #EEF1F4;
   --connecta-ink-soft: #A7B0C0;
   --connecta-paper: #12161F;
@@ -262,6 +266,15 @@
     border-color: color-mix(in oklch, var(--chart-5) 20%, transparent);
   }
 
+  /* The drafting sheet: a 32px plan grid over the ground, for app pages. */
+  .sheet-grid {
+    background-color: var(--background);
+    background-image:
+      linear-gradient(var(--sv-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--sv-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
   /* Hide scrollbars for horizontal chip rails while keeping scroll */
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -272,242 +285,7 @@
   }
 }
 
-/* Clerk Auth - Centering & Mobile Responsive */
-.cl-rootBox {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 auto !important;
-}
-
-.cl-card {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-  border-radius: inherit !important;
-}
-
-.cl-internal {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-/* Prevent any Clerk element from overflowing */
-[class*="cl-"] {
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-/* ============================================================================
-   LANDING PAGE — 2026 ANIMATIONS & EFFECTS
-   All effects use transform/opacity only (GPU-friendly). Initial-hidden states
-   are gated behind no-preference so content stays visible under reduced motion.
-   ========================================================================== */
-
 @layer utilities {
-  /* ── Aurora / gradient-mesh hero blobs ──────────────────────────────── */
-  @keyframes aurora-drift-a {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    50% {
-      transform: translate3d(6%, 4%, 0) scale(1.12);
-    }
-  }
-  @keyframes aurora-drift-b {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) scale(1.05);
-    }
-    50% {
-      transform: translate3d(-7%, -5%, 0) scale(0.92);
-    }
-  }
-  @keyframes aurora-drift-c {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    50% {
-      transform: translate3d(4%, -6%, 0) scale(1.08);
-    }
-  }
-  .aurora-blob {
-    position: absolute;
-    border-radius: 9999px;
-    filter: blur(80px);
-    will-change: transform;
-  }
-  @media (min-width: 640px) {
-    .aurora-blob {
-      filter: blur(120px);
-    }
-  }
-  .aurora-a {
-    animation: aurora-drift-a 16s ease-in-out infinite;
-  }
-  .aurora-b {
-    animation: aurora-drift-b 20s ease-in-out infinite;
-  }
-  .aurora-c {
-    animation: aurora-drift-c 24s ease-in-out infinite;
-  }
-
-  /* ── Kinetic headline: staggered word fade-up on load ───────────────── */
-  @keyframes word-rise {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 0.5em, 0);
-    }
-    to {
-      opacity: 1;
-      transform: translate3d(0, 0, 0);
-    }
-  }
-  /* Only hide-then-reveal when motion is allowed; otherwise words are visible. */
-  @media (prefers-reduced-motion: no-preference) {
-    .word-rise {
-      opacity: 0;
-      animation: word-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-  }
-
-  /* ── Gradient text accent ───────────────────────────────────────────── */
-  .text-gradient-brand {
-    background-image: linear-gradient(
-      120deg,
-      var(--foreground),
-      color-mix(in oklch, var(--chart-5) 70%, var(--foreground)),
-      var(--foreground)
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  /* ── Shimmering CTA sheen on hover ──────────────────────────────────── */
-  .cta-sheen {
-    position: relative;
-    overflow: hidden;
-  }
-  .cta-sheen::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    transform: translateX(-120%) skewX(-18deg);
-    background: linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in oklch, white 35%, transparent),
-      transparent
-    );
-    transition: none;
-    pointer-events: none;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .cta-sheen:hover::after {
-      animation: cta-sheen-sweep 0.9s ease-out;
-    }
-  }
-  @keyframes cta-sheen-sweep {
-    to {
-      transform: translateX(120%) skewX(-18deg);
-    }
-  }
-
-  /* ── Idle float (used by TiltCard fallback + glow layers) ───────────── */
-  @keyframes float-y {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0);
-    }
-    50% {
-      transform: translate3d(0, -10px, 0);
-    }
-  }
-
-  /* ── Feature card lift + border glow on hover ───────────────────────── */
-  .card-glow {
-    transition:
-      transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 300ms ease,
-      border-color 300ms ease;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .card-glow:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 18px 40px -18px color-mix(in oklch, var(--chart-5) 55%, transparent);
-      border-color: color-mix(in oklch, var(--chart-5) 40%, var(--border));
-    }
-  }
-  /* Softer glow in light mode */
-  .card-glow:hover {
-    box-shadow: 0 16px 36px -20px color-mix(in oklch, var(--chart-5) 30%, transparent);
-    border-color: color-mix(in oklch, var(--chart-5) 30%, var(--border));
-  }
-
-  /* ── How-it-works connecting line draw-in ───────────────────────────── */
-  .draw-line {
-    transform: scaleX(0);
-    transform-origin: left center;
-    transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1) 200ms;
-  }
-  .draw-line[data-drawn="true"] {
-    transform: scaleX(1);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .draw-line {
-      transform: scaleX(1);
-      transition: none;
-    }
-  }
-
-  /* ── Template showcase marquee ──────────────────────────────────────── */
-  @keyframes marquee-x {
-    from {
-      transform: translate3d(0, 0, 0);
-    }
-    to {
-      transform: translate3d(-50%, 0, 0);
-    }
-  }
-  .marquee-track {
-    display: flex;
-    width: max-content;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .marquee-track {
-      animation: marquee-x 38s linear infinite;
-    }
-    .marquee-group:hover .marquee-track {
-      animation-play-state: paused;
-    }
-  }
-
-  /* ── Section dot pattern (masked fade) ──────────────────────────────── */
-  .dot-pattern {
-    background-image: radial-gradient(
-      color-mix(in oklch, var(--foreground) 14%, transparent) 1px,
-      transparent 1px
-    );
-    background-size: 22px 22px;
-    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent 75%);
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent 75%);
-  }
-
-  /* ── Gradient divider hairline ──────────────────────────────────────── */
-  .gradient-divider {
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in oklch, var(--foreground) 18%, transparent),
-      transparent
-    );
-  }
-
   /* ── Snap micro-animations ──────────────────────────────────────────── */
   /* Was `.transition-spring` with cubic-bezier(0.34, 1.56, 0.64, 1) — the
      1.56 control point overshoots past 1, i.e. bounce/elastic easing,
