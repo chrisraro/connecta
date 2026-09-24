@@ -54,7 +54,7 @@ function GetProCta({
       href={UPGRADE_HREF}
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90",
+        "inline-flex shrink-0 items-center gap-1.5 bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90",
         className,
       )}
     >
@@ -109,7 +109,7 @@ export function UpgradeGate({
         {children}
       </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 p-3 text-center backdrop-blur-[1px]">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 bg-muted px-2.5 py-1 text-[12px] font-bold text-muted-foreground">
           <Lock className="h-3 w-3" aria-hidden="true" />
           Pro
         </span>

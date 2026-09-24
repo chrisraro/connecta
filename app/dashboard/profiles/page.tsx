@@ -118,7 +118,7 @@ export default function ProfilesPage() {
           <Link href={createProfileHref} className="md:hidden">
             <Button
               size="icon"
-              className="rounded-full h-10 w-10 bg-primary text-primary-foreground"
+              className="h-10 w-10 bg-primary text-primary-foreground"
             >
               <Plus className="w-5 h-5" />
             </Button>
@@ -149,7 +149,7 @@ export default function ProfilesPage() {
           <button
             key={chip}
             onClick={() => setActiveChip(chip)}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors duration-300 border ${
+            className={`px-5 py-2.5 text-xs font-bold whitespace-nowrap transition-colors duration-300 border ${
               activeChip === chip
                 ? "bg-primary border-primary text-primary-foreground"
                 : "bg-muted border-border text-muted-foreground hover:border-primary/50"
@@ -294,7 +294,7 @@ export default function ProfilesPage() {
                       <DialogClose asChild>
                         <Button
                           variant="outline"
-                          className="rounded-full px-10 h-12 bg-muted border-border text-foreground hover:bg-muted/80 font-bold text-xs"
+                          className="px-10 h-12 bg-muted border-border text-foreground hover:bg-muted/80 font-bold text-xs"
                         >
                           Dismiss
                         </Button>

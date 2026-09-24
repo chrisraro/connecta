@@ -199,7 +199,7 @@ export default function LeadsPage() {
             key={chip}
             onClick={() => setActiveChip(chip)}
             aria-pressed={activeChip === chip}
-            className={`px-6 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors duration-300 border ${
+            className={`px-6 py-2.5 text-xs font-bold whitespace-nowrap transition-colors duration-300 border ${
               activeChip === chip
                 ? "bg-primary border-primary text-primary-foreground"
                 : "bg-muted border-border text-muted-foreground hover:border-primary/50"
@@ -220,7 +220,7 @@ export default function LeadsPage() {
             {lockedCount === 1 ? "lead is" : "leads are"} locked on the Free plan. Upgrade to Pro to
             view all your leads.
           </p>
-          <span className="shrink-0 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground">
+          <span className="shrink-0 bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground">
             Upgrade
           </span>
         </Link>
@@ -407,7 +407,7 @@ function StatusChip({ status }: { status: "new" | "contacted" | "closed" }) {
   const { label, className } = map[status];
   return (
     <span
-      className={`shrink-0 rounded-full border px-3 py-1 text-[12px] font-bold  ${className}`}
+      className={`shrink-0 border px-3 py-1 text-[12px] font-bold  ${className}`}
     >
       {label}
     </span>

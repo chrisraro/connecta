@@ -69,7 +69,7 @@ export default function BillingPage() {
                 {PLAN_LIMITS[currentPlan].name}
               </span>
               {currentPlan !== "free" && (
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                <span className="bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                   Active
                 </span>
               )}
@@ -89,7 +89,7 @@ export default function BillingPage() {
         </div>
 
         {myPlan.inGrace && (
-          <div className="mt-5 flex items-start gap-3 rounded-xl border border-[var(--connecta-mark-text)]/30 bg-[var(--connecta-mark)]/10 px-4 py-3">
+          <div className="mt-5 flex items-start gap-3 border-[1.5px] border-[var(--connecta-mark)] px-4 py-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--connecta-mark-text)]" />
             <p className="text-sm text-foreground">
               Your plan expired on {fmtDate(myPlan.planExpiresAt)}. You&apos;re in a 3-day grace
@@ -113,13 +113,13 @@ export default function BillingPage() {
               }`}
             >
               {highlight && (
-                <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+                <span className="absolute -top-3 left-6 bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
                   Most popular
                 </span>
               )}
               <h3 className="text-lg font-bold tracking-tight">{limits.name}</h3>
               <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-3xl font-bold tracking-tighter">
+                <span className="font-mono text-3xl font-medium">
                   {priceFor(p) === 0 ? "₱0" : formatPHP(priceFor(p))}
                 </span>
                 <span className="text-sm text-muted-foreground">
@@ -136,14 +136,14 @@ export default function BillingPage() {
               </ul>
               <div className="mt-8">
                 {p === "free" ? (
-                  <Button variant="outline" disabled className="h-11 w-full rounded-2xl">
+                  <Button variant="outline" disabled className="h-11 w-full">
                     {isCurrent ? "Your plan" : "Free forever"}
                   </Button>
                 ) : (
                   <PlanUpgradeButton
                     label={isCurrent ? `Renew ${limits.name}` : `Upgrade to ${limits.name}`}
                     variant={highlight ? "default" : "outline"}
-                    className="h-11 w-full rounded-2xl font-semibold"
+                    className="min-h-11 h-auto w-full whitespace-normal py-2 text-center leading-tight"
                   />
                 )}
               </div>

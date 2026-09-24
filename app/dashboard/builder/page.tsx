@@ -1636,7 +1636,7 @@ function BuilderContent() {
                                 Visible
                               </span>
                             ) : (
-                              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                              <span className="text-xs text-muted-foreground bg-muted px-2 py-1">
                                 Hidden
                               </span>
                             )}

@@ -90,7 +90,7 @@ export default function SettingsPage() {
             className="bg-muted/50 border-border focus:border-primary transition-colors"
             disabled
           />
-          <p className="text-xs text-muted-foreground">Managed via Clerk Auth</p>
+          <p className="text-xs text-muted-foreground">Managed by your sign-in account</p>
         </div>
 
         <div className="space-y-2">

@@ -155,7 +155,7 @@ export default function TeamPage() {
             {seatUsage.used} / {seatUsage.total}
           </span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-2 w-full overflow-hidden bg-muted">
           <div className="h-full bg-primary" style={{ width: `${seatPct}%` }} />
         </div>
       </div>

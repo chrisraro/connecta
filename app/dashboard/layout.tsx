@@ -239,7 +239,7 @@ function DashboardSidebar({ className }: { className?: string }) {
 
   return (
     <aside
-      className={`flex flex-col h-full bg-sidebar border-r-[1.5px] border-input text-sidebar-foreground ${className}`}
+      className={`sticky top-0 flex h-screen shrink-0 flex-col overflow-y-auto bg-sidebar border-r-[1.5px] border-input text-sidebar-foreground ${className}`}
     >
       <Link href="/dashboard" className="p-6 flex items-center gap-2.5">
         <ConnectaMark className="h-7 w-7 text-primary" />
@@ -341,6 +341,8 @@ function MobileHeader() {
     if (pathname.startsWith("/dashboard/team")) return "Team";
     if (pathname.startsWith("/dashboard/billing")) return "Billing";
     if (pathname.startsWith("/dashboard/settings")) return "Settings";
+    if (pathname.startsWith("/dashboard/builder")) return "Profile Builder";
+    if (pathname.startsWith("/dashboard/onboarding")) return "Profile Setup";
     return CONNECTA.name;
   };
 

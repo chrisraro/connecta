@@ -201,7 +201,7 @@ export default function CardsPage() {
 
             {isSuccess ? (
               <div className="py-10 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
+                <div className="w-16 h-16 border-[1.5px] border-input flex items-center justify-center text-primary mb-4">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-bold text-foreground">Card Activated!</h3>
