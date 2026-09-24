@@ -15,7 +15,8 @@
  * other unparseable garbage) passed straight through and got encoded onto a
  * tag. It's now validated with `new URL()` and must be an absolute
  * `http:`/`https:` URL or this returns `null` the same way an empty value
- * does. `localhost` is deliberately NOT rejected here — it's exactly what
+ * does. The one exception is a bare public hostname (what Vercel's env UI
+ * stores), which is read as https; see the comment in the body. `localhost` is deliberately NOT rejected here — it's exactly what
  * `.env.example` / `SETUP.md` tell every developer to set for
  * local dev, and Web NFC works fine against port-forwarded localhost on
  * Chrome for Android. The caller is responsible for making that host
@@ -29,7 +30,15 @@ export function resolveNfcHost(env: Record<string, string | undefined>): string 
   const trimmed = raw.trim();
   if (trimmed === "") return null;
 
-  const withoutTrailingSlashes = trimmed.replace(/\/+$/, "");
+  // Vercel's env UI stores a bare host ("connectaph.vercel.app"), which
+  // disabled card writing in production. Read exactly a public hostname as
+  // https. Nothing else is guessed: a path, query, fragment or credentials
+  // still fall through to the checks below and are rejected, and a
+  // scheme-less localhost or IP stays null because local dev runs on http.
+  const bareHost = /^(?!localhost)(?!\d+\.\d+\.\d+\.\d+)[a-z0-9-]+(\.[a-z0-9-]+)+\/*$/i;
+  const withScheme = bareHost.test(trimmed) ? `https://${trimmed}` : trimmed;
+
+  const withoutTrailingSlashes = withScheme.replace(/\/+$/, "");
 
   let parsed: URL;
   try {

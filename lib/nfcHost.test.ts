@@ -44,8 +44,28 @@ describe("resolveNfcHost", () => {
   // SETUP.md tell every developer to set — so a scheme-less or
   // otherwise unparseable value must be rejected the same way an empty one
   // is, forcing the caller to refuse to write instead of encoding garbage.
-  test("returns null for a scheme-less host", () => {
-    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "example.com" })).toBeNull();
+  // Vercel's env UI stores a bare host (2026-09-24: "connectaph.vercel.app"
+  // disabled card writing in production). A bare public hostname is read as
+  // https; anything scheme-less that is not exactly a hostname stays null.
+  test("reads a bare public hostname as https", () => {
+    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "connectaph.vercel.app" })).toBe(
+      "https://connectaph.vercel.app",
+    );
+    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "example.com/" })).toBe("https://example.com");
+  });
+
+  test("still returns null for scheme-less values that are not a bare hostname", () => {
+    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "example.com/app" })).toBeNull();
+    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "example.com?ref=qr" })).toBeNull();
+    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "example.com#promo" })).toBeNull();
+    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "u:pw@example.com" })).toBeNull();
+  });
+
+  // Local development runs on http; guessing https for it would write tags
+  // that never open, so a scheme-less localhost or IP is still rejected.
+  test("does not guess a scheme for localhost or an IP", () => {
+    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "localhost:3000" })).toBeNull();
+    expect(resolveNfcHost({ NEXT_PUBLIC_APP_URL: "192.168.1.4:3000" })).toBeNull();
   });
 
   test("returns null for a garbage string", () => {
