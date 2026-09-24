@@ -61,7 +61,6 @@ import {
   Code,
   Quote,
   Image as ImageIcon,
-  Sparkles,
   ArrowUpDown,
   ShoppingBag,
   Building2,
@@ -71,7 +70,9 @@ import {
 } from "lucide-react";
 
 // Templates
-import { ProfileRenderer } from "@/components/templates/ProfileRenderer";
+import { SurveyProfile, sheetVars, surveyStyles } from "@/components/survey/SurveyProfile";
+import { sheetFor } from "@/components/survey/sheet";
+import { PROFILE_COPY } from "@/components/survey/copy";
 import { TEMPLATES, getTemplateMeta } from "@/components/templates/registry";
 import {
   ProfileData,
@@ -268,7 +269,7 @@ function GalleryUploader({
             ) : (
               <>
                 <Plus className="w-5 h-5 text-muted-foreground" />
-                <span className="text-[10px] text-muted-foreground">Add Photo</span>
+                <span className="text-[12px] text-muted-foreground">Add Photo</span>
               </>
             )}
           </button>
@@ -335,7 +336,7 @@ function TemplateSelector({
 }) {
   return (
     <div className="space-y-3">
-      <Label className="text-sm font-semibold text-foreground">Choose Template</Label>
+      <Label className="text-sm font-semibold text-foreground">Sheet</Label>
       {/* Two columns until `sm:`. Three columns put each card at 72px
                 at 320px (95px at 390px); minus the label's own `p-3` that
                 leaves 48-71px for the name, and "Architectural" needs 76px.
@@ -344,33 +345,46 @@ function TemplateSelector({
                 widths (measured: button scrollWidth 100 vs clientWidth 72).
                 Two columns give 114px at 320px, which fits the longest
                 name; `truncate` keeps a future longer one from clipping. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-3">
         {TEMPLATES.map((template) => {
+          // The stored template id selects a sheet colourway of the one
+          // Survey Plan profile (components/survey/sheet.ts).
+          const sheet = sheetFor(template.id);
           const locked = isTemplateLocked(template.id, allowedTemplateIds);
           const tile = (
             <button
+              type="button"
               onClick={() => !locked && onSelect(template.id)}
               disabled={locked}
               aria-disabled={locked}
-              className={`relative w-full rounded-xl overflow-hidden aspect-[3/4] transition-all ${
+              aria-pressed={selectedTemplate === template.id}
+              className={`relative flex w-full flex-col overflow-hidden border-[1.5px] text-left transition-colors ${
                 selectedTemplate === template.id
-                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                  ? "border-input outline-2 outline-offset-2 outline-ring"
                   : locked
-                    ? "cursor-default"
-                    : "hover:scale-[1.02]"
+                    ? "border-border cursor-default"
+                    : "border-border hover:border-input"
               }`}
             >
-              <div className="absolute inset-0" style={{ background: template.thumbnail }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <p className="truncate text-white font-semibold text-sm">{template.name}</p>
-                <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{template.description}</p>
-              </div>
-              {selectedTemplate === template.id && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                  <Sparkles className="w-3 h-3 text-primary-foreground" />
-                </div>
-              )}
+              {/* The sheet itself: its ground, drafting grid, a lot in its
+                  line colour and the red point of beginning. */}
+              <span
+                aria-hidden="true"
+                className="relative block aspect-[4/3]"
+                style={{
+                  backgroundColor: sheet.ground,
+                  backgroundImage: `linear-gradient(${sheet.grid} 1px, transparent 1px), linear-gradient(90deg, ${sheet.grid} 1px, transparent 1px)`,
+                  backgroundSize: "12px 12px",
+                }}
+              >
+                <svg viewBox="0 0 60 45" className="absolute inset-0 h-full w-full">
+                  <path d="M14 10 H40 L48 18 V35 H14 Z" fill="none" stroke={sheet.line} strokeWidth="1.5" />
+                  <circle cx="44" cy="31" r="2" fill={sheet.mark} />
+                </svg>
+              </span>
+              <span className="block border-t-[1.5px] border-inherit bg-background px-2.5 py-2">
+                <span className="block truncate text-sm font-bold capitalize">{sheet.id}</span>
+              </span>
             </button>
           );
           // Every free user still SEES every template (nothing
@@ -382,9 +396,9 @@ function TemplateSelector({
             <UpgradeGate
               key={template.id}
               locked={locked}
-              reason="This template is available on Pro & Business."
+              reason="This sheet is available on Pro & Business."
               variant="overlay"
-              className="aspect-[3/4]"
+              className=""
             >
               {tile}
             </UpgradeGate>
@@ -1290,16 +1304,14 @@ function BuilderContent() {
       },
     };
 
-    // headingLevel="h2": this preview is embedded inside the builder page,
-    // which already has its own h1 above — see the comment on the header
-    // h2 change and on HeroSection's headingLevel prop.
+    // The preview is the same SurveyProfile the public /p/[id] page renders,
+    // in the sheet the selected template id maps to, so what the owner edits
+    // is what visitors see. headingLevel="h2": the builder owns the page h1.
+    // showEmpty: owners see empty sections as unsurveyed lots to fill in.
     return (
-      <ProfileRenderer
-        data={data}
-        templateId={selectedTemplate}
-        headingLevel="h2"
-        showSaveContact={false}
-      />
+      <div className={surveyStyles.sheet} style={sheetVars(sheetFor(selectedTemplate))}>
+        <SurveyProfile data={data} t={PROFILE_COPY} headingLevel="h2" showEmpty />
+      </div>
     );
   };
 
@@ -1403,7 +1415,7 @@ function BuilderContent() {
               <button
                 type="button"
                 onClick={() => setPreviewMode("page")}
-                className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
                   previewMode === "page"
                     ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -1414,7 +1426,7 @@ function BuilderContent() {
               <button
                 type="button"
                 onClick={() => setPreviewMode("card")}
-                className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
                   previewMode === "card"
                     ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -1425,7 +1437,7 @@ function BuilderContent() {
               <button
                 type="button"
                 onClick={() => setPreviewMode("storefront")}
-                className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                className={`min-h-11 lg:min-h-0 flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
                   previewMode === "storefront"
                     ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -1558,7 +1570,7 @@ function BuilderContent() {
                     <button
                       key={type}
                       onClick={() => handleProfileTypeChange(type)}
-                      className={`min-h-11 lg:min-h-0 py-2.5 px-4 rounded-xl text-sm font-medium capitalize transition-all ${
+                      className={`min-h-11 lg:min-h-0 py-2.5 px-4 rounded-xl text-sm font-medium capitalize transition-colors ${
                         profileType === type
                           ? "bg-primary text-primary-foreground"
                           : "bg-card border border-border text-foreground hover:bg-muted"
@@ -2361,8 +2373,10 @@ function BuilderContent() {
                 </div>
               </InspectorPanel>
 
-              {/* Customize Colors - Expanded */}
-              <div className="px-4 py-4">
+              {/* Custom colours are kept in saved profiles, but the Survey
+                  Plan profile draws in its sheet's inks and ignores them, so
+                  the controls are hidden rather than left as dead inputs. */}
+              <div className="hidden px-4 py-4">
                 <Label className="text-sm font-semibold text-foreground mb-3 block">Colors</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -2522,7 +2536,7 @@ function BuilderContent() {
                     type="button"
                     onClick={() => setDigitalCard({ ...digitalCard, skin: skin.id })}
                     aria-pressed={digitalCard.skin === skin.id}
-                    className={`rounded-2xl border p-3 text-left transition-all ${
+                    className={`rounded-2xl border p-3 text-left transition-colors ${
                       digitalCard.skin === skin.id
                         ? "border-primary ring-2 ring-primary/30"
                         : "border-border hover:border-primary/40"
@@ -2533,7 +2547,7 @@ function BuilderContent() {
                       style={{ background: skin.swatch }}
                     />
                     <span className="block text-xs font-bold text-foreground">{skin.label}</span>
-                    <span className="block text-[10px] text-muted-foreground">{skin.intent}</span>
+                    <span className="block text-[12px] text-muted-foreground">{skin.intent}</span>
                   </button>
                 ))}
               </div>
