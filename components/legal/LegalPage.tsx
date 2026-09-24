@@ -26,17 +26,19 @@ export function LegalPage({
 }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 border-b-[1.5px] border-input bg-background">
         <nav
           aria-label="Primary"
           className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6"
         >
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
+            className="flex shrink-0 items-center gap-2.5"
           >
-            <ConnectaMark className="h-5 w-5 text-primary" />
-            <span>{CONNECTA.name}</span>
+            <ConnectaMark className="h-7 w-7 text-primary" />
+            <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+              {CONNECTA.name.toUpperCase()}
+            </span>
           </Link>
           <Link
             href="/"
@@ -53,14 +55,14 @@ export function LegalPage({
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,68ch)_16rem] lg:gap-16">
           <div>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="text-3xl font-bold [font-stretch:112%] sm:text-4xl">
               {title}
             </h1>
             <p className="mt-3 text-sm text-muted-foreground">
               Last updated: <time>{lastUpdated}</time>
             </p>
 
-            <div className="mt-10 max-w-[70ch] text-[15px] leading-7 text-foreground/90 [&_h2]:font-[family-name:var(--font-display)]">
+            <div className="mt-10 max-w-[70ch] text-[15px] leading-7 text-foreground/90 [&_h2]:[font-stretch:112%]">
               {children}
             </div>
           </div>
@@ -68,8 +70,8 @@ export function LegalPage({
           {/* Table of contents — hidden on small screens to avoid pushing the
               actual content below the fold on a 390px viewport. */}
           <nav aria-label="On this page" className="hidden lg:block">
-            <div className="sticky top-24 rounded-[var(--r-md)] border border-border bg-card p-5 shadow-[var(--e-raised)]">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            <div className="sticky top-24 border-[1.5px] border-input bg-background p-5">
+              <p className="text-[13px] font-bold">
                 On this page
               </p>
               <ul className="mt-3 space-y-2 text-sm">
@@ -102,13 +104,13 @@ export function DraftNotice() {
   return (
     <div
       role="alert"
-      className="flex items-start gap-3 rounded-[var(--r-md)] border border-amber-500/40 bg-amber-500/10 p-4 shadow-[var(--e-raised)] sm:p-5"
+      className="flex items-start gap-3 border-[1.5px] border-[var(--connecta-mark)] p-4 sm:p-5"
     >
       <TriangleAlert
-        className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400"
+        className="mt-0.5 size-5 shrink-0 text-[var(--connecta-mark-text)]"
         aria-hidden="true"
       />
-      <div className="text-sm leading-6 text-amber-900 dark:text-amber-200">
+      <div className="text-sm leading-6 text-[var(--connecta-mark-text)]">
         <p className="font-semibold">Draft — not legal advice, not yet approved for launch.</p>
         <p className="mt-1">
           This page was generated from an engineering audit of what {CONNECTA.name}&apos;s codebase
@@ -126,7 +128,7 @@ export function DraftNotice() {
 /** Inline marker for a fact that must be supplied by the human owner. */
 export function Placeholder({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-[var(--r-sm)] border border-dashed border-amber-500/60 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[0.85em] text-amber-800 dark:text-amber-300">
+    <span className="border border-dashed border-[var(--connecta-mark-text)]/60 bg-[var(--connecta-mark)]/10 px-1.5 py-0.5 font-mono text-[0.85em] text-[var(--connecta-mark-text)]">
       {children}
     </span>
   );
@@ -143,7 +145,7 @@ export function Section({
 }) {
   return (
     <section id={id} className="scroll-mt-24">
-      <h2 className="mt-12 text-xl font-semibold tracking-tight first:mt-0 sm:text-2xl">
+      <h2 className="mt-12 text-xl font-bold [font-stretch:112%] first:mt-0 sm:text-2xl">
         {heading}
       </h2>
       <div className="mt-3 space-y-4 text-muted-foreground [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-2 [&_strong]:text-foreground [&_strong]:font-semibold">
@@ -156,7 +158,7 @@ export function Section({
 /** Highlighted call-out for an honest "here's a known gap" statement. */
 export function Callout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-[var(--r-md)] border border-border bg-card p-4 text-sm leading-6 shadow-[var(--e-raised)]">
+    <div className="border-[1.5px] border-input bg-background p-4 text-sm leading-6">
       {children}
     </div>
   );

@@ -225,7 +225,7 @@ export default function PrivacyPolicyPage() {
       <Section id="public-profiles" heading="Public profiles are public">
         <p>
           A published {CONNECTA.name} profile (at a URL like{" "}
-          <code className="rounded-[var(--r-sm)] bg-muted px-1 py-0.5 text-[0.9em]">
+          <code className="bg-muted px-1 py-0.5 text-[0.9em]">
             /your-slug
           </code>
           ) is deliberately public to anyone with the link — that is the point of a digital business
