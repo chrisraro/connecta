@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { adminRoleLabel } from "@/lib/adminRoles";
 
 export default function AdminDashboardPage() {
   const { user, isLoaded } = useAuth();
@@ -47,7 +48,7 @@ export default function AdminDashboardPage() {
         </div>
         <Badge variant="outline" className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1">
           <Shield className="w-3 h-3" />
-          {myRole}
+          {adminRoleLabel(myRole)}
         </Badge>
       </div>
 
@@ -146,7 +147,7 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Manage user accounts, roles, and permissions
                 </p>
-                <Button className="w-full bg-primary hover:bg-primary text-foreground group-hover:translate-x-1 transition-transform">
+                <Button className="w-full">
                   View Users
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -168,7 +169,7 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Register cards, scan NFC, and manage inventory
                 </p>
-                <Button className="w-full bg-primary hover:bg-primary text-foreground group-hover:translate-x-1 transition-transform">
+                <Button className="w-full">
                   Manage Cards
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -190,7 +191,7 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   View platform metrics, trends, and insights
                 </p>
-                <Button className="w-full bg-primary hover:bg-primary text-foreground group-hover:translate-x-1 transition-transform">
+                <Button className="w-full">
                   View Analytics
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -212,7 +213,7 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Track all platform actions and security events
                 </p>
-                <Button className="w-full bg-[var(--connecta-mark)] hover:bg-[var(--connecta-mark)] text-foreground group-hover:translate-x-1 transition-transform">
+                <Button className="w-full">
                   View Logs
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

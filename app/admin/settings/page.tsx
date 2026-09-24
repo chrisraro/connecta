@@ -182,7 +182,7 @@ export default function AdminSettingsPage() {
               </div>
               <div className="flex items-center gap-4">
                 <Button
-                  className="bg-primary hover:bg-primary text-foreground"
+                  
                   onClick={handleSaveShopSettings}
                   disabled={shopSaving}
                 >

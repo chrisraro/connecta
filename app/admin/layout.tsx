@@ -238,7 +238,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </span>
         </Link>
 
-        <p className="px-6 text-[13px] font-semibold text-muted-foreground">Super User Control</p>
+        <p className="px-6 text-[13px] font-semibold text-muted-foreground">Admin Control</p>
 
         <nav className="flex-1 px-4 space-y-2 py-4">
           {navItems.map((item) => {

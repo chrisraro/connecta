@@ -98,7 +98,7 @@ export default function InventoryPage() {
           <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
           <p className="text-muted-foreground mt-1">Monitor stock levels and manage restocking</p>
         </div>
-        <Button onClick={exportToCSV} className="bg-muted hover:bg-accent">
+        <Button onClick={exportToCSV} variant="outline">
           <Download className="w-4 h-4 mr-2" />
           Export CSV
         </Button>

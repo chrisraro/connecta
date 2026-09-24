@@ -651,7 +651,7 @@ export default function AdminFactoryPage() {
                   disabled={!nfcHost}
                   title={!nfcHost ? "No NFC host configured — see the notice above." : undefined}
                   aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
-                  className="w-full mt-2 bg-primary hover:bg-primary text-foreground rounded-xl"
+                  className="w-full mt-2"
                 >
                   <Printer className="w-4 h-4 mr-2" />
                   Print Sticker

@@ -34,6 +34,7 @@ import {
 import { useAuth } from "@/components/auth/AuthProvider";
 import { toUserMessage } from "@/lib/errors";
 import { PLAN_GRACE_DAYS } from "@/lib/plans";
+import { adminRoleLabel } from "@/lib/adminRoles";
 
 // Paid-plan grants offered in the Manage menu. Renewing the same plan extends
 // from the current expiry, so "30 days" on an active Pro adds 30 more.
@@ -143,7 +144,7 @@ export default function AdminUsersPage() {
         </div>
         {isSuperadmin && (
           <Badge variant="outline" className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1">
-            <ShieldCheck className="w-3 h-3" /> Superadmin
+            <ShieldCheck className="w-3 h-3" /> {adminRoleLabel("superadmin")}
           </Badge>
         )}
       </div>
@@ -195,7 +196,7 @@ export default function AdminUsersPage() {
                           variant="outline"
                           className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1"
                         >
-                          <ShieldCheck className="w-3 h-3" /> {grant.role}
+                          <ShieldCheck className="w-3 h-3" /> {adminRoleLabel(grant.role)}
                         </Badge>
                       ) : (
                         <Badge
@@ -293,7 +294,7 @@ export default function AdminUsersPage() {
                                 <DropdownMenuItem
                                   onClick={() => handleGrant(u.id as string, "superadmin")}
                                 >
-                                  Grant superadmin
+                                  Grant admin
                                 </DropdownMenuItem>
                               </>
                             )}
@@ -347,7 +348,7 @@ export default function AdminUsersPage() {
 
       {!isSuperadmin && (
         <p className="text-xs text-muted-foreground mt-4">
-          Admin grants, plan changes, and user suspension require superadmin access.
+          Admin grants, plan changes, and user suspension require the Admin role.
         </p>
       )}
     </div>
