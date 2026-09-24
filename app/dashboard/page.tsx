@@ -144,6 +144,7 @@ export default function DashboardPage() {
           agent={agentInfoOf(activeCardProfile)}
           profileId={activeCardProfile.id}
           profileSlug={activeCardProfile.slug}
+          digitalCardConfig={{ skin: activeCardProfile.skin }}
           isOwner={true}
         />
       )}

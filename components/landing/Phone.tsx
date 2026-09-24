@@ -7,6 +7,7 @@ import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { CONNECTA } from "@/lib/brand";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import survey from "@/components/survey/survey.module.css";
+import { cardSkin, type CardSkinId } from "@/lib/cardSkins";
 import styles from "./landing.module.css";
 
 export type DemoPersona = {
@@ -171,22 +172,17 @@ export function MiniProfile({ persona, saveLabel, form = 0 }: { persona: DemoPer
 }
 
 /** The physical card, drawn in its skin colours. */
-export function CardFace({ skin, className = "" }: { skin: "charcoal" | "scarlet" | "crimson" | "gradient"; className?: string }) {
-  const bg: Record<string, string> = {
-    charcoal: "#1B1E24",
-    scarlet: "#D0312D",
-    crimson: "linear-gradient(90deg, #7A1420 0 50%, #EEF1F4 50% 100%)",
-    gradient: "linear-gradient(135deg, #2B3F8F 0%, #12161F 100%)",
-  };
-  const lot = skin === "crimson" ? "#2B3F8F" : "#EEF1F4";
-  const dot = skin === "scarlet" ? "#12161F" : "#FF5A52";
+export function CardFace({ skin: id, className = "" }: { skin: CardSkinId; className?: string }) {
+  // Colours come from the one skin registry the builder and digital card use.
+  const skin = cardSkin(id);
+  const lot = skin.split?.line ?? skin.lineColor;
   return (
-    <div className={`relative overflow-hidden rounded-[12px] ${className}`} style={{ aspectRatio: "85.6 / 54", background: bg[skin] }}>
+    <div className={`relative overflow-hidden rounded-[12px] ${className}`} style={{ aspectRatio: "85.6 / 54", background: skin.swatch }}>
       <svg viewBox="0 0 400 252" className="absolute inset-0 h-full w-full" aria-hidden="true">
         <path d="M262 44 H342 L362 64 V160 L342 180 H262 L242 160 V64 Z" fill="none" stroke={lot} strokeOpacity="0.6" strokeWidth="2" />
         <g transform="translate(26 26) scale(0.6)">
-          <path d="M50 23 L37 10 H19 L6 23 V41 L19 54 H37 L50 41" fill="none" stroke={skin === "crimson" ? "#FFFFFF" : lot} strokeWidth="6" />
-          <circle cx="57" cy="32" r="4.5" fill={dot} />
+          <path d="M50 23 L37 10 H19 L6 23 V41 L19 54 H37 L50 41" fill="none" stroke={skin.lineColor} strokeWidth="6" />
+          <circle cx="57" cy="32" r="4.5" fill={skin.dotColor} />
         </g>
       </svg>
     </div>

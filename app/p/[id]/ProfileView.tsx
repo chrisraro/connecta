@@ -149,6 +149,7 @@ export function ProfileView({
         agent={agentInfo}
         profileId={profileIdForCard}
         profileSlug={profile.slug}
+        digitalCardConfig={{ skin: profile.skin }}
         isOwner={false}
       />
 

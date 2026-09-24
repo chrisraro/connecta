@@ -11,7 +11,7 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { agentInfoOf, layoutConfigOf, jsonArrayOf, onboardingDataOf } from "@/lib/db/profile";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
-import { isPlanLimitError, isTemplateLocked } from "@/lib/plans";
+import { isCardSkinLocked, isPlanLimitError, isTemplateLocked } from "@/lib/plans";
 import { UpgradeGate } from "@/components/billing/UpgradeGate";
 import {
   DndContext,
@@ -589,7 +589,7 @@ function BuilderContent() {
     setIsExportingPng(true);
     try {
       const cardEl =
-        (builderCardRef.current.querySelector(".select-none") as HTMLElement) ||
+        builderCardRef.current.querySelector<HTMLElement>("[data-digital-card]") ??
         builderCardRef.current;
       const dataUrl = await toPng(cardEl, {
         quality: 0.95,
@@ -752,44 +752,6 @@ function BuilderContent() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
-
-  const handleCardThemeChange = (theme: "light" | "dark" | "glass" | "carbon") => {
-    let colors = {};
-    if (theme === "light") {
-      colors = {
-        backgroundColor: "#ffffff",
-        textColor: "#1e293b",
-        cardGradientStart: "#ffffff",
-        cardGradientEnd: "#f1f5f9",
-      };
-    } else if (theme === "dark") {
-      colors = {
-        backgroundColor: "#18181b",
-        textColor: "#f5f5f5",
-        cardGradientStart: "#18181b",
-        cardGradientEnd: "#09090b",
-      };
-    } else if (theme === "glass") {
-      colors = {
-        backgroundColor: "#ffffff",
-        textColor: "#ffffff",
-        cardGradientStart: "#ffffff",
-        cardGradientEnd: "#ffffff",
-      };
-    } else if (theme === "carbon") {
-      colors = {
-        backgroundColor: "#0d0d0d",
-        textColor: "#ececec",
-        cardGradientStart: "#18181b",
-        cardGradientEnd: "#020202",
-      };
-    }
-    setDigitalCard({
-      ...digitalCard,
-      theme,
-      ...colors,
-    });
-  };
 
   // Prefill logic
   const [hasPrefilled, setHasPrefilled] = useState(false);
@@ -1456,7 +1418,7 @@ function BuilderContent() {
             >
               <div className="overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]">
                 {previewMode === "card" ? (
-                  <div className="p-4 flex flex-col justify-center bg-neutral-900/5 min-h-[360px] items-center space-y-4">
+                  <div className="sheet-grid p-4 flex flex-col justify-center min-h-[360px] items-center space-y-4">
                     <div ref={builderCardRef} className="w-full flex justify-center">
                       <DigitalBusinessCard
                         fullName={agentInfo.fullName}
@@ -1471,9 +1433,6 @@ function BuilderContent() {
                         profileId={editingId || undefined}
                         profileSlug={existingProfile?.slug}
                         config={digitalCard}
-                        onPositionsChange={(newPos) =>
-                          setDigitalCard({ ...digitalCard, positions: newPos })
-                        }
                       />
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
@@ -2526,30 +2485,72 @@ function BuilderContent() {
           {previewMode === "card" && (
             <div className="px-4 py-4 border-t border-border">
               <Label className="text-sm font-semibold text-foreground mb-1 block">Card Skin</Label>
-              <p className="text-[11px] text-muted-foreground mb-3">
+              <p className="text-[13px] text-muted-foreground mb-3">
                 Pick the look for your digital card and printed front.
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                {CARD_SKINS.map((skin) => (
-                  <button
-                    key={skin.id}
-                    type="button"
-                    onClick={() => setDigitalCard({ ...digitalCard, skin: skin.id })}
-                    aria-pressed={digitalCard.skin === skin.id}
-                    className={`rounded-2xl border p-3 text-left transition-colors ${
-                      digitalCard.skin === skin.id
-                        ? "border-primary ring-2 ring-primary/30"
-                        : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <span
-                      className="block h-10 rounded-lg mb-2 border border-border/50"
-                      style={{ background: skin.swatch }}
-                    />
-                    <span className="block text-xs font-bold text-foreground">{skin.label}</span>
-                    <span className="block text-[12px] text-muted-foreground">{skin.intent}</span>
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 gap-3">
+                {CARD_SKINS.map((skin) => {
+                  // Confirmed 2026-09-24: the default skin is free; the rest
+                  // are subscription-only, on the digital card too.
+                  const locked = isCardSkinLocked(
+                    skin.id,
+                    myPlan?.limits.allowedCardSkins ?? null,
+                  );
+                  const selected = digitalCard.skin === skin.id;
+                  const tile = (
+                    <button
+                      type="button"
+                      onClick={() => !locked && setDigitalCard({ ...digitalCard, skin: skin.id })}
+                      disabled={locked}
+                      aria-disabled={locked}
+                      aria-pressed={selected}
+                      className={`w-full border-[1.5px] p-2.5 text-left transition-colors ${
+                        selected
+                          ? "border-input outline-2 outline-offset-2 outline-ring"
+                          : locked
+                            ? "border-border cursor-default"
+                            : "border-border hover:border-input"
+                      }`}
+                    >
+                      {/* A miniature card front: the skin's ground, its
+                          drawn lot and the mark's point of beginning. */}
+                      <span
+                        aria-hidden="true"
+                        className="relative mb-2 block aspect-[85.6/54] overflow-hidden rounded-[6px]"
+                        style={{ background: skin.swatch }}
+                      >
+                        <svg viewBox="0 0 86 54" className="absolute inset-0 h-full w-full">
+                          <path
+                            d="M4 4 H78 L82 8 V50 H4 Z"
+                            fill="none"
+                            stroke={skin.lineColor}
+                            strokeOpacity="0.45"
+                            strokeWidth="0.8"
+                          />
+                          <path
+                            d="M17 12 L14.5 9.5 H11 L8.5 12 V15.5 L11 18 H14.5 L17 15.5"
+                            fill="none"
+                            stroke={skin.lineColor}
+                            strokeWidth="1.2"
+                          />
+                          <circle cx="18.4" cy="13.8" r="0.9" fill={skin.dotColor} />
+                        </svg>
+                      </span>
+                      <span className="block text-sm font-bold text-foreground">{skin.label}</span>
+                      <span className="block text-[12px] text-muted-foreground">{skin.intent}</span>
+                    </button>
+                  );
+                  return (
+                    <UpgradeGate
+                      key={skin.id}
+                      locked={locked}
+                      reason="This skin is available on Pro & Business."
+                      variant="overlay"
+                    >
+                      {tile}
+                    </UpgradeGate>
+                  );
+                })}
               </div>
             </div>
           )}

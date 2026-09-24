@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vitest";
-import { isPlanLimitError, isTemplateLocked, PLAN_LIMITS } from "./plans";
+import { isCardSkinLocked, isPlanLimitError, isTemplateLocked, PLAN_LIMITS } from "./plans";
 
 describe("isPlanLimitError", () => {
   /**
@@ -73,5 +73,22 @@ describe("isTemplateLocked", () => {
   test("a template outside the allow-list is locked", () => {
     expect(isTemplateLocked("luxe", ["editorial", "architectural"])).toBe(true);
     expect(isTemplateLocked("editorial", ["editorial", "architectural"])).toBe(false);
+  });
+});
+
+describe("card skins by plan (confirmed 2026-09-24)", () => {
+  test("free keeps exactly the one default skin", () => {
+    expect(PLAN_LIMITS.free.allowedCardSkins).toEqual(["charcoal"]);
+    expect(isCardSkinLocked("charcoal", PLAN_LIMITS.free.allowedCardSkins)).toBe(false);
+    for (const skin of ["scarlet", "crimson", "gradient"] as const) {
+      expect(isCardSkinLocked(skin, PLAN_LIMITS.free.allowedCardSkins)).toBe(true);
+    }
+  });
+
+  test("every subscription unlocks every skin", () => {
+    for (const plan of ["pro", "business"] as const) {
+      expect(PLAN_LIMITS[plan].allowedCardSkins).toBeNull();
+      expect(isCardSkinLocked("scarlet", PLAN_LIMITS[plan].allowedCardSkins)).toBe(false);
+    }
   });
 });

@@ -2,60 +2,84 @@ import type { Enums } from "@/lib/supabase/database.types";
 
 export type CardSkinId = Enums<"card_skin">;
 
-/**
- * The four card skins, per the 2026-08-31 design spec.
- *
- * A registry rather than scattered literals, mirroring the existing
- * components/templates/registry.ts pattern: one place defining each skin so
- * the on-screen card, the builder picker and the print spec cannot drift.
- *
- * These replaced the freeform designer wholesale. The product promise is
- * "look professional the instant somebody taps", and arbitrary colour pickers
- * let people produce cards that fail that promise. Four art-directed options
- * guarantee the outcome; custom colours can be rebuilt as a paid tier in about
- * a week if a paying customer asks, whereas a designer that lets people make
- * bad cards is hard to un-ship.
- */
-export const CARD_SKINS: {
+export interface CardSkin {
   id: CardSkinId;
   label: string;
   intent: string;
-  /** CSS background for the picker swatch and the rendered card front. */
+  /** CSS background for the picker swatch and the card front. */
   swatch: string;
+  /** Primary text on the card. */
   textColor: string;
-}[] = [
+  /** Secondary text (role, company, contacts). */
+  softColor: string;
+  /** The lot mark and the drawn boundary. */
+  lineColor: string;
+  /** The mark's point of beginning. */
+  dotColor: string;
+  /**
+   * Split skins: the card's right half is a second ground (the QR sits on
+   * it) with its own ink. Undefined for single-ground skins.
+   */
+  split?: { ground: string; ink: string; line: string };
+}
+
+/**
+ * The four card skins in the Survey Plan identity (2026-09-24), one source
+ * for the homepage card faces, the builder picker and the digital card, so
+ * print and screen cannot drift. The enum ids are a schema constraint
+ * (card_skin); only the artwork changed.
+ *
+ * Plan access (confirmed 2026-09-24): the default skin is free; every other
+ * skin is subscription-only, as a digital card as well as in print
+ * (lib/plans.ts allowedCardSkins). Portrait versions and more skins and
+ * colourways are planned; see PRODUCT.md.
+ */
+export const CARD_SKINS: CardSkin[] = [
   {
     id: "charcoal",
     label: "Charcoal",
-    intent: "Default, quietly premium",
-    swatch: "#1e1e1e",
-    textColor: "#ffffff",
+    intent: "The default: quietly premium",
+    swatch: "#1B1E24",
+    textColor: "#EEF1F4",
+    softColor: "#A7B0C0",
+    lineColor: "#EEF1F4",
+    dotColor: "#FF5A52",
   },
   {
     id: "scarlet",
     label: "Scarlet",
-    intent: "Brand-forward front",
-    swatch: "#c8102e",
-    textColor: "#ffffff",
+    intent: "The brand red, front and centre",
+    swatch: "#D0312D",
+    textColor: "#FFFFFF",
+    softColor: "#FFE1DE",
+    lineColor: "#FFFFFF",
+    dotColor: "#12161F",
   },
   {
     id: "crimson",
     label: "Crimson",
-    intent: "Minimalist split",
-    swatch: "linear-gradient(90deg, #7d0a1b 0%, #7d0a1b 50%, #f5f5f5 50%, #f5f5f5 100%)",
-    textColor: "#ffffff",
+    intent: "A minimalist split",
+    swatch: "linear-gradient(90deg, #7A1420 0 50%, #EEF1F4 50% 100%)",
+    textColor: "#FFFFFF",
+    softColor: "#F2C9CE",
+    lineColor: "#FFFFFF",
+    dotColor: "#FF5A52",
+    split: { ground: "#EEF1F4", ink: "#12161F", line: "#2B3F8F" },
   },
   {
     id: "gradient",
-    label: "Gradient",
-    intent: "Subtle and sophisticated",
-    swatch: "linear-gradient(135deg, #1e1e1e 0%, #c8102e 100%)",
-    textColor: "#ffffff",
+    label: "Plan Blue",
+    intent: "Plan blue into drafting ink",
+    swatch: "linear-gradient(135deg, #2B3F8F 0%, #12161F 100%)",
+    textColor: "#EEF1F4",
+    softColor: "#C9D3F2",
+    lineColor: "#EEF1F4",
+    dotColor: "#FF5A52",
   },
 ];
 
 export const DEFAULT_CARD_SKIN: CardSkinId = "charcoal";
 
-export function cardSkin(id: CardSkinId | null | undefined) {
+export function cardSkin(id: CardSkinId | null | undefined): CardSkin {
   return CARD_SKINS.find((s) => s.id === id) ?? CARD_SKINS[0];
 }

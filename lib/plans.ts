@@ -9,6 +9,7 @@
 
 import { CONNECTA } from "@/lib/brand";
 import { errorCode } from "@/lib/errors";
+import { DEFAULT_CARD_SKIN, type CardSkinId } from "@/lib/cardSkins";
 
 export type PlanId = "free" | "pro" | "business";
 
@@ -19,6 +20,8 @@ export interface PlanLimits {
   maxProfiles: number | null;
   maxActiveCards: number | null;
   allowedTemplateIds: string[] | null;
+  /** Card skins the plan may pick; null = every skin. Free keeps only the default. */
+  allowedCardSkins: CardSkinId[] | null;
   leadViewCap: number | null;
   showBranding: boolean;
   canExportLeads: boolean;
@@ -39,6 +42,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     maxProfiles: 1,
     maxActiveCards: 1,
     allowedTemplateIds: FREE_TEMPLATE_IDS,
+    allowedCardSkins: [DEFAULT_CARD_SKIN],
     leadViewCap: 100,
     showBranding: true,
     canExportLeads: false,
@@ -60,6 +64,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     maxProfiles: null,
     maxActiveCards: null,
     allowedTemplateIds: null,
+    allowedCardSkins: null,
     leadViewCap: null,
     showBranding: false,
     canExportLeads: true,
@@ -80,6 +85,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     maxProfiles: null,
     maxActiveCards: null,
     allowedTemplateIds: null,
+    allowedCardSkins: null,
     leadViewCap: null,
     showBranding: false,
     canExportLeads: true,
@@ -99,11 +105,21 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
  * Cosmetic UI gate for the builder's template picker: true when `templateId`
  * is NOT in the plan's `allowedTemplateIds` (`null` means "no restriction" —
  * every plan without a template allowlist, i.e. pro/business). This is
- * UI-only; convex/profiles.ts's `createProfile` is the actual source of
- * truth and re-enforces the same rule server-side on save.
+ * UI-only: the Supabase backend does not re-enforce it on save (the Convex
+ * createProfile check it once relied on is gone).
  */
 export function isTemplateLocked(templateId: string, allowedTemplateIds: string[] | null): boolean {
   return allowedTemplateIds !== null && !allowedTemplateIds.includes(templateId);
+}
+
+/**
+ * Cosmetic UI gate for the card skin picker (confirmed 2026-09-24: every skin
+ * except the default is subscription-only, on the digital card as well as
+ * print). Like isTemplateLocked, this is UI-only today; no database check
+ * re-enforces it yet.
+ */
+export function isCardSkinLocked(skin: CardSkinId, allowedCardSkins: CardSkinId[] | null): boolean {
+  return allowedCardSkins !== null && !allowedCardSkins.includes(skin);
 }
 
 /**

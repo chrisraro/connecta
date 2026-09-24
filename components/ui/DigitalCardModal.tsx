@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { DigitalBusinessCard } from "@/components/ui/digital-business-card";
 import { ProfileInfo, DigitalCardConfig } from "@/types/profile";
 import { downloadVCard } from "@/lib/vcard";
-import { Download, Share2, Check, Copy, Sparkles, Loader2, QrCode } from "lucide-react";
+import { Download, Share2, Check, Copy, Loader2, QrCode } from "lucide-react";
+import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import Link from "next/link";
 import { profileUrl } from "@/lib/profileUrl";
 
@@ -50,7 +51,7 @@ export function DigitalCardModal({
     try {
       // Target the inner card element
       const cardEl =
-        (cardWrapperRef.current.querySelector(".select-none") as HTMLElement) ||
+        cardWrapperRef.current.querySelector<HTMLElement>("[data-digital-card]") ??
         cardWrapperRef.current;
       const dataUrl = await toPng(cardEl, {
         quality: 0.95,
@@ -84,13 +85,13 @@ export function DigitalCardModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-4 sm:p-6 bg-background border-border rounded-3xl overflow-hidden">
+      <DialogContent className="sm:max-w-[480px] p-4 sm:p-6 bg-background overflow-hidden">
         <DialogHeader className="text-center sm:text-left mb-2">
-          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
-            <Sparkles className="w-5 h-5 text-primary" />
+          <DialogTitle className="text-xl font-bold [font-stretch:112%] flex items-center gap-2 text-foreground">
+            <ConnectaMark className="w-6 h-6 text-primary" />
             Digital Business Card
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
+          <DialogDescription className="text-sm text-muted-foreground">
             Access, share, or download your instant NFC digital business card as a PNG image.
           </DialogDescription>
         </DialogHeader>
@@ -99,7 +100,7 @@ export function DigitalCardModal({
         <div className="flex flex-col items-center justify-center my-4">
           <div
             ref={cardWrapperRef}
-            className="w-full flex justify-center p-2 rounded-2xl bg-muted/40 border border-border/50"
+            className="sheet-grid w-full flex justify-center border-[1.5px] border-input p-4"
           >
             <DigitalBusinessCard
               fullName={agent.fullName}
@@ -123,7 +124,7 @@ export function DigitalCardModal({
           <Button
             onClick={handleDownloadImage}
             disabled={isDownloading}
-            className="w-full font-semibold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+            className="w-full gap-2"
           >
             {isDownloading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -136,7 +137,7 @@ export function DigitalCardModal({
           <Button
             onClick={handleSaveVCard}
             variant="outline"
-            className="w-full font-semibold gap-2 border-border rounded-xl hover:bg-muted"
+            className="w-full gap-2"
           >
             <Share2 className="w-4 h-4 text-primary" />
             Save Contact (.vcf)
@@ -147,7 +148,7 @@ export function DigitalCardModal({
           <Button
             onClick={handleCopyLink}
             variant="secondary"
-            className="flex-1 font-medium gap-2 text-xs rounded-xl"
+            className="flex-1 gap-2"
           >
             {copied ? (
               <Check className="w-3.5 h-3.5 text-primary" />
@@ -171,7 +172,7 @@ export function DigitalCardModal({
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="gap-1.5 text-muted-foreground hover:text-foreground"
               >
                 <QrCode className="w-3.5 h-3.5" />
                 Edit Design
