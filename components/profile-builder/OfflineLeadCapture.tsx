@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { User, Mail, MessageSquare, Wifi, WifiOff, Upload } from "lucide-react";
 import {
-  saveOfflineLead,
+  adoptLegacyLeads,
+  discardLegacyLeads,
+  getLegacyLeadCount,
+  getLegacyLeadNames,
   getUnsyncedCount,
   isOnline,
+  nextRetryAt,
+  saveOfflineLead,
   syncOfflineLeads,
-  getOrCreateLeadVisitorId,
 } from "@/lib/offline-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +26,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useCreateLead } from "@/hooks/useLeads";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface OfflineLeadCaptureProps {
   /** Controlled: dialog visibility now lives with the caller (the single
@@ -40,17 +44,34 @@ interface OfflineLeadCaptureProps {
   onUnsyncedCountChange?: (count: number) => void;
 }
 
+const plural = (n: number) => (n === 1 ? "" : "s");
+
 export function OfflineLeadCapture({
   open,
   onOpenChange,
   onUnsyncedCountChange,
 }: OfflineLeadCaptureProps) {
   const createLead = useCreateLead().mutateAsync;
-  const { data: currentUser } = useCurrentUser();
+  // The queue belongs to the signed-in account (B4). The auth session is read
+  // locally, so this is known offline too; users.id is the auth user id.
+  const { user } = useAuth();
+  const ownerId = user?.id ?? "";
+  // The account signed in right now, for callbacks that outlive a render
+  // (an in-flight sync, a toast left on screen).
+  const ownerRef = useRef(ownerId);
+  useEffect(() => {
+    ownerRef.current = ownerId;
+  }, [ownerId]);
 
-  const [online, setOnline] = useState(true);
+  const [online, setOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
   const [unsyncedCount, setUnsyncedCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  // Accounts with a sync in flight. Per account, so switching accounts
+  // mid-sync neither blocks the new account's sync nor lets the old one's
+  // result overwrite its count, and one account never syncs twice at once.
+  const inFlight = useRef(new Set<string>());
 
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
@@ -59,109 +80,148 @@ export function OfflineLeadCapture({
 
   useEffect(() => {
     setOnline(isOnline());
-    setUnsyncedCount(getUnsyncedCount());
-
-    const handleOnline = () => {
-      setOnline(true);
-    };
+    const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
-
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
+  // Recount whenever the account changes: another account's queue is not ours.
+  useEffect(() => {
+    setUnsyncedCount(ownerId ? getUnsyncedCount(ownerId) : 0);
+  }, [ownerId]);
+
   useEffect(() => {
     onUnsyncedCountChange?.(unsyncedCount);
   }, [unsyncedCount, onUnsyncedCountChange]);
 
-  // Auto-sync when currentUser loads and we have unsynced leads online
-  useEffect(() => {
-    if (online && currentUser && getUnsyncedCount() > 0 && !syncing) {
-      const autoSync = async () => {
-        setSyncing(true);
-        try {
-          const result = await syncOfflineLeads(createLead, currentUser.id);
-          setUnsyncedCount(getUnsyncedCount());
-          console.log(`Auto-synced ${result.synced} offline leads.`);
-          // Task 17 / I2: syncOfflineLeads never throws — it
-          // catches per-lead so one bad lead doesn't stop the rest
-          // of the batch — so a partial failure must be surfaced
-          // here, not assumed to show up in the catch block below.
-          if (result.failed > 0) {
-            toast.warning(
-              `${result.failed} offline lead${result.failed === 1 ? "" : "s"} failed to sync and will retry automatically.`,
-            );
-          }
-        } catch (error) {
-          console.error("Auto-sync failed:", error);
-          toast.error("Some leads failed to sync. They'll retry the next time you're online.");
-        } finally {
+  const runSync = useCallback(
+    async (manual: boolean) => {
+      if (!ownerId || inFlight.current.has(ownerId)) return null;
+      inFlight.current.add(ownerId);
+      setSyncing(true);
+      try {
+        return await syncOfflineLeads(createLead, ownerId, Date.now(), { ignoreBackoff: manual });
+      } finally {
+        inFlight.current.delete(ownerId);
+        if (ownerRef.current === ownerId) {
           setSyncing(false);
+          setUnsyncedCount(getUnsyncedCount(ownerId));
         }
-      };
-      autoSync();
-    }
-  }, [online, currentUser, syncing, createLead]);
+      }
+    },
+    [createLead, ownerId],
+  );
+
+  // Auto-sync when online with queued leads, then again when the earliest
+  // backoff ends. Not keyed on `syncing`: that re-ran the sync the moment the
+  // last one finished, so a failing lead looped with a toast every time.
+  const [retryTick, setRetryTick] = useState(0);
+  useEffect(() => {
+    if (!online || !ownerId || getUnsyncedCount(ownerId) === 0) return;
+    let cancelled = false;
+    let timer: number | undefined;
+    (async () => {
+      const result = await runSync(false);
+      if (cancelled || !result || ownerRef.current !== ownerId) return;
+      if (result.newlyFailed > 0) {
+        toast.warning(
+          `${result.newlyFailed} offline lead${plural(result.newlyFailed)} couldn't sync yet. We'll keep retrying.`,
+        );
+      }
+      const due = nextRetryAt(ownerId);
+      if (due !== null) {
+        timer = window.setTimeout(() => setRetryTick((t) => t + 1), Math.max(0, due - Date.now()));
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [online, ownerId, runSync, retryTick]);
+
+  // Leads from the old shared queue have no known owner: ask before adding
+  // them to this account (decided 2026-09-25). On a shared device they may be
+  // someone else's, so the prompt says so and names them by first name only.
+  const legacyAsked = useRef(false);
+  useEffect(() => {
+    if (!ownerId || legacyAsked.current) return;
+    const count = getLegacyLeadCount();
+    if (count === 0) return;
+    legacyAsked.current = true;
+    const names = getLegacyLeadNames();
+    const shown = names.slice(0, 3).join(", ") + (names.length > 3 ? ` and ${names.length - 3} more` : "");
+    toast(`${count} lead${plural(count)} saved on this device earlier`, {
+      description: `${shown}. They were captured offline before leads were kept per account, and may belong to whoever used this device before you. Add them only if they're yours: once added, they sync to your leads.`,
+      duration: Infinity,
+      action: {
+        label: "They're mine",
+        onClick: () => {
+          const current = ownerRef.current;
+          if (!current) return;
+          const added = adoptLegacyLeads(current);
+          setUnsyncedCount(getUnsyncedCount(current));
+          setRetryTick((t) => t + 1);
+          toast.success(`Added ${added} lead${plural(added)}. Syncing now.`);
+        },
+      },
+      cancel: {
+        label: "Discard",
+        onClick: () => discardLegacyLeads(),
+      },
+    });
+  }, [ownerId]);
+
+  const resetForm = () => {
+    setName("");
+    setContact("");
+    setMessage("");
+    onOpenChange(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!ownerId) {
+      toast.error("Sign in again to save leads.");
+      return;
+    }
     setSaving(true);
+    const lead = { inquirerName: name, inquirerContact: contact, message: message || undefined };
 
     try {
-      if (online && currentUser) {
-        // Online: save directly to Convex
+      if (online) {
         await createLead({
-          owner_id: currentUser.id,
+          owner_id: ownerId,
           inquirer_name: name,
           inquirer_contact: contact,
           message: message || undefined,
         });
-
-        // Reset form
-        setName("");
-        setContact("");
-        setMessage("");
-        onOpenChange(false);
+        resetForm();
         toast.success("Lead saved");
       } else {
-        // Offline: save to localStorage
-        saveOfflineLead({
-          inquirerName: name,
-          inquirerContact: contact,
-          message: message || undefined,
-        });
-
-        setUnsyncedCount(getUnsyncedCount());
-
-        // Reset form
-        setName("");
-        setContact("");
-        setMessage("");
-        onOpenChange(false);
-        toast.info("Saved offline — it'll sync automatically once you're back online.");
+        saveOfflineLead(ownerId, lead);
+        setUnsyncedCount(getUnsyncedCount(ownerId));
+        resetForm();
+        toast.info("Saved offline. It'll sync automatically once you're back online.");
       }
     } catch (error) {
-      console.error("Failed to save lead:", error);
-      // Fallback to offline storage. This used to close the dialog
-      // silently here too, making an online-save failure look
-      // identical to a successful save — the lead WAS captured
-      // locally, but the user has no way to know it didn't reach the
-      // server, so a distinct warning (not the plain success toast
-      // above) is the whole point of this branch.
-      saveOfflineLead({
-        inquirerName: name,
-        inquirerContact: contact,
-        message: message || undefined,
-      });
-      setUnsyncedCount(getUnsyncedCount());
-      onOpenChange(false);
+      // The lead is kept locally, but the user must know it didn't reach the
+      // server, so this is a warning, not the plain success toast. If the
+      // session ended mid-save, keep the form filled rather than lose it.
+      const current = ownerRef.current;
+      if (!current) {
+        toast.error("You were signed out before this lead saved. Sign in again, then save it.");
+        return;
+      }
+      saveOfflineLead(current, lead);
+      setUnsyncedCount(getUnsyncedCount(current));
+      resetForm();
       toast.warning(
-        `Couldn't reach the server (${toUserMessage(error)}) — saved offline instead. It'll sync automatically.`,
+        `Couldn't reach the server (${toUserMessage(error)}). Saved offline instead; it'll sync automatically.`,
       );
     } finally {
       setSaving(false);
@@ -169,37 +229,19 @@ export function OfflineLeadCapture({
   };
 
   const handleSync = async () => {
-    if (!currentUser) return;
-
-    setSyncing(true);
-    try {
-      const result = await syncOfflineLeads(createLead, currentUser.id);
-      setUnsyncedCount(getUnsyncedCount());
-
-      // Task 17 / I2 fix: this used to report ONLY result.synced —
-      // "Synced 5 leads" while an equal number silently failed and
-      // stayed queued, because syncOfflineLeads catches per-lead and
-      // never throws (so the catch block below could never fire for a
-      // partial failure). Report both halves honestly; failed leads
-      // remain queued and are retried on the next sync.
-      if (result.synced > 0 && result.failed === 0) {
-        toast.success(`Synced ${result.synced} lead${result.synced === 1 ? "" : "s"}`);
-      } else if (result.synced > 0 && result.failed > 0) {
-        toast.warning(
-          `Synced ${result.synced} lead${result.synced === 1 ? "" : "s"}, but ${result.failed} failed and will retry automatically.`,
-        );
-      } else if (result.failed > 0) {
-        toast.error(
-          `Failed to sync ${result.failed} lead${result.failed === 1 ? "" : "s"}. They're still saved locally and will retry automatically.`,
-        );
-      }
-    } catch (error) {
-      console.error("Failed to sync leads:", error);
-      toast.error(
-        "Failed to sync leads. They will be synced automatically when connection is restored.",
+    const result = await runSync(true);
+    if (!result) return;
+    // syncOfflineLeads catches per lead and never throws, so report both halves.
+    if (result.synced > 0 && result.failed === 0) {
+      toast.success(`Synced ${result.synced} lead${plural(result.synced)}`);
+    } else if (result.synced > 0 && result.failed > 0) {
+      toast.warning(
+        `Synced ${result.synced} lead${plural(result.synced)}, but ${result.failed} failed and will retry automatically.`,
       );
-    } finally {
-      setSyncing(false);
+    } else if (result.failed > 0) {
+      toast.error(
+        `Failed to sync ${result.failed} lead${plural(result.failed)}. They're still saved on this device and will retry automatically.`,
+      );
     }
   };
 
@@ -271,11 +313,11 @@ export function OfflineLeadCapture({
             <Button
               type="submit"
               className="flex-1"
-              disabled={saving || (online && currentUser === undefined)}
+              disabled={saving || !ownerId}
             >
               {saving ? (
                 "Saving..."
-              ) : currentUser === undefined && online ? (
+              ) : !ownerId ? (
                 "Connecting..."
               ) : !online ? (
                 <>

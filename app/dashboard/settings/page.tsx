@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { accountName } from "@/lib/accountName";
+import { clearOfflineLeads, discardLegacyLeads } from "@/lib/offline-leads";
 import { createClient } from "@/lib/supabase/client";
 import type { IdentityDeletionResult } from "@/lib/accountDeletion";
 import {
@@ -53,6 +54,11 @@ export default function SettingsPage() {
     setError(null);
     try {
       const result = await deleteAccount();
+      // Queued offline leads hold visitors' details; they go with the account,
+      // and so does the pre-2026-09-25 shared queue, which may hold this
+      // account's leads and has no other owner to answer for it.
+      if (user?.id) clearOfflineLeads(user.id);
+      discardLegacyLeads();
       // Your Convex data (profiles, leads, etc.) is always erased at
       // this point — that part is atomic and already committed. The
       // Clerk identity itself may not be: if CLERK_SECRET_KEY isn't
