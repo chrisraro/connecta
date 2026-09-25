@@ -41,7 +41,7 @@ export function StatusBar({ tone }: { tone: "light" | "dark" }) {
   return (
     <div className="relative flex h-[38px] items-center justify-between px-[22px] pt-[4px]" style={{ ...IOS_FONT, color: c }}>
       <span className="w-[52px] text-center text-[11.5px] font-semibold tracking-[-0.01em]">9:41</span>
-      <span aria-hidden="true" className="absolute left-1/2 top-[8px] h-[22px] w-[82px] -translate-x-1/2 rounded-full bg-black" />
+      <span aria-hidden="true" className="absolute left-1/2 top-[8.8px] h-[24.1px] w-[81.3px] -translate-x-1/2 rounded-full bg-black" />
       <span className="flex w-[52px] items-center justify-end gap-[4px]" aria-hidden="true">
         <svg viewBox="0 0 17 11" className="h-[8px] w-[12px]" fill={c}>
           <rect x="0" y="7" width="3" height="4" rx="0.8" />

@@ -55,7 +55,7 @@ export function TapStory({ t, intro }: { t: LandingCopy; intro: ReactNode }) {
         <div className="lg:col-start-1 lg:row-start-1 lg:flex lg:min-h-[calc(100vh-4rem)] lg:items-center">{intro}</div>
         <div className="sticky top-[64px] z-10 -mx-4 flex justify-center self-start border-b-[1.5px] bg-[var(--sv-ground)] px-4 py-3 lg:bg-transparent lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:top-20 lg:mx-0 lg:h-[calc(100vh-6rem)] lg:items-center lg:border-b-0 lg:py-0"
           style={{ borderColor: "var(--sv-line)" }}>
-          <div className="relative h-[292px] w-[184px] [--mini-zoom:0.6] [clip-path:inset(-100%_-100%_0_-100%)] lg:h-auto lg:w-[300px] lg:[--mini-zoom:1] lg:[clip-path:none]">
+          <div className="relative h-[292px] w-[184px] [--mini-zoom:0.6] [clip-path:inset(-100%_-100%_0_-100%)] lg:h-auto lg:w-[304px] lg:[--mini-zoom:1] lg:[clip-path:none]">
             {/* The card meets the back of the phone near the top, where the NFC reader sits. */}
             <div aria-hidden="true" className={`${styles.card} ${cardClass} pointer-events-none absolute -left-[26%] -top-[7%] w-[80%]`}>
               <CardFace skin="charcoal" className="w-full shadow-lg" />
