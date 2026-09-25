@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { accountName } from "@/lib/accountName";
 import { createClient } from "@/lib/supabase/client";
 import type { IdentityDeletionResult } from "@/lib/accountDeletion";
 import {
@@ -23,6 +25,7 @@ import { decideDeletionOutcome } from "@/lib/accountDeletion";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { data: appUser } = useCurrentUser();
   const signOut = async () => {
     await createClient().auth.signOut();
     window.location.assign("/");
@@ -86,7 +89,8 @@ export default function SettingsPage() {
         <div className="space-y-2">
           <Label className="text-muted-foreground">Full Name</Label>
           <Input
-            defaultValue={user?.user_metadata?.full_name || ""}
+            value={accountName(appUser, user?.user_metadata)}
+            readOnly
             className="bg-muted/50 border-border focus:border-primary transition-colors"
             disabled
           />

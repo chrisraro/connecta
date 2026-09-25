@@ -12,7 +12,6 @@ import {
   Warehouse,
   ArrowRight,
   Shield,
-  BarChart3,
   Settings,
   AlertTriangle,
   UserCircle,
@@ -132,7 +131,7 @@ export default function AdminDashboardPage() {
 
       <div>
         <h2 className="text-xl font-bold text-foreground mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Link href="/admin/users">
             <Card className="bg-card border-border text-foreground hover:border-primary/50 transition-all cursor-pointer group">
               <CardHeader>
@@ -171,28 +170,6 @@ export default function AdminDashboardPage() {
                 </p>
                 <Button className="w-full">
                   Manage Cards
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/admin/analytics">
-            <Card className="bg-card border-border text-foreground hover:border-primary/50 transition-all cursor-pointer group">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">Analytics</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  View platform metrics, trends, and insights
-                </p>
-                <Button className="w-full">
-                  View Analytics
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </CardContent>

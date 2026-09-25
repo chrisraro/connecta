@@ -37,6 +37,10 @@ import {
 } from "lucide-react";
 import { CONNECTA } from "@/lib/brand";
 import { resolveOnboardingPrefill } from "@/lib/onboardingPrefill";
+import { shouldAttemptClaim } from "@/lib/cardClaim";
+
+// Retrying cannot help once someone else holds the card.
+const CARD_ALREADY_ACTIVATED = "This card has already been activated.";
 
 type ProfileCategory = "individual" | "company" | "business";
 
@@ -248,34 +252,29 @@ function OnboardingContent() {
 
   // Claim card when user is authenticated and card_uuid is present
   useEffect(() => {
-    // Only claim if:
-    // 1. Clerk is fully loaded
-    // 2. We have a card UUID
-    // 3. We have a Clerk user ID
-    // 4. Card hasn't been claimed yet
-    // 5. We're not already in the process of claiming
-    if (!isAuthLoaded || !cardUuid || !authUser?.id || cardClaimed || isClaiming) return;
+    if (
+      !shouldAttemptClaim({
+        isAuthLoaded,
+        cardUuid,
+        userId: authUser?.id,
+        cardClaimed,
+        isClaiming,
+        claimError,
+      })
+    )
+      return;
 
     const claim = async () => {
       setIsClaiming(true);
       try {
-        console.log("Attempting to claim card:", {
-          uuid: cardUuid,
-        });
-
-        const cardId = await claimCard(cardUuid);
-
-        console.log("Card claimed successfully:", cardId);
+        const cardId = await claimCard(cardUuid!);
         setClaimedCardId(cardId);
         setCardClaimed(true);
         setClaimError(null);
       } catch (err: unknown) {
-        console.error("Card claim error:", err);
-        // Don't show error immediately - might be a race condition
-        // Only show error if it's not a "already claimed" scenario
         const msg = err instanceof Error ? err.message : "";
         if (msg.includes("not available")) {
-          setClaimError("This card has already been activated.");
+          setClaimError(CARD_ALREADY_ACTIVATED);
         } else {
           setClaimError(msg || "Failed to claim card");
         }
@@ -285,7 +284,7 @@ function OnboardingContent() {
     };
 
     claim();
-  }, [cardUuid, authUser?.id, cardClaimed, isClaiming, claimCard, isAuthLoaded]);
+  }, [cardUuid, authUser?.id, cardClaimed, isClaiming, claimError, claimCard, isAuthLoaded]);
 
   const progress = (step / (STEPS.length - 1)) * 100;
 
@@ -562,6 +561,17 @@ function OnboardingContent() {
                 <>
                   <p className="text-sm font-semibold text-destructive">Card Activation Issue</p>
                   <p className="text-xs text-muted-foreground">{claimError}</p>
+                  {claimError !== CARD_ALREADY_ACTIVATED && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => setClaimError(null)}
+                    >
+                      Try again
+                    </Button>
+                  )}
                 </>
               ) : isClaiming ? (
                 <>

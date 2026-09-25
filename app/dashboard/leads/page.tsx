@@ -32,6 +32,7 @@ import Link from "next/link";
 import { CONNECTA } from "@/lib/brand";
 import { useMyProfiles } from "@/hooks/useProfiles";
 import { newestProfileId } from "@/lib/builderEntry";
+import { toCsv } from "@/lib/csv";
 
 export default function LeadsPage() {
   const { user } = useAuth();
@@ -119,9 +120,7 @@ export default function LeadsPage() {
         new Date(l.created_at).toLocaleDateString(),
       ]),
     ];
-    const csv = rows
-      .map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
+    const csv = toCsv(rows);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
