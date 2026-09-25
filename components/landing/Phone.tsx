@@ -47,7 +47,7 @@ export function PhoneFrame({ children, className = "" }: { children: ReactNode; 
       {RIGHT_CONTROLS.map((c) => (
         <span key={c[0]} aria-hidden="true" className={`${styles.button} ${styles.buttonRight}`} style={controlStyle(c)} />
       ))}
-      <div className={styles.glass}>
+      <div className={styles.coverGlass}>
         <div className={`${styles.screen} relative h-full w-full`}>{children}</div>
       </div>
     </div>
