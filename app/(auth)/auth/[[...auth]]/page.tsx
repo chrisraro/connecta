@@ -1,4 +1,5 @@
 import { AuthForm } from "@/components/auth/AuthForm";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { ArrowLeft, Loader2, ShieldCheck, SmartphoneNfc, Zap } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -11,6 +12,10 @@ const AUTH_NOTICES: Record<string, string> = {
   confirmed: "Your email is confirmed. Sign in to continue.",
   link_invalid:
     "That link has expired or was already used. If you have confirmed your email, sign in; otherwise create your account again to get a new link.",
+  // Set by /auth/confirm, /auth/callback?flow=recovery and the reset page's
+  // guard when a password reset link can't be used.
+  reset_link_invalid:
+    "That reset link has expired, was already used, or was opened in a different browser. Enter your email to get a new one.",
 };
 
 export default function AuthPage({
@@ -40,7 +45,9 @@ async function AuthContent({
   const mode = params.mode;
   const cardUuid = params.card_uuid;
 
-  const isSignIn = mode === "signin";
+  const isForgot = mode === "forgot";
+  // "Forgot password" belongs to signing in, so that tab stays selected.
+  const isSignIn = mode === "signin" || isForgot;
 
   // Set by /auth/callback when an email link could not finish signing in.
   // Only known keys render; anything else in the query string is ignored.
@@ -124,11 +131,15 @@ async function AuthContent({
       )}
 
       <div className="w-full">
-        <AuthForm
-          mode={isSignIn ? "signin" : "signup"}
-          redirectUrl={redirectUrl}
-          cardUuid={cardUuid}
-        />
+        {isForgot ? (
+          <ForgotPasswordForm signInUrl={signInUrl} />
+        ) : (
+          <AuthForm
+            mode={isSignIn ? "signin" : "signup"}
+            redirectUrl={redirectUrl}
+            cardUuid={cardUuid}
+          />
+        )}
       </div>
 
       {/* Feature strip: three cells sharing their boundaries, one ink. */}

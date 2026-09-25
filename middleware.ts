@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { authRouteRedirect, recoveryApiBlocked } from "@/lib/authRecovery";
+import { RECOVERY_PASS_COOKIE, recoveryPassSecret, verifyRecoveryPass } from "@/lib/recoveryPass";
 
 // Public surface outnumbers the protected one: every top-level segment that is
 // not a known static section is a potential vanity profile slug (see
@@ -34,11 +36,27 @@ export async function middleware(request: NextRequest) {
   if (pathname === "/sign-in" || pathname === "/sign-up") {
     return NextResponse.redirect(new URL("/auth", request.url));
   }
-  if (pathname.startsWith("/auth/") && pathname !== "/auth/callback") {
-    return NextResponse.redirect(new URL("/auth", request.url));
+  // /auth sub-paths fold into /auth except the email-link handlers and the
+  // password reset page, which needs a verified reset link's pass. A session
+  // holding that pass stays on the reset page until the password is saved.
+  const recovering = Boolean(
+    user &&
+      (await verifyRecoveryPass(
+        request.cookies.get(RECOVERY_PASS_COOKIE)?.value,
+        user.id,
+        Date.now(),
+        recoveryPassSecret(),
+      )),
+  );
+  const authRedirect = authRouteRedirect(pathname, { hasUser: Boolean(user), recovering });
+  if (authRedirect) {
+    return NextResponse.redirect(new URL(authRedirect, request.url));
   }
-  if (user && pathname === "/auth") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (recoveryApiBlocked(pathname, recovering)) {
+    return NextResponse.json(
+      { error: "Finish setting your new password first." },
+      { status: 403 },
+    );
   }
 
   // Segment-aware, so a vanity slug like /apikeys is not mistaken for an API

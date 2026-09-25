@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { RESET_LINK_INVALID } from "@/lib/authRecovery";
+import { recoveryRedirect } from "@/lib/recoveryResponse";
 
 /**
  * Post-authentication landing point.
@@ -26,6 +28,19 @@ export async function GET(request: NextRequest) {
   const redirect = searchParams.get("redirect");
 
   const supabase = await createClient();
+
+  // Password reset (B5). Handled before everything else: the link signs the
+  // person in, and without this an admin would be sent to /admin instead of
+  // being asked for a new password. A PKCE code only exchanges in the browser
+  // that asked for the reset; /auth/confirm handles links from any device.
+  if (searchParams.get("flow") === "recovery") {
+    const failed = Boolean(searchParams.get("error") || searchParams.get("error_description"));
+    if (failed || !code) return NextResponse.redirect(new URL(RESET_LINK_INVALID, origin));
+    return recoveryRedirect(origin, async () => {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      return error ? null : (data.user?.id ?? null);
+    });
+  }
 
   // Back to sign-in with a named notice, keeping the card the visitor tapped.
   // A key rather than the auth server's text: the page owns the wording, and
