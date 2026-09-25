@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useMyProfiles, useSaveOnboarding } from "@/hooks/useProfiles";
@@ -37,6 +38,15 @@ import {
 } from "lucide-react";
 import { CONNECTA } from "@/lib/brand";
 import { resolveOnboardingPrefill } from "@/lib/onboardingPrefill";
+import {
+  autoLinkTarget,
+  shouldAttemptClaim,
+  shouldAutoLinkReturningClaim,
+  type LinkState,
+} from "@/lib/cardClaim";
+
+// Retrying cannot help once someone else holds the card.
+const CARD_ALREADY_ACTIVATED = "This card has already been activated.";
 
 type ProfileCategory = "individual" | "company" | "business";
 
@@ -171,7 +181,7 @@ function OnboardingContent() {
   // Drives the "Profile Setup Complete" screen's "Go to Profile Builder"
   // button below — same Task 12 fix as handleFinish's routing: link to
   // the profile that already exists instead of a doomed no-id create.
-  const { data: profiles } = useMyProfiles();
+  const { data: profiles, isError: profilesFailed } = useMyProfiles();
   const myProfileId = profiles && profiles.length > 0 ? profiles[0].id : null;
 
   const [step, setStep] = useState(0);
@@ -181,6 +191,10 @@ function OnboardingContent() {
   const [claimedCardId, setClaimedCardId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
+  // Whether the claimed card is attached to a profile yet. The completed
+  // screen used to say "linked" for a returning user whose card never was.
+  const [linkState, setLinkState] = useState<LinkState>("idle");
+  const linkStarted = useRef(false);
   // Set by handleFinish the instant onboarding completes, from the
   // mutation's own return value — not the reactive `profiles` query,
   // which also updates but there's no reason to wait a second round trip
@@ -248,34 +262,29 @@ function OnboardingContent() {
 
   // Claim card when user is authenticated and card_uuid is present
   useEffect(() => {
-    // Only claim if:
-    // 1. Clerk is fully loaded
-    // 2. We have a card UUID
-    // 3. We have a Clerk user ID
-    // 4. Card hasn't been claimed yet
-    // 5. We're not already in the process of claiming
-    if (!isAuthLoaded || !cardUuid || !authUser?.id || cardClaimed || isClaiming) return;
+    if (
+      !shouldAttemptClaim({
+        isAuthLoaded,
+        cardUuid,
+        userId: authUser?.id,
+        cardClaimed,
+        isClaiming,
+        claimError,
+      })
+    )
+      return;
 
     const claim = async () => {
       setIsClaiming(true);
       try {
-        console.log("Attempting to claim card:", {
-          uuid: cardUuid,
-        });
-
-        const cardId = await claimCard(cardUuid);
-
-        console.log("Card claimed successfully:", cardId);
+        const cardId = await claimCard(cardUuid!);
         setClaimedCardId(cardId);
         setCardClaimed(true);
         setClaimError(null);
       } catch (err: unknown) {
-        console.error("Card claim error:", err);
-        // Don't show error immediately - might be a race condition
-        // Only show error if it's not a "already claimed" scenario
         const msg = err instanceof Error ? err.message : "";
         if (msg.includes("not available")) {
-          setClaimError("This card has already been activated.");
+          setClaimError(CARD_ALREADY_ACTIVATED);
         } else {
           setClaimError(msg || "Failed to claim card");
         }
@@ -285,7 +294,40 @@ function OnboardingContent() {
     };
 
     claim();
-  }, [cardUuid, authUser?.id, cardClaimed, isClaiming, claimCard, isAuthLoaded]);
+  }, [cardUuid, authUser?.id, cardClaimed, isClaiming, claimError, claimCard, isAuthLoaded]);
+
+  // B2: someone who already finished setup never reaches Finish, so a card
+  // they claim here is linked straight away, to their newest profile
+  // (decided 2026-09-25). They can change it on the Cards page.
+  const onboardingCompleted = Boolean(appUser?.onboarding_completed);
+  useEffect(() => {
+    if (
+      !shouldAutoLinkReturningClaim({
+        claimedCardId,
+        onboardingCompleted,
+        isEditMode,
+        // A failed lookup counts as settled: it ends as "failed" with a link
+        // to the Cards page instead of "Linking..." forever.
+        profilesLoaded: profiles !== undefined || profilesFailed,
+        linkState,
+      }) ||
+      linkStarted.current
+    )
+      return;
+    linkStarted.current = true;
+    const target = autoLinkTarget(profiles);
+    if (!claimedCardId || !target) {
+      setLinkState("failed");
+      return;
+    }
+    setLinkState("linking");
+    linkProfile({ cardId: claimedCardId, profileId: target })
+      .then(() => setLinkState("linked"))
+      .catch(() => {
+        setLinkState("failed");
+        toast.warning("Your card is activated, but it didn't link to your profile. Link it from the Cards page.");
+      });
+  }, [claimedCardId, onboardingCompleted, isEditMode, profiles, profilesFailed, linkState, linkProfile]);
 
   const progress = (step / (STEPS.length - 1)) * 100;
 
@@ -357,8 +399,9 @@ function OnboardingContent() {
             cardId: claimedCardId,
             profileId: result.profileId,
           });
-        } catch (linkErr) {
-          console.error("Failed to link card to profile:", linkErr);
+          setLinkState("linked");
+        } catch {
+          setLinkState("failed");
           // Non-blocking - profile is still created, but the user
           // needs to know their card didn't attach.
           toast.warning(
@@ -477,7 +520,19 @@ function OnboardingContent() {
                   <div className="text-left">
                     <p className="text-sm font-bold">Card Activated!</p>
                     <p className="text-xs text-muted-foreground">
-                      Your physical {CONNECTA.name} card is now live and linked to your profile.
+                      {linkState === "linked" ? (
+                        <>Your physical {CONNECTA.name} card is now live and linked to your profile.</>
+                      ) : linkState === "linking" || linkState === "idle" ? (
+                        <>Linking your {CONNECTA.name} card to your profile...</>
+                      ) : (
+                        <>
+                          Your card is activated but not linked yet.{" "}
+                          <Link href="/dashboard/cards" className="underline underline-offset-2">
+                            Link it on the Cards page
+                          </Link>
+                          .
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -562,6 +617,17 @@ function OnboardingContent() {
                 <>
                   <p className="text-sm font-semibold text-destructive">Card Activation Issue</p>
                   <p className="text-xs text-muted-foreground">{claimError}</p>
+                  {claimError !== CARD_ALREADY_ACTIVATED && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => setClaimError(null)}
+                    >
+                      Try again
+                    </Button>
+                  )}
                 </>
               ) : isClaiming ? (
                 <>

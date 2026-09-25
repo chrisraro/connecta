@@ -5,8 +5,9 @@ import { useEffect, use, useRef, useState } from "react";
 import { Loader2, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useCardByUuid, useClaimCard, useRecordTap } from "@/hooks/useCards";
-import { useProfile } from "@/hooks/useProfiles";
+import { useCardByUuid, useClaimCard, useLinkCardProfile, useRecordTap } from "@/hooks/useCards";
+import { useMyProfiles, useProfile } from "@/hooks/useProfiles";
+import { autoLinkTarget, claimedCardsHref } from "@/lib/cardClaim";
 import { profilePath } from "@/lib/profileUrl";
 import { toUserMessage } from "@/lib/errors";
 import { isPlanLimitError } from "@/lib/plans";
@@ -38,7 +39,11 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
   const { data: card, isPending: cardPending, isError: cardError } = useCardByUuid(uuid);
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
   const claimCard = useClaimCard();
+  const linkCard = useLinkCardProfile();
   const recordTap = useRecordTap();
+  // A claimed card links straight to the owner's newest profile (B3). Only
+  // fetched for a signed-in visitor; waited on so the link isn't skipped.
+  const { data: myProfiles, isPending: myProfilesPending } = useMyProfiles();
 
   const [claimFailed, setClaimFailed] = useState<string | null>(null);
   // True when the rejection was a plan-limit one (the free plan cap of one
@@ -81,12 +86,22 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
       if (!authLoaded) return;
 
       if (isSignedIn) {
-        if (claimingRef.current || claimFailed) return;
+        if (claimingRef.current || claimFailed || myProfilesPending) return;
         claimingRef.current = true;
         claimCard
           .mutateAsync(uuid)
-          .then(() => {
-            router.replace("/dashboard/cards?claimed=1");
+          .then(async (cardId) => {
+            const target = autoLinkTarget(myProfiles);
+            let linked = false;
+            if (target) {
+              try {
+                await linkCard.mutateAsync({ cardId, profileId: target });
+                linked = true;
+              } catch {
+                // The Cards page says it isn't linked and offers the picker.
+              }
+            }
+            router.replace(claimedCardsHref(linked));
           })
           .catch((err: unknown) => {
             setClaimFailed(toUserMessage(err));
@@ -117,6 +132,9 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
     authLoaded,
     isSignedIn,
     claimCard,
+    linkCard,
+    myProfiles,
+    myProfilesPending,
     recordTap,
     claimFailed,
   ]);

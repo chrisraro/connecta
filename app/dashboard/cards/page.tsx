@@ -10,7 +10,8 @@ import {
 } from "@/hooks/useCards";
 import { useMyProfiles } from "@/hooks/useProfiles";
 import { agentInfoOf } from "@/lib/db/profile";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { claimNotice } from "@/lib/cardClaim";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { isPlanLimitError } from "@/lib/plans";
@@ -68,6 +69,18 @@ export default function CardsPage() {
   // success, rejects on error), so nothing else here changes.
   const activateCard = useActivateCardByCode().mutateAsync;
   const linkProfile = useLinkCardProfile().mutateAsync;
+
+  // Set by the tap page after it claims a card (B3). Read once, then dropped
+  // from the address bar so a reload doesn't show it again.
+  const [notice, setNotice] = useState<"linked" | "unlinked" | null>(null);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const found = claimNotice(url.searchParams.get("claimed"));
+    if (!found) return;
+    setNotice(found);
+    url.searchParams.delete("claimed");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, []);
   const unclaimCard = useUnclaimCard().mutateAsync;
   const claimCard = useClaimCard().mutateAsync;
 
@@ -257,6 +270,25 @@ export default function CardsPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {notice && (
+        <div role="status" className="mb-6 flex items-start gap-3 border-[1.5px] border-input bg-background p-4">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <div className="flex-1 text-sm">
+            <p className="font-bold">Card activated</p>
+            <p className="text-muted-foreground">
+              {notice === "linked"
+                ? "It's linked to your profile, so a tap opens it now. You can change the profile below."
+                : myProfiles && myProfiles.length > 0
+                  ? "Choose the profile it should open below."
+                  : "Create a profile, then link the card to it here."}
+            </p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setNotice(null)}>
+            Dismiss
+          </Button>
+        </div>
+      )}
 
       {myCards.length === 0 ? (
         <Card className="border-dashed py-20 bg-muted/20">

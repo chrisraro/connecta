@@ -23,11 +23,33 @@ function initials(name: string) {
   return ((p[0]?.[0] ?? "") + (p.length > 1 ? (p[p.length - 1]?.[0] ?? "") : "")).toUpperCase();
 }
 
-/** A phone body; the screen fills it. */
+// iPhone 17 Pro Max side controls: [top, length] in mm from the top of the
+// body, from Apple's dimensional drawing. Action, volume up and down on the
+// left; the Side button and Camera Control on the right.
+const MM = 284 / 72.86;
+const LEFT_CONTROLS = [[30.83, 6.9], [42.83, 11.2], [57.03, 11.2]] as const;
+const RIGHT_CONTROLS = [[46.68, 17.7], [103.27, 17.1]] as const;
+
+function controlStyle([top, length]: readonly [number, number]) {
+  return {
+    top: `calc(${(top * MM).toFixed(2)} * var(--u))`,
+    height: `calc(${(length * MM).toFixed(2)} * var(--u))`,
+  };
+}
+
+/** An iPhone 17 Pro Max at 1:1 proportions; the screen fills the display area. */
 export function PhoneFrame({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`${styles.phone} ${className}`} style={{ aspectRatio: "9 / 18.5" }}>
-      <div className={`${styles.screen} relative h-full w-full`}>{children}</div>
+    <div className={`${styles.phone} ${className}`}>
+      {LEFT_CONTROLS.map((c) => (
+        <span key={c[0]} aria-hidden="true" className={`${styles.button} ${styles.buttonLeft}`} style={controlStyle(c)} />
+      ))}
+      {RIGHT_CONTROLS.map((c) => (
+        <span key={c[0]} aria-hidden="true" className={`${styles.button} ${styles.buttonRight}`} style={controlStyle(c)} />
+      ))}
+      <div className={styles.coverGlass}>
+        <div className={`${styles.screen} relative h-full w-full`}>{children}</div>
+      </div>
     </div>
   );
 }

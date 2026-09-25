@@ -11,8 +11,6 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Truck,
-  Shield,
   Loader2,
 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
@@ -327,24 +325,6 @@ export default function ProductPage() {
                 View Selection
               </Button>
             </Link>
-          </div>
-
-          {/* Features */}
-          <div className="grid grid-cols-2 gap-4 pt-6 border-t border-border">
-            <div className="flex items-start gap-3">
-              <Truck className="w-5 h-5 text-muted-foreground mt-0.5" />
-              <div>
-                <div className="text-sm font-medium">Free Shipping</div>
-                <div className="text-xs text-muted-foreground">On orders over ₱50</div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-muted-foreground mt-0.5" />
-              <div>
-                <div className="text-sm font-medium">Secure Checkout</div>
-                <div className="text-xs text-muted-foreground">SSL encrypted</div>
-              </div>
-            </div>
           </div>
 
           {/* Tags */}

@@ -1,81 +1,92 @@
 // Offline Lead Capture Utility
-// Stores leads in localStorage when offline, syncs when online
+// Stores leads in localStorage when offline, syncs when online.
+//
+// B4 (2026-09-25): each account has its own queue. There used to be one queue
+// per browser, so leads captured offline by one account synced into whichever
+// account signed in next on the same device. Every lead is also stamped with
+// its owner, and a lead stamped for someone else is never sent.
 
 import { OFFLINE_LEADS_KEY, LEAD_VISITOR_ID_KEY } from "./storage-keys";
 import { toUserMessage } from "./errors";
 
 export interface OfflineLead {
   id: string;
+  ownerId: string;
   inquirerName: string;
   inquirerContact: string;
   message?: string;
   timestamp: number;
   synced: boolean;
+  /** Failed sync attempts so far. */
+  attempts?: number;
+  /** Epoch ms before which the lead is not retried. */
+  nextAttemptAt?: number;
 }
 
-/**
- * Save lead to localStorage when offline
- */
-export function saveOfflineLead(
-  lead: Omit<OfflineLead, "id" | "timestamp" | "synced">,
-): OfflineLead {
-  const offlineLead: OfflineLead = {
-    ...lead,
-    id: `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    timestamp: Date.now(),
-    synced: false,
-  };
+type NewLead = Pick<OfflineLead, "inquirerName" | "inquirerContact" | "message">;
 
-  const existingLeads = getOfflineLeads();
-  existingLeads.push(offlineLead);
-  localStorage.setItem(OFFLINE_LEADS_KEY, JSON.stringify(existingLeads));
-
-  console.log("Offline lead saved:", offlineLead.id);
-  return offlineLead;
+/** The queue key for one account. The bare OFFLINE_LEADS_KEY is the old shared queue. */
+export function offlineLeadsKey(ownerId: string): string {
+  return `${OFFLINE_LEADS_KEY}:${ownerId}`;
 }
 
-/**
- * Get all offline leads from localStorage
- */
-export function getOfflineLeads(): OfflineLead[] {
+const RETRY_BASE_MS = 30_000;
+const RETRY_MAX_MS = 60 * 60_000;
+
+/** Wait before retry number `attempts`: 30 s, doubling, capped at an hour. */
+export function retryDelayMs(attempts: number): number {
+  return Math.min(RETRY_BASE_MS * 2 ** Math.max(0, attempts - 1), RETRY_MAX_MS);
+}
+
+function readQueue(key: string): OfflineLead[] {
   try {
-    const stored = localStorage.getItem(OFFLINE_LEADS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error("Failed to parse offline leads:", error);
+    const stored = localStorage.getItem(key);
+    const parsed: unknown = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? (parsed as OfflineLead[]) : [];
+  } catch {
     return [];
   }
 }
 
-/**
- * Mark a lead as synced
- */
-export function markLeadSynced(leadId: string): void {
-  const leads = getOfflineLeads();
-  const updated = leads.map((lead) => (lead.id === leadId ? { ...lead, synced: true } : lead));
-  localStorage.setItem(OFFLINE_LEADS_KEY, JSON.stringify(updated));
+function writeQueue(ownerId: string, leads: OfflineLead[]): void {
+  const key = offlineLeadsKey(ownerId);
+  if (leads.length === 0) localStorage.removeItem(key);
+  else localStorage.setItem(key, JSON.stringify(leads));
 }
 
-/**
- * Remove synced leads from localStorage
- */
-export function clearSyncedLeads(): void {
-  const leads = getOfflineLeads();
-  const unsynced = leads.filter((lead) => !lead.synced);
-  localStorage.setItem(OFFLINE_LEADS_KEY, JSON.stringify(unsynced));
+/** Queue a lead for one account. */
+export function saveOfflineLead(ownerId: string, lead: NewLead): OfflineLead {
+  if (!ownerId) throw new Error("A signed-in account is needed to save a lead.");
+  const offlineLead: OfflineLead = {
+    ...lead,
+    id: `offline_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+    ownerId,
+    timestamp: Date.now(),
+    synced: false,
+  };
+  writeQueue(ownerId, [...getOfflineLeads(ownerId), offlineLead]);
+  return offlineLead;
 }
 
-/**
- * Get unsynced leads count
- */
-export function getUnsyncedCount(): number {
-  const leads = getOfflineLeads();
-  return leads.filter((lead) => !lead.synced).length;
+/** One account's queued leads. Entries stamped for another owner are ignored. */
+export function getOfflineLeads(ownerId: string): OfflineLead[] {
+  if (!ownerId) return [];
+  return readQueue(offlineLeadsKey(ownerId)).filter((lead) => lead.ownerId === ownerId);
 }
 
-/**
- * Check if browser is online
- */
+export function getUnsyncedCount(ownerId: string): number {
+  return getOfflineLeads(ownerId).filter((lead) => !lead.synced).length;
+}
+
+/** When the earliest waiting lead is due for a retry, or null if none is waiting. */
+export function nextRetryAt(ownerId: string): number | null {
+  const due = getOfflineLeads(ownerId)
+    .filter((lead) => !lead.synced && lead.nextAttemptAt)
+    .map((lead) => lead.nextAttemptAt as number);
+  return due.length ? Math.min(...due) : null;
+}
+
+/** Check if browser is online */
 export function isOnline(): boolean {
   return navigator.onLine;
 }
@@ -105,15 +116,25 @@ export function getOrCreateLeadVisitorId(): string {
   return visitorId;
 }
 
-/**
- * Flush locally-captured leads to the server.
- *
- * The callback takes the row shape the leads table actually uses. visitorId
- * is gone: it existed to scope the Convex rate limit per browser, and the
- * limiter now keys on the authenticated caller instead, which cannot be
- * reset by clearing localStorage.
- */
+export interface SyncResult {
+  synced: number;
+  /** Leads attempted this run that failed; they stay queued. */
+  failed: number;
+  /** Of those, how many failed for the first time (worth telling the user about). */
+  newlyFailed: number;
+  /** Leads skipped because their retry backoff hasn't passed. */
+  deferred: number;
+  failures: string[];
+}
 
+/**
+ * Flush one account's queued leads to the server.
+ *
+ * Never throws: each lead is tried on its own, so one bad lead doesn't stop
+ * the rest. A failed lead stays queued with an exponential backoff, so a
+ * lead the server keeps rejecting can't be resent in a tight loop.
+ * `ignoreBackoff` is for a sync the user asked for.
+ */
 export async function syncOfflineLeads(
   createLeadFn: (args: {
     owner_id: string;
@@ -122,23 +143,19 @@ export async function syncOfflineLeads(
     message?: string | null;
   }) => Promise<unknown>,
   ownerId: string,
-): Promise<{ synced: number; failed: number; failures: string[] }> {
-  const leads = getOfflineLeads().filter((lead) => !lead.synced);
-
-  if (leads.length === 0) {
-    return { synced: 0, failed: 0, failures: [] };
-  }
-
-  console.log(`Syncing ${leads.length} offline leads...`);
-  let synced = 0;
-  let failed = 0;
-  // Task 17 / I2: the caller used to get back only `{synced, failed}` —
-  // enough to count failures but never enough to say what happened, so the
-  // only honest UI copy possible was a vague "N leads failed." Collecting
-  // the actual per-lead reasons lets the sync toast name them.
-  const failures: string[] = [];
+  now: number = Date.now(),
+  { ignoreBackoff = false }: { ignoreBackoff?: boolean } = {},
+): Promise<SyncResult> {
+  const result: SyncResult = { synced: 0, failed: 0, newlyFailed: 0, deferred: 0, failures: [] };
+  const leads = getOfflineLeads(ownerId);
+  const outcome = new Map<string, OfflineLead | null>();
 
   for (const lead of leads) {
+    if (lead.synced) continue;
+    if (!ignoreBackoff && lead.nextAttemptAt && lead.nextAttemptAt > now) {
+      result.deferred++;
+      continue;
+    }
     try {
       await createLeadFn({
         owner_id: ownerId,
@@ -146,26 +163,64 @@ export async function syncOfflineLeads(
         inquirer_contact: lead.inquirerContact,
         message: lead.message,
       });
-
-      markLeadSynced(lead.id);
-      synced++;
-      console.log(`✓ Synced lead: ${lead.inquirerName}`);
+      outcome.set(lead.id, null);
+      result.synced++;
     } catch (error) {
-      failed++;
-      // toUserMessage, not the raw error: a production deployment redacts
-      // plain Error text (see lib/errors.ts), and a raw Convex transport
-      // envelope in this toast would be worse than no detail at all.
-      const reason = toUserMessage(error);
-      failures.push(`${lead.inquirerName}: ${reason}`);
-      console.error(`✗ Failed to sync lead ${lead.id}:`, error);
+      const attempts = (lead.attempts ?? 0) + 1;
+      outcome.set(lead.id, { ...lead, attempts, nextAttemptAt: now + retryDelayMs(attempts) });
+      result.failed++;
+      if (attempts === 1) result.newlyFailed++;
+      // toUserMessage, not the raw error: production redacts plain Error text
+      // (see lib/errors.ts).
+      result.failures.push(`${lead.inquirerName}: ${toUserMessage(error)}`);
     }
   }
 
-  // Clean up synced leads. Unsynced ones are deliberately left in place —
-  // see markLeadSynced/clearSyncedLeads above — so a failed lead is retried
-  // on the next sync instead of being lost.
-  clearSyncedLeads();
+  // Re-read so a lead queued while this sync was running isn't lost.
+  const remaining = getOfflineLeads(ownerId).flatMap((lead) => {
+    if (!outcome.has(lead.id)) return lead.synced ? [] : [lead];
+    const next = outcome.get(lead.id);
+    return next ? [next] : [];
+  });
+  writeQueue(ownerId, remaining);
+  return result;
+}
 
-  console.log(`Sync complete: ${synced} synced, ${failed} failed`);
-  return { synced, failed, failures };
+/** Unsynced leads left in the old shared queue, whose owner is unknown. */
+export function getLegacyLeadCount(): number {
+  return readQueue(OFFLINE_LEADS_KEY).filter((lead) => !lead.synced).length;
+}
+
+/** Move the old shared queue into one account's queue, on that account's say-so. */
+export function adoptLegacyLeads(ownerId: string): number {
+  if (!ownerId) return 0;
+  const legacy = readQueue(OFFLINE_LEADS_KEY)
+    .filter((lead) => !lead.synced)
+    .map((lead) => ({ ...lead, ownerId, attempts: 0, nextAttemptAt: undefined }));
+  writeQueue(ownerId, [...getOfflineLeads(ownerId), ...legacy]);
+  localStorage.removeItem(OFFLINE_LEADS_KEY);
+  return legacy.length;
+}
+
+export function discardLegacyLeads(): void {
+  localStorage.removeItem(OFFLINE_LEADS_KEY);
+}
+
+/**
+ * First names in the old shared queue, so the import prompt can show whose
+ * leads they are without exposing contact details.
+ */
+export function getLegacyLeadNames(): string[] {
+  return readQueue(OFFLINE_LEADS_KEY)
+    .filter((lead) => !lead.synced)
+    .map((lead) => String(lead.inquirerName ?? "").trim().split(/\s+/)[0] || "Unnamed");
+}
+
+/**
+ * Drop one account's queue. Called when the account is deleted: queued
+ * leads hold visitors' names and numbers (RA 10173), and must not outlive
+ * the account in this browser.
+ */
+export function clearOfflineLeads(ownerId: string): void {
+  if (ownerId) localStorage.removeItem(offlineLeadsKey(ownerId));
 }
