@@ -199,7 +199,7 @@ function TitleBlock({
 
         <button
           type="button"
-          onClick={() => downloadVCard(agent)}
+          onClick={() => downloadVCard(agent, { profileUrl: window.location.origin + window.location.pathname })}
           className={`${styles.primary} ${styles.semiExpanded} flex h-14 w-full items-center justify-center gap-2 text-[17px] font-bold`}
         >
           <Download className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
@@ -626,7 +626,7 @@ export function SurveyProfile({
         <p className="mb-6 max-w-[62ch] text-[16px] leading-relaxed" style={{ color: "var(--sv-soft)" }}>
           {t.contactIntro(first)}
         </p>
-        <SurveyLeadForm ownerId={data.ownerId} firstName={first} t={t} />
+        <SurveyLeadForm ownerId={data.ownerId} firstName={first} ownerName={agent.fullName} t={t} />
       </Lot>
     ),
   };

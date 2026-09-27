@@ -1,3 +1,5 @@
+import { CONNECTA } from "@/lib/brand";
+
 /**
  * Interface copy for the public profile. What the owner wrote about themselves
  * (name, role, about, services) is shown exactly as they typed it; these are
@@ -33,6 +35,11 @@ export const PROFILE_COPY = {
   sending: "Sending…",
   sent: (first: string) => `Sent. ${first} has your details.`,
   sendError: "That didn't send. Check your connection and try again.",
+  // L-8: approved by the Data Protection Officer, 2026-09-27 (CONSENT_VERSION
+  // in lib/leadConsent.ts). Change the version whenever this changes.
+  consent: (owner: string) =>
+    `I agree to share my name, contact details and message with ${owner} so they can reply to me. ${CONNECTA.name} stores them for ${owner} under its Privacy Policy.`,
+  privacyPolicy: "Privacy Policy",
   view: "View",
   poweredBy: "Powered by",
   profileTab: "Profile",

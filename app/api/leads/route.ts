@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import { consentProblem, consentVersionFor } from "@/lib/leadConsent";
 import { Resend } from "resend";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { CONNECTA } from "@/lib/brand";
@@ -26,6 +27,7 @@ type LeadBody = {
   message?: unknown;
   property_id?: unknown;
   property_name?: unknown;
+  consent?: unknown;
 };
 
 const str = (v: unknown) => (typeof v === "string" ? v : null);
@@ -109,6 +111,18 @@ export async function POST(request: Request) {
   } = await (await createClient()).auth.getUser();
   const selfCapture = user?.id === ownerId;
 
+  // L-8: a visitor's details are taken only on their consent (RA 10173).
+  if (consentProblem({ selfCapture, consent: body.consent })) {
+    return NextResponse.json(
+      {
+        message: "Please agree to share your details before sending.",
+        details: "CONSENT_REQUIRED",
+        code: "P0001",
+      },
+      { status: 400 },
+    );
+  }
+
   let service;
   try {
     service = createServiceClient();
@@ -126,6 +140,7 @@ export async function POST(request: Request) {
     property_name: str(body.property_name) ?? undefined,
     visitor_key: clientIp(request) ?? undefined,
     self_capture: selfCapture,
+    consent_version: consentVersionFor(body.consent),
   });
 
   if (error) {

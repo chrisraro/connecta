@@ -15,6 +15,8 @@ export interface OfflineLead {
   inquirerName: string;
   inquirerContact: string;
   message?: string;
+  /** The person agreed to share their details (the owner confirmed it). */
+  consent?: boolean;
   timestamp: number;
   synced: boolean;
   /** Failed sync attempts so far. */
@@ -23,7 +25,7 @@ export interface OfflineLead {
   nextAttemptAt?: number;
 }
 
-type NewLead = Pick<OfflineLead, "inquirerName" | "inquirerContact" | "message">;
+type NewLead = Pick<OfflineLead, "inquirerName" | "inquirerContact" | "message" | "consent">;
 
 /** The queue key for one account. The bare OFFLINE_LEADS_KEY is the old shared queue. */
 export function offlineLeadsKey(ownerId: string): string {
@@ -141,6 +143,7 @@ export async function syncOfflineLeads(
     inquirer_name: string;
     inquirer_contact: string;
     message?: string | null;
+    consent?: boolean;
   }) => Promise<unknown>,
   ownerId: string,
   now: number = Date.now(),
@@ -162,6 +165,7 @@ export async function syncOfflineLeads(
         inquirer_name: lead.inquirerName,
         inquirer_contact: lead.inquirerContact,
         message: lead.message,
+        consent: lead.consent,
       });
       outcome.set(lead.id, null);
       result.synced++;

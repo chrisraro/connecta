@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { MOBILE_NAV } from "@/lib/dashboardNav";
 import { useCurrentUser, useIsAdmin } from "@/hooks/useCurrentUser";
 import { useEffect, useState } from "react";
 import { UserMenu } from "@/components/auth/UserMenu";
@@ -283,13 +284,7 @@ function DashboardSidebar({ className }: { className?: string }) {
 
 function MobileBottomNav() {
   const pathname = usePathname();
-  const navItems = [
-    { title: "Home", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Profiles", url: "/dashboard/profiles", icon: Users },
-    { title: "Leads", url: "/dashboard/leads", icon: MessageSquare },
-    { title: "Cards", url: "/dashboard/cards", icon: SmartphoneNfc },
-    { title: "Settings", url: "/dashboard/settings", icon: Settings },
-  ];
+  const navItems = MOBILE_NAV;
 
   return (
     <div className="mobile-bottom-nav fixed bottom-6 left-4 right-4 z-50 md:hidden">
