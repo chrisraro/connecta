@@ -26,3 +26,14 @@ export const PRICING = {
 } as const;
 
 export type BillingCycle = "monthly" | "yearly";
+
+const pesoFormatter = new Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+  maximumFractionDigits: 0,
+});
+
+/** A whole-peso price as shown on the site, e.g. 799 -> "₱799". */
+export function formatPeso(pesos: number): string {
+  return pesoFormatter.format(pesos);
+}
