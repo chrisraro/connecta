@@ -1014,6 +1014,7 @@ export type Database = {
         Args: { check_user?: string };
         Returns: Database["public"]["Enums"]["plan_tier"];
       };
+      get_my_invites: { Args: never; Returns: Json };
       get_my_team: { Args: never; Returns: Json };
       get_public_profile: {
         Args: { lookup_id?: string; lookup_slug?: string };
@@ -1079,7 +1080,8 @@ export type Database = {
         Returns: Json;
       };
       team_accept_invite: { Args: { invite_id: string }; Returns: undefined };
-      team_invite_member: { Args: { invite_email: string }; Returns: string };
+      team_decline_invite: { Args: { invite_id: string }; Returns: undefined };
+      team_invite_member: { Args: { invite_email: string }; Returns: Json };
       team_remove_member: { Args: { member_id: string }; Returns: undefined };
       team_revoke_invite: { Args: { invite_id: string }; Returns: undefined };
       unaccent_fallback: { Args: { input: string }; Returns: string };
@@ -1090,7 +1092,7 @@ export type Database = {
       card_skin: "charcoal" | "scarlet" | "crimson" | "gradient";
       card_status: "inventory" | "active" | "lost";
       dimension_unit: "cm" | "in";
-      invite_status: "pending" | "accepted" | "revoked";
+      invite_status: "pending" | "accepted" | "revoked" | "declined";
       lead_status: "new" | "contacted" | "closed";
       notification_type: "new_lead" | "system";
       plan_tier: "free" | "lead_tools" | "teams";
@@ -1234,7 +1236,7 @@ export const Constants = {
       card_skin: ["charcoal", "scarlet", "crimson", "gradient"],
       card_status: ["inventory", "active", "lost"],
       dimension_unit: ["cm", "in"],
-      invite_status: ["pending", "accepted", "revoked"],
+      invite_status: ["pending", "accepted", "revoked", "declined"],
       lead_status: ["new", "contacted", "closed"],
       notification_type: ["new_lead", "system"],
       plan_tier: ["free", "lead_tools", "teams"],

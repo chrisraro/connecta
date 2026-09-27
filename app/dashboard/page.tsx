@@ -27,6 +27,7 @@ import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import { newestProfileId } from "@/lib/builderEntry";
 import { sheetFor } from "@/components/survey/sheet";
+import { InviteBanner } from "@/components/team/InviteBanner";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -80,6 +81,9 @@ export default function DashboardPage() {
           Manage your portfolio, share via NFC &amp; QR, and capture leads.
         </p>
       </div>
+
+      {/* ─── Pending team invites ──────────────────────────────────── */}
+      <InviteBanner />
 
       {/* ─── Digital Business Card Banner ──────────────────────────── */}
       {primaryProfile && (
