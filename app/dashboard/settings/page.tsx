@@ -91,29 +91,20 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Manage your personal information.</p>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-8 space-y-6">
+      <div className="border-[1.5px] border-input bg-background p-8 space-y-6">
         <div className="space-y-2">
-          <Label className="text-muted-foreground">Full Name</Label>
-          <Input
-            value={accountName(appUser, user?.user_metadata)}
-            readOnly
-            className="bg-muted/50 border-border focus:border-primary transition-colors"
-            disabled
-          />
-          <p className="text-xs text-muted-foreground">Managed by your sign-in account</p>
+          <Label className="text-muted-foreground">Full name</Label>
+          <Input value={accountName(appUser, user?.user_metadata)} readOnly disabled />
+          <p className="text-[13px] text-muted-foreground">Managed by your sign-in account</p>
         </div>
 
         <div className="space-y-2">
-          <Label className="text-muted-foreground">Email Address</Label>
-          <Input
-            defaultValue={user?.email || ""}
-            className="bg-muted/50 border-border focus:border-primary transition-colors"
-            disabled
-          />
+          <Label className="text-muted-foreground">Email address</Label>
+          <Input defaultValue={user?.email || ""} disabled />
         </div>
 
-        <div className="pt-4 border-t border-border">
-          <h3 className="text-lg font-bold text-destructive mb-2">Danger Zone</h3>
+        <div className="border-t-[1.5px] border-input pt-6">
+          <h3 className="text-lg font-bold text-destructive mb-2">Danger zone</h3>
           <p className="text-sm text-muted-foreground mb-4">
             Permanently delete your profile, leads, and account data per privacy regulations (RA
             10173).
@@ -121,18 +112,13 @@ export default function SettingsPage() {
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button
-                variant="destructive"
-                className="bg-destructive/10 text-destructive hover:bg-destructive/20 border-none font-semibold"
-              >
-                Delete Account
-              </Button>
+              <Button variant="destructive">Delete account</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-destructive">
                   <AlertTriangle className="w-5 h-5 shrink-0" />
-                  Delete Account Permanently?
+                  Delete account permanently?
                 </DialogTitle>
                 <DialogDescription className="pt-2 text-sm text-muted-foreground space-y-2">
                   This action cannot be undone. This will permanently delete:
@@ -148,16 +134,16 @@ export default function SettingsPage() {
               </DialogHeader>
 
               <div className="space-y-3 py-3">
-                <Label className="text-xs font-semibold">
+                <Label className="text-[13px] font-semibold">
                   Type <span className="font-bold text-destructive">DELETE</span> to confirm:
                 </Label>
                 <Input
                   value={confirmText}
                   onChange={(e) => setConfirmText(e.target.value)}
                   placeholder="DELETE"
-                  className="uppercase font-mono"
+                  className="font-mono"
                 />
-                {error && <p className="text-xs text-destructive">{error}</p>}
+                {error && <p className="text-sm text-destructive">{error}</p>}
               </div>
 
               <DialogFooter>
@@ -175,11 +161,11 @@ export default function SettingsPage() {
                 >
                   {isDeleting ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Deleting...
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Deleting…
                     </>
                   ) : (
-                    "Permanently Delete"
+                    "Permanently delete"
                   )}
                 </Button>
               </DialogFooter>

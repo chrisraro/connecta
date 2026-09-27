@@ -9,11 +9,11 @@ describe("PlanUpgradeButton", () => {
   // than start (or appear to start) a checkout that does not exist.
   test("clicking opens an inquiry dialog with a support contact", async () => {
     const user = userEvent.setup();
-    render(<PlanUpgradeButton label="Upgrade to Pro" />);
+    render(<PlanUpgradeButton label="Upgrade to Lead tools" />);
 
-    await user.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
+    await user.click(screen.getByRole("button", { name: "Upgrade to Lead tools" }));
 
-    expect(await screen.findByText(/handled personally for now/i)).toBeInTheDocument();
+    expect(await screen.findByText(/we'll confirm payment/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /support/i })).toHaveAttribute(
       "href",
       expect.stringContaining("mailto:"),
@@ -21,17 +21,17 @@ describe("PlanUpgradeButton", () => {
   });
 
   test("the dialog stays closed until the button is clicked", () => {
-    render(<PlanUpgradeButton label="Upgrade to Pro" />);
+    render(<PlanUpgradeButton label="Upgrade to Lead tools" />);
 
-    expect(screen.queryByText(/handled personally for now/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/we'll confirm payment/i)).not.toBeInTheDocument();
   });
 
   test("disabled prop prevents the dialog from opening at all", async () => {
     const user = userEvent.setup();
-    render(<PlanUpgradeButton label="Upgrade to Pro" disabled />);
+    render(<PlanUpgradeButton label="Upgrade to Lead tools" disabled />);
 
-    await user.click(screen.getByRole("button", { name: "Upgrade to Pro" }));
+    await user.click(screen.getByRole("button", { name: "Upgrade to Lead tools" }));
 
-    expect(screen.queryByText(/handled personally for now/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/we'll confirm payment/i)).not.toBeInTheDocument();
   });
 });

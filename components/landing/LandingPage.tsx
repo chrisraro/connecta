@@ -131,19 +131,16 @@ export function LandingPage() {
           <h2 id="skins-title" className={`${survey.expanded} max-w-[20ch] text-[clamp(28px,4.4vw,48px)] font-bold leading-[1.05]`}>
             {t.skinsTitle}
           </h2>
-          <p className="mt-3 max-w-[52ch] text-[17px]" style={{ color: "var(--sv-soft)" }}>{t.skinsNote}</p>
+          <p className="mt-3 max-w-[52ch] text-[17px]" style={{ color: "var(--sv-soft)" }}>
+            {t.skinsNote}{" "}
+            {t.from} <span className={`${styles.price} font-medium`} style={{ color: "var(--sv-ink)" }}>₱799</span>{" "}
+            <span className={`${styles.price} line-through`}>₱888</span>.
+          </p>
           <ul className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
             {SKINS.map((s) => (
               <li key={s.id}>
-                <CardFace skin={s.id} className="w-full shadow-md" />
+                <CardFace skin={s.id} className="w-full" />
                 <p className="mt-3 text-[16px] font-bold">{s.label}</p>
-                <p className="text-[14px]" style={{ color: "var(--sv-soft)" }}>
-                  {t.from} <span className={`${styles.price} font-medium`} style={{ color: "var(--sv-ink)" }}>₱799</span>{" "}
-                  <span className={`${styles.price} line-through`}>₱888</span>
-                </p>
-                <div className="mt-3 flex aspect-[4/3] items-center justify-center border-[1.5px] border-dashed px-3 text-center text-[12px]" style={{ borderColor: "var(--sv-line)", color: "var(--sv-soft)" }}>
-                  {t.photoSlot}
-                </div>
               </li>
             ))}
           </ul>

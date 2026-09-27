@@ -63,12 +63,6 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
                 >
                   Shop
                 </Link>
-                <Link
-                  href="/shop"
-                  className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Categories
-                </Link>
               </nav>
             </div>
 
@@ -137,7 +131,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       )}
 
       {/* Trust strip */}
-      <div className="border-b border-border bg-card/40">
+      <div className="border-b border-border">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground sm:px-6 lg:px-8">
           <span>Ships nationwide PH</span>
           <span aria-hidden="true" className="hidden sm:inline">
@@ -153,11 +147,11 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       {/* Footer */}
       <footer className="border-t border-border mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="font-bold mb-2">About {CONNECTA.name}</h3>
               <p className="text-sm text-muted-foreground">
-                Premium NFC-enabled digital business cards and portfolio solutions.
+                NFC business cards, shipped in the Philippines.
               </p>
             </div>
             <div>
@@ -167,31 +161,25 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
                   href="/shop"
                   className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  All Products
+                  All products
                 </Link>
                 <Link
                   href="/shop/cart"
                   className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Your Selection
+                  Your selection
                 </Link>
               </div>
             </div>
             <div>
               <h3 className="font-bold mb-2">Support</h3>
               <div className="-my-1">
-                <Link
-                  href="/"
+                <a
+                  href={`mailto:${CONNECTA.supportEmail}`}
                   className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Contact Us
-                </Link>
-                <Link
-                  href="/"
-                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Shipping Info
-                </Link>
+                  Contact us
+                </a>
               </div>
             </div>
           </div>

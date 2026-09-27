@@ -143,7 +143,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                           accessible name. SheetHeader/SheetTitle were imported
                           but unused.
                         */}
-            <SheetHeader className="p-6 border-b border-border space-y-0">
+            <SheetHeader className="p-6 border-b-[1.5px] border-input space-y-0">
               <SheetTitle className="flex items-center gap-2.5">
                 <ConnectaMark className="h-7 w-7 text-primary" />
                 <span className="text-[15px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
@@ -190,7 +190,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Link key={item.href} href={item.href}>
                     <div
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                        "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
                         pathname === item.href
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:text-foreground hover:bg-card",
@@ -203,7 +203,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 );
               })}
             </nav>
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border space-y-1">
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t-[1.5px] border-input space-y-1">
               <Button
                 variant="ghost"
                 className="w-full justify-start min-h-11 text-muted-foreground hover:text-foreground"
@@ -254,7 +254,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <Link key={child.href} href={child.href!}>
                         <div
                           className={cn(
-                            "flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                            "flex items-center gap-3 px-4 py-2 text-sm font-medium transition-colors",
                             pathname === child.href
                               ? "bg-primary text-primary-foreground"
                               : "text-muted-foreground hover:text-foreground hover:bg-card",
@@ -273,7 +273,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link key={item.href} href={item.href!}>
                 <div
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
                     pathname === item.href
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-card",
@@ -287,7 +287,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        <div className="p-6 border-t border-border space-y-1">
+        <div className="p-6 border-t-[1.5px] border-input space-y-1">
           <Button
             variant="ghost"
             className="w-full justify-start min-h-11 text-muted-foreground hover:text-foreground"
@@ -314,7 +314,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <main className="sheet-grid flex-1 min-w-0 p-4 md:p-8 pb-24 md:pb-8">
+      <main className="bg-background flex-1 min-w-0 p-4 md:p-8 pb-24 md:pb-8">
         {children}
       </main>
 

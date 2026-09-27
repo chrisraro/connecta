@@ -35,7 +35,6 @@ export function sheetVars(sheet: Sheet): CSSProperties {
     "--sv-ink": sheet.ink,
     "--sv-soft": sheet.soft,
     "--sv-line": sheet.line,
-    "--sv-grid": sheet.grid,
     "--sv-mark": sheet.mark,
     "--sv-mark-text": sheet.markText,
     "--sv-action-bg": sheet.actionBg,
@@ -415,7 +414,7 @@ const DEFAULT_ORDER = [
 
 /**
  * The public profile in the Survey Plan world: the person's portrait inside a
- * surveyed lot on a drafting-grid sheet, a title block with the actions, and
+ * surveyed lot on a plain survey sheet, a title block with the actions, and
  * one section per builder block.
  * Section order and visibility follow the owner's componentOrder. On desktop
  * the whole page becomes one plan sheet inside a double neatline, with the

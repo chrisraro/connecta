@@ -10,7 +10,6 @@ import { useMyCards } from "@/hooks/useCards";
 import { agentInfoOf, layoutConfigOf } from "@/lib/db/profile";
 import {
   ChevronRight,
-  Sparkles,
   MessageSquare,
   ExternalLink,
   Users,
@@ -28,6 +27,7 @@ import { ProfileImage } from "@/components/templates/ProfileImage";
 import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
 import { newestProfileId } from "@/lib/builderEntry";
 import { sheetFor } from "@/components/survey/sheet";
+import { InviteBanner } from "@/components/team/InviteBanner";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -82,6 +82,9 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* ─── Pending team invites ──────────────────────────────────── */}
+      <InviteBanner />
+
       {/* ─── Digital Business Card Banner ──────────────────────────── */}
       {primaryProfile && (
         <div className="border-[1.5px] border-input bg-background p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -101,9 +104,6 @@ export default function DashboardPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <h2 className="text-base font-bold text-foreground [font-stretch:112%]">Digital business card</h2>
-                <span className="border-[1.5px] border-input px-1.5 py-0.5 text-[11px] font-bold">
-                  Instant web access
-                </span>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 Present your card on screen, download it as a high-res PNG, or save the contact as a
@@ -154,9 +154,6 @@ export default function DashboardPage() {
         <div className="border-[1.5px] border-input bg-accent/50 p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-primary text-primary-foreground flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles className="w-5 h-5" aria-hidden="true" />
-              </div>
               <div>
                 <h2 className="font-bold text-base [font-stretch:112%]">Complete your profile setup</h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
@@ -204,7 +201,7 @@ export default function DashboardPage() {
             label="New Leads"
             value={newLeadsCount.toString()}
             color="text-primary"
-            icon={<Sparkles className="w-4 h-4" />}
+            icon={<MessageSquare className="w-4 h-4" />}
           />
         </div>
       )}

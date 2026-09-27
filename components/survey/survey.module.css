@@ -5,14 +5,9 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  /* A plain ground. (The graph-paper grid was removed on 2026-09-27: it read
+     as decoration, not structure.) */
   background-color: var(--sv-ground);
-  /* The plan's drafting grid: this page is a survey sheet, so the grid is the
-     surface itself, not decoration laid over one. */
-  background-image:
-    linear-gradient(var(--sv-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--sv-grid) 1px, transparent 1px);
-  background-size: 32px 32px;
-  background-position: -1px -1px;
   color: var(--sv-ink);
   font-family: var(--font-survey), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -73,7 +68,7 @@
 }
 
 /* On a desktop the page becomes one plan sheet: a double neatline around the
-   drawing, the drafting grid still showing through inside it. */
+   drawing. */
 @media (min-width: 1024px) {
   .neatline {
     border: 2px solid var(--sv-line);

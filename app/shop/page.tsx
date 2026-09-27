@@ -3,17 +3,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   ShoppingCart,
   Search,
-  Filter,
-  Sparkles,
   Check,
-  ArrowRight,
-  Package,
   ShoppingBag,
   X,
   Loader2,
@@ -102,7 +99,7 @@ function ToastNotification({
               <div className="flex flex-wrap gap-2 mt-2">
                 <Button size="sm" className="h-8 text-xs flex-1 sm:flex-none" onClick={onViewCart}>
                   <ShoppingBag className="w-3 h-3 mr-1" />
-                  View Cart
+                  View selection
                 </Button>
                 <Button
                   size="sm"
@@ -173,17 +170,24 @@ import {
 } from "@/components/ui/select";
 import { imageUrl as resolveImageUrl } from "@/lib/imageUrl";
 import { useProductCategories, useProducts } from "@/hooks/useShop";
+import { filterAndSortProducts, type ShopSort } from "@/lib/shopFilters";
 
 export default function ShopPage() {
   const { data: categories } = useProductCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState<ShopSort>("newest");
   const [inStockOnly, setInStockOnly] = useState(false);
   const { addItem, isLoading: cartLoading } = useCart();
   const [addedToCart, setAddedToCart] = useState<string | null>(null);
 
-  const { data: products } = useProducts();
+  // Category filtering happens server-side (fewer rows over the wire);
+  // search text, in-stock and sort are applied client-side below — all
+  // three used to just set state that nothing read (Task audit).
+  const { data: rawProducts } = useProducts({ categoryId: selectedCategory ?? undefined });
+  const products = rawProducts
+    ? filterAndSortProducts(rawProducts, { search: searchQuery, inStockOnly, sortBy })
+    : undefined;
 
   const handleAddToCart = async (productId: string) => {
     try {
@@ -204,9 +208,7 @@ export default function ShopPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Shop</h1>
-        <p className="text-muted-foreground mt-1">
-          Browse our collection of premium NFC cards and accessories
-        </p>
+        <p className="text-muted-foreground mt-1">NFC business cards, shipped in the Philippines.</p>
       </div>
 
       {/* Search & Filters Bar */}
@@ -224,7 +226,7 @@ export default function ShopPage() {
         </div>
 
         {/* Sort (Desktop) */}
-        <Select value={sortBy} onValueChange={setSortBy}>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as ShopSort)}>
           <SelectTrigger className="w-[200px] hidden md:flex">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
@@ -232,7 +234,6 @@ export default function ShopPage() {
             <SelectItem value="newest">Newest First</SelectItem>
             <SelectItem value="price_asc">Price: Low to High</SelectItem>
             <SelectItem value="price_desc">Price: High to Low</SelectItem>
-            <SelectItem value="popular">Most Popular</SelectItem>
           </SelectContent>
         </Select>
 
@@ -294,7 +295,7 @@ export default function ShopPage() {
               {/* Sort */}
               <div>
                 <h3 className="font-semibold mb-3">Sort By</h3>
-                <Select value={sortBy} onValueChange={setSortBy}>
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as ShopSort)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -302,7 +303,6 @@ export default function ShopPage() {
                     <SelectItem value="newest">Newest First</SelectItem>
                     <SelectItem value="price_asc">Price: Low to High</SelectItem>
                     <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                    <SelectItem value="popular">Most Popular</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -365,13 +365,7 @@ export default function ShopPage() {
           {products === undefined ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <div className="aspect-square bg-muted" />
-                  <CardContent className="p-4 space-y-3">
-                    <div className="h-4 bg-muted rounded w-3/4" />
-                    <div className="h-3 bg-muted rounded w-1/2" />
-                  </CardContent>
-                </Card>
+                <Skeleton key={i} className="aspect-square" />
               ))}
             </div>
           ) : products.length === 0 ? (
@@ -488,12 +482,12 @@ export default function ShopPage() {
                           {addedToCart === product.id ? (
                             <>
                               <Check className="w-4 h-4 mr-2" />
-                              Added!
+                              Added
                             </>
                           ) : (
                             <>
                               <ShoppingCart className="w-4 h-4 mr-2" />
-                              Add to Cart
+                              Add to selection
                             </>
                           )}
                         </Button>
@@ -509,7 +503,7 @@ export default function ShopPage() {
 
       {/* Toast Notification */}
       <ToastNotification
-        message="Added to cart!"
+        message="Added to selection."
         visible={addedToCart !== null}
         onViewCart={() => {
           window.location.href = "/shop/cart";

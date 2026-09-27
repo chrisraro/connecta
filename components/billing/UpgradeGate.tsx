@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
  * The single reusable "locked" presentation for every plan-gated capability
  * (builder templates, card activation, CSV export, team workspace, ...).
  *
- * Product requirement (task 11 — the builder used to just hide Pro features
+ * Product requirement (task 11 — the builder used to just hide paid features
  * with no upsell, which read as broken): a gated feature must stay VISIBLE,
- * never vanish, and always carry a lock badge + a "Get Pro" CTA to
+ * never vanish, and always carry a lock badge + a "Get Lead tools" CTA to
  * /dashboard/billing. Every call site routes through this one component
  * instead of hand-rolling its own locked state, so that promise holds
  * everywhere without needing to audit each usage separately.
@@ -69,7 +69,7 @@ export function UpgradeGate({
   reason,
   children,
   variant,
-  ctaLabel = "Get Pro",
+  ctaLabel = "Get Lead tools",
   className,
 }: UpgradeGateProps) {
   if (!locked) {
@@ -108,10 +108,10 @@ export function UpgradeGate({
       <div aria-hidden="true" className="pointer-events-none opacity-40 grayscale">
         {children}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 p-3 text-center backdrop-blur-[1px]">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/85 p-3 text-center">
         <span className="inline-flex items-center gap-1.5 bg-muted px-2.5 py-1 text-[12px] font-bold text-muted-foreground">
           <Lock className="h-3 w-3" aria-hidden="true" />
-          Pro
+          Lead tools
         </span>
         <p className="max-w-[16rem] text-xs font-medium text-foreground">{reason}</p>
         <GetProCta label={ctaLabel} />

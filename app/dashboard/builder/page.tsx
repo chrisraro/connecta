@@ -371,11 +371,7 @@ function TemplateSelector({
               <span
                 aria-hidden="true"
                 className="relative block aspect-[4/3]"
-                style={{
-                  backgroundColor: sheet.ground,
-                  backgroundImage: `linear-gradient(${sheet.grid} 1px, transparent 1px), linear-gradient(90deg, ${sheet.grid} 1px, transparent 1px)`,
-                  backgroundSize: "12px 12px",
-                }}
+                style={{ backgroundColor: sheet.ground }}
               >
                 <svg viewBox="0 0 60 45" className="absolute inset-0 h-full w-full">
                   <path d="M14 10 H40 L48 18 V35 H14 Z" fill="none" stroke={sheet.line} strokeWidth="1.5" />
@@ -388,15 +384,15 @@ function TemplateSelector({
             </button>
           );
           // Every free user still SEES every template (nothing
-          // vanishes) — Pro-only ones render dimmed under a lock
-          // badge + "Get Pro" CTA via the one shared gating
+          // vanishes) — Lead tools/Teams-only ones render dimmed under a
+          // lock badge + "Get Lead tools" CTA via the one shared gating
           // component, instead of clicking through to a raw
-          // "Upgrade to Pro" error at save time.
+          // "Upgrade to Lead tools" error at save time.
           return (
             <UpgradeGate
               key={template.id}
               locked={locked}
-              reason="This sheet is available on Pro & Business."
+              reason="This sheet is available on Lead tools & Teams."
               variant="overlay"
               className=""
             >
@@ -543,7 +539,7 @@ function BuilderContent() {
 
   // Task 12: a "create profile" entry (no `?id=`) while the user is
   // already at their plan's profile limit can never save — createProfile
-  // would throw "Upgrade to Pro for unlimited profiles." the moment they
+  // would throw "Upgrade to Lead tools for unlimited profiles." the moment they
   // click Save. Redirect to editing their newest profile instead of
   // showing a form that's doomed from the start.
   useEffect(() => {
@@ -1119,17 +1115,17 @@ function BuilderContent() {
       router.push(profilePath({ id: profileId, slug }));
     } catch (error: unknown) {
       console.error("Save error:", error);
-      // The template picker already blocks selecting a Pro-only
-      // template, and the entry-redirect above blocks a doomed
-      // "create" doomed by the profile-count limit — but a plan can
+      // The template picker already blocks selecting a Lead
+      // tools/Teams-only template, and the entry-redirect above blocks a
+      // doomed "create" doomed by the profile-count limit — but a plan can
       // still change out from under an open tab (e.g. a downgrade,
       // or a profile that already had a since-restricted template),
-      // so this can still fire. Give the toast the same "Get Pro" CTA
-      // as every other gated surface instead of just plain text.
+      // so this can still fire. Give the toast the same "Get Lead tools"
+      // CTA as every other gated surface instead of just plain text.
       toast.error(
         toUserMessage(error),
         isPlanLimitError(error)
-          ? { action: { label: "Get Pro", onClick: () => router.push("/dashboard/billing") } }
+          ? { action: { label: "Get Lead tools", onClick: () => router.push("/dashboard/billing") } }
           : undefined,
       );
     } finally {
@@ -1420,7 +1416,7 @@ function BuilderContent() {
             >
               <div className="overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]">
                 {previewMode === "card" ? (
-                  <div className="sheet-grid p-4 flex flex-col justify-center min-h-[360px] items-center space-y-4">
+                  <div className="bg-background p-4 flex flex-col justify-center min-h-[360px] items-center space-y-4">
                     <div role="group" aria-label="Card orientation" className="flex w-full max-w-[420px] border-[1.5px] border-input bg-background">
                       {(["landscape", "portrait"] as const).map((o) => (
                         <button
@@ -2568,7 +2564,7 @@ function BuilderContent() {
                     <UpgradeGate
                       key={skin.id}
                       locked={locked}
-                      reason="This skin is available on Pro & Business."
+                      reason="This skin is available on Lead tools & Teams."
                       variant="overlay"
                     >
                       {tile}

@@ -5,12 +5,14 @@ import Link from "next/link";
 import survey from "@/components/survey/survey.module.css";
 import type { LandingCopy } from "./copy";
 import styles from "./landing.module.css";
+import { PRICING } from "@/lib/pricing";
 
-// Confirmed 2026-09-24 (PRODUCT.md): standard and prelaunch prices in pesos.
+// Confirmed 2026-09-24 (PRODUCT.md); lib/pricing.ts is the single source so
+// the billing page and paywall can't drift from what is shown here.
 const PRICES = {
-  card: { standard: 888, prelaunch: 799 },
-  lead: { monthly: { standard: 79, prelaunch: 49 }, yearly: { standard: 799, prelaunch: 499 } },
-  team: { monthly: { standard: 299, prelaunch: 249 }, yearly: { standard: 3199, prelaunch: 2699 } },
+  card: PRICING.card,
+  lead: PRICING.leadTools,
+  team: PRICING.teams,
 };
 
 const peso = (n: number) => `₱${n.toLocaleString("en-PH")}`;

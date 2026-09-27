@@ -142,10 +142,10 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
   if (errorMessage) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-6 text-center">
-        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-6">
-          <Smartphone className="w-10 h-10 text-destructive" />
+        <div className="w-16 h-16 border-[1.5px] border-destructive flex items-center justify-center mb-6 text-destructive">
+          <Smartphone className="w-8 h-8" aria-hidden="true" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">Card Not Ready</h1>
+        <h1 className="text-2xl font-bold mb-2">Card not ready</h1>
         {claimFailed && claimFailedLocked ? (
           // The upgrade CTA already carries the message, so the plain
           // paragraph is skipped to avoid showing it twice.
@@ -158,9 +158,9 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
             <div className="flex flex-col gap-3 w-full max-w-xs">
               <Link
                 href="/"
-                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors text-center"
+                className="w-full bg-primary text-primary-foreground font-bold py-3 hover:bg-primary/90 transition-colors text-center"
               >
-                Learn More
+                Go to the homepage
               </Link>
             </div>
           </>
@@ -171,8 +171,8 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
-      <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-      <p className="text-muted-foreground animate-pulse">Redirecting to profile...</p>
+      <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" aria-hidden="true" />
+      <p className="text-muted-foreground">Redirecting to profile…</p>
     </div>
   );
 }

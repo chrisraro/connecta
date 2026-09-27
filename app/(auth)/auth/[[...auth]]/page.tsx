@@ -1,7 +1,7 @@
 import { AuthForm } from "@/components/auth/AuthForm";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { authCallbackUrl, authModeUrl } from "@/lib/authLinks";
-import { ArrowLeft, Loader2, ShieldCheck, SmartphoneNfc, Zap } from "lucide-react";
+import { ArrowLeft, Loader2, SmartphoneNfc } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ConnectaMark } from "@/components/brand/ConnectaMark";
@@ -91,7 +91,7 @@ async function AuthContent({
           </span>
         </Link>
         <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-muted-foreground">
-          Elevate your digital business card, manage leads CRM &amp; share via NFC instantly.
+          Sign in to edit your profile, manage your cards and see your leads.
         </p>
 
         {cardUuid && (
@@ -140,24 +140,6 @@ async function AuthContent({
           />
         )}
       </div>
-
-      {/* Feature strip: three cells sharing their boundaries, one ink. */}
-      <ul className="mt-8 grid w-full grid-cols-3 border-[1.5px] border-input text-center">
-        {[
-          { icon: Zap, label: "Fast Setup" },
-          { icon: ShieldCheck, label: "Encrypted" },
-          { icon: SmartphoneNfc, label: "NFC Powered" },
-        ].map(({ icon: Icon, label }, i) => (
-          <li key={label} className={`px-2 py-3 ${i > 0 ? "border-l-[1.5px] border-input" : ""}`}>
-            <Icon
-              className="mx-auto mb-1.5 h-4 w-4 text-primary"
-              strokeWidth={1.75}
-              aria-hidden="true"
-            />
-            <span className="block text-[12px] font-bold">{label}</span>
-          </li>
-        ))}
-      </ul>
 
       <Link
         href="/"

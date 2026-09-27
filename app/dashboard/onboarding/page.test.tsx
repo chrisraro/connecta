@@ -11,32 +11,21 @@ import userEvent from "@testing-library/user-event";
  * saw the summary, and closed the tab had NOT completed onboarding and had
  * NO profile.
  *
- * The existing tests for this page (there were none at the component level)
- * never asserted WHICH control triggers completion — only that completion
- * worked when directly invoked — which is exactly why this survived. These
- * tests mount the real wizard, click through it via the same "Next →"/
- * "Finish →" buttons a user clicks, and assert on the `markCompleted`
- * argument each click actually sends.
+ * These tests mount the real wizard, click through it via the same
+ * "Next →"/"Finish →" buttons a user clicks, and assert on the
+ * `markCompleted` argument each click actually sends.
  *
- * convex/react, @clerk/nextjs, next/navigation, and sonner are mocked below
- * — there's no existing precedent in this repo for mounting a page this
- * hook-heavy, so the mocks are local to this file. `updateOnboarding`'s mock
- * flips a small local `onboardingState.completed` to true on
- * `markCompleted: true`, mirroring how the real Convex reactive query
- * updates after a mutation lands — this is what lets the wizard's own
- * completed-state screen take over as the post-completion confirmation,
- * exactly as it does live.
+ * Redesign (2026-09-27): the step list grew (account type/identity/contact
+ * are required and now block "Next" until valid; work/style/card
+ * skin/photo/plan are individually skippable) — see lib/onboardingFlow.ts,
+ * tested thoroughly on its own. This file only needs to walk the real
+ * required fields to reach the end, then re-assert the same Task 21
+ * invariants against whatever step is actually last.
  */
 
 // vi.mock factories are hoisted above every import in this file, so anything
 // they close over must itself be created inside vi.hoisted().
-//
-// Ported from Convex: there is no api object or reactive query to fake any
-// more. The wizard reads its state from useCurrentUser (the public.users row)
-// and writes through useSaveOnboarding, so those are what get mocked -- and
-// the mocked save updates the mocked user row, which is what lets the
-// completed-state screen take over exactly as it does live.
-const { push, replace, updateOnboarding, getUserState, resetUserState } = vi.hoisted(() => {
+const { push, replace, updateOnboarding, updateProfile, getUserState, resetUserState } = vi.hoisted(() => {
   let userState: {
     id: string;
     name: string;
@@ -58,10 +47,13 @@ const { push, replace, updateOnboarding, getUserState, resetUserState } = vi.hoi
     return { profileId: "profile_new" };
   });
 
+  const updateProfile = vi.fn(async () => ({}));
+
   return {
     push: vi.fn(),
     replace: vi.fn(),
     updateOnboarding,
+    updateProfile,
     getUserState: () => userState,
     resetUserState: () => {
       userState = {
@@ -85,13 +77,18 @@ vi.mock("@/components/auth/AuthProvider", () => ({
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({ data: getUserState(), isPending: false }),
-  useMyPlan: () => ({ plan: "free", limits: { maxProfiles: 1 }, isPending: false }),
+  useMyPlan: () => ({
+    plan: "free",
+    limits: { maxProfiles: 1, allowedTemplateIds: null, allowedCardSkins: null },
+    isPending: false,
+  }),
   useIsAdmin: () => ({ data: false, isPending: false }),
 }));
 
 vi.mock("@/hooks/useProfiles", () => ({
   useMyProfiles: () => ({ data: [] }),
   useSaveOnboarding: () => ({ mutateAsync: updateOnboarding }),
+  useUpdateProfile: () => ({ mutateAsync: updateProfile }),
 }));
 
 vi.mock("@/hooks/useCards", () => ({
@@ -99,10 +96,30 @@ vi.mock("@/hooks/useCards", () => ({
   useLinkCardProfile: () => ({ mutateAsync: vi.fn() }),
 }));
 
+vi.mock("@/hooks/useSettings", () => ({
+  usePlanPricing: () => ({ data: { pro: 29900, business: 99900 } }),
+}));
+
 // The photo step mounts <ImageUploader>, which uploads through this hook.
 vi.mock("@/hooks/useImageUpload", () => ({
   useImageUpload: () => ({ mutateAsync: vi.fn(async () => "user_test/photo.webp") }),
   useImageDelete: () => ({ mutateAsync: vi.fn() }),
+}));
+
+// The style/card-skin steps re-read the freshly created profile before
+// applying a non-default choice; this test never picks one, so the mock
+// client is only exercised if that assumption ever breaks.
+vi.mock("@/lib/db/client", () => ({
+  useSupabase: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: async () => ({ data: { layout_config: {}, skin: "charcoal" }, error: null }),
+        }),
+      }),
+    }),
+    auth: { updateUser: vi.fn(async () => ({ error: null })) },
+  }),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -114,21 +131,38 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
+// The invite banner has its own tests (components/team/InviteBanner.test.tsx).
+vi.mock("@/components/team/InviteBanner", () => ({ InviteBanner: () => null }));
+
 import OnboardingPage from "./page";
 
 async function goToLastStep(user: ReturnType<typeof userEvent.setup>) {
-  // welcome -> type -> identity -> contact -> work -> photo (5 "Next"s).
-  // No field validation gates advancing, so this reaches the last step
-  // without filling in any form data.
-  for (let i = 0; i < 5; i++) {
+  // welcome -> type: no data needed.
+  await user.click(screen.getByRole("button", { name: "Next →" }));
+  await user.click(screen.getByRole("button", { name: "Next →" }));
+
+  // identity: required — fill name and title before Next is enabled.
+  await user.type(screen.getByPlaceholderText("e.g. Maria Santos"), "Maria Santos");
+  await user.type(screen.getByPlaceholderText("e.g. Brand designer, real estate broker"), "Broker");
+  await user.click(screen.getByRole("button", { name: "Next →" }));
+
+  // contact: required — fill phone before Next is enabled.
+  await user.type(screen.getByPlaceholderText("+63 917 123 4567"), "+63 917 000 0000");
+  await user.click(screen.getByRole("button", { name: "Next →" }));
+
+  // work, style, card skin, photo: skippable, Next needs nothing filled in.
+  for (let i = 0; i < 4; i++) {
     await user.click(screen.getByRole("button", { name: "Next →" }));
   }
+
+  // Now on "plans", the last step for a first-run, non-edit, non-invited session.
 }
 
 describe("onboarding wizard completion (Task 21)", () => {
   beforeEach(() => {
     resetUserState();
     updateOnboarding.mockClear();
+    updateProfile.mockClear();
     push.mockClear();
     replace.mockClear();
   });
@@ -158,12 +192,12 @@ describe("onboarding wizard completion (Task 21)", () => {
       expect.objectContaining({ markCompleted: true }),
     );
 
-    // No further click was needed to persist the work: the mutation
-    // above already completed onboarding and created the profile. The
-    // reactive onboarding query (mocked to mirror Convex) now reports
+    // No further click was needed to persist the work: the mutation above
+    // already completed onboarding and created the profile. The reactive
+    // onboarding query (mocked to mirror the live one) now reports
     // completed=true, so the wizard's own post-completion confirmation
-    // takes over in place of the wizard steps — proving a closed tab
-    // right here would NOT lose any work.
+    // takes over in place of the wizard steps — proving a closed tab right
+    // here would NOT lose any work.
     expect(
       await screen.findByRole("heading", { name: /profile setup complete/i }),
     ).toBeInTheDocument();

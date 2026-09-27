@@ -1,14 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMyPlan } from "@/hooks/useCurrentUser";
 import { usePlanPricing } from "@/hooks/useSettings";
-import { DEFAULT_PLAN_PRICING } from "@/lib/plans";
-import { Button } from "@/components/ui/button";
 import { Check, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
-import { formatPHP } from "@/lib/payment";
-import { PLAN_LIMITS, type PlanId } from "@/lib/plans";
+import { DEFAULT_PLAN_PRICING, PLAN_LIMITS, type PlanId } from "@/lib/plans";
+import { PRICING, type BillingCycle } from "@/lib/pricing";
 import { PlanUpgradeButton } from "@/components/billing/PlanUpgradeButton";
+
+const peso = (n: number) => `₱${n.toLocaleString("en-PH")}`;
 
 function fmtDate(ts: number | null | undefined): string {
   if (!ts) return "—";
@@ -19,22 +20,46 @@ function fmtDate(ts: number | null | undefined): string {
   });
 }
 
+const PAID_PLANS: Extract<PlanId, "lead_tools" | "teams">[] = ["lead_tools", "teams"];
+
+/** lib/pricing.ts key for a paid plan id. */
+const PRICING_KEY = { lead_tools: "leadTools", teams: "teams" } as const;
+
+/**
+ * Standard monthly price for a paid plan, in pesos.
+ *
+ * The admin settings override (hooks/useSettings usePlanPricing) replaces
+ * this ONE number -- the standard monthly price -- and nothing else. The
+ * prelaunch price and both yearly prices are fixed in lib/pricing.ts; see
+ * lib/plans.ts PlanPricing for why the override's scope stops there.
+ */
+function standardMonthlyPesos(plan: "lead_tools" | "teams", override: Record<string, number> | undefined) {
+  const centavos = override?.[plan] ?? DEFAULT_PLAN_PRICING[plan];
+  return centavos / 100;
+}
+
 /**
  * Billing & plans.
  *
  * There is no payment gateway and no checkout: every upgrade/renew action
  * goes through PlanUpgradeButton, which opens an inquiry dialog. Prices and
- * plan limits are real (convex/billing.ts still owns pricing and the
- * expiry/grace logic) — only the act of paying happens off-app for now.
- * There is likewise no payment history to show.
+ * plan limits are real (enforced in Postgres, see lib/plans.ts) -- only the
+ * act of paying happens off-app for now. There is likewise no payment
+ * history to show.
+ *
+ * Styled to match the homepage's Survey Plan pricing table
+ * (components/landing/Pricing.tsx): square 1.5px boundaries, no shadows, no
+ * "Most popular" badge, the prelaunch price shown as the real price with the
+ * standard price struck through beside it.
  */
 export default function BillingPage() {
   const { user } = useAuth();
+  const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
   const myPlan = useMyPlan();
   const { data: pricingData } = usePlanPricing();
 
-  if (myPlan === undefined) {
+  if (myPlan === undefined || !user) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="animate-spin text-primary w-8 h-8" />
@@ -43,33 +68,27 @@ export default function BillingPage() {
   }
 
   const currentPlan = myPlan.plan;
-  const pricing = pricingData ?? DEFAULT_PLAN_PRICING;
-  const priceFor = (p: PlanId) => (p === "free" ? 0 : p === "pro" ? pricing.pro : pricing.business);
-
-  const tiers: PlanId[] = ["free", "pro", "business"];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Billing &amp; Plans</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Billing &amp; plans</h1>
         <p className="text-muted-foreground">
-          Prepaid 30-day plans. Renew anytime — time stacks on what you have left.
+          Prepaid plans. Renew anytime — time stacks on what you have left.
         </p>
       </div>
 
-      {/* Current plan card */}
-      <div className="rounded-2xl border border-border bg-card p-6">
+      {/* Current plan */}
+      <div className="border-[1.5px] border-input p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Current Plan
-            </h3>
+            <h3 className="text-sm font-medium text-muted-foreground">Current plan</h3>
             <div className="mt-1 flex items-center gap-3">
               <span className="text-3xl font-bold tracking-tight">
                 {PLAN_LIMITS[currentPlan].name}
               </span>
               {currentPlan !== "free" && (
-                <span className="bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                <span className="border-[1.5px] border-primary px-3 py-1 text-xs font-bold text-primary">
                   Active
                 </span>
               )}
@@ -81,10 +100,7 @@ export default function BillingPage() {
             )}
           </div>
           {currentPlan !== "free" && (
-            <PlanUpgradeButton
-              label={`Renew ${PLAN_LIMITS[currentPlan].name}`}
-              className="rounded-2xl"
-            />
+            <PlanUpgradeButton label={`Renew ${PLAN_LIMITS[currentPlan].name}`} className="rounded-none" />
           )}
         </div>
 
@@ -99,54 +115,91 @@ export default function BillingPage() {
         )}
       </div>
 
+      {/* Monthly / yearly toggle */}
+      <div role="group" aria-label="Billing cycle" className="flex w-fit border-[1.5px] border-input">
+        {(["monthly", "yearly"] as const).map((c) => (
+          <button
+            key={c}
+            type="button"
+            aria-pressed={cycle === c}
+            onClick={() => setCycle(c)}
+            className={`flex h-11 items-center px-4 text-[14px] font-bold transition-colors ${
+              cycle === c ? "bg-foreground text-background" : "hover:bg-muted"
+            }`}
+          >
+            {c === "monthly" ? "Monthly" : "Yearly"}
+          </button>
+        ))}
+      </div>
+
       {/* Plan comparison grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {tiers.map((p) => {
-          const limits = PLAN_LIMITS[p];
-          const isCurrent = p === currentPlan;
-          const highlight = p === "pro";
+      <div className="grid border-[1.5px] border-input lg:grid-cols-3">
+        {/* Free */}
+        <div className="relative flex flex-col border-b-[1.5px] border-input px-5 pb-7 pt-9 lg:border-b-0 lg:border-r-[1.5px] lg:last:border-r-0">
+          <h3 className="absolute left-4 top-0 -translate-y-1/2 bg-background px-2 text-[19px] font-bold leading-none">
+            Free
+          </h3>
+          <p className="text-[14px] text-muted-foreground">Try it out</p>
+          <p className="mt-5 flex items-baseline gap-2">
+            <span className="text-[34px] font-medium">₱0</span>
+            <span className="text-[14px] text-muted-foreground">forever</span>
+          </p>
+          <ul className="mb-6 mt-6 flex flex-col">
+            {PLAN_LIMITS.free.features.map((f) => (
+              <li key={f} className="flex items-center gap-3 border-b border-input/60 py-2.5 text-[15px]">
+                <Check className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                {f}
+              </li>
+            ))}
+          </ul>
+          <span className="mt-auto flex h-12 items-center justify-center border-[1.5px] border-input text-[15px] font-bold text-muted-foreground">
+            {currentPlan === "free" ? "Your plan" : "Free forever"}
+          </span>
+        </div>
+
+        {PAID_PLANS.map((planId) => {
+          const limits = PLAN_LIMITS[planId];
+          const priceKey = PRICING_KEY[planId];
+          const homepage = PRICING[priceKey][cycle];
+          const standard = standardMonthlyPesosOrYearly(planId, cycle, pricingData, homepage);
+          const isCurrent = planId === currentPlan;
+          const unit = cycle === "monthly" ? "/ month" : "/ year";
+
           return (
             <div
-              key={p}
-              className={`relative flex flex-col rounded-2xl border bg-card p-6 ${
-                highlight ? "border-primary ring-1 ring-primary/20" : "border-border"
-              }`}
+              key={planId}
+              className="relative flex flex-col border-b-[1.5px] border-input px-5 pb-7 pt-9 last:border-b-0 lg:border-b-0 lg:border-r-[1.5px] lg:last:border-r-0"
             >
-              {highlight && (
-                <span className="absolute -top-3 left-6 bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
-                  Most popular
+              <h3 className="absolute left-4 top-0 -translate-y-1/2 bg-background px-2 text-[19px] font-bold leading-none">
+                {limits.name}
+              </h3>
+              <p className="text-[14px] text-muted-foreground">
+                {planId === "lead_tools" ? "For one person" : "Up to 5 people"}
+              </p>
+              <p className="mt-5 flex items-baseline gap-2">
+                <span className="text-[34px] font-medium">{peso(homepage.prelaunch)}</span>
+                <span className="text-[14px] text-muted-foreground">{unit}</span>
+              </p>
+              <p className="mt-1 flex items-center gap-2 text-[13px]">
+                <span className="border-[1.5px] border-[var(--connecta-mark)] px-1.5 py-0.5 text-[11px] font-bold uppercase text-[var(--connecta-mark-text)]">
+                  Prelaunch
                 </span>
-              )}
-              <h3 className="text-lg font-bold tracking-tight">{limits.name}</h3>
-              <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="font-mono text-3xl font-medium">
-                  {priceFor(p) === 0 ? "₱0" : formatPHP(priceFor(p))}
+                <span className="text-muted-foreground">
+                  Standard <span className="line-through">{peso(standard)}</span>
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  {p === "free" ? "forever" : "/ 30 days"}
-                </span>
-              </div>
-              <ul className="mt-6 flex-1 space-y-3">
+              </p>
+              <ul className="mb-6 mt-6 flex flex-col">
                 {limits.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>{f}</span>
+                  <li key={f} className="flex items-center gap-3 border-b border-input/60 py-2.5 text-[15px]">
+                    <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    {f}
                   </li>
                 ))}
               </ul>
-              <div className="mt-8">
-                {p === "free" ? (
-                  <Button variant="outline" disabled className="h-11 w-full">
-                    {isCurrent ? "Your plan" : "Free forever"}
-                  </Button>
-                ) : (
-                  <PlanUpgradeButton
-                    label={isCurrent ? `Renew ${limits.name}` : `Upgrade to ${limits.name}`}
-                    variant={highlight ? "default" : "outline"}
-                    className="min-h-11 h-auto w-full whitespace-normal py-2 text-center leading-tight"
-                  />
-                )}
-              </div>
+              <PlanUpgradeButton
+                label={isCurrent ? `Renew ${limits.name}` : `Upgrade to ${limits.name}`}
+                className="mt-auto flex h-12 w-full items-center justify-center rounded-none text-[15px] font-bold"
+              />
             </div>
           );
         })}
@@ -154,9 +207,26 @@ export default function BillingPage() {
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="h-4 w-4 shrink-0" />
-        Prices above are final. Online checkout is on our roadmap — for now we set up upgrades with
-        you directly.
+        There is no online checkout yet. Send a request and we&apos;ll confirm payment by GCash or
+        bank transfer, then switch your plan on — usually within a day.
       </p>
     </div>
   );
+}
+
+/**
+ * The struck-through "standard" price beside the prelaunch price.
+ *
+ * Monthly: the admin-overridable standard price (see standardMonthlyPesos).
+ * Yearly: the fixed constant in lib/pricing.ts -- the settings override only
+ * ever applies to the standard MONTHLY price (lib/plans.ts PlanPricing).
+ */
+function standardMonthlyPesosOrYearly(
+  planId: "lead_tools" | "teams",
+  cycle: BillingCycle,
+  pricingData: Record<string, number> | undefined,
+  homepage: { standard: number; prelaunch: number },
+): number {
+  if (cycle === "yearly") return homepage.standard;
+  return standardMonthlyPesos(planId, pricingData);
 }

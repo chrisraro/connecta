@@ -36,4 +36,5 @@ export const queryKeys = {
 
   settings: (key: string) => ["settings", key] as const,
   myTeam: () => ["team", "mine"] as const,
+  myInvites: () => ["team", "invites", "mine"] as const,
 } as const;

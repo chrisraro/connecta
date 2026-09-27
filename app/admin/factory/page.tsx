@@ -482,9 +482,7 @@ export default function AdminFactoryPage() {
       {nfcHost && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground font-medium">Encoding host:</span>
-          <code className="font-mono text-foreground bg-muted px-2 py-1 rounded-md break-all">
-            {nfcHost}
-          </code>
+          <code className="font-mono text-foreground bg-muted px-2 py-1 break-all">{nfcHost}</code>
         </div>
       )}
 
@@ -520,8 +518,8 @@ export default function AdminFactoryPage() {
           <ShieldCheck className="w-5 h-5 text-primary" />
           How Card Activation Works
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-background/50 rounded-2xl p-4 border border-border">
+        <div className="grid grid-cols-1 gap-[1.5px] border-[1.5px] border-input bg-input md:grid-cols-3">
+          <div className="bg-background p-4">
             <div className="w-8 h-8 border-[1.5px] border-input flex items-center justify-center mb-3">
               <span className="text-primary font-bold font-mono">1</span>
             </div>
@@ -530,7 +528,7 @@ export default function AdminFactoryPage() {
               Scan or manually register cards. They start as &quot;inventory&quot; status.
             </p>
           </div>
-          <div className="bg-background/50 rounded-2xl p-4 border border-border">
+          <div className="bg-background p-4">
             <div className="w-8 h-8 border-[1.5px] border-input flex items-center justify-center mb-3">
               <span className="text-primary font-bold font-mono">2</span>
             </div>
@@ -539,7 +537,7 @@ export default function AdminFactoryPage() {
               Customer taps the card → redirected to signup with auto-activation.
             </p>
           </div>
-          <div className="bg-background/50 rounded-2xl p-4 border border-border">
+          <div className="bg-background p-4">
             <div className="w-8 h-8 border-[1.5px] border-input flex items-center justify-center mb-3">
               <span className="text-primary font-bold font-mono">3</span>
             </div>
@@ -552,16 +550,16 @@ export default function AdminFactoryPage() {
       </div>
 
       {isScanning && (
-        <div className="mb-8 p-12 bg-background border-[1.5px] border-dashed border-input flex flex-col items-center justify-center text-center animate-pulse">
+        <div className="mb-8 p-12 bg-background border-[1.5px] border-dashed border-input flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 border-[1.5px] border-input flex items-center justify-center mb-6">
             <SmartphoneNfc className="w-10 h-10 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">Ready to Scan</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Ready to scan</h2>
           <p className="text-muted-foreground max-w-sm">
             Bring a physical NFC card close to your device&apos;s NFC reader to register it.
           </p>
           {ndefStatus && (
-            <div className="mt-4 px-3 py-1 border-[1.5px] border-input text-primary text-xs font-bold animate-pulse">
+            <div className="mt-4 px-3 py-1 border-[1.5px] border-input text-primary text-xs font-bold">
               {ndefStatus}
             </div>
           )}
@@ -599,7 +597,7 @@ export default function AdminFactoryPage() {
                 <Input
                   name="uuid"
                   placeholder="e.g. 04:A1:B2:C3:D4:E5:F6"
-                  className="bg-background border-border h-12 rounded-xl text-foreground font-mono"
+                  className="font-mono"
                   required
                   disabled={!nfcHost}
                   aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
@@ -607,7 +605,8 @@ export default function AdminFactoryPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-muted hover:bg-accent text-foreground h-12 rounded-xl"
+                variant="outline"
+                className="w-full"
                 disabled={!nfcHost}
                 title={!nfcHost ? "No NFC host configured — see the notice above." : undefined}
                 aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
@@ -618,25 +617,22 @@ export default function AdminFactoryPage() {
           </div>
 
           {lastRegistered && (
-            <div className="bg-primary/5 border border-primary/20 rounded-3xl p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <ShieldCheck className="w-12 h-12 text-primary" />
-              </div>
+            <div className="border-[1.5px] border-input bg-background p-6">
               <h3 className="text-primary font-bold mb-4 flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5" />
-                Just Registered
+                Just registered
               </h3>
               <div className="space-y-3">
                 <div>
-                  <div className="text-[10px] uppercase font-bold text-primary/60 tracking-widest">
-                    Activation Code
+                  <div className="text-[13px] font-semibold text-muted-foreground">
+                    Activation code
                   </div>
                   <div className="text-2xl font-bold text-foreground tracking-[0.2em]">
                     {lastRegistered.activationCode}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase font-bold text-primary/60 tracking-widest">
+                  <div className="text-[13px] font-semibold text-muted-foreground">
                     Card ID (UID)
                   </div>
                   <div className="text-xs font-mono text-muted-foreground truncate">
@@ -663,10 +659,10 @@ export default function AdminFactoryPage() {
 
         {/* Right: Records Table */}
         <div className="lg:col-span-2">
-          <div className="bg-card border border-border rounded-3xl overflow-hidden">
-            <div className="p-6 border-b border-border flex justify-between items-center bg-background/30">
+          <div className="border-[1.5px] border-input bg-card">
+            <div className="p-6 border-b-[1.5px] border-input flex justify-between items-center">
               <div>
-                <h2 className="font-bold text-foreground text-lg">Inventory Database</h2>
+                <h2 className="font-bold text-foreground text-lg">Inventory database</h2>
                 <p className="text-xs text-muted-foreground">
                   {/* api.admin.getCards caps at ADMIN_CARDS_LIST_CAP (500, convex/admin.ts) */}
                   {cardsList.length >= 500
@@ -687,16 +683,16 @@ export default function AdminFactoryPage() {
                         className="border-border"
                       />
                     </TableHead>
-                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
+                    <TableHead className="text-[13px] font-semibold text-muted-foreground">
                       Card UID
                     </TableHead>
-                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
+                    <TableHead className="text-[13px] font-semibold text-muted-foreground">
                       Code
                     </TableHead>
-                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
+                    <TableHead className="text-[13px] font-semibold text-muted-foreground">
                       Status
                     </TableHead>
-                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest text-right pr-6">
+                    <TableHead className="text-[13px] font-semibold text-muted-foreground text-right pr-6">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -736,14 +732,14 @@ export default function AdminFactoryPage() {
                           {card.status === "inventory" ? (
                             <Badge
                               variant="outline"
-                              className="bg-[var(--connecta-mark)]/10 text-[var(--connecta-mark-text)] border-[var(--connecta-mark-text)]/20 text-[10px] font-bold uppercase tracking-tight"
+                              className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark-text)]/40 text-[12px] font-bold"
                             >
-                              In Stock
+                              In stock
                             </Badge>
                           ) : card.status === "active" ? (
                             <Badge
                               variant="outline"
-                              className="bg-primary/10 text-primary border-primary/40 text-[12px] font-bold"
+                              className="bg-transparent text-primary border-primary/40 text-[12px] font-bold"
                             >
                               Active
                             </Badge>
@@ -804,9 +800,7 @@ export default function AdminFactoryPage() {
       <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
         <DialogContent className="sm:max-w-md bg-background border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold italic tracking-tighter uppercase">
-              Label Preview
-            </DialogTitle>
+            <DialogTitle className="text-2xl font-bold">Label preview</DialogTitle>
             <DialogDescription className="text-muted-foreground">
               This is how the physical sticker will look when printed.
             </DialogDescription>
@@ -816,7 +810,7 @@ export default function AdminFactoryPage() {
             {/* The Actual Label Template */}
             <div
               id="print-section"
-              className="bg-white p-4 rounded-lg flex flex-col items-center justify-center"
+              className="bg-white p-4 flex flex-col items-center justify-center"
               style={{ width: "200px", height: "200px" }}
             >
               <div className="mb-2 text-black font-bold text-xs tracking-[0.2em] uppercase">
@@ -855,15 +849,13 @@ export default function AdminFactoryPage() {
             </div>
 
             <div className="mt-8 grid grid-cols-2 gap-4 w-full">
-              <div className="p-4 bg-card rounded-2xl border border-border">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">
-                  Sticker Size
-                </p>
+              <div className="border-[1.5px] border-input p-4">
+                <p className="text-[13px] font-semibold text-muted-foreground mb-1">Sticker size</p>
                 <p className="text-sm font-bold">25mm x 25mm</p>
               </div>
-              <div className="p-4 bg-card rounded-2xl border border-border">
-                <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">
-                  DPI Recommendation
+              <div className="border-[1.5px] border-input p-4">
+                <p className="text-[13px] font-semibold text-muted-foreground mb-1">
+                  DPI recommendation
                 </p>
                 <p className="text-sm font-bold">300 DPI</p>
               </div>
@@ -875,7 +867,6 @@ export default function AdminFactoryPage() {
               type="button"
               variant="secondary"
               onClick={() => setShowPrintDialog(false)}
-              className="rounded-xl bg-muted hover:bg-accent border-none text-foreground"
             >
               Close
             </Button>

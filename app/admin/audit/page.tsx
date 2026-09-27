@@ -45,7 +45,7 @@ export default function AdminAuditPage() {
     )
       return "bg-destructive/10 text-destructive border-destructive/20";
     if (action.includes("update") || action.includes("reactivate"))
-      return "bg-primary/10 text-primary border-primary/20";
+      return "bg-transparent text-primary border-primary/40";
     return "bg-muted text-muted-foreground border-border";
   };
 
@@ -95,14 +95,9 @@ export default function AdminAuditPage() {
             Security events and platform activity tracking
           </p>
         </div>
-        <Button
-          variant="outline"
-          className="bg-card border-border text-foreground hover:bg-muted"
-          onClick={exportLogs}
-          disabled={!filtered.length}
-        >
+        <Button variant="outline" onClick={exportLogs} disabled={!filtered.length}>
           <Download className="w-4 h-4 mr-2" />
-          Export Logs
+          Export logs
         </Button>
       </div>
 
@@ -113,14 +108,14 @@ export default function AdminAuditPage() {
           placeholder="Search action, resource, or actor..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 bg-card border-border"
+          className="pl-10"
         />
       </div>
 
       {/* Audit Table */}
-      <Card className="bg-card border-border text-foreground">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Recent Activity ({filtered.length})</CardTitle>
+          <CardTitle className="text-lg">Recent activity ({filtered.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {filtered.length === 0 ? (
@@ -147,7 +142,7 @@ export default function AdminAuditPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((log) => (
-                  <TableRow key={log.id} className="border-border hover:bg-muted/50">
+                  <TableRow key={log.id} className="border-border hover:bg-accent/40">
                     <TableCell className="text-xs text-muted-foreground font-mono">
                       {formatTimestamp(log.timestamp)}
                     </TableCell>
