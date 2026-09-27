@@ -45,6 +45,7 @@ import { PhotoStep } from "./steps/PhotoStep";
 import { PasswordStep } from "./steps/PasswordStep";
 import { PlansStep } from "./steps/PlansStep";
 import { CompletedScreen } from "./steps/CompletedScreen";
+import { InviteBanner } from "@/components/team/InviteBanner";
 
 // Retrying cannot help once someone else holds the card.
 const CARD_ALREADY_ACTIVATED = "This card has already been activated.";
@@ -403,9 +404,10 @@ function OnboardingContent() {
   return (
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-lg">
-        {/* TODO(team-invite): components/team/InviteBanner.tsx is being
-            built elsewhere — render "You've been invited to join <team>"
-            above the card detection alert once it exists. */}
+        {/* A pending team invite (Accept / Decline); renders nothing otherwise. */}
+        <div className="mb-4 empty:hidden">
+          <InviteBanner />
+        </div>
 
         {cardUuid && (
           <div className="mb-4 flex items-center gap-3 border-[1.5px] border-input bg-background p-4">

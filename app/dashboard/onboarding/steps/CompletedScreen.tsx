@@ -6,6 +6,7 @@ import { CONNECTA } from "@/lib/brand";
 import type { LinkState } from "@/lib/cardClaim";
 import { PROFILE_CATEGORIES } from "./TypeStep";
 import type { OnboardingData } from "@/lib/db/profile";
+import { InviteBanner } from "@/components/team/InviteBanner";
 
 /**
  * The post-completion confirmation, gated on the live `onboarding.completed`
@@ -104,9 +105,7 @@ export function CompletedScreen({
               </div>
             )}
 
-            {/* TODO(team-invite): once components/team/InviteBanner.tsx exists,
-                render "You've been invited to join <team>" here for invited
-                users landing on this screen. */}
+            <InviteBanner />
 
             <div className="space-y-2">
               <Button className="w-full" size="lg" onClick={onGoToBuilder}>

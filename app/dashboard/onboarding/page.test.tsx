@@ -131,6 +131,9 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
+// The invite banner has its own tests (components/team/InviteBanner.test.tsx).
+vi.mock("@/components/team/InviteBanner", () => ({ InviteBanner: () => null }));
+
 import OnboardingPage from "./page";
 
 async function goToLastStep(user: ReturnType<typeof userEvent.setup>) {
