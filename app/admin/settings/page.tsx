@@ -8,7 +8,7 @@ import { Loader2, Settings, Save, Store } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useSetting, useUpdateSetting, usePlanPricing } from "@/hooks/useSettings";
-import type { PlanPricing } from "@/lib/plans";
+import { PLAN_LIMITS, type PlanPricing } from "@/lib/plans";
 import type { ShopSettings } from "@/lib/shopSettings";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
@@ -40,7 +40,7 @@ export default function AdminSettingsPage() {
     }
   }, [shopSettings]);
 
-  // ---- Plan pricing (Pro / Business monthly price in ₱) ----
+  // ---- Plan pricing (paid-tier monthly price in ₱) ----
   const { data: planPricing } = usePlanPricing();
   const updatePlanPricing = (value: PlanPricing) =>
     updateSetting({ key: "planPricing", value, isPublic: true });
@@ -105,14 +105,12 @@ export default function AdminSettingsPage() {
         <p className="text-muted-foreground mt-1">Configure system preferences and integrations</p>
       </div>
 
-      <Card className="bg-card border-border text-foreground">
+      <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Store className="w-5 h-5 text-primary" />
-            </div>
+            <Store className="w-5 h-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <CardTitle className="text-lg">Shop Settings</CardTitle>
+              <CardTitle className="text-lg">Shop settings</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Tax and shipping rates applied at checkout (PHP). Used by the storefront and order
                 totals.
@@ -129,7 +127,7 @@ export default function AdminSettingsPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Tax Rate (%)</Label>
+                  <Label>Tax rate (%)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -139,12 +137,11 @@ export default function AdminSettingsPage() {
                     onChange={(e) =>
                       setShopForm({ ...shopForm, taxRatePercent: parseFloat(e.target.value) || 0 })
                     }
-                    className="bg-background border-border text-foreground"
                   />
                   <p className="text-xs text-muted-foreground">0 = no tax</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Flat Shipping (₱)</Label>
+                  <Label>Flat shipping (₱)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -156,14 +153,13 @@ export default function AdminSettingsPage() {
                         shippingFlatRatePesos: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="bg-background border-border text-foreground"
                   />
                   <p className="text-xs text-muted-foreground">
                     Charged below the free-shipping threshold
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Free Shipping Over (₱)</Label>
+                  <Label>Free shipping over (₱)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -175,24 +171,19 @@ export default function AdminSettingsPage() {
                         freeShippingThresholdPesos: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="bg-background border-border text-foreground"
                   />
                   <p className="text-xs text-muted-foreground">Orders at/above this ship free</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Button
-                  
-                  onClick={handleSaveShopSettings}
-                  disabled={shopSaving}
-                >
+                <Button onClick={handleSaveShopSettings} disabled={shopSaving}>
                   {shopSaving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" /> Save Shop Settings
+                      <Save className="w-4 h-4 mr-2" /> Save shop settings
                     </>
                   )}
                 </Button>
@@ -205,14 +196,12 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-card border-border text-foreground">
+      <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Settings className="w-5 h-5 text-primary" />
-            </div>
+            <Settings className="w-5 h-5 shrink-0 text-primary" aria-hidden="true" />
             <div>
-              <CardTitle className="text-lg">Plan Pricing</CardTitle>
+              <CardTitle className="text-lg">Plan pricing</CardTitle>
               <CardDescription className="text-muted-foreground">
                 Monthly (30-day) subscription prices in PHP. Used on the billing page and landing
                 pricing.
@@ -229,7 +218,7 @@ export default function AdminSettingsPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Pro — monthly (₱)</Label>
+                  <Label>{PLAN_LIMITS.pro.name} — monthly (₱)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -238,11 +227,10 @@ export default function AdminSettingsPage() {
                     onChange={(e) =>
                       setPlanForm({ ...planForm, proPesos: parseFloat(e.target.value) || 0 })
                     }
-                    className="bg-background border-border text-foreground"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Business — monthly (₱)</Label>
+                  <Label>{PLAN_LIMITS.business.name} — monthly (₱)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -251,23 +239,18 @@ export default function AdminSettingsPage() {
                     onChange={(e) =>
                       setPlanForm({ ...planForm, businessPesos: parseFloat(e.target.value) || 0 })
                     }
-                    className="bg-background border-border text-foreground"
                   />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                  onClick={handleSavePlanPricing}
-                  disabled={planSaving}
-                >
+                <Button onClick={handleSavePlanPricing} disabled={planSaving}>
                   {planSaving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" /> Save Plan Pricing
+                      <Save className="w-4 h-4 mr-2" /> Save plan pricing
                     </>
                   )}
                 </Button>
@@ -286,12 +269,10 @@ export default function AdminSettingsPage() {
         flips and saves nothing tells an admin a protection is on when it is
         not. This card says where each of those things actually lives.
       */}
-      <Card className="bg-card border-border text-foreground">
+      <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-              <Settings className="w-5 h-5 text-muted-foreground" />
-            </div>
+            <Settings className="w-5 h-5 shrink-0 text-muted-foreground" aria-hidden="true" />
             <div>
               <CardTitle className="text-lg">Configured outside this console</CardTitle>
               <CardDescription className="text-muted-foreground">
