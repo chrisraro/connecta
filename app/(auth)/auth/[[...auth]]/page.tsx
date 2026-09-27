@@ -91,7 +91,7 @@ async function AuthContent({
           </span>
         </Link>
         <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-muted-foreground">
-          Elevate your digital business card, manage leads CRM &amp; share via NFC instantly.
+          Manage your digital business card, leads, and NFC cards.
         </p>
 
         {cardUuid && (

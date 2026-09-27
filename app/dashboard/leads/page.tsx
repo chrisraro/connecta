@@ -1,12 +1,12 @@
 "use client";
 
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useDeleteLead, useMyLeads, useUpdateLeadStatus, type Lead } from "@/hooks/useLeads";
 import { leadReplyLinks } from "@/lib/leadContact";
 import { leadStatusActions, type LeadAction } from "@/lib/leadActions";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   MessageSquare,
   CheckCircle2,
@@ -49,7 +49,7 @@ import { newestProfileId } from "@/lib/builderEntry";
 import { leadsExportFilename, toCsv } from "@/lib/csv";
 
 export default function LeadsPage() {
-  const { user } = useAuth();
+  const { data: appUser } = useCurrentUser();
   const { data: leadsData } = useMyLeads();
   // "Edit your profile" must name a profile: the bare builder URL means CREATE,
   // which on a paid plan made a duplicate profile instead of editing one.
@@ -76,8 +76,9 @@ export default function LeadsPage() {
   const handleFollowUpClick = (lead: Lead) => {
     setSelectedLead(lead);
     const refText = lead.property_name ? `about ${lead.property_name}` : "from my profile";
+    const signOff = appUser?.name ? appUser.name.split(" ")[0] : "";
     setFollowUpMsg(
-      `Hi ${lead.inquirer_name},\n\nThanks for inquiring ${refText}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,\n[Your Name]`,
+      `Hi ${lead.inquirer_name},\n\nThanks for inquiring ${refText}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,\n${signOff}`,
     );
   };
 
@@ -213,7 +214,7 @@ export default function LeadsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search leads..."
-              className="pl-10 bg-muted/50 border-border rounded-2xl h-12 md:h-10 focus-visible:ring-primary"
+              className="pl-10"
             />
           </div>
           {leads.length > 0 && (
@@ -225,7 +226,7 @@ export default function LeadsPage() {
               <Button
                 variant="outline"
                 onClick={handleExportCsv}
-                className="h-12 shrink-0 rounded-2xl md:h-10"
+                className="shrink-0"
                 aria-label="Export leads as CSV"
               >
                 <Download className="h-4 w-4 md:mr-2" aria-hidden="true" />
@@ -243,10 +244,10 @@ export default function LeadsPage() {
             key={chip}
             onClick={() => setActiveChip(chip)}
             aria-pressed={activeChip === chip}
-            className={`px-6 py-2.5 text-xs font-bold whitespace-nowrap transition-colors duration-300 border ${
+            className={`px-6 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors border-[1.5px] ${
               activeChip === chip
-                ? "bg-primary border-primary text-primary-foreground"
-                : "bg-muted border-border text-muted-foreground hover:border-primary/50"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-input text-muted-foreground hover:text-foreground"
             }`}
           >
             {chip}
@@ -257,16 +258,14 @@ export default function LeadsPage() {
       {lockedCount > 0 && (
         <Link
           href="/dashboard/billing"
-          className="flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 transition-colors hover:bg-primary/10"
+          className="flex items-center justify-between gap-3 border-[1.5px] border-input px-5 py-4 transition-colors hover:bg-accent"
         >
           <p className="text-sm font-medium text-foreground">
-            <span className="font-bold">{lockedCount}</span> older{" "}
+            <span className="font-semibold">{lockedCount}</span> older{" "}
             {lockedCount === 1 ? "lead is" : "leads are"} locked on the Free plan. Upgrade to Pro to
             view all your leads.
           </p>
-          <span className="shrink-0 bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground">
-            Upgrade
-          </span>
+          <span className="shrink-0 text-sm font-semibold text-primary">Upgrade</span>
         </Link>
       )}
 
@@ -286,7 +285,7 @@ export default function LeadsPage() {
           filteredLeads.map((lead) => (
             <div
               key={lead.id}
-              className="group relative bg-card border border-border p-5 hover:border-primary/20 transition-colors duration-300"
+              className="relative border-[1.5px] border-input bg-background p-5"
             >
               {/* The `truncate` on the contact below only works if
                                 every flex ancestor can shrink. Without min-w-0
@@ -297,29 +296,21 @@ export default function LeadsPage() {
                                 at their intended size while the text gives way. */}
               <div className="flex justify-between items-start gap-3 mb-4">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div
-                    className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center border ${
-                      lead.status === "new"
-                        ? "bg-primary/10 border-primary/20 text-primary"
-                        : "bg-muted border-border text-muted-foreground"
-                    }`}
-                  >
-                    <MessageSquare className="w-6 h-6" aria-hidden="true" />
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center border-[1.5px] border-input text-muted-foreground">
+                    <MessageSquare className="w-5 h-5" aria-hidden="true" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="truncate font-bold [font-stretch:112%] text-foreground">
+                    <h3 className="truncate font-semibold text-foreground">
                       {lead.inquirer_name}
                     </h3>
-                    <div className="flex min-w-0 items-center gap-2 text-[12px] font-bold text-muted-foreground">
+                    <div className="flex min-w-0 items-center gap-2 text-[13px] text-muted-foreground">
                       <span className="shrink-0">
                         {new Date(lead.created_at).toLocaleDateString()}
                       </span>
                       <span aria-hidden="true" className="shrink-0">
                         •
                       </span>
-                      <span className="truncate normal-case tracking-normal">
-                        {lead.inquirer_contact}
-                      </span>
+                      <span className="truncate">{lead.inquirer_contact}</span>
                     </div>
                   </div>
                 </div>
@@ -328,25 +319,20 @@ export default function LeadsPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="bg-muted/50 rounded-2xl p-4 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1 uppercase tracking-tighter font-bold">
-                    Regarding
-                  </p>
-                  <p className="text-sm font-bold text-foreground uppercase">
-                    {lead.property_name || "General Inquiry"}
+              <div className="mb-6 border-t-[1.5px] border-input">
+                <div className="flex items-baseline justify-between gap-3 border-b border-border py-2.5">
+                  <p className="text-[13px] font-semibold text-muted-foreground">Regarding</p>
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {lead.property_name || "General inquiry"}
                   </p>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed px-1 line-clamp-2">
+                <p className="pt-3 text-sm text-muted-foreground leading-relaxed line-clamp-2">
                   &quot;{lead.message || "Interested in learning more about this property."}&quot;
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <Button
-                  className="flex-1 rounded-2xl h-12 font-bold text-[12px] bg-primary text-primary-foreground hover:bg-primary/90"
-                  onClick={() => handleFollowUpClick(lead)}
-                >
+                <Button className="flex-1" onClick={() => handleFollowUpClick(lead)}>
                   <Mail className="w-4 h-4 mr-2" aria-hidden="true" />
                   Reply
                 </Button>
@@ -359,17 +345,12 @@ export default function LeadsPage() {
                   if (!quick) return null;
                   const Icon = quick.channel === "call" ? Phone : Mail;
                   return (
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="icon"
-                      className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
-                    >
+                    <Button asChild variant="outline" size="icon" className="size-9">
                       <a
                         href={quick.href}
                         aria-label={`${quick.channel === "call" ? "Call" : "Email"} ${lead.inquirer_name}`}
                       >
-                        <Icon className="w-5 h-5" aria-hidden="true" />
+                        <Icon className="w-4 h-4" aria-hidden="true" />
                       </a>
                     </Button>
                   );
@@ -386,12 +367,12 @@ export default function LeadsPage() {
                       key={action}
                       variant="outline"
                       size="icon"
-                      className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
+                      className="size-9"
                       onClick={() => handleLeadAction(lead, action)}
                       aria-label={meta.label}
                       title={meta.label}
                     >
-                      <meta.Icon className={`w-5 h-5 ${meta.tone}`} aria-hidden="true" />
+                      <meta.Icon className={`w-4 h-4 ${meta.tone}`} aria-hidden="true" />
                     </Button>
                   );
                 })}
@@ -402,12 +383,10 @@ export default function LeadsPage() {
       </div>
 
       <Dialog open={!!selectedLead} onOpenChange={(open) => !open && setSelectedLead(null)}>
-        <DialogContent className="bg-card border-border sm:max-w-md p-6">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold [font-stretch:112%]">
-              Follow Up
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground font-medium tracking-tight">
+            <DialogTitle>Follow up</DialogTitle>
+            <DialogDescription>
               Personalize your response to {selectedLead?.inquirer_name}.
             </DialogDescription>
           </DialogHeader>
@@ -420,15 +399,10 @@ export default function LeadsPage() {
               value={followUpMsg}
               onChange={(e) => setFollowUpMsg(e.target.value)}
               rows={8}
-              className="bg-muted/50 border-border rounded-2xl focus-visible:ring-primary resize-none p-4 text-sm leading-relaxed"
             />
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => setSelectedLead(null)}
-              className="rounded-xl font-bold text-[12px]"
-            >
+            <Button variant="ghost" onClick={() => setSelectedLead(null)}>
               Cancel
             </Button>
             {selectedLead && replyLinks(selectedLead).length === 0 && (
@@ -438,11 +412,7 @@ export default function LeadsPage() {
             )}
             {selectedLead &&
               replyLinks(selectedLead).map((link) => (
-                <Button
-                  key={link.channel}
-                  asChild
-                  className="rounded-xl bg-primary hover:bg-primary/90 font-bold text-[12px] px-6 h-12 text-primary-foreground"
-                >
+                <Button key={link.channel} asChild>
                   <a
                     href={link.href}
                     target={link.channel === "whatsapp" ? "_blank" : undefined}
@@ -468,10 +438,7 @@ export default function LeadsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep it</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={confirmDelete} className={buttonVariants({ variant: "destructive" })}>
               Delete lead
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -483,18 +450,13 @@ export default function LeadsPage() {
 
 function StatusChip({ status }: { status: "new" | "contacted" | "closed" }) {
   const map = {
-    new: {
-      label: "New",
-      className: "bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)]",
-    },
-    contacted: { label: "Contacted", className: "bg-primary/10 text-primary border-primary/20" },
-    closed: { label: "Closed", className: "bg-muted text-muted-foreground border-border" },
+    new: { label: "New", className: "border-primary text-primary" },
+    contacted: { label: "Contacted", className: "border-input text-foreground" },
+    closed: { label: "Closed", className: "border-input text-muted-foreground" },
   } as const;
   const { label, className } = map[status];
   return (
-    <span
-      className={`shrink-0 border px-3 py-1 text-[12px] font-bold  ${className}`}
-    >
+    <span className={`shrink-0 border-[1.5px] px-3 py-1 text-[13px] font-semibold ${className}`}>
       {label}
     </span>
   );
