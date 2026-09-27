@@ -108,7 +108,7 @@ export function UpgradeGate({
       <div aria-hidden="true" className="pointer-events-none opacity-40 grayscale">
         {children}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 p-3 text-center backdrop-blur-[1px]">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/85 p-3 text-center">
         <span className="inline-flex items-center gap-1.5 bg-muted px-2.5 py-1 text-[12px] font-bold text-muted-foreground">
           <Lock className="h-3 w-3" aria-hidden="true" />
           Lead tools

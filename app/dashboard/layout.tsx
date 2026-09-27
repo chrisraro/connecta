@@ -12,7 +12,7 @@ import {
   Settings,
   SmartphoneNfc,
   MessageSquare,
-  Sparkles,
+  ListChecks,
   Zap,
   LayoutTemplate,
   ChevronRight,
@@ -72,7 +72,7 @@ function DashboardFabs() {
           <Button
             size="icon"
             aria-label="Quick actions"
-            className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 shadow-[var(--e-overlay)] bg-primary text-primary-foreground md:hidden"
+            className="quick-actions-fab fixed bottom-28 right-6 z-50 h-14 w-14 ring-[1.5px] ring-background bg-primary text-primary-foreground md:hidden"
           >
             <Zap className="w-7 h-7" aria-hidden="true" />
             {unsyncedCount > 0 && (
@@ -172,7 +172,7 @@ function QuickActionItem({
           <div className="font-bold text-sm tracking-tight">{label}</div>
           <div className="text-xs text-muted-foreground">{desc}</div>
         </div>
-        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
       </div>
     </Link>
   );
@@ -212,7 +212,7 @@ function QuickActionButton({
         <div className="font-bold text-sm tracking-tight">{label}</div>
         <div className="text-xs text-muted-foreground">{desc}</div>
       </div>
-      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
     </button>
   );
 }
@@ -233,7 +233,7 @@ function DashboardSidebar({ className }: { className?: string }) {
     {
       title: "Profile Setup",
       url: "/dashboard/onboarding",
-      icon: Sparkles,
+      icon: ListChecks,
       badge: isOnboardingIncomplete,
     },
   ];
@@ -297,7 +297,7 @@ function MobileBottomNav() {
                 fixed label height (opacity toggles visibility, not layout),
                 so the pill's height is constant and there's nothing left
                 for overflow-hidden to need to clip. */}
-      <nav aria-label="Dashboard" className="bg-background border-[1.5px] border-input p-1.5 flex items-center justify-between shadow-[var(--e-overlay)]">
+      <nav aria-label="Dashboard" className="bg-background border-[1.5px] border-input p-1.5 flex items-center justify-between">
         {navItems.map((item) => {
           const isActive =
             pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url));
