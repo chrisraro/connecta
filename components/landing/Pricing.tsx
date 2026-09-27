@@ -5,15 +5,9 @@ import Link from "next/link";
 import survey from "@/components/survey/survey.module.css";
 import type { LandingCopy } from "./copy";
 import styles from "./landing.module.css";
+import { PRICING, formatPeso } from "@/lib/pricing";
 
-// Confirmed 2026-09-24 (PRODUCT.md): standard and prelaunch prices in pesos.
-const PRICES = {
-  card: { standard: 888, prelaunch: 799 },
-  lead: { monthly: { standard: 79, prelaunch: 49 }, yearly: { standard: 799, prelaunch: 499 } },
-  team: { monthly: { standard: 299, prelaunch: 249 }, yearly: { standard: 3199, prelaunch: 2699 } },
-};
-
-const peso = (n: number) => `₱${n.toLocaleString("en-PH")}`;
+const peso = formatPeso;
 
 function Plan({
   name,
@@ -105,9 +99,9 @@ export function Pricing({ t }: { t: LandingCopy }) {
       </div>
 
       <div className="relative mt-10 grid border-x-[1.5px] border-b-[1.5px] lg:grid-cols-3 lg:border-t-[1.5px]" style={{ borderColor: "var(--sv-line)" }}>
-        <Plan {...t.plans.card} prelaunch={PRICES.card.prelaunch} standard={PRICES.card.standard} unit={t.oneTime} t={t} cta={{ href: "/shop", label: t.orderCard }} />
-        <Plan {...t.plans.lead} prelaunch={PRICES.lead[cycle].prelaunch} standard={PRICES.lead[cycle].standard} unit={unit} t={t} cta={{ href: "/auth?mode=signup", label: t.nav.start }} />
-        <Plan {...t.plans.team} prelaunch={PRICES.team[cycle].prelaunch} standard={PRICES.team[cycle].standard} unit={unit} t={t} cta={{ href: "/auth?mode=signup", label: t.nav.start }} />
+        <Plan {...t.plans.card} prelaunch={PRICING.card.prelaunch} standard={PRICING.card.standard} unit={t.oneTime} t={t} cta={{ href: "/shop", label: t.orderCard }} />
+        <Plan {...t.plans.lead} prelaunch={PRICING.lead[cycle].prelaunch} standard={PRICING.lead[cycle].standard} unit={unit} t={t} cta={{ href: "/auth?mode=signup", label: t.nav.start }} />
+        <Plan {...t.plans.team} prelaunch={PRICING.team[cycle].prelaunch} standard={PRICING.team[cycle].standard} unit={unit} t={t} cta={{ href: "/auth?mode=signup", label: t.nav.start }} />
       </div>
     </section>
   );
