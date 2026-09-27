@@ -88,10 +88,10 @@ export default function CardsPage() {
   const [activationCode, setActivationCode] = useState("");
   const [activationError, setActivationError] = useState<string | null>(null);
   // Set alongside activationError whenever the rejection is a plan limit
-  // (e.g. "Upgrade to Pro to activate more than one card") — the free-plan
-  // 1-active-card cap is the single most common wall a free user hits
-  // here, so it gets the same "Get Pro" CTA as every other gated surface
-  // instead of a dead end.
+  // (e.g. "Upgrade to Lead tools to activate more than one card") — the
+  // free-plan 1-active-card cap is the single most common wall a free user
+  // hits here, so it gets the same "Get Lead tools" CTA as every other
+  // gated surface instead of a dead end.
   const [activationLocked, setActivationLocked] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showActivationDialog, setShowActivationDialog] = useState(false);

@@ -178,7 +178,7 @@ export function useSetUserSuspended() {
 /**
  * Set a customer's plan by hand -- the only upgrade path while there is no
  * payment gateway (20260924000024). A paid plan extends from the later of
- * today and the current expiry; a first Business upgrade creates the team.
+ * today and the current expiry; a first Teams upgrade creates the team.
  */
 export function useSetUserPlan() {
   const supabase = useSupabase();
@@ -191,7 +191,7 @@ export function useSetUserPlan() {
       periodDays = 30,
     }: {
       userId: string;
-      plan: "free" | "pro" | "business";
+      plan: "free" | "lead_tools" | "teams";
       periodDays?: number;
     }) => {
       const { error } = await supabase.rpc("admin_set_user_plan", {

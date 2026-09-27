@@ -37,12 +37,12 @@ import { PLAN_GRACE_DAYS } from "@/lib/plans";
 import { adminRoleLabel } from "@/lib/adminRoles";
 
 // Paid-plan grants offered in the Manage menu. Renewing the same plan extends
-// from the current expiry, so "30 days" on an active Pro adds 30 more.
+// from the current expiry, so "30 days" on an active Lead tools adds 30 more.
 const PLAN_GRANTS = [
-  { plan: "pro", days: 30, label: "Pro · 30 days" },
-  { plan: "pro", days: 365, label: "Pro · 1 year" },
-  { plan: "business", days: 30, label: "Business · 30 days" },
-  { plan: "business", days: 365, label: "Business · 1 year" },
+  { plan: "lead_tools", days: 30, label: "Lead tools · 30 days" },
+  { plan: "lead_tools", days: 365, label: "Lead tools · 1 year" },
+  { plan: "teams", days: 30, label: "Teams · 30 days" },
+  { plan: "teams", days: 365, label: "Teams · 1 year" },
 ] as const;
 
 /** Past expiry plus grace: the account is served as Free whatever it stores. */
@@ -102,12 +102,12 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleSetPlan = (u: AdminUserRow, plan: "free" | "pro" | "business", days = 30) => {
+  const handleSetPlan = (u: AdminUserRow, plan: "free" | "lead_tools" | "teams", days = 30) => {
     const who = u.name || u.email || "this user";
     const question =
       plan === "free"
         ? `Downgrade ${who} to Free? Paid features stop immediately; their team is kept.`
-        : `Give ${who} ${plan === "pro" ? "Pro" : "Business"} for ${days} days?` +
+        : `Give ${who} ${plan === "lead_tools" ? "Lead tools" : "Teams"} for ${days} days?` +
           (u.plan === plan && !planLapsed(u) ? " This extends their current expiry." : "");
     if (!confirm(question)) return;
     run(
@@ -212,14 +212,14 @@ export default function AdminUsersPage() {
                         <Badge
                           variant="outline"
                           className={
-                            u.plan === "business"
+                            u.plan === "teams"
                               ? "bg-primary text-primary-foreground border-primary w-fit capitalize"
-                              : u.plan === "pro"
+                              : u.plan === "lead_tools"
                                 ? "bg-primary/10 text-primary border-primary/20 w-fit capitalize"
                                 : "bg-muted text-foreground border-border w-fit capitalize"
                           }
                         >
-                          {u.plan}
+                          {u.plan === "lead_tools" ? "Lead tools" : u.plan === "teams" ? "Teams" : "Free"}
                         </Badge>
                         {u.plan !== "free" &&
                           u.plan_expires_at &&

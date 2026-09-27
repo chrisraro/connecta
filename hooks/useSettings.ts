@@ -33,12 +33,14 @@ export function usePlanPricing() {
 
       const stored = (data?.value ?? {}) as Partial<PlanPricing>;
       return {
-        pro:
-          typeof stored.pro === "number" && stored.pro >= 0 ? stored.pro : DEFAULT_PLAN_PRICING.pro,
-        business:
-          typeof stored.business === "number" && stored.business >= 0
-            ? stored.business
-            : DEFAULT_PLAN_PRICING.business,
+        lead_tools:
+          typeof stored.lead_tools === "number" && stored.lead_tools >= 0
+            ? stored.lead_tools
+            : DEFAULT_PLAN_PRICING.lead_tools,
+        teams:
+          typeof stored.teams === "number" && stored.teams >= 0
+            ? stored.teams
+            : DEFAULT_PLAN_PRICING.teams,
       };
     },
   });

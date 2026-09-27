@@ -45,8 +45,8 @@ export function PlanUpgradeButton({
         open={showInquiry}
         onOpenChange={setShowInquiry}
         title="Talk to us about upgrading"
-        description="Plan upgrades are handled personally for now — online checkout is on the roadmap. Your plan and prices are ready; we'll get you set up directly."
-        mailSubject="Pro upgrade"
+        description="Send a request — we'll confirm payment by GCash or bank transfer and switch your plan on, usually within a day."
+        mailSubject="Plan upgrade"
       />
     </>
   );

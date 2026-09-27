@@ -221,7 +221,7 @@ export default function LeadsPage() {
             // (canExport === false) with no explanation — now it
             // stays visible as a locked CTA via the shared
             // gating component instead of disappearing.
-            <UpgradeGate locked={!canExport} reason="CSV export is a Pro feature." variant="inline">
+            <UpgradeGate locked={!canExport} reason="CSV export is a Lead tools feature." variant="inline">
               <Button
                 variant="outline"
                 onClick={handleExportCsv}
@@ -261,8 +261,8 @@ export default function LeadsPage() {
         >
           <p className="text-sm font-medium text-foreground">
             <span className="font-bold">{lockedCount}</span> older{" "}
-            {lockedCount === 1 ? "lead is" : "leads are"} locked on the Free plan. Upgrade to Pro to
-            view all your leads.
+            {lockedCount === 1 ? "lead is" : "leads are"} locked on the Free plan. Upgrade to Lead
+            tools to view all your leads.
           </p>
           <span className="shrink-0 bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground">
             Upgrade

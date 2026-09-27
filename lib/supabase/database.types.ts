@@ -1093,7 +1093,7 @@ export type Database = {
       invite_status: "pending" | "accepted" | "revoked";
       lead_status: "new" | "contacted" | "closed";
       notification_type: "new_lead" | "system";
-      plan_tier: "free" | "pro" | "business";
+      plan_tier: "free" | "lead_tools" | "teams";
       profile_type: "individual" | "company" | "business";
       project_category:
         | "graphic-design"
@@ -1237,7 +1237,7 @@ export const Constants = {
       invite_status: ["pending", "accepted", "revoked"],
       lead_status: ["new", "contacted", "closed"],
       notification_type: ["new_lead", "system"],
-      plan_tier: ["free", "pro", "business"],
+      plan_tier: ["free", "lead_tools", "teams"],
       profile_type: ["individual", "company", "business"],
       project_category: [
         "graphic-design",

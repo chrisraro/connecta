@@ -40,19 +40,21 @@ export default function AdminSettingsPage() {
     }
   }, [shopSettings]);
 
-  // ---- Plan pricing (Pro / Business monthly price in ₱) ----
+  // ---- Plan pricing (Lead tools / Teams standard monthly price in ₱) ----
+  // This overrides the STANDARD price only -- the prelaunch price and both
+  // yearly prices are fixed in lib/pricing.ts (see lib/plans.ts PlanPricing).
   const { data: planPricing } = usePlanPricing();
   const updatePlanPricing = (value: PlanPricing) =>
     updateSetting({ key: "planPricing", value, isPublic: true });
   const [planSaving, setPlanSaving] = useState(false);
   const [planSavedAt, setPlanSavedAt] = useState<number | null>(null);
-  const [planForm, setPlanForm] = useState({ proPesos: 299, businessPesos: 999 });
+  const [planForm, setPlanForm] = useState({ leadToolsPesos: 79, teamsPesos: 299 });
 
   useEffect(() => {
     if (planPricing) {
       setPlanForm({
-        proPesos: planPricing.pro / 100,
-        businessPesos: planPricing.business / 100,
+        leadToolsPesos: planPricing.lead_tools / 100,
+        teamsPesos: planPricing.teams / 100,
       });
     }
   }, [planPricing]);
@@ -61,8 +63,8 @@ export default function AdminSettingsPage() {
     setPlanSaving(true);
     try {
       await updatePlanPricing({
-        pro: Math.round(planForm.proPesos * 100),
-        business: Math.round(planForm.businessPesos * 100),
+        lead_tools: Math.round(planForm.leadToolsPesos * 100),
+        teams: Math.round(planForm.teamsPesos * 100),
       });
       setPlanSavedAt(Date.now());
     } catch (error) {
@@ -214,8 +216,8 @@ export default function AdminSettingsPage() {
             <div>
               <CardTitle className="text-lg">Plan Pricing</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Monthly (30-day) subscription prices in PHP. Used on the billing page and landing
-                pricing.
+                Standard monthly (30-day) subscription price in PHP, shown struck through beside
+                the prelaunch price. Prelaunch and yearly prices are fixed in lib/pricing.ts.
               </CardDescription>
             </div>
           </div>
@@ -229,27 +231,27 @@ export default function AdminSettingsPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Pro — monthly (₱)</Label>
+                  <Label>Lead tools — standard monthly (₱)</Label>
                   <Input
                     type="number"
                     min="0"
                     step="1"
-                    value={planForm.proPesos}
+                    value={planForm.leadToolsPesos}
                     onChange={(e) =>
-                      setPlanForm({ ...planForm, proPesos: parseFloat(e.target.value) || 0 })
+                      setPlanForm({ ...planForm, leadToolsPesos: parseFloat(e.target.value) || 0 })
                     }
                     className="bg-background border-border text-foreground"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Business — monthly (₱)</Label>
+                  <Label>Teams — standard monthly (₱)</Label>
                   <Input
                     type="number"
                     min="0"
                     step="1"
-                    value={planForm.businessPesos}
+                    value={planForm.teamsPesos}
                     onChange={(e) =>
-                      setPlanForm({ ...planForm, businessPesos: parseFloat(e.target.value) || 0 })
+                      setPlanForm({ ...planForm, teamsPesos: parseFloat(e.target.value) || 0 })
                     }
                     className="bg-background border-border text-foreground"
                   />
