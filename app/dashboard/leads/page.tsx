@@ -1,7 +1,9 @@
 "use client";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useMyLeads, useUpdateLeadStatus, type Lead } from "@/hooks/useLeads";
+import { useDeleteLead, useMyLeads, useUpdateLeadStatus, type Lead } from "@/hooks/useLeads";
+import { leadReplyLinks } from "@/lib/leadContact";
+import { leadStatusActions, type LeadAction } from "@/lib/leadActions";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
@@ -12,8 +14,20 @@ import {
   Phone,
   Search,
   Download,
-  ArrowRight,
+  Archive,
+  RotateCcw,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useState } from "react";
@@ -45,6 +59,8 @@ export default function LeadsPage() {
   const updateStatus = useUpdateLeadStatus().mutateAsync;
   const markContacted = ({ leadId }: { leadId: string }) =>
     updateStatus({ id: leadId, status: "contacted" });
+  const deleteLead = useDeleteLead().mutateAsync;
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
   const leads = leadsData?.leads;
   const lockedCount = leadsData?.lockedCount ?? 0;
@@ -56,8 +72,6 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
 
   const chips = ["All", "New", "Contacted", "Closed"];
-
-  const isPhone = (contact: string) => /^[+()\d\s-]{6,}$/.test(contact.trim());
 
   const handleFollowUpClick = (lead: Lead) => {
     setSelectedLead(lead);
@@ -81,13 +95,44 @@ export default function LeadsPage() {
     }
   };
 
-  const handleSendAction = async () => {
-    if (!selectedLead) return;
-    const subject = `Re: Inquiry ${selectedLead.property_name ? `for ${selectedLead.property_name}` : ""}`;
-    const body = encodeURIComponent(followUpMsg);
-    window.open(`mailto:${selectedLead.inquirer_contact}?subject=${subject}&body=${body}`);
-    await handleMarkContacted(selectedLead.id);
+  // B14: reply on the channel the lead left: SMS, WhatsApp or Viber for a
+  // number, email for an address. Opening one counts as contacting them.
+  const replyLinks = (lead: Lead) =>
+    leadReplyLinks({
+      contact: lead.inquirer_contact,
+      subject: `Re: your inquiry${lead.property_name ? ` about ${lead.property_name}` : ""}`,
+      body: followUpMsg,
+    }).filter((link) => link.channel !== "call");
+
+  const handleReplySent = (lead: Lead) => {
+    if (lead.status === "new") void handleMarkContacted(lead.id);
     setSelectedLead(null);
+  };
+
+  // B13: close, reopen and delete, alongside mark-contacted.
+  const handleLeadAction = async (lead: Lead, action: LeadAction) => {
+    if (action === "delete") {
+      setLeadToDelete(lead);
+      return;
+    }
+    const status: Lead["status"] = action === "reopen" ? "new" : action;
+    try {
+      await updateStatus({ id: lead.id, status });
+    } catch (err) {
+      toast.error(toUserMessage(err));
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!leadToDelete) return;
+    try {
+      await deleteLead(leadToDelete.id);
+      toast.success("Lead deleted");
+    } catch (err) {
+      toast.error(toUserMessage(err));
+    } finally {
+      setLeadToDelete(null);
+    }
   };
 
   const filteredLeads = (leads ?? []).filter((lead) => {
@@ -305,46 +350,51 @@ export default function LeadsPage() {
                   <Mail className="w-4 h-4 mr-2" aria-hidden="true" />
                   Reply
                 </Button>
-                {isPhone(lead.inquirer_contact) ? (
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="icon"
-                    className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
-                  >
-                    <a
-                      href={`tel:${lead.inquirer_contact.replace(/\s/g, "")}`}
-                      aria-label={`Call ${lead.inquirer_name}`}
+                {(() => {
+                  const quick = leadReplyLinks({
+                    contact: lead.inquirer_contact,
+                    subject: "",
+                    body: "",
+                  }).find((link) => link.channel === "call" || link.channel === "email");
+                  if (!quick) return null;
+                  const Icon = quick.channel === "call" ? Phone : Mail;
+                  return (
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
                     >
-                      <Phone className="w-5 h-5" aria-hidden="true" />
-                    </a>
-                  </Button>
-                ) : (
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="icon"
-                    className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
-                  >
-                    <a
-                      href={`mailto:${lead.inquirer_contact}`}
-                      aria-label={`Email ${lead.inquirer_name}`}
+                      <a
+                        href={quick.href}
+                        aria-label={`${quick.channel === "call" ? "Call" : "Email"} ${lead.inquirer_name}`}
+                      >
+                        <Icon className="w-5 h-5" aria-hidden="true" />
+                      </a>
+                    </Button>
+                  );
+                })()}
+                {leadStatusActions(lead.status).map((action) => {
+                  const meta = {
+                    contacted: { label: "Mark as contacted", Icon: CheckCircle2, tone: "text-primary" },
+                    closed: { label: "Close lead", Icon: Archive, tone: "" },
+                    reopen: { label: "Reopen lead", Icon: RotateCcw, tone: "" },
+                    delete: { label: "Delete lead", Icon: Trash2, tone: "text-destructive" },
+                  }[action];
+                  return (
+                    <Button
+                      key={action}
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
+                      onClick={() => handleLeadAction(lead, action)}
+                      aria-label={meta.label}
+                      title={meta.label}
                     >
-                      <Mail className="w-5 h-5" aria-hidden="true" />
-                    </a>
-                  </Button>
-                )}
-                {lead.status === "new" && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-12 w-12 rounded-2xl border-border hover:bg-muted"
-                    onClick={() => handleMarkContacted(lead.id)}
-                    aria-label="Mark as contacted"
-                  >
-                    <CheckCircle2 className="w-5 h-5 text-primary" aria-hidden="true" />
-                  </Button>
-                )}
+                      <meta.Icon className={`w-5 h-5 ${meta.tone}`} aria-hidden="true" />
+                    </Button>
+                  );
+                })}
               </div>
             </div>
           ))
@@ -381,15 +431,52 @@ export default function LeadsPage() {
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleSendAction}
-              className="rounded-xl bg-primary hover:bg-primary/90 font-bold text-[12px] px-8 h-12 text-primary-foreground"
-            >
-              <ArrowRight className="w-4 h-4 mr-2" aria-hidden="true" /> Send Message
-            </Button>
+            {selectedLead && replyLinks(selectedLead).length === 0 && (
+              <p className="text-sm text-muted-foreground sm:self-center">
+                No phone or email to reply to. Copy the message and send it where they reached you.
+              </p>
+            )}
+            {selectedLead &&
+              replyLinks(selectedLead).map((link) => (
+                <Button
+                  key={link.channel}
+                  asChild
+                  className="rounded-xl bg-primary hover:bg-primary/90 font-bold text-[12px] px-6 h-12 text-primary-foreground"
+                >
+                  <a
+                    href={link.href}
+                    target={link.channel === "whatsapp" ? "_blank" : undefined}
+                    rel={link.channel === "whatsapp" ? "noopener noreferrer" : undefined}
+                    onClick={() => handleReplySent(selectedLead)}
+                  >
+                    Send by {link.label}
+                  </a>
+                </Button>
+              ))}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!leadToDelete} onOpenChange={(open) => !open && setLeadToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {leadToDelete?.inquirer_name}&apos;s details and message will be permanently deleted.
+              This can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete lead
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

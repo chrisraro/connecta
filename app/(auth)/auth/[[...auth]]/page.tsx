@@ -1,5 +1,6 @@
 import { AuthForm } from "@/components/auth/AuthForm";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
+import { authCallbackUrl, authModeUrl } from "@/lib/authLinks";
 import { ArrowLeft, Loader2, ShieldCheck, SmartphoneNfc, Zap } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -23,7 +24,7 @@ const AUTH_NOTICES: Record<string, string> = {
 export default function AuthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; card_uuid?: string; notice?: string }>;
+  searchParams: Promise<{ mode?: string; card_uuid?: string; notice?: string; redirect?: string }>;
 }) {
   return (
     <Suspense
@@ -41,7 +42,7 @@ export default function AuthPage({
 async function AuthContent({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; card_uuid?: string; notice?: string }>;
+  searchParams: Promise<{ mode?: string; card_uuid?: string; notice?: string; redirect?: string }>;
 }) {
   const params = await searchParams;
   const mode = params.mode;
@@ -61,18 +62,14 @@ async function AuthContent({
   // (onboarding's claimCardByUuid effect) sits on the far side of Clerk's
   // redirect. Dropping the param here silently severed the whole QR
   // activation path — users scanned, signed up, and nothing happened.
-  const redirectUrl = cardUuid
-    ? `/auth/callback?card_uuid=${encodeURIComponent(cardUuid)}`
-    : "/auth/callback";
+  // B10: the page a signed-out visitor was heading for (set by middleware as
+  // ?redirect=) rides along too, so they land back there after signing in.
+  const context = { cardUuid, redirect: params.redirect };
+  const redirectUrl = authCallbackUrl(context);
 
-  // Build auth URLs preserving card_uuid when toggling sign-in vs sign-up
-  const signUpUrl = cardUuid
-    ? `/auth?mode=signup&card_uuid=${encodeURIComponent(cardUuid)}`
-    : "/auth?mode=signup";
-
-  const signInUrl = cardUuid
-    ? `/auth?mode=signin&card_uuid=${encodeURIComponent(cardUuid)}`
-    : "/auth?mode=signin";
+  // Tab links keep the card and the return path.
+  const signUpUrl = authModeUrl("signup", context);
+  const signInUrl = authModeUrl("signin", context);
 
   const tab = (active: boolean) =>
     `flex h-11 flex-1 items-center justify-center text-[14px] font-bold [font-stretch:112%] transition-colors ${
