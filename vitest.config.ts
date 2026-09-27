@@ -14,7 +14,8 @@ export default defineConfig({
         test: {
           name: "server",
           environment: "edge-runtime",
-          exclude: ["**/*.test.tsx", "**/node_modules/**"],
+          // .claude holds local agent worktrees: whole copies of this repo.
+          exclude: ["**/*.test.tsx", "**/node_modules/**", ".claude/**"],
         },
       },
       {
@@ -23,6 +24,7 @@ export default defineConfig({
           name: "client",
           environment: "jsdom",
           include: ["**/*.test.tsx"],
+          exclude: ["**/node_modules/**", ".claude/**"],
         },
       },
     ],

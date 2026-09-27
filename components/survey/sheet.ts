@@ -19,7 +19,6 @@ export interface Sheet {
   ink: string;
   soft: string;
   line: string;
-  grid: string;
   mark: string;
   markText: string;
   actionBg: string;
@@ -35,7 +34,6 @@ export const SHEETS: Record<SheetId, Sheet> = {
     ink: "#12161F",
     soft: "#4A5468",
     line: "#2B3F8F",
-    grid: "rgb(43 63 143 / 0.07)",
     mark: "#D0312D",
     markText: "#C42A26",
     actionBg: "#2B3F8F",
@@ -48,7 +46,6 @@ export const SHEETS: Record<SheetId, Sheet> = {
     ink: "#F4F6FA",
     soft: "#C9D3F2",
     line: "#EEF1F4",
-    grid: "rgb(238 241 244 / 0.09)",
     mark: "#FF5A52",
     markText: "#FFB3AD",
     actionBg: "#EEF1F4",
@@ -61,7 +58,6 @@ export const SHEETS: Record<SheetId, Sheet> = {
     ink: "#EEF1F4",
     soft: "#A7B0C0",
     line: "#8FA3E0",
-    grid: "rgb(143 163 224 / 0.08)",
     mark: "#FF5A52",
     markText: "#FF7A73",
     actionBg: "#EEF1F4",

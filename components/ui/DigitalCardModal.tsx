@@ -122,7 +122,7 @@ export function DigitalCardModal({
         <div className="flex flex-col items-center justify-center my-4">
           <div
             ref={cardWrapperRef}
-            className={`sheet-grid w-full flex justify-center border-[1.5px] border-input p-4 ${
+            className={`bg-background w-full flex justify-center border-[1.5px] border-input p-4 ${
               orientation === "portrait" ? "[&>[data-digital-card]]:max-w-[260px]" : ""
             }`}
           >

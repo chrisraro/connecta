@@ -6,7 +6,7 @@ import { CONNECTA } from "@/lib/brand";
 
 export default function NotFound() {
   return (
-    <div className="sheet-grid relative flex min-h-screen flex-col items-center justify-center px-6 text-center text-foreground">
+    <div className="bg-background relative flex min-h-screen flex-col items-center justify-center px-6 text-center text-foreground">
 
       <Link href="/" className="mb-10 flex items-center gap-2.5">
         <ConnectaMark className="h-7 w-7 text-primary" />
@@ -23,7 +23,7 @@ export default function NotFound() {
         We couldn&apos;t find that page
       </h1>
       <p className="mt-3 max-w-md text-muted-foreground">
-        The link may be broken, or the page may have moved. Let&apos;s get you back on track.
+        The link may be broken, or the page may have moved.
       </p>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">

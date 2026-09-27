@@ -314,7 +314,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content */}
-      <main className="sheet-grid flex-1 min-w-0 p-4 md:p-8 pb-24 md:pb-8">
+      <main className="bg-background flex-1 min-w-0 p-4 md:p-8 pb-24 md:pb-8">
         {children}
       </main>
 

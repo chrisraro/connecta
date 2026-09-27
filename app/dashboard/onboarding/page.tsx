@@ -462,7 +462,7 @@ function OnboardingContent() {
     const d = onboardingDataOf(onboarding.data);
     const cat = PROFILE_CATEGORIES.find((c) => c.id === d?.profileCategory);
     return (
-      <div className="sheet-grid min-h-screen flex items-center justify-center p-4">
+      <div className="bg-background min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-lg">
           <div className="border-[1.5px] border-input bg-background">
             <div className="p-6 md:p-8 space-y-6">
@@ -587,7 +587,7 @@ function OnboardingContent() {
 
   // ─── WIZARD MODE ─────────────────────────────────────────────────
   return (
-    <div className="sheet-grid min-h-screen flex items-center justify-center p-4">
+    <div className="bg-background min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {/* Card Detection Alert */}
         {cardUuid && (

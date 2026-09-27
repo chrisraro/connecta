@@ -59,7 +59,7 @@ export default function ProfilesPage() {
   const deleteProfileMutation = useDeleteProfile();
   const deleteProfile = deleteProfileMutation.mutateAsync;
 
-  const [activeChip, setActiveChip] = useState("All");
+  const [query, setQuery] = useState("");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   // The profile whose digital card is open (portrait first, from "Card").
   const [cardProfileId, setCardProfileId] = useState<string | null>(null);
@@ -100,7 +100,16 @@ export default function ProfilesPage() {
     }
   };
 
-  const chips = ["All", "Active", "Recently Updated", "Drafts"];
+
+  // Search by profile name, owner name or web address.
+  const q = query.trim().toLowerCase();
+  const visibleProfiles = q
+    ? profiles.filter((p) =>
+        [p.name, agentInfoOf(p).fullName, profilePath(p)]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q)),
+      )
+    : profiles;
 
   return (
     <div className="space-y-6">
@@ -126,8 +135,12 @@ export default function ProfilesPage() {
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search profiles..."
-              className="pl-10 bg-muted/50 border-border rounded-2xl h-12 md:h-10 focus-visible:ring-primary"
+              type="search"
+              aria-label="Search profiles"
+              placeholder="Search profiles"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-10 h-12 md:h-10"
             />
           </div>
 
@@ -138,23 +151,6 @@ export default function ProfilesPage() {
             </Button>
           </Link>
         </div>
-      </div>
-
-      {/* Chips UI for Mobile/Modern Feel */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
-        {chips.map((chip) => (
-          <button
-            key={chip}
-            onClick={() => setActiveChip(chip)}
-            className={`px-5 py-2.5 text-xs font-bold whitespace-nowrap transition-colors duration-300 border ${
-              activeChip === chip
-                ? "bg-primary border-primary text-primary-foreground"
-                : "bg-muted border-border text-muted-foreground hover:border-primary/50"
-            }`}
-          >
-            {chip}
-          </button>
-        ))}
       </div>
 
       {profiles.length === 0 ? (
@@ -170,7 +166,10 @@ export default function ProfilesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profiles.map((profile) => {
+          {visibleProfiles.length === 0 && (
+            <p className="text-sm text-muted-foreground">No profiles match &ldquo;{query}&rdquo;.</p>
+          )}
+          {visibleProfiles.map((profile) => {
             // The stored template id selects a Survey Plan sheet colourway;
             // the banner is that sheet, not the retired template's palette.
             const sheet = sheetFor(layoutConfigOf(profile).themeId);
@@ -181,11 +180,7 @@ export default function ProfilesPage() {
               >
                 <div
                   className="h-32 w-full relative border-b-[1.5px] border-input"
-                  style={{
-                    backgroundColor: sheet.ground,
-                    backgroundImage: `linear-gradient(${sheet.grid} 1px, transparent 1px), linear-gradient(90deg, ${sheet.grid} 1px, transparent 1px)`,
-                    backgroundSize: "16px 16px",
-                  }}
+                  style={{ backgroundColor: sheet.ground }}
                 >
                   <svg
                     aria-hidden="true"
@@ -270,10 +265,9 @@ export default function ProfilesPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pb-6 text-center">
-                  <div className="text-xs text-muted-foreground flex items-center justify-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    Live Profile
-                  </div>
+                  <p className="font-mono text-xs text-muted-foreground break-all">
+                    {profilePath(profile)}
+                  </p>
                 </CardContent>
                 <CardFooter className="flex flex-wrap gap-3 pt-0 pb-6 px-6">
                   <Link

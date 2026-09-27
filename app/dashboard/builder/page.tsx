@@ -371,11 +371,7 @@ function TemplateSelector({
               <span
                 aria-hidden="true"
                 className="relative block aspect-[4/3]"
-                style={{
-                  backgroundColor: sheet.ground,
-                  backgroundImage: `linear-gradient(${sheet.grid} 1px, transparent 1px), linear-gradient(90deg, ${sheet.grid} 1px, transparent 1px)`,
-                  backgroundSize: "12px 12px",
-                }}
+                style={{ backgroundColor: sheet.ground }}
               >
                 <svg viewBox="0 0 60 45" className="absolute inset-0 h-full w-full">
                   <path d="M14 10 H40 L48 18 V35 H14 Z" fill="none" stroke={sheet.line} strokeWidth="1.5" />
@@ -1420,7 +1416,7 @@ function BuilderContent() {
             >
               <div className="overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]">
                 {previewMode === "card" ? (
-                  <div className="sheet-grid p-4 flex flex-col justify-center min-h-[360px] items-center space-y-4">
+                  <div className="bg-background p-4 flex flex-col justify-center min-h-[360px] items-center space-y-4">
                     <div role="group" aria-label="Card orientation" className="flex w-full max-w-[420px] border-[1.5px] border-input bg-background">
                       {(["landscape", "portrait"] as const).map((o) => (
                         <button

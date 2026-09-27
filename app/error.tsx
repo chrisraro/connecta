@@ -20,7 +20,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="sheet-grid relative flex min-h-screen flex-col items-center justify-center px-6 text-center text-foreground">
+    <div className="bg-background relative flex min-h-screen flex-col items-center justify-center px-6 text-center text-foreground">
 
       <Link href="/" className="mb-10 flex items-center gap-2.5">
         <ConnectaMark className="h-7 w-7 text-primary" />
@@ -35,7 +35,7 @@ export default function Error({
         Something went wrong
       </h1>
       <p className="mt-3 max-w-md text-muted-foreground">
-        An unexpected error occurred. You can try again, or head back to safety.
+        Something went wrong on our side. Try again, or go to the homepage.
       </p>
       {error?.digest && (
         <p className="mt-2 font-mono text-xs text-muted-foreground/70">Ref: {error.digest}</p>

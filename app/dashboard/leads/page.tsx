@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { accountName } from "@/lib/accountName";
 import { useDeleteLead, useMyLeads, useUpdateLeadStatus, type Lead } from "@/hooks/useLeads";
 import { leadReplyLinks } from "@/lib/leadContact";
 import { leadStatusActions, type LeadAction } from "@/lib/leadActions";
@@ -50,6 +52,9 @@ import { leadsExportFilename, toCsv } from "@/lib/csv";
 
 export default function LeadsPage() {
   const { user } = useAuth();
+  const { data: appUser } = useCurrentUser();
+  // Signs the prefilled reply with the owner's real name (it said "[Your Name]").
+  const signature = accountName(appUser, user?.user_metadata);
   const { data: leadsData } = useMyLeads();
   // "Edit your profile" must name a profile: the bare builder URL means CREATE,
   // which on a paid plan made a duplicate profile instead of editing one.
@@ -77,7 +82,7 @@ export default function LeadsPage() {
     setSelectedLead(lead);
     const refText = lead.property_name ? `about ${lead.property_name}` : "from my profile";
     setFollowUpMsg(
-      `Hi ${lead.inquirer_name},\n\nThanks for inquiring ${refText}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,\n[Your Name]`,
+      `Hi ${lead.inquirer_name},\n\nThanks for inquiring ${refText}. I'd be happy to provide more details.\n\nAre you available for a quick call or viewing this week?\n\nBest regards,${signature ? `\n${signature}` : ""}`,
     );
   };
 
@@ -338,7 +343,7 @@ export default function LeadsPage() {
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed px-1 line-clamp-2">
-                  &quot;{lead.message || "Interested in learning more about this property."}&quot;
+                  {lead.message ? <>&quot;{lead.message}&quot;</> : <span className="italic">No message</span>}
                 </p>
               </div>
 

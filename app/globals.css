@@ -127,8 +127,7 @@
   --e-raised: 0 1px 0 rgb(43 63 143 / 0.12);
   --e-overlay: 0 12px 32px -12px rgb(18 22 31 / 0.35);
 
-  /* The drafting sheet: grid, rule weight, chamfer size. */
-  --sv-grid: rgb(43 63 143 / 0.07);
+  /* The drafting sheet: rule weight, chamfer size. */
   --rule: 1.5px;
   --chamfer: 12px;
 
@@ -184,7 +183,6 @@
   --sidebar-border: rgb(143 163 224 / 0.4);
   --sidebar-ring: #8FA3E0;
 
-  --sv-grid: rgb(143 163 224 / 0.08);
 
   --connecta-brand: #8FA3E0;
   --connecta-brand-hover: #B5C2EA;
@@ -264,15 +262,6 @@
   }
   .border-yellow-500\/20 {
     border-color: color-mix(in oklch, var(--chart-5) 20%, transparent);
-  }
-
-  /* The drafting sheet: a 32px plan grid over the ground, for app pages. */
-  .sheet-grid {
-    background-color: var(--background);
-    background-image:
-      linear-gradient(var(--sv-grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--sv-grid) 1px, transparent 1px);
-    background-size: 32px 32px;
   }
 
   /* Hide scrollbars for horizontal chip rails while keeping scroll */

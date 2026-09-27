@@ -374,7 +374,9 @@ export default function CardsPage() {
                     <div className="text-[12px] font-bold uppercase text-muted-foreground">
                       Status
                     </div>
-                    <div className="text-xs font-bold text-primary uppercase">Active</div>
+                    <div className="text-xs font-bold text-primary">
+                      {card.status === "lost" ? "Lost" : card.status === "active" ? "Active" : card.status}
+                    </div>
                   </div>
                 </div>
               </CardContent>

@@ -425,7 +425,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="sheet-grid flex min-h-screen text-foreground selection:bg-primary/30">
+    <div className="bg-background flex min-h-screen text-foreground selection:bg-primary/30">
       {/* Desktop Sidebar */}
       <DashboardSidebar className="hidden md:flex w-72" />
 
