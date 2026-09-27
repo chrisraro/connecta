@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { CONNECTA } from "@/lib/brand";
 import { appOrigin } from "@/lib/appUrl";
+import { siteVerification } from "@/lib/siteVerification";
 import { Toaster } from "@/components/ui/toaster";
 
 // Without a metadataBase, every relative OG/Twitter image URL (e.g. the
@@ -19,6 +20,8 @@ const appUrl = appOrigin(process.env.NEXT_PUBLIC_APP_URL) ?? `https://${CONNECTA
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
+  // Search Console ownership proof, needed by Google's OAuth branding review.
+  verification: siteVerification(process.env.GOOGLE_SITE_VERIFICATION),
   title: `${CONNECTA.name} — One tap. They have your number.`,
   description:
     "NFC + QR business cards that open a professional profile on any phone, with no app to install, and send every enquiry back to you. Built for Naga first.",
