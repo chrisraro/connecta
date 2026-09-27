@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import Link from "next/link";
 import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { useCreateLead } from "@/hooks/useLeads";
 import type { ProfileCopy } from "./copy";
@@ -18,15 +19,20 @@ type Status = "idle" | "sending" | "sent" | "error";
 export function SurveyLeadForm({
   ownerId,
   firstName,
+  ownerName,
   t,
 }: {
   ownerId: string;
   firstName: string;
+  /** The profile owner's full name, as the consent wording names them. */
+  ownerName: string;
   t: ProfileCopy;
 }) {
   const createLead = useCreateLead();
   const [status, setStatus] = useState<Status>("idle");
   const [form, setForm] = useState({ name: "", contact: "", message: "" });
+  // L-8: nothing is sent until the visitor agrees.
+  const [consent, setConsent] = useState(false);
 
   const uid = useId();
   const ids = {
@@ -34,6 +40,7 @@ export function SurveyLeadForm({
     contact: `${uid}-contact`,
     message: `${uid}-message`,
     status: `${uid}-status`,
+    consent: `${uid}-consent`,
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -45,9 +52,11 @@ export function SurveyLeadForm({
         inquirer_name: form.name.trim(),
         inquirer_contact: form.contact.trim(),
         message: form.message.trim() || undefined,
+        consent,
       });
       setStatus("sent");
       setForm({ name: "", contact: "", message: "" });
+      setConsent(false);
     } catch {
       setStatus("error");
     }
@@ -120,6 +129,35 @@ export function SurveyLeadForm({
         />
       </div>
 
+      <div className="flex items-start gap-3">
+        <input
+          id={ids.consent}
+          type="checkbox"
+          required
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-1 h-5 w-5 shrink-0 accent-[var(--sv-line)]"
+        />
+        <label htmlFor={ids.consent} className="text-[14px] leading-snug">
+          {(() => {
+            // The approved sentence already names the Privacy Policy; that
+            // phrase becomes the link rather than repeating it.
+            const text = t.consent(ownerName);
+            const at = text.lastIndexOf(t.privacyPolicy);
+            if (at < 0) return text;
+            return (
+              <>
+                {text.slice(0, at)}
+                <Link href="/privacy#lead-data" className="font-semibold underline underline-offset-2">
+                  {t.privacyPolicy}
+                </Link>
+                {text.slice(at + t.privacyPolicy.length)}
+              </>
+            );
+          })()}
+        </label>
+      </div>
+
       {status === "error" && (
         <p
           id={ids.status}
@@ -134,7 +172,7 @@ export function SurveyLeadForm({
 
       <button
         type="submit"
-        disabled={status === "sending"}
+        disabled={status === "sending" || !consent}
         aria-describedby={status === "error" ? ids.status : undefined}
         className={`${styles.primary} ${styles.semiExpanded} flex h-14 w-full items-center justify-center gap-2 text-[16px] font-bold`}
       >

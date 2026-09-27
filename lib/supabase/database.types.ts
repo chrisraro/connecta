@@ -217,6 +217,8 @@ export type Database = {
       };
       leads: {
         Row: {
+          consent_at: string | null;
+          consent_version: string | null;
           created_at: string;
           id: string;
           inquirer_contact: string;
@@ -230,6 +232,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string;
           id?: string;
           inquirer_contact: string;
@@ -243,6 +247,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          consent_at?: string | null;
+          consent_version?: string | null;
           created_at?: string;
           id?: string;
           inquirer_contact?: string;
@@ -1060,6 +1066,7 @@ export type Database = {
       slugify: { Args: { input: string; suffix?: string }; Returns: string };
       submit_lead: {
         Args: {
+          consent_version?: string;
           inquirer_contact: string;
           inquirer_name: string;
           lead_owner: string;

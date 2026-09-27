@@ -131,7 +131,8 @@ export default function PrivacyPolicyPage() {
         <p>
           When someone taps your card or opens your profile and sends you their details, we store
           their name, contact details and message as a &quot;lead&quot; in your account and may
-          email you a notification.
+          email you a notification. The form asks for their consent first, and we record when they
+          gave it and to which wording.
         </p>
         <p>
           For that data, <strong>you, the profile owner, are the personal information

@@ -76,6 +76,8 @@ export function OfflineLeadCapture({
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [message, setMessage] = useState("");
+  // L-8: the owner confirms the person agreed to share their details.
+  const [consent, setConsent] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -180,6 +182,7 @@ export function OfflineLeadCapture({
     setName("");
     setContact("");
     setMessage("");
+    setConsent(false);
     onOpenChange(false);
   };
 
@@ -190,7 +193,12 @@ export function OfflineLeadCapture({
       return;
     }
     setSaving(true);
-    const lead = { inquirerName: name, inquirerContact: contact, message: message || undefined };
+    const lead = {
+      inquirerName: name,
+      inquirerContact: contact,
+      message: message || undefined,
+      consent,
+    };
 
     try {
       if (online) {
@@ -199,6 +207,7 @@ export function OfflineLeadCapture({
           inquirer_name: name,
           inquirer_contact: contact,
           message: message || undefined,
+          consent,
         });
         resetForm();
         toast.success("Lead saved");
@@ -309,11 +318,22 @@ export function OfflineLeadCapture({
             />
           </div>
 
+          <label className="flex items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              required
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--primary)]"
+            />
+            <span>They agreed to share these details with me.</span>
+          </label>
+
           <div className="flex gap-2">
             <Button
               type="submit"
               className="flex-1"
-              disabled={saving || !ownerId}
+              disabled={saving || !ownerId || !consent}
             >
               {saving ? (
                 "Saving..."

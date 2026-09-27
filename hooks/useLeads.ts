@@ -77,6 +77,8 @@ export type NewLead = {
   message?: string | null;
   property_id?: string | null;
   property_name?: string | null;
+  /** The visitor agreed to the consent wording (L-8). */
+  consent?: boolean;
 };
 
 /**
