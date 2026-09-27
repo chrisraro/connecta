@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { authRouteRedirect, recoveryApiBlocked } from "@/lib/authRecovery";
+import {
+  ONBOARDED_COOKIE,
+  needsOnboardingCheck,
+  onboardedMarker,
+  onboardingRedirect,
+} from "@/lib/onboardingGate";
 import { RECOVERY_PASS_COOKIE, recoveryPassSecret, verifyRecoveryPass } from "@/lib/recoveryPass";
 
 // Public surface outnumbers the protected one: every top-level segment that is
@@ -74,6 +80,42 @@ export async function middleware(request: NextRequest) {
     // So the user lands back where they were aiming after signing in.
     signIn.searchParams.set("redirect", pathname);
     return NextResponse.redirect(signIn);
+  }
+
+  // Onboarding first (owner decision, 2026-09-27): an account that hasn't
+  // finished onboarding sees it before any other dashboard page, however it
+  // got here (password sign-in never passes through /auth/callback). Admins
+  // are exempt. A finished account carries a cookie so this only asks the
+  // database until the answer is yes. See lib/onboardingGate.ts.
+  if (
+    user &&
+    needsOnboardingCheck(pathname) &&
+    !onboardedMarker.matches(request.cookies.get(ONBOARDED_COOKIE)?.value, user.id)
+  ) {
+    const { createServerClient } = await import("@supabase/ssr");
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } },
+    );
+    const { data: row } = await supabase
+      .from("users")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .maybeSingle();
+    const onboarded = Boolean(row?.onboarding_completed);
+    const isAdmin = onboarded ? false : Boolean((await supabase.rpc("is_admin")).data);
+    const target = onboardingRedirect({ onboarded, isAdmin });
+    if (target) {
+      return NextResponse.redirect(new URL(target, request.url));
+    }
+    supabaseResponse.cookies.set(ONBOARDED_COOKIE, onboardedMarker.value(user.id), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: request.nextUrl.protocol === "https:",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
   }
 
   // Admin gate.

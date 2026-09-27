@@ -20,7 +20,6 @@ import {
   Phone,
   Briefcase,
   Image as ImageIcon,
-  ChevronRight,
   ChevronLeft,
   CheckCircle2,
   Sparkles,
@@ -450,11 +449,6 @@ function OnboardingContent() {
     }
   };
 
-  const handleSkip = async () => {
-    if (step > 0) await saveProgress(false);
-    router.push("/dashboard");
-  };
-
   const categoryFields = CATEGORY_FIELDS[profileCategory];
 
   // ─── COMPLETED STATE ─────────────────────────────────────────────
@@ -652,12 +646,6 @@ function OnboardingContent() {
             <span>
               Step {step + 1} of {STEPS.length}
             </span>
-            <button
-              onClick={handleSkip}
-              className="hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              Skip for now <ChevronRight className="w-3 h-3" />
-            </button>
           </div>
           {/* Progress is a survey rule drawn along the line. */}
           <div className="h-1.5 border border-input bg-background">
