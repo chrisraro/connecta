@@ -116,11 +116,11 @@ export default function InventoryPage() {
       )}
 
       {lowStockProducts && lowStockProducts.length > 0 && (
-        <Card className="bg-card border-destructive">
+        <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-destructive" />
-              Needs Attention
+              Needs attention
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -164,7 +164,7 @@ export default function InventoryPage() {
                             [product.id]: parseInt(e.target.value) || 0,
                           })
                         }
-                        className="w-24 bg-muted border-border"
+                        className="w-24"
                         placeholder="Qty"
                       />
                     </TableCell>
@@ -172,7 +172,6 @@ export default function InventoryPage() {
                       <Button
                         size="sm"
                         onClick={() => handleRestock(product.id)}
-                        className="bg-primary hover:bg-primary"
                         disabled={!restockMap[product.id] || restockMap[product.id] <= 0}
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -187,9 +186,9 @@ export default function InventoryPage() {
         </Card>
       )}
 
-      <Card className="bg-card border-border">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-foreground">All Products Inventory</CardTitle>
+          <CardTitle className="text-foreground">All products inventory</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

@@ -155,12 +155,12 @@ export default function CategoriesPage() {
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              Add Category
+              Add category
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-card border-border text-foreground">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingId ? "Edit" : "Add"} Category</DialogTitle>
+              <DialogTitle>{editingId ? "Edit" : "Add"} category</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -174,7 +174,6 @@ export default function CategoriesPage() {
                       slug: generateSlug(e.target.value),
                     })
                   }
-                  className="bg-muted border-border"
                   required
                 />
               </div>
@@ -183,7 +182,6 @@ export default function CategoriesPage() {
                 <Input
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  className="bg-muted border-border"
                   required
                 />
               </div>
@@ -192,17 +190,16 @@ export default function CategoriesPage() {
                 <Input
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="bg-muted border-border"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Parent Category (Optional)</Label>
+                <Label>Parent category (optional)</Label>
                 <select
                   value={formData.parent_id || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, parent_id: e.target.value || undefined })
                   }
-                  className="w-full px-3 py-2 bg-muted border border-border rounded-md"
+                  className="w-full border-[1.5px] border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">None (Top Level)</option>
                   {categories?.map((cat) => (
@@ -213,14 +210,13 @@ export default function CategoriesPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Sort Order</Label>
+                <Label>Sort order</Label>
                 <Input
                   type="number"
                   value={formData.sort_order}
                   onChange={(e) =>
                     setFormData({ ...formData, sort_order: parseInt(e.target.value) })
                   }
-                  className="bg-muted border-border"
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -232,7 +228,7 @@ export default function CategoriesPage() {
               </div>
               <div className="flex gap-2 pt-4">
                 <Button type="submit" className="flex-1">
-                  {editingId ? "Update" : "Create"} Category
+                  {editingId ? "Update" : "Create"} category
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancel
@@ -243,9 +239,9 @@ export default function CategoriesPage() {
         </Dialog>
       </div>
 
-      <Card className="bg-card border-border">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-foreground">All Categories</CardTitle>
+          <CardTitle className="text-foreground">All categories</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

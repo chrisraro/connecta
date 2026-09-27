@@ -157,7 +157,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Products Table */}
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="border-[1.5px] border-input">
         <Table>
           <TableHeader>
             <TableRow>
@@ -186,7 +186,7 @@ export default function AdminProductsPage() {
                   <TableRow key={product.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-muted rounded overflow-hidden flex-shrink-0">
+                        <div className="w-12 h-12 border-[1.5px] border-input overflow-hidden flex-shrink-0">
                           {imageUrl ? (
                             <ProductImage storageId={imageUrl} alt={product.name} />
                           ) : (
@@ -225,7 +225,7 @@ export default function AdminProductsPage() {
                               ? "bg-transparent text-destructive border-destructive"
                               : product.inventory <= product.low_stock_threshold
                                 ? "bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)]"
-                                : "bg-primary/10 text-primary"
+                                : "bg-transparent text-primary border-primary/40"
                           }
                         >
                           {product.inventory}

@@ -33,16 +33,16 @@ import {
 } from "@/hooks/useAdmin";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { toUserMessage } from "@/lib/errors";
-import { PLAN_GRACE_DAYS } from "@/lib/plans";
+import { PLAN_GRACE_DAYS, PLAN_LIMITS } from "@/lib/plans";
 import { adminRoleLabel } from "@/lib/adminRoles";
 
 // Paid-plan grants offered in the Manage menu. Renewing the same plan extends
-// from the current expiry, so "30 days" on an active Lead tools adds 30 more.
+// from the current expiry, so "30 days" on an active paid plan adds 30 more.
 const PLAN_GRANTS = [
-  { plan: "lead_tools", days: 30, label: "Lead tools · 30 days" },
-  { plan: "lead_tools", days: 365, label: "Lead tools · 1 year" },
-  { plan: "teams", days: 30, label: "Teams · 30 days" },
-  { plan: "teams", days: 365, label: "Teams · 1 year" },
+  { plan: "lead_tools", days: 30, label: `${PLAN_LIMITS.lead_tools.name} · 30 days` },
+  { plan: "lead_tools", days: 365, label: `${PLAN_LIMITS.lead_tools.name} · 1 year` },
+  { plan: "teams", days: 30, label: `${PLAN_LIMITS.teams.name} · 30 days` },
+  { plan: "teams", days: 365, label: `${PLAN_LIMITS.teams.name} · 1 year` },
 ] as const;
 
 /** Past expiry plus grace: the account is served as Free whatever it stores. */
@@ -106,14 +106,16 @@ export default function AdminUsersPage() {
     const who = u.name || u.email || "this user";
     const question =
       plan === "free"
-        ? `Downgrade ${who} to Free? Paid features stop immediately; their team is kept.`
-        : `Give ${who} ${plan === "lead_tools" ? "Lead tools" : "Teams"} for ${days} days?` +
+        ? `Downgrade ${who} to ${PLAN_LIMITS.free.name}? Paid features stop immediately; their team is kept.`
+        : `Give ${who} ${PLAN_LIMITS[plan].name} for ${days} days?` +
           (u.plan === plan && !planLapsed(u) ? " This extends their current expiry." : "");
     if (!confirm(question)) return;
     run(
       u.id,
       () => setUserPlan({ userId: u.id, plan, periodDays: days }),
-      plan === "free" ? `${who} is now on Free` : `${who} is now on ${plan} for ${days} days`,
+      plan === "free"
+        ? `${who} is now on ${PLAN_LIMITS.free.name}`
+        : `${who} is now on ${PLAN_LIMITS[plan].name} for ${days} days`,
     );
   };
 
@@ -149,9 +151,9 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="border-[1.5px] border-input bg-card">
         <Table>
-          <TableHeader className="bg-background/50">
+          <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
               <TableHead className="text-muted-foreground">Account</TableHead>
               <TableHead className="text-muted-foreground">Role</TableHead>
@@ -180,10 +182,7 @@ export default function AdminUsersPage() {
                 // a one-click self-demotion.
                 const grant = grants.find((g) => g.user_id === u.id);
                 return (
-                  <TableRow
-                    key={u.id}
-                    className="border-border hover:bg-muted/50 transition-colors"
-                  >
+                  <TableRow key={u.id} className="border-border hover:bg-accent/40 transition-colors">
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-semibold text-foreground">{u.name || "Unnamed"}</span>
@@ -213,13 +212,13 @@ export default function AdminUsersPage() {
                           variant="outline"
                           className={
                             u.plan === "teams"
-                              ? "bg-primary text-primary-foreground border-primary w-fit capitalize"
+                              ? "bg-primary text-primary-foreground border-primary w-fit"
                               : u.plan === "lead_tools"
-                                ? "bg-primary/10 text-primary border-primary/20 w-fit capitalize"
-                                : "bg-muted text-foreground border-border w-fit capitalize"
+                                ? "bg-transparent text-primary border-primary/40 w-fit"
+                                : "bg-muted text-foreground border-border w-fit"
                           }
                         >
-                          {u.plan === "lead_tools" ? "Lead tools" : u.plan === "teams" ? "Teams" : "Free"}
+                          {PLAN_LIMITS[u.plan].name}
                         </Badge>
                         {u.plan !== "free" &&
                           u.plan_expires_at &&
@@ -246,15 +245,15 @@ export default function AdminUsersPage() {
                           Suspended
                         </Badge>
                       ) : u.onboarding_completed ? (
-                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                        <Badge variant="outline" className="bg-transparent text-primary border-primary/40">
                           Onboarded
                         </Badge>
                       ) : (
                         <Badge
-                          variant="secondary"
-                          className="bg-[var(--connecta-mark)]/10 text-[var(--connecta-mark-text)] hover:bg-[var(--connecta-mark)]/20 border-[var(--connecta-mark-text)]/20"
+                          variant="outline"
+                          className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark-text)]/40"
                         >
-                          Pending Setup
+                          Pending setup
                         </Badge>
                       )}
                     </TableCell>
