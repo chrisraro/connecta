@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { QrClaimScanner, type QrScanResult } from "@/components/dashboard/QrClaimScanner";
 import {
   AlertDialog,
@@ -199,39 +200,39 @@ export default function CardsPage() {
 
         <Dialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
           <DialogTrigger asChild>
-            <Button className="font-bold h-12 px-6 rounded-2xl">
-              <Plus className="w-5 h-5 mr-2" />
-              Activate New Card
+            <Button>
+              <Plus className="w-4 h-4" />
+              Activate new card
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">Activate Your Card</DialogTitle>
+              <DialogTitle>Activate your card</DialogTitle>
               <DialogDescription>
                 Enter the 6-character activation code found on your card or its packaging.
               </DialogDescription>
             </DialogHeader>
 
             {isSuccess ? (
-              <div className="py-10 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in">
+              <div className="py-10 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 border-[1.5px] border-input flex items-center justify-center text-primary mb-4">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground">Card Activated!</h3>
+                <h3 className="text-xl font-bold text-foreground">Card activated</h3>
                 <p className="text-muted-foreground">Your card is now ready to be linked.</p>
               </div>
             ) : (
               <form onSubmit={handleActivate} className="space-y-6 py-4">
                 <div className="space-y-4">
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-bold uppercase text-muted-foreground ml-1">
-                      Activation Code
+                    <label className="text-[13px] font-semibold text-muted-foreground">
+                      Activation code
                     </label>
                     <Input
-                      placeholder="E.G. AB12CD"
+                      placeholder="e.g. AB12CD"
                       value={activationCode}
                       onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
-                      className="h-14 text-2xl font-bold tracking-[0.3em] text-center uppercase"
+                      className="text-center text-lg font-semibold tracking-[0.3em] uppercase"
                       maxLength={6}
                       autoFocus
                     />
@@ -241,29 +242,25 @@ export default function CardsPage() {
                     <UpgradeGate locked reason={activationError} variant="banner" />
                   )}
                   {activationError && !activationLocked && (
-                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2 text-destructive text-sm">
+                    <div className="flex items-center gap-2 border-[1.5px] border-destructive p-3 text-sm text-destructive">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       {activationError}
                     </div>
                   )}
 
-                  <div className="p-4 bg-muted/50 rounded-2xl border border-dashed space-y-3">
+                  <div className="space-y-3 border-[1.5px] border-dashed border-input p-4">
                     <div className="flex items-center justify-center gap-2 text-center">
                       <QrCode className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                      <p className="text-xs text-muted-foreground font-medium">
+                      <p className="text-[13px] text-muted-foreground">
                         No code handy? Scan the QR printed on your card instead.
                       </p>
                     </div>
                     <QrClaimScanner onResult={handleScanResult} disabled={isActivating} />
                   </div>
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full h-12 rounded-xl text-lg font-bold"
-                  disabled={isActivating || activationCode.length < 6}
-                >
-                  {isActivating ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
-                  Activate Card
+                <Button type="submit" className="w-full" disabled={isActivating || activationCode.length < 6}>
+                  {isActivating ? <Loader2 className="animate-spin w-4 h-4" /> : null}
+                  Activate card
                 </Button>
               </form>
             )}
@@ -291,69 +288,44 @@ export default function CardsPage() {
       )}
 
       {myCards.length === 0 ? (
-        <Card className="border-dashed py-20 bg-muted/20">
-          <CardContent className="flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
-              <SmartphoneNfc className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">No Active Cards</h3>
-            <p className="text-muted-foreground max-w-xs mb-8 font-medium">
-              You haven&apos;t activated any physical {CONNECTA.name} cards yet. Get started by
-              clicking the button above.
-            </p>
-            <Button
-              variant="outline"
-              className="rounded-xl px-8 h-12"
-              onClick={() => setShowActivationDialog(true)}
-            >
-              Get Started
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={SmartphoneNfc}
+          title="No active cards"
+          description={`You haven't activated any physical ${CONNECTA.name} cards yet. Get started by clicking the button above.`}
+          action={{ label: "Get started", onClick: () => setShowActivationDialog(true) }}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myCards.map((card) => (
-            <Card
-              key={card.id}
-              className="overflow-hidden border-border/50 transition-shadow"
-            >
-              <CardHeader className="bg-muted/30 pb-4">
+            <Card key={card.id} className="gap-0 py-0">
+              <CardHeader className="border-b border-input px-5 py-4">
                 <div className="flex justify-between items-start mb-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-background font-mono text-[12px] tracking-tighter"
-                  >
+                  <Badge variant="outline" className="font-mono text-[12px]">
                     ID: {card.uuid.slice(-8).toUpperCase()}
                   </Badge>
-                  <Badge
-                    className={
-                      card.linked_profile_id
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-[var(--connecta-mark)]/10 text-[var(--connecta-mark-text)] border-[var(--connecta-mark-text)]/20"
-                    }
-                  >
+                  <Badge variant={card.linked_profile_id ? "default" : "outline"}>
                     {card.linked_profile_id ? "Linked" : "Unlinked"}
                   </Badge>
                 </div>
                 <CardTitle className="flex items-center gap-2">
                   <SmartphoneNfc className="w-5 h-5 text-primary" />
-                  {CONNECTA.name} NFC Card
+                  {CONNECTA.name} NFC card
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6 space-y-4">
+              <CardContent className="space-y-4 px-5 py-4">
                 <div className="space-y-2">
-                  <label className="text-[12px] font-bold uppercase text-muted-foreground">
-                    Connected Profile
+                  <label className="text-[13px] font-semibold text-muted-foreground">
+                    Connected profile
                   </label>
                   <Select
                     defaultValue={card.linked_profile_id || "none"}
                     onValueChange={(val) => handleLinkProfile(card.id, val)}
                   >
-                    <SelectTrigger className="w-full h-11 rounded-xl">
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a profile" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Not Linked</SelectItem>
+                      <SelectItem value="none">Not linked</SelectItem>
                       {myProfiles?.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.name}
@@ -363,37 +335,33 @@ export default function CardsPage() {
                   </Select>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl border">
-                  <div className="text-center flex-1 border-r">
-                    <div className="text-[12px] font-bold uppercase text-muted-foreground">
-                      Total Taps
-                    </div>
+                <div className="flex items-center justify-between border-[1.5px] border-input p-3">
+                  <div className="flex-1 border-r border-input text-center">
+                    <div className="text-[13px] font-semibold text-muted-foreground">Total taps</div>
                     <div className="text-xl font-bold">{card.tap_count}</div>
                   </div>
-                  <div className="text-center flex-1">
-                    <div className="text-[12px] font-bold uppercase text-muted-foreground">
-                      Status
-                    </div>
-                    <div className="text-xs font-bold text-primary">
+                  <div className="flex-1 text-center">
+                    <div className="text-[13px] font-semibold text-muted-foreground">Status</div>
+                    <div className="text-sm font-semibold text-primary">
                       {card.status === "lost" ? "Lost" : card.status === "active" ? "Active" : card.status}
                     </div>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-muted/10 border-t pt-4 flex gap-2">
+              <CardFooter className="flex gap-2 border-t border-input px-5 py-4">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 rounded-lg h-10"
+                  className="flex-1"
                   onClick={() => window.open(`/t/${card.uuid}`, "_blank")}
                 >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Test Link
+                  <ExternalLink className="w-4 h-4" />
+                  Test link
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="icon"
-                  className="h-10 w-10 text-muted-foreground hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive"
                   disabled={deletingCardId === card.id}
                   onClick={() => setConfirmUnclaimId(card.id)}
                   title="Un-pair / Return to inventory"

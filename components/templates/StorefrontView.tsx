@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { ProfileData } from "@/types/profile";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { formatCatalogPrice } from "@/lib/payment";
 import { buildServiceCatalogItems, CatalogItem } from "@/lib/serviceCatalog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -26,37 +25,48 @@ import {
   Mail,
   Globe,
   ExternalLink,
-  Building2,
-  ArrowRight,
-  Store,
+  ArrowUpRight,
   Send,
   Loader2,
-  CheckCircle2,
-  MessageSquare,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 import { useCreateLead } from "@/hooks/useLeads";
+import { PROFILE_COPY as t } from "@/components/survey/copy";
+import styles from "@/components/survey/survey.module.css";
 
 interface StorefrontViewProps {
   data: ProfileData;
 }
 
+function normalizeUrl(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+/**
+ * The profile's "Services & products" tab, in the Survey Plan world: square
+ * tags, flat `--sv-ground` placeholders and 1.5px `--sv-line` rules, on the
+ * same `--sv-*` custom properties SurveyProfile sets on the page root.
+ */
 export function StorefrontView({ data }: StorefrontViewProps) {
   const { agent, products = [], ownerId } = data;
-  // createLead is a Convex action (not a mutation) — see convex/leads.ts.
-  // useAction has the same calling convention as useMutation.
-  const createLead = useCreateLead().mutateAsync;
+  // createLead posts to /api/leads (see hooks/useLeads.ts).
+  const createLead = useCreateLead();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<"all" | "products" | "services">("all");
   const [selectedItem, setSelectedItem] = useState<CatalogItem | null>(null);
 
-  // Inquiry Lead Form Modal State
+  // Inquiry lead form modal state.
   const [inquiryItem, setInquiryItem] = useState<CatalogItem | null>(null);
   const [inquiryForm, setInquiryForm] = useState({ name: "", contact: "", message: "" });
-  const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
-  const [inquirySuccess, setInquirySuccess] = useState(false);
+  // L-8: nothing is sent until the visitor agrees.
+  const [consent, setConsent] = useState(false);
+  const [inquiryStatus, setInquiryStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
-  // Normalize catalog items
+  const uid = useId();
+
+  // Normalize catalog items.
   const productItems: CatalogItem[] = (products || []).map((p) => ({
     type: "product",
     title: p.title,
@@ -91,445 +101,403 @@ export function StorefrontView({ data }: StorefrontViewProps) {
   });
 
   const openInquiryModal = (item: CatalogItem) => {
-    const defaultMsg = `Hi ${agent.fullName}, I am interested in inquiring about your offering: "${item.title}"${
+    const defaultMsg = `Hi ${agent.fullName}, I am interested in your offering: "${item.title}"${
       item.price ? ` (${formatCatalogPrice(item.price)})` : ""
     }. Please contact me with availability and details.`;
 
     setInquiryForm({ name: "", contact: "", message: defaultMsg });
-    setInquirySuccess(false);
+    setConsent(false);
+    setInquiryStatus("idle");
     setInquiryItem(item);
   };
 
   const handleSendInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inquiryForm.name || !inquiryForm.contact) return;
+    if (!inquiryForm.name || !inquiryForm.contact || !consent) return;
 
-    setIsSubmittingInquiry(true);
+    setInquiryStatus("sending");
     try {
-      await createLead({
+      await createLead.mutateAsync({
         owner_id: ownerId,
         inquirer_name: inquiryForm.name,
         inquirer_contact: inquiryForm.contact,
         message: inquiryForm.message,
+        consent,
       });
 
-      setInquirySuccess(true);
+      setInquiryStatus("sent");
       setTimeout(() => {
-        setInquirySuccess(false);
         setInquiryItem(null);
-      }, 3000);
+      }, 2500);
     } catch (err) {
       console.error("Failed to submit inquiry lead:", err);
       toast.error(toUserMessage(err));
-    } finally {
-      setIsSubmittingInquiry(false);
+      setInquiryStatus("error");
     }
   };
 
+  const categories: { id: "all" | "products" | "services"; label: string; count: number }[] = [
+    { id: "all", label: "All offerings", count: allCatalogItems.length },
+    { id: "products", label: "Products", count: productItems.length },
+    { id: "services", label: "Services", count: serviceItems.length },
+  ];
+
   return (
-    <div className="w-full min-h-screen bg-background text-foreground pb-20 selection:bg-yellow-500/30">
-      {/* ─── Hero Header & Business Branding ─────────────────────── */}
-      <div className="relative border-b border-border bg-card/60 backdrop-blur-xl overflow-hidden">
-        <div className="absolute top-[-50%] left-[-20%] w-[140%] h-[200%] bg-gradient-to-br from-yellow-500/10 via-amber-500/5 to-transparent blur-3xl pointer-events-none" />
+    <main className="mx-auto w-full max-w-[560px] flex-1 px-4 pb-16 lg:max-w-[900px] lg:px-14 lg:pb-14 lg:pt-10">
+      {/* ─── Business header ────────────────────────────────────────── */}
+      <div className="mt-6 border-[1.5px] p-5" style={{ borderColor: "var(--sv-line)" }}>
+        <div className="flex flex-col items-start gap-4 sm:flex-row">
+          <div
+            className={`${styles.duotone} h-20 w-20 shrink-0 border-[1.5px]`}
+            style={{ borderColor: "var(--sv-line)" }}
+          >
+            <ProfileImage
+              src={agent.avatarUrl}
+              alt={agent.fullName}
+              fallbackSeed={agent.fullName}
+              className="h-full w-full object-cover"
+            />
+          </div>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 relative z-10">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-            {/* Avatar / Logo */}
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-2 border-primary/20 shadow-2xl bg-muted shrink-0 relative">
-              <ProfileImage
-                src={agent.avatarUrl}
-                alt={agent.fullName}
-                fallbackSeed={agent.fullName}
-                className="w-full h-full object-cover"
-              />
-            </div>
+          <div className="min-w-0 flex-1">
+            <h1 className={`${styles.expanded} text-2xl font-bold leading-tight`}>
+              {agent.company || agent.fullName}
+            </h1>
+            <p className="mt-1 text-[15px] leading-relaxed" style={{ color: "var(--sv-soft)" }}>
+              {agent.about || agent.title || t.storefrontTab}
+            </p>
 
-            <div className="flex-1 space-y-2">
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                <Badge
-                  variant="secondary"
-                  className="px-3 py-1 bg-primary/10 text-primary border-primary/20 gap-1 rounded-full text-xs font-bold uppercase"
-                >
-                  <Store className="w-3 h-3" /> Business Storefront
-                </Badge>
-                {agent.company && (
-                  <Badge
-                    variant="outline"
-                    className="px-3 py-1 gap-1 rounded-full text-xs font-medium"
-                  >
-                    <Building2 className="w-3 h-3" /> {agent.company}
-                  </Badge>
-                )}
-              </div>
-
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-                {agent.company || agent.fullName}
-              </h1>
-
-              <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed font-medium">
-                {agent.about || `${agent.title} • Products & Offered Services`}
-              </p>
-
-              {/* Contact Badges */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
+            {(agent.phone || agent.email || agent.website) && (
+              <div className="mt-4 flex flex-wrap gap-2">
                 {agent.phone && (
                   <a
-                    href={`tel:${agent.phone}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-muted/80 hover:bg-primary/10 hover:text-primary transition-colors border border-border"
+                    href={`tel:${agent.phone.replace(/\s+/g, "")}`}
+                    className={`${styles.cell} flex items-center gap-1.5 border-[1.5px] px-3 py-1.5 text-[13px] font-semibold`}
+                    style={{ borderColor: "var(--sv-line)" }}
                   >
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>{agent.phone}</span>
+                    <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+                    {agent.phone}
                   </a>
                 )}
                 {agent.email && (
                   <a
                     href={`mailto:${agent.email}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-muted/80 hover:bg-primary/10 hover:text-primary transition-colors border border-border"
+                    className={`${styles.cell} flex items-center gap-1.5 border-[1.5px] px-3 py-1.5 text-[13px] font-semibold`}
+                    style={{ borderColor: "var(--sv-line)" }}
                   >
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>{agent.email}</span>
+                    <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+                    {agent.email}
                   </a>
                 )}
                 {agent.website && (
                   <a
-                    href={
-                      agent.website.startsWith("http") ? agent.website : `https://${agent.website}`
-                    }
+                    href={normalizeUrl(agent.website)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-muted/80 hover:bg-primary/10 hover:text-primary transition-colors border border-border"
+                    className={`${styles.cell} flex items-center gap-1.5 border-[1.5px] px-3 py-1.5 text-[13px] font-semibold`}
+                    style={{ borderColor: "var(--sv-line)" }}
                   >
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>Website</span>
-                    <ExternalLink className="w-3 h-3 opacity-60" />
+                    <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+                    Website
+                    <ExternalLink className="h-3 w-3 opacity-70" aria-hidden="true" />
+                    <span className="sr-only">(opens in a new tab)</span>
                   </a>
                 )}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ─── Main Catalog Content ─────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {/* Filter Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-          {/* Category Tabs */}
-          {/* `flex-1` below carries `min-width: auto`, so each tab
-                        is floored at its own min-content width (measured 87 /
-                        85 / 84px). Their 272px total fits a real 320px phone
-                        (~284px available) but not the builder's 182px preview
-                        frame, where the strip was clipped and the "Services"
-                        tab's right edge landed 21px past the viewport with no
-                        way to reach it. Scrolling the strip — the same
-                        treatment the dashboard filter chips get — keeps the
-                        tabs stretched when they fit and reachable when they
-                        don't, without clipping either way. */}
-          <div className="flex items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border w-full overflow-x-auto sm:w-auto">
+      {/* ─── Filters ─────────────────────────────────────────────────── */}
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className="flex w-full overflow-x-auto border-[1.5px] sm:w-auto"
+          style={{ borderColor: "var(--sv-line)" }}
+        >
+          {categories.map((c, i) => (
             <button
-              onClick={() => setActiveCategory("all")}
-              className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                activeCategory === "all"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
+              key={c.id}
+              type="button"
+              onClick={() => setActiveCategory(c.id)}
+              aria-pressed={activeCategory === c.id}
+              className={`${styles.cell} flex-1 whitespace-nowrap px-4 py-2.5 text-[13px] font-semibold sm:flex-initial ${
+                i > 0 ? "border-l-[1.5px]" : ""
               }`}
+              style={{
+                borderColor: "var(--sv-line)",
+                backgroundColor: activeCategory === c.id ? "var(--sv-line)" : "transparent",
+                color: activeCategory === c.id ? "var(--sv-ground)" : "var(--sv-ink)",
+              }}
             >
-              All Offerings ({allCatalogItems.length})
+              {c.label} ({c.count})
             </button>
-            <button
-              onClick={() => setActiveCategory("products")}
-              className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                activeCategory === "products"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Products ({productItems.length})
-            </button>
-            <button
-              onClick={() => setActiveCategory("services")}
-              className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                activeCategory === "services"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Services ({serviceItems.length})
-            </button>
-          </div>
-
-          {/* Search Field */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search catalog..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-card border-border rounded-xl text-xs"
-            />
-          </div>
+          ))}
         </div>
 
-        {/* Catalog Grid */}
-        {filteredItems.length === 0 ? (
-          <div className="text-center py-16 px-4 border border-dashed border-border rounded-3xl bg-card/30">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
-              <ShoppingBag className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold mb-1">No items found</h3>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              No matching products or services were found for your current filter.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredItems.map((item, index) => (
-              <div
-                key={index}
+        <div className="relative w-full sm:w-64">
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+            style={{ color: "var(--sv-soft)" }}
+            aria-hidden="true"
+          />
+          <label htmlFor={`${uid}-search`} className="sr-only">
+            Search catalog
+          </label>
+          <input
+            id={`${uid}-search`}
+            placeholder="Search catalog…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`${styles.field} pl-9`}
+            style={{ minHeight: "44px" }}
+          />
+        </div>
+      </div>
+
+      {/* ─── Catalog grid ────────────────────────────────────────────── */}
+      {filteredItems.length === 0 ? (
+        <div
+          className="mt-8 border-[1.5px] border-dashed px-6 py-14 text-center"
+          style={{ borderColor: "var(--sv-line)" }}
+        >
+          <ShoppingBag className="mx-auto h-8 w-8" style={{ color: "var(--sv-soft)" }} aria-hidden="true" />
+          <h3 className="mt-4 text-[17px] font-bold">No items found</h3>
+          <p className="mt-1 text-[14px]" style={{ color: "var(--sv-soft)" }}>
+            No matching products or services for the current filter.
+          </p>
+        </div>
+      ) : (
+        <ul className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredItems.map((item, index) => (
+            <li key={index} className="border-[1.5px]" style={{ borderColor: "var(--sv-line)" }}>
+              <button
+                type="button"
                 onClick={() => setSelectedItem(item)}
-                className="group bg-card border border-border hover:border-primary/40 rounded-3xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-xl flex flex-col cursor-pointer"
+                className="flex w-full flex-col text-left"
               >
-                {/* Media Container */}
-                <div className="aspect-[4/3] w-full bg-muted relative overflow-hidden">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5 text-primary">
-                      {item.type === "product" ? (
-                        <ShoppingBag className="w-10 h-10 opacity-70" />
-                      ) : (
-                        <Briefcase className="w-10 h-10 opacity-70" />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Type Tag */}
-                  <div className="absolute top-3 left-3">
-                    <Badge
-                      variant="secondary"
-                      className={`capitalize text-[10px] font-bold px-2.5 py-0.5 rounded-full border backdrop-blur-md ${
-                        item.type === "product"
-                          ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                          : "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                      }`}
-                    >
-                      {item.type}
-                    </Badge>
-                  </div>
-
-                  {/* Price Tag */}
+                <div className="flex items-center justify-between border-b-[1.5px] px-3 py-2" style={{ borderColor: "var(--sv-line)" }}>
+                  <span className={`${styles.mono} text-[11px] uppercase`} style={{ color: "var(--sv-soft)" }}>
+                    {item.type}
+                  </span>
                   {item.price !== undefined && item.price > 0 && (
-                    <div className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-md border border-border px-3 py-1 rounded-xl shadow-lg">
-                      <span className="text-xs font-extrabold text-foreground">
-                        {formatCatalogPrice(item.price)}
-                      </span>
-                    </div>
+                    <span className={`${styles.mono} text-[13px] font-semibold`}>
+                      {formatCatalogPrice(item.price)}
+                    </span>
+                  )}
+                </div>
+                <div
+                  className="flex aspect-[4/3] w-full items-center justify-center"
+                  style={{ backgroundColor: "var(--sv-ground)" }}
+                >
+                  {item.image ? (
+                    <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+                  ) : item.type === "product" ? (
+                    <ShoppingBag className="h-9 w-9" style={{ color: "var(--sv-soft)" }} aria-hidden="true" />
+                  ) : (
+                    <Briefcase className="h-9 w-9" style={{ color: "var(--sv-soft)" }} aria-hidden="true" />
                   )}
                 </div>
 
-                {/* Body */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between border-t border-border/60">
-                    <span className="text-[11px] font-semibold text-primary flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      View &amp; Inquire <ArrowRight className="w-3 h-3" />
-                    </span>
-                    {item.link && <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />}
-                  </div>
+                <div className="flex flex-1 flex-col gap-2 border-t-[1.5px] p-4" style={{ borderColor: "var(--sv-line)" }}>
+                  <h3 className="text-[16px] font-bold leading-snug line-clamp-1">{item.title}</h3>
+                  <p className="text-[13px] leading-relaxed line-clamp-2" style={{ color: "var(--sv-soft)" }}>
+                    {item.description}
+                  </p>
+                  <span className="mt-1 inline-flex items-center gap-1 text-[13px] font-semibold">
+                    View &amp; inquire
+                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
-      {/* ─── Item Details Modal ──────────────────────────────────── */}
+      {/* ─── Item details modal ──────────────────────────────────────── */}
       {selectedItem && (
         <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-          <DialogContent className="sm:max-w-[520px] p-0 bg-background/95 backdrop-blur-2xl border-border rounded-3xl overflow-hidden shadow-2xl">
-            <div className="aspect-[16/9] w-full bg-muted relative">
-              {selectedItem.image ? (
+          <DialogContent className="sm:max-w-[520px]">
+            <DialogHeader>
+              <DialogTitle>{selectedItem.title}</DialogTitle>
+              {selectedItem.price !== undefined && selectedItem.price > 0 && (
+                <DialogDescription className="text-base font-semibold text-foreground">
+                  {formatCatalogPrice(selectedItem.price)}
+                </DialogDescription>
+              )}
+            </DialogHeader>
+
+            {selectedItem.image && (
+              <div className="aspect-[16/9] w-full border-[1.5px] border-input">
                 <img
                   src={selectedItem.image}
                   alt={selectedItem.title}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 text-primary">
-                  {selectedItem.type === "product" ? (
-                    <ShoppingBag className="w-12 h-12 opacity-80" />
-                  ) : (
-                    <Briefcase className="w-12 h-12 opacity-80" />
-                  )}
-                </div>
-              )}
-
-              <div className="absolute top-4 left-4">
-                <Badge className="capitalize text-xs font-bold px-3 py-1 rounded-full bg-black/60 text-white backdrop-blur-md border-0">
-                  {selectedItem.type}
-                </Badge>
               </div>
-            </div>
+            )}
 
-            <div className="p-6 space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">{selectedItem.title}</h2>
-                  {selectedItem.price !== undefined && selectedItem.price > 0 && (
-                    <p className="text-lg font-extrabold text-primary mt-0.5">
-                      {formatCatalogPrice(selectedItem.price)}
-                    </p>
-                  )}
-                </div>
-              </div>
+            <p className="whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
+              {selectedItem.description}
+            </p>
 
-              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
-                {selectedItem.description}
-              </p>
+            <div className="flex flex-col gap-2 border-t border-border pt-4 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => {
+                  const itemToInquire = selectedItem;
+                  setSelectedItem(null);
+                  openInquiryModal(itemToInquire);
+                }}
+                className={`${styles.primary} ${styles.semiExpanded} flex h-11 w-full items-center justify-center gap-2 text-[15px] font-bold`}
+              >
+                <Send className="h-4 w-4" aria-hidden="true" />
+                Inquire via lead form
+              </button>
 
-              {/* Action Buttons */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center gap-2 border-t border-border">
-                <Button
-                  onClick={() => {
-                    const itemToInquire = selectedItem;
-                    setSelectedItem(null);
-                    openInquiryModal(itemToInquire);
-                  }}
-                  className="w-full font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+              {selectedItem.link && (
+                <a
+                  href={normalizeUrl(selectedItem.link)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-11 w-full items-center justify-center gap-1.5 border-[1.5px] border-input text-[15px] font-semibold sm:w-auto sm:px-4"
                 >
-                  <MessageSquare className="w-4 h-4" /> Inquire via Lead Form
-                </Button>
-
-                {selectedItem.link && (
-                  <a
-                    href={
-                      selectedItem.link.startsWith("http")
-                        ? selectedItem.link
-                        : `https://${selectedItem.link}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full sm:w-auto"
-                  >
-                    <Button
-                      variant="outline"
-                      className="w-full font-semibold gap-1.5 rounded-xl border-border"
-                    >
-                      External Link <ExternalLink className="w-3.5 h-3.5" />
-                    </Button>
-                  </a>
-                )}
-              </div>
+                  External link
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="sr-only">(opens in a new tab)</span>
+                </a>
+              )}
             </div>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* ─── Inquiry Lead Form Modal ─────────────────────────────── */}
+      {/* ─── Inquiry lead form modal ─────────────────────────────────── */}
       {inquiryItem && (
         <Dialog open={!!inquiryItem} onOpenChange={() => setInquiryItem(null)}>
-          <DialogContent className="sm:max-w-[460px] p-6 bg-background/95 backdrop-blur-2xl border-border rounded-3xl overflow-hidden shadow-2xl">
+          <DialogContent className="sm:max-w-[460px]">
             <DialogHeader>
-              <DialogTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
-                <Send className="w-4 h-4 text-primary" />
-                Inquire about {inquiryItem.title}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Send an instant lead message directly to {agent.fullName}.
+              <DialogTitle>Inquire about {inquiryItem.title}</DialogTitle>
+              <DialogDescription>
+                Send a message directly to {agent.fullName}.
               </DialogDescription>
             </DialogHeader>
 
-            {inquirySuccess ? (
-              <div className="py-8 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-6 h-6" />
+            {inquiryStatus === "sent" ? (
+              <div className="space-y-3 py-6 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center border-[1.5px] border-input text-primary">
+                  <Check className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <h3 className="font-bold text-base">Inquiry Sent!</h3>
-                <p className="text-xs text-muted-foreground">
-                  Your message has been sent directly to {agent.fullName}. They will review it in
-                  their dashboard.
+                <h3 className="text-base font-bold">Inquiry sent</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your message has been sent to {agent.fullName}.
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSendInquiry} className="space-y-4 pt-2">
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">
-                    Your Name
+              <form onSubmit={handleSendInquiry} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor={`${uid}-name`} className="text-[13px] font-semibold">
+                    Your name
                   </label>
                   <Input
+                    id={`${uid}-name`}
                     required
                     placeholder="e.g. Maria Santos"
                     value={inquiryForm.name}
                     onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
-                    className="text-xs rounded-xl"
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">
-                    Your Email or Mobile Phone
+                <div className="space-y-1.5">
+                  <label htmlFor={`${uid}-contact`} className="text-[13px] font-semibold">
+                    Your email or mobile phone
                   </label>
                   <Input
+                    id={`${uid}-contact`}
                     required
                     placeholder="e.g. maria@example.com or 09171234567"
                     value={inquiryForm.contact}
                     onChange={(e) => setInquiryForm({ ...inquiryForm, contact: e.target.value })}
-                    className="text-xs rounded-xl"
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-foreground mb-1 block">
-                    Message / Inquiry Details
+                <div className="space-y-1.5">
+                  <label htmlFor={`${uid}-message`} className="text-[13px] font-semibold">
+                    Message
                   </label>
                   <Textarea
+                    id={`${uid}-message`}
                     required
                     rows={3}
                     value={inquiryForm.message}
                     onChange={(e) => setInquiryForm({ ...inquiryForm, message: e.target.value })}
-                    className="text-xs rounded-xl resize-none"
                   />
                 </div>
 
-                <div className="pt-2 flex items-center gap-2">
-                  <Button
+                <div className="flex items-start gap-3">
+                  <input
+                    id={`${uid}-consent`}
+                    type="checkbox"
+                    required
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                    className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                  />
+                  <label htmlFor={`${uid}-consent`} className="text-[13px] leading-snug text-muted-foreground">
+                    {(() => {
+                      const text = t.consent(agent.fullName);
+                      const at = text.lastIndexOf(t.privacyPolicy);
+                      if (at < 0) return text;
+                      return (
+                        <>
+                          {text.slice(0, at)}
+                          <Link
+                            href="/privacy#lead-data"
+                            className="font-semibold text-foreground underline underline-offset-2"
+                          >
+                            {t.privacyPolicy}
+                          </Link>
+                          {text.slice(at + t.privacyPolicy.length)}
+                        </>
+                      );
+                    })()}
+                  </label>
+                </div>
+
+                {inquiryStatus === "error" && (
+                  <p role="alert" className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    That didn&apos;t send. Check your connection and try again.
+                  </p>
+                )}
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
                     type="submit"
-                    disabled={isSubmittingInquiry}
-                    className="flex-1 font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+                    disabled={inquiryStatus === "sending" || !consent}
+                    className={`${styles.primary} ${styles.semiExpanded} flex h-11 flex-1 items-center justify-center gap-2 text-[15px] font-bold disabled:opacity-60`}
                   >
-                    {isSubmittingInquiry ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                    {inquiryStatus === "sending" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Send className="h-4 w-4" aria-hidden="true" />
                     )}
-                    {isSubmittingInquiry ? "Sending..." : "Submit Inquiry"}
-                  </Button>
-                  <Button
+                    {inquiryStatus === "sending" ? "Sending…" : "Send inquiry"}
+                  </button>
+                  <button
                     type="button"
-                    variant="ghost"
                     onClick={() => setInquiryItem(null)}
-                    className="rounded-xl"
+                    className="h-11 px-4 text-[15px] font-semibold text-muted-foreground"
                   >
                     Cancel
-                  </Button>
+                  </button>
                 </div>
               </form>
             )}
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </main>
   );
 }

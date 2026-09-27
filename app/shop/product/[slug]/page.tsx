@@ -149,14 +149,14 @@ export default function ProductPage() {
                     <button
                       onClick={prevImage}
                       aria-label="Previous image"
-                      className="absolute left-2 top-1/2 -translate-y-1/2 size-11 flex items-center justify-center bg-background/80 hover:bg-background rounded-full transition-colors"
+                      className="absolute left-2 top-1/2 size-11 -translate-y-1/2 flex items-center justify-center border-[1.5px] border-input bg-background transition-colors hover:bg-accent"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={nextImage}
                       aria-label="Next image"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 size-11 flex items-center justify-center bg-background/80 hover:bg-background rounded-full transition-colors"
+                      className="absolute right-2 top-1/2 size-11 -translate-y-1/2 flex items-center justify-center border-[1.5px] border-input bg-background transition-colors hover:bg-accent"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -254,10 +254,10 @@ export default function ProductPage() {
                     key={variation.id}
                     onClick={() => setSelectedVariation(variation.id)}
                     disabled={variation.inventory === 0}
-                    className={`p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
+                    className={`p-3 border-[1.5px] text-sm font-medium transition-colors ${
                       selectedVariation === variation.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-muted"
+                        ? "border-primary"
+                        : "border-input hover:bg-accent"
                     } ${variation.inventory === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <div>{variation.name}</div>
@@ -346,14 +346,6 @@ export default function ProductPage() {
             SKU: <span className="font-mono">{product.sku}</span>
           </div>
         </div>
-      </div>
-
-      {/* Related Products Section (placeholder) */}
-      <div className="pt-12 border-t border-border">
-        <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
-        <p className="text-muted-foreground">
-          Related products will be displayed here based on category and tags.
-        </p>
       </div>
     </div>
   );
