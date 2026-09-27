@@ -2,7 +2,6 @@
 
 import { useId, useState } from "react";
 import { Loader2, CheckCircle2, Send, AlertCircle } from "lucide-react";
-import { getOrCreateLeadVisitorId } from "@/lib/offline-leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

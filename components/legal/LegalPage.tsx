@@ -1,16 +1,15 @@
 import Link from "next/link";
-import { ArrowLeft, TriangleAlert } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { CONNECTA } from "@/lib/brand";
 
 /**
  * Shared shell for /privacy and /terms.
  *
- * Both pages are long-form legal text generated from a factual data-flow
- * inventory (see the audit that produced them), NOT reviewed by a lawyer.
- * Every render carries a fixed, un-dismissable draft notice so nobody mistakes
- * this for a launch-ready policy. Do not remove DraftNotice from either page
- * without a real legal sign-off replacing it.
+ * Both pages state only what the product actually does (checked against the
+ * code, 2026-09-27) and name the operator from CONNECTA.operator. Keep them
+ * in step with the product: lib/legalPages.test.ts fails on a draft banner,
+ * a bracketed placeholder or a retired provider.
  */
 
 export function LegalPage({
@@ -36,7 +35,7 @@ export function LegalPage({
             className="flex shrink-0 items-center gap-2.5"
           >
             <ConnectaMark className="h-7 w-7 text-primary" />
-            <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+            <span className="text-[15px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
               {CONNECTA.name.toUpperCase()}
             </span>
           </Link>
@@ -51,9 +50,7 @@ export function LegalPage({
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-        <DraftNotice />
-
-        <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,68ch)_16rem] lg:gap-16">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,68ch)_16rem] lg:gap-16">
           <div>
             <h1 className="text-3xl font-bold [font-stretch:112%] sm:text-4xl">
               {title}
@@ -100,40 +97,6 @@ export function LegalPage({
   );
 }
 
-export function DraftNotice() {
-  return (
-    <div
-      role="alert"
-      className="flex items-start gap-3 border-[1.5px] border-[var(--connecta-mark)] p-4 sm:p-5"
-    >
-      <TriangleAlert
-        className="mt-0.5 size-5 shrink-0 text-[var(--connecta-mark-text)]"
-        aria-hidden="true"
-      />
-      <div className="text-sm leading-6 text-[var(--connecta-mark-text)]">
-        <p className="font-semibold">Draft — not legal advice, not yet approved for launch.</p>
-        <p className="mt-1">
-          This page was generated from an engineering audit of what {CONNECTA.name}&apos;s codebase
-          actually does. It has not been reviewed by a Philippine-qualified lawyer or the
-          company&apos;s Data Protection Officer, and must not be treated as a compliant policy
-          until it has been. Placeholders in brackets — like{" "}
-          <Placeholder>[COMPANY LEGAL NAME]</Placeholder> — mark facts that have not been supplied
-          yet and must be filled in before publication.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/** Inline marker for a fact that must be supplied by the human owner. */
-export function Placeholder({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="border border-dashed border-[var(--connecta-mark-text)]/60 bg-[var(--connecta-mark)]/10 px-1.5 py-0.5 font-mono text-[0.85em] text-[var(--connecta-mark-text)]">
-      {children}
-    </span>
-  );
-}
-
 export function Section({
   id,
   heading,
@@ -155,7 +118,7 @@ export function Section({
   );
 }
 
-/** Highlighted call-out for an honest "here's a known gap" statement. */
+/** A highlighted note inside a section. */
 export function Callout({ children }: { children: React.ReactNode }) {
   return (
     <div className="border-[1.5px] border-input bg-background p-4 text-sm leading-6">

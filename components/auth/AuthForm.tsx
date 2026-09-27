@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { forgotPasswordHref } from "@/lib/authRecovery";
 import { Loader2, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -145,9 +147,19 @@ export function AuthForm({ mode, redirectUrl, cardUuid }: Props) {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="password" className="text-[14px] font-semibold">
-            Password
-          </Label>
+          <div className="flex items-baseline justify-between gap-3">
+            <Label htmlFor="password" className="text-[14px] font-semibold">
+              Password
+            </Label>
+            {isSignIn && (
+              <Link
+                href={forgotPasswordHref(cardUuid)}
+                className="text-[14px] font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <Input
             id="password"
             name="password"

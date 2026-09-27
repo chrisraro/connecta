@@ -38,14 +38,30 @@ function domainFromAppUrl(raw: string | undefined): string | undefined {
  */
 export function buildConnecta(env: Record<string, string | undefined>) {
   const domain = domainFromAppUrl(env.NEXT_PUBLIC_APP_URL) || FALLBACK_DOMAIN;
-  const supportEmail = env.SUPPORT_EMAIL?.trim() || `support@${domain}`;
+  const supportEmail = env.SUPPORT_EMAIL?.trim() || SUPPORT_INBOX;
   return {
-    name: "Connecta",
+    // Final product name, confirmed by the owner on 2026-09-27.
+    name: "Connecta PH",
     tagline: "tap.connect.grow.",
     domain,
     supportEmail,
+    /** Who runs the service, as the privacy policy and terms state it. */
+    operator: OPERATOR,
   };
 }
+
+// The owner's inbox for support, privacy requests and the Data Protection
+// Officer (2026-09-27). Not domain-derived: no domain mailbox exists yet.
+const SUPPORT_INBOX = "connectaphnfc@gmail.com";
+
+// The personal information controller under RA 10173, trading under the
+// product name (supplied by the owner, 2026-09-27).
+const OPERATOR = {
+  legalName: "Christian F. Raro",
+  address: "Naga City, Camarines Sur, Philippines",
+  /** Courts named in the terms for disputes. */
+  venue: "Naga City",
+} as const;
 
 // Each variable is read by its full literal name: Next.js inlines
 // NEXT_PUBLIC_* values into client bundles only for direct

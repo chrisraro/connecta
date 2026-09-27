@@ -670,7 +670,7 @@ export function SurveyFooter({ sheet, t }: { sheet: Sheet; t: ProfileCopy }) {
       >
         <span>{t.poweredBy}</span>
         <ConnectaMark className="h-5 w-5" dotColor={sheet.mark} style={{ color: sheet.line }} />
-        <span className={`${styles.expanded} font-bold tracking-[0.1em]`} style={{ color: "var(--sv-ink)" }}>
+        <span className={`${styles.expanded} whitespace-nowrap font-bold tracking-[0.1em]`} style={{ color: "var(--sv-ink)" }}>
           {CONNECTA.name.toUpperCase()}
         </span>
       </Link>
