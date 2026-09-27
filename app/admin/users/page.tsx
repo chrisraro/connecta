@@ -33,7 +33,7 @@ import {
 } from "@/hooks/useAdmin";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { toUserMessage } from "@/lib/errors";
-import { PLAN_GRACE_DAYS, PLAN_LIMITS } from "@/lib/plans";
+import { PLAN_GRACE_DAYS, PLAN_LIMITS, toPlanId } from "@/lib/plans";
 import { adminRoleLabel } from "@/lib/adminRoles";
 
 // Paid-plan grants offered in the Manage menu. Renewing the same plan extends
@@ -218,7 +218,7 @@ export default function AdminUsersPage() {
                                 : "bg-muted text-foreground border-border w-fit"
                           }
                         >
-                          {PLAN_LIMITS[u.plan].name}
+                          {PLAN_LIMITS[toPlanId(u.plan)].name}
                         </Badge>
                         {u.plan !== "free" &&
                           u.plan_expires_at &&

@@ -46,6 +46,23 @@ export const PLAN_PERIOD_DAYS = 30;
 export const PLAN_GRACE_DAYS = 3;
 export const FREE_TEMPLATE_IDS = ["editorial", "architectural"];
 
+// Values the database stored before migration 028 renamed them.
+const RENAMED_TIERS: Record<string, PlanId> = {
+  pro: "lead_tools",
+  business: "teams",
+};
+
+/**
+ * A stored plan value as a PlanId: current ids pass through, the names used
+ * before the rename map to their new ids, and anything else reads as Free,
+ * so an unexpected value never breaks a PLAN_LIMITS lookup.
+ */
+export function toPlanId(value: unknown): PlanId {
+  if (typeof value !== "string") return "free";
+  if (value === "free" || value === "lead_tools" || value === "teams") return value;
+  return RENAMED_TIERS[value] ?? "free";
+}
+
 export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
   free: {
     id: "free",

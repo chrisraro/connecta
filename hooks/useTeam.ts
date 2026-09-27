@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSupabase } from "@/lib/db/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { queryKeys } from "@/lib/db/keys";
-import type { PlanId } from "@/lib/plans";
+import { toPlanId, type PlanId } from "@/lib/plans";
 
 export type TeamMember = {
   userId: string;
@@ -59,7 +59,8 @@ export function useMyTeam() {
     queryFn: async (): Promise<MyTeam | null> => {
       const { data, error } = await supabase.rpc("get_my_team");
       if (error) throw error;
-      return (data as unknown as MyTeam) ?? null;
+      const team = (data as unknown as MyTeam) ?? null;
+      return team && { ...team, plan: toPlanId(team.plan) };
     },
   });
 }

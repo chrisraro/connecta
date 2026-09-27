@@ -5,6 +5,7 @@ import {
   isTemplateLocked,
   PLAN_LIMITS,
   DEFAULT_PLAN_PRICING,
+  toPlanId,
 } from "./plans";
 import { PRICING } from "./pricing";
 
@@ -163,5 +164,24 @@ describe("card skins by plan (confirmed 2026-09-24)", () => {
       expect(PLAN_LIMITS[plan].allowedCardSkins).toBeNull();
       expect(isCardSkinLocked("scarlet", PLAN_LIMITS[plan].allowedCardSkins)).toBe(false);
     }
+  });
+});
+
+describe("toPlanId", () => {
+  test("passes the current ids through", () => {
+    expect(toPlanId("free")).toBe("free");
+    expect(toPlanId("lead_tools")).toBe("lead_tools");
+    expect(toPlanId("teams")).toBe("teams");
+  });
+
+  // A row written before migration 028 renamed the enum (or read while the
+  // deploy and the migration are a minute apart) must not crash a page.
+  test("reads the names used before the rename as the new ids", () => {
+    expect(toPlanId("pro")).toBe("lead_tools");
+    expect(toPlanId("business")).toBe("teams");
+  });
+
+  test("anything else is Free", () => {
+    for (const v of [null, undefined, "", "enterprise", 3]) expect(toPlanId(v)).toBe("free");
   });
 });

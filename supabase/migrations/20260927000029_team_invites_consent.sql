@@ -23,6 +23,9 @@
 -- ---------------------------------------------------------------------------
 -- A third resolution: declined, alongside pending/accepted/revoked.
 -- ---------------------------------------------------------------------------
+-- Safe in one migration with the functions below: 'declined' only appears
+-- inside function bodies, which are not checked against the enum until they
+-- first run. Do not add a plain statement using 'declined' to this file.
 alter type public.invite_status add value 'declined';
 
 -- ---------------------------------------------------------------------------
@@ -65,6 +68,22 @@ begin
   if team.id is null then
     raise exception using errcode = 'P0001',
       message = 'You do not own a team.', detail = 'NO_TEAM';
+  end if;
+
+  -- The team row outlives the plan (a lapsed or downgraded owner keeps it),
+  -- so inviting needs a live Teams plan, not just a team.
+  if public.effective_plan(caller) <> 'teams' then
+    raise exception using errcode = 'P0001',
+      message = 'Inviting teammates needs an active Teams plan.', detail = 'NOT_TEAMS_PLAN';
+  end if;
+
+  -- Every invite can send an email, and revoking frees the seat again, so cap
+  -- how many invites a team can issue per hour. Revoked and declined rows
+  -- keep their created_at, so they count too.
+  if (select count(*) from public.team_invites
+       where team_id = team.id and created_at > now() - interval '1 hour') >= 10 then
+    raise exception using errcode = 'P0001',
+      message = 'Too many invites in the last hour. Try again later.', detail = 'RATE_LIMITED';
   end if;
 
   if email_clean = '' or position('@' in email_clean) = 0 then

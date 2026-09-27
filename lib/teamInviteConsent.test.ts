@@ -41,6 +41,23 @@ describe("team invite consent migration", () => {
     expect(sql).toMatch(/alter\s+type\s+public\.invite_status\s+add\s+value\s+'declined'/i);
   });
 
+  // Review finding: a team row outlives the plan (a lapsed or downgraded
+  // owner keeps it), so owning a team must not be enough to invite.
+  test("team_invite_member requires the caller's effective plan to be Teams", () => {
+    const body = functionBody(sql, "team_invite_member");
+    expect(body).toMatch(/public\.effective_plan\(\s*caller\s*\)\s*<>\s*'teams'/i);
+    expect(body).toMatch(/'NOT_TEAMS_PLAN'/);
+  });
+
+  // Review finding: revoke frees a seat, so invite -> revoke -> invite could
+  // send unlimited invite emails. Revoked rows stay (status only), so
+  // counting rows created in the last hour caps sends per team.
+  test("team_invite_member caps invites per team per hour", () => {
+    const body = functionBody(sql, "team_invite_member");
+    expect(body).toMatch(/created_at\s*>\s*now\(\)\s*-\s*interval '1 hour'/i);
+    expect(body).toMatch(/'RATE_LIMITED'/);
+  });
+
   test("team_invite_member no longer updates users.team_id", () => {
     const body = functionBody(sql, "team_invite_member");
     expect(body).not.toMatch(/update\s+public\.users\s+set\s+team_id/i);

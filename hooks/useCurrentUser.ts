@@ -5,7 +5,7 @@ import { useSupabase } from "@/lib/db/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { queryKeys } from "@/lib/db/keys";
 import type { Tables } from "@/lib/supabase/database.types";
-import { PLAN_LIMITS, PLAN_GRACE_DAYS, type PlanId } from "@/lib/plans";
+import { PLAN_LIMITS, PLAN_GRACE_DAYS, toPlanId, type PlanId } from "@/lib/plans";
 
 export type AppUser = Tables<"users">;
 
@@ -75,7 +75,7 @@ export function useIsAdmin() {
 export function useMyPlan() {
   const { data: appUser, isPending } = useCurrentUser();
 
-  const stored = (appUser?.plan ?? "free") as PlanId;
+  const stored = toPlanId(appUser?.plan);
   const expiresAt = appUser?.plan_expires_at ? Date.parse(appUser.plan_expires_at) : null;
   const graceEnds = (expiresAt ?? 0) + PLAN_GRACE_DAYS * 24 * 60 * 60 * 1000;
   const now = Date.now();
