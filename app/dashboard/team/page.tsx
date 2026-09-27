@@ -79,8 +79,8 @@ export default function TeamPage() {
     );
   }
 
-  // Business-plan gate (also covers the signed-out null case).
-  if (data === null || data.plan !== "business" || data.team === null) {
+  // Teams-plan gate (also covers the signed-out null case).
+  if (data === null || data.plan !== "teams" || data.team === null) {
     return (
       <div className="space-y-6">
         <div>
@@ -89,9 +89,9 @@ export default function TeamPage() {
         </div>
         <EmptyState
           icon={Building2}
-          title="Team workspace is a Business feature"
-          description="Upgrade to the Business plan to invite teammates, share branding, and view a combined team lead pool."
-          action={{ label: "Upgrade to Business", href: "/dashboard/billing" }}
+          title="Team workspace is a Teams feature"
+          description="Upgrade to Teams to invite teammates, share branding, and view a combined team lead pool."
+          action={{ label: "Upgrade to Teams", href: "/dashboard/billing" }}
         />
       </div>
     );

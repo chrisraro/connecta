@@ -132,7 +132,7 @@ export type TeamLead = {
 };
 
 /**
- * Every lead across the team. Business plan, owner only.
+ * Every lead across the team. Teams plan, owner only.
  *
  * Returns an empty list rather than raising when the caller is not entitled:
  * the page renders it as a section that is simply absent, and an error here

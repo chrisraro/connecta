@@ -1,21 +1,33 @@
 /**
- * Frontend re-export of the plan definitions in convex/plans.ts.
+ * Plan definitions used across the app.
  *
- * The Convex bundler keeps its sources inside convex/; this thin copy lets
- * React components import plan limits without crossing that boundary. The two
- * files MUST be kept in sync. Server enforcement always uses convex/plans.ts —
- * anything here is for cosmetic UI gating only.
+ * There is no Convex anymore: enforcement of the real limits (profile count,
+ * active card count, template lock, team leads) lives in Postgres functions
+ * and triggers (see supabase/migrations, e.g. 20260911000009_business_rules,
+ * 20260911000017_effective_plan). What lives here is the client-side mirror
+ * of those limits -- used for cosmetic UI gating (dimming a locked template,
+ * showing an upgrade CTA) -- plus the plan names, prices and feature copy
+ * shown on the billing page and the paywall. Keep this file's limits in sync
+ * with the database; a mismatch only ever shows the wrong CTA, since the
+ * database is what actually enforces the paywall.
+ *
+ * DECISION (owner, 2026-09-27): the app adopted the homepage plan names.
+ * "Pro" is now "Lead tools" and "Business" is now "Teams" -- same limits,
+ * new ids and copy. Prices come from lib/pricing.ts, the single source of
+ * truth shared with components/landing/Pricing.tsx.
  */
 
 import { CONNECTA } from "@/lib/brand";
 import { errorCode } from "@/lib/errors";
 import { DEFAULT_CARD_SKIN, type CardSkinId } from "@/lib/cardSkins";
+import { PRICING } from "@/lib/pricing";
 
-export type PlanId = "free" | "pro" | "business";
+export type PlanId = "free" | "lead_tools" | "teams";
 
 export interface PlanLimits {
   id: PlanId;
   name: string;
+  /** Standard (non-prelaunch) monthly price, in centavos. */
   priceCentavos: number;
   maxProfiles: number | null;
   maxActiveCards: number | null;
@@ -57,10 +69,10 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
       `${CONNECTA.name} branding`,
     ],
   },
-  pro: {
-    id: "pro",
-    name: "Pro",
-    priceCentavos: 29900,
+  lead_tools: {
+    id: "lead_tools",
+    name: "Lead tools",
+    priceCentavos: PRICING.leadTools.monthly.standard * 100,
     maxProfiles: null,
     maxActiveCards: null,
     allowedTemplateIds: null,
@@ -70,18 +82,21 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     canExportLeads: true,
     hasTeam: false,
     teamSeats: 0,
+    // Honest about what exists today (2026-09-27): no follow-up reminders or
+    // analytics yet, so they are not listed as included. They may return here
+    // as clearly-labelled "Coming soon" items once built.
     features: [
-      "Unlimited profiles & cards",
-      "All premium templates",
-      "Branding removed",
-      "Lead CSV export",
-      "Full analytics",
+      "Unlimited leads",
+      "Export your leads",
+      "All profile styles and card skins",
+      "No product branding on your profile",
+      "Unlimited profiles and cards",
     ],
   },
-  business: {
-    id: "business",
-    name: "Business",
-    priceCentavos: 99900,
+  teams: {
+    id: "teams",
+    name: "Teams",
+    priceCentavos: PRICING.teams.monthly.standard * 100,
     maxProfiles: null,
     maxActiveCards: null,
     allowedTemplateIds: null,
@@ -92,19 +107,18 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     hasTeam: true,
     teamSeats: 5,
     features: [
-      "Everything in Pro",
-      "Team workspace (5 seats)",
+      "Everything in Lead tools",
+      "Up to 5 seats",
       "Shared team branding",
-      "Team lead pool",
-      "White-label profiles",
+      "One team lead pool",
     ],
   },
 };
 
 /**
  * Cosmetic UI gate for the builder's template picker: true when `templateId`
- * is NOT in the plan's `allowedTemplateIds` (`null` means "no restriction" —
- * every plan without a template allowlist, i.e. pro/business). This is
+ * is NOT in the plan's `allowedTemplateIds` (`null` means "no restriction" --
+ * every plan without a template allowlist, i.e. lead_tools/teams). This is
  * UI-only: the Supabase backend does not re-enforce it on save (the Convex
  * createProfile check it once relied on is gone).
  */
@@ -142,10 +156,19 @@ export function isPlanLimitError(err: unknown): boolean {
  * These constants are the fallback, not the source of truth: an admin can
  * change pricing without a deploy, and a missing or malformed settings row
  * falls back here rather than rendering a blank or NaN price.
+ *
+ * Scope of the override (decided here, since there was no existing answer):
+ * it replaces the STANDARD monthly price only. The prelaunch monthly price
+ * and both yearly prices stay fixed constants in lib/pricing.ts. There is no
+ * billing engine yet to recompute a yearly or prelaunch discount from an
+ * arbitrary edited monthly number, and letting the admin edit only the one
+ * price that every other price is quoted against (as a struck-through
+ * "standard" beside the real prelaunch price) keeps the override meaningful
+ * without inventing pricing rules nobody asked for.
  */
-export type PlanPricing = Record<"pro" | "business", number>;
+export type PlanPricing = Record<"lead_tools" | "teams", number>;
 
 export const DEFAULT_PLAN_PRICING: PlanPricing = {
-  pro: PLAN_LIMITS.pro.priceCentavos,
-  business: PLAN_LIMITS.business.priceCentavos,
+  lead_tools: PLAN_LIMITS.lead_tools.priceCentavos,
+  teams: PLAN_LIMITS.teams.priceCentavos,
 };

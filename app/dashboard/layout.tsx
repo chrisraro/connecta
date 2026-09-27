@@ -131,8 +131,8 @@ function DashboardFabs() {
             <QuickActionItem
               href="/dashboard/billing"
               icon={CreditCard}
-              label="Upgrade Pro"
-              desc="Unlock unlimited profiles"
+              label="Lead tools"
+              desc="Unlimited profiles, cards and leads"
             />
           </div>
         </SheetContent>
