@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { RESET_LINK_INVALID } from "@/lib/authRecovery";
 import { recoveryRedirect } from "@/lib/recoveryResponse";
+import { authErrorNotice } from "@/lib/oauth";
 
 /**
  * Post-authentication landing point.
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
   // Back to sign-in with a named notice, keeping the card the visitor tapped.
   // A key rather than the auth server's text: the page owns the wording, and
   // nothing from the query string is echoed back as content.
-  const backToSignIn = (notice: "confirmed" | "link_invalid") => {
+  const backToSignIn = (notice: "confirmed" | "link_invalid" | "oauth_failed") => {
     const back = new URL("/auth", origin);
     back.searchParams.set("mode", "signin");
     back.searchParams.set("notice", notice);
@@ -56,8 +57,10 @@ export async function GET(request: NextRequest) {
   // The auth server redirects here WITH error params when a confirmation link
   // is expired or already used. Ignoring them left the person on a bare
   // sign-up page with no idea what happened.
+  // A Google sign-in (provider=google) that was cancelled or failed says so,
+  // rather than blaming an email link.
   if (searchParams.get("error") || searchParams.get("error_description")) {
-    return backToSignIn("link_invalid");
+    return backToSignIn(authErrorNotice(searchParams));
   }
 
   // OAuth and email-link flows arrive with a code to trade for a session.
@@ -65,6 +68,7 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
+      if (searchParams.get("provider") === "google") return backToSignIn("oauth_failed");
       // The exchange needs a verifier stored by the browser that signed up,
       // so it fails when the confirmation email is opened on another device.
       // A code only exists if the auth server already VERIFIED the link, so

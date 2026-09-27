@@ -14,6 +14,8 @@ const AUTH_NOTICES: Record<string, string> = {
     "That link has expired or was already used. If you have confirmed your email, sign in; otherwise create your account again to get a new link.",
   // Set by /auth/confirm, /auth/callback?flow=recovery and the reset page's
   // guard when a password reset link can't be used.
+  oauth_failed:
+    "Google sign-in was cancelled or didn't finish. Try again, or use your email and password.",
   reset_link_invalid:
     "That reset link has expired, was already used, or was opened in a different browser. Enter your email to get a new one.",
 };
