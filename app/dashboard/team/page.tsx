@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@/components/auth/AuthProvider";
 import {
   useMyTeam,
   useTeamLeads,
@@ -8,11 +7,16 @@ import {
   useRemoveMember,
   useRevokeInvite,
   useUpdateTeamBranding,
+  useLeaveTeam,
 } from "@/hooks/useTeam";
+import { teamGateFor, seatUsagePercent, canInviteMore } from "@/lib/team";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PlanPanel } from "@/components/survey/PlanPanel";
+import { InviteBanner } from "@/components/team/InviteBanner";
+import { PlanUpgradeButton } from "@/components/billing/PlanUpgradeButton";
 import {
   Table,
   TableBody,
@@ -32,14 +36,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Building2, Loader2, UserPlus, Trash2, X, Save, Crown } from "lucide-react";
+import { Building2, Loader2, UserPlus, Trash2, X, Save, Crown, LogOut } from "lucide-react";
 import { CONNECTA } from "@/lib/brand";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 
 export default function TeamPage() {
-  const { user } = useAuth();
   const { data } = useMyTeam();
   const { data: teamLeads } = useTeamLeads();
 
@@ -47,10 +50,12 @@ export default function TeamPage() {
   const removeMember = useRemoveMember().mutateAsync;
   const revokeInvite = useRevokeInvite().mutateAsync;
   const updateBrandingMutation = useUpdateTeamBranding().mutateAsync;
+  const leaveTeam = useLeaveTeam().mutateAsync;
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const [branding, setBranding] = useState({
     name: "",
     companyName: "",
@@ -71,38 +76,7 @@ export default function TeamPage() {
     }
   }, [teamObj]);
 
-  if (data === undefined) {
-    return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
-      </div>
-    );
-  }
-
-  // Teams-plan gate (also covers the signed-out null case).
-  if (data === null || data.plan !== "teams" || data.team === null) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Team Workspace</h1>
-          <p className="text-muted-foreground">Collaborate with your team under one brand.</p>
-        </div>
-        <EmptyState
-          icon={Building2}
-          title="Team workspace is a Teams feature"
-          description="Upgrade to Teams to invite teammates, share branding, and view a combined team lead pool."
-          action={{ label: "Upgrade to Teams", href: "/dashboard/billing" }}
-        />
-      </div>
-    );
-  }
-
-  const team = data.team;
-  const members = data.members;
-  const pendingInvites = data.pendingInvites;
-  const seatUsage = data.seatUsage;
-  const isOwner = data.isOwner;
-  const seatPct = seatUsage.total > 0 ? Math.min(100, (seatUsage.used / seatUsage.total) * 100) : 0;
+  const gate = teamGateFor(data);
 
   const run = async (fn: () => Promise<unknown>, successMessage?: string) => {
     setBusy(true);
@@ -116,20 +90,68 @@ export default function TeamPage() {
     }
   };
 
+  if (gate === "loading") {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="animate-spin text-primary w-8 h-8" aria-hidden="true" />
+      </div>
+    );
+  }
+
+  if (gate === "upgrade") {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold [font-stretch:112%]">Team</h1>
+          <p className="text-muted-foreground">Collaborate with your team under one brand.</p>
+        </div>
+        <InviteBanner />
+        <EmptyState
+          icon={Building2}
+          title="Team is a Teams-plan feature"
+          description="Upgrade to Teams to invite teammates, share branding, and see one team lead pool."
+        />
+        <div className="flex justify-center">
+          <PlanUpgradeButton label="Upgrade to Teams" />
+        </div>
+      </div>
+    );
+  }
+
+  // gate === "active": data, data.team and data.isOwner are all present.
+  const team = data!.team!;
+  const isOwner = data!.isOwner;
+  const members = data!.members;
+  const pendingInvites = data!.pendingInvites;
+  const seatUsage = data!.seatUsage;
+  const seatPct = seatUsagePercent(seatUsage);
+
   const handleInvite = async () => {
     const email = inviteEmail.trim();
     if (!email) return;
-    await run(async () => {
-      await inviteMember(email);
+    setBusy(true);
+    try {
+      const result = await inviteMember(email);
       setInviteEmail("");
-    }, "Invite sent");
+      if (result.warning) {
+        toast.warning(result.warning);
+      } else if (result.hasAccount) {
+        toast.success("Invite sent — they'll see it next time they sign in.");
+      } else {
+        toast.success("Invite email sent");
+      }
+    } catch (error) {
+      toast.error(toUserMessage(error));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleSaveBranding = () =>
     run(
       () =>
         updateBrandingMutation({
-          teamId: teamObj!.id,
+          teamId: team.id,
           name: branding.name,
           companyName: branding.companyName,
           logoUrl: branding.logoUrl,
@@ -141,251 +163,232 @@ export default function TeamPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{team.name}</h1>
+        <h1 className="text-3xl font-bold [font-stretch:112%]">{team.name}</h1>
         <p className="text-muted-foreground">
           {seatUsage.used} of {seatUsage.total} seats used
         </p>
       </div>
 
-      {/* Seat usage bar */}
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <span className="font-medium">Seat usage</span>
-          <span className="text-muted-foreground">
-            {seatUsage.used} / {seatUsage.total}
-          </span>
-        </div>
-        <div className="h-2 w-full overflow-hidden bg-muted">
-          <div className="h-full bg-primary" style={{ width: `${seatPct}%` }} />
-        </div>
-      </div>
+      <InviteBanner />
 
-      <Tabs defaultValue="members">
-        <TabsList>
-          <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="branding">Branding</TabsTrigger>
-          {isOwner && <TabsTrigger value="leads">Lead Pool</TabsTrigger>}
-        </TabsList>
-
-        {/* Members */}
-        <TabsContent value="members" className="space-y-6">
-          {isOwner && (
-            <div className="rounded-2xl border border-border bg-card p-5">
-              <Label htmlFor="invite-email" className="text-sm font-semibold">
-                Invite a teammate
-              </Label>
-              <div className="mt-2 flex gap-2">
-                <Input
-                  id="invite-email"
-                  type="email"
-                  placeholder="name@company.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-                  className="rounded-2xl"
-                />
-                <Button onClick={handleInvite} disabled={busy} className="rounded-2xl shrink-0">
-                  <UserPlus className="mr-2 h-4 w-4" /> Invite
-                </Button>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Existing {CONNECTA.name} users join instantly. Anyone else joins as soon as they
-                sign up and confirm that email address.
-              </p>
+      {!isOwner ? (
+        <MemberView team={team} members={members} busy={busy} onLeave={() => setConfirmLeave(true)} />
+      ) : (
+        <>
+          {/* Seat usage */}
+          <PlanPanel heading="Seat usage">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-medium">Seats</span>
+              <span className="text-muted-foreground">
+                {seatUsage.used} / {seatUsage.total}
+              </span>
             </div>
-          )}
+            <div className="h-2 w-full border-[1.5px] border-input">
+              <div className="h-full bg-primary" style={{ width: `${seatPct}%` }} />
+            </div>
+          </PlanPanel>
 
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Role</TableHead>
-                  {isOwner && <TableHead className="text-right">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {members.map((m) => (
-                  <TableRow key={m.userId}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{m.name || "Unnamed"}</span>
-                        <span className="text-xs text-muted-foreground">{m.email}</span>
+          <Tabs defaultValue="members">
+            <TabsList>
+              <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="branding">Branding</TabsTrigger>
+              <TabsTrigger value="leads">Lead pool</TabsTrigger>
+            </TabsList>
+
+            {/* Members */}
+            <TabsContent value="members" className="space-y-6 pt-2">
+              <PlanPanel heading="Invite a teammate">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    id="invite-email"
+                    type="email"
+                    placeholder="name@company.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+                  />
+                  <Button
+                    onClick={handleInvite}
+                    disabled={busy || !canInviteMore(seatUsage)}
+                    className="shrink-0 gap-2"
+                  >
+                    <UserPlus className="h-4 w-4" aria-hidden="true" />
+                    Invite
+                  </Button>
+                </div>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {canInviteMore(seatUsage)
+                    ? `Someone new gets an email to join. Someone who already has a ${CONNECTA.name} account sees the invite next time they sign in, and can accept or decline it.`
+                    : "No seats available. Remove a member or revoke a pending invite to free one up."}
+                </p>
+              </PlanPanel>
+
+              <PlanPanel heading="Members">
+                <div className="space-y-3">
+                  {members.map((m) => (
+                    <div
+                      key={m.userId}
+                      className="flex items-center justify-between gap-3 border-[1.5px] border-input p-4"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{m.name || "Unnamed"}</p>
+                        <p className="truncate text-xs text-muted-foreground">{m.email}</p>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {m.role === "owner" ? (
-                        <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                          <Crown className="h-4 w-4" /> Owner
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Member</span>
-                      )}
-                    </TableCell>
-                    {isOwner && (
-                      <TableCell className="text-right">
-                        {m.role === "member" ? (
+                      <div className="flex shrink-0 items-center gap-2">
+                        {m.role === "owner" ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-primary">
+                            <Crown className="h-3.5 w-3.5" aria-hidden="true" />
+                            Owner
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Member</span>
+                        )}
+                        {m.role === "member" && (
                           <Button
                             variant="ghost"
                             size="icon"
                             disabled={busy}
                             onClick={() => setConfirmRemoveMemberId(m.userId as string)}
+                            aria-label={`Remove ${m.name || m.email}`}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
                           </Button>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
                         )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </PlanPanel>
 
-          {pendingInvites.length > 0 && (
-            <div className="rounded-2xl border border-border bg-card p-5">
-              <h3 className="mb-3 text-sm font-semibold">Pending invites</h3>
-              <ul className="space-y-2">
-                {pendingInvites.map((inv) => (
-                  <li
-                    key={inv.id}
-                    className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm"
-                  >
-                    <span>{inv.email}</span>
-                    {isOwner && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={busy}
-                        onClick={() => run(() => revokeInvite(inv.id), "Invite revoked")}
+              {pendingInvites.length > 0 && (
+                <PlanPanel heading="Pending invites">
+                  <div className="space-y-3">
+                    {pendingInvites.map((inv) => (
+                      <div
+                        key={inv.id}
+                        className="flex items-center justify-between gap-3 border-[1.5px] border-input p-4 text-sm"
                       >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </TabsContent>
+                        <span className="min-w-0 truncate">{inv.email}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={busy}
+                          onClick={() => run(() => revokeInvite(inv.id), "Invite revoked")}
+                          aria-label={`Revoke invite to ${inv.email}`}
+                        >
+                          <X className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </PlanPanel>
+              )}
+            </TabsContent>
 
-        {/* Branding */}
-        <TabsContent value="branding">
-          <div className="rounded-2xl border border-border bg-card p-6 space-y-5 max-w-2xl">
-            {!isOwner && (
-              <p className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                Only the team owner can edit shared branding.
-              </p>
-            )}
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="team-name">Team name</Label>
-                <Input
-                  id="team-name"
-                  value={branding.name}
-                  disabled={!isOwner}
-                  onChange={(e) => setBranding({ ...branding, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company name</Label>
-                <Input
-                  id="company-name"
-                  value={branding.companyName}
-                  disabled={!isOwner}
-                  onChange={(e) => setBranding({ ...branding, companyName: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="logo-url">Logo URL</Label>
-                <Input
-                  id="logo-url"
-                  value={branding.logoUrl}
-                  disabled={!isOwner}
-                  placeholder="https://…"
-                  onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="accent">Accent color</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="accent"
-                    value={branding.accentColor}
-                    disabled={!isOwner}
-                    placeholder="#00193c"
-                    onChange={(e) => setBranding({ ...branding, accentColor: e.target.value })}
-                  />
-                  {branding.accentColor && (
-                    <span
-                      className="h-9 w-9 shrink-0 rounded-lg border border-border"
-                      style={{ backgroundColor: branding.accentColor }}
+            {/* Branding */}
+            <TabsContent value="branding" className="pt-2">
+              <PlanPanel heading="Shared branding" className="max-w-2xl">
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="team-name">Team name</Label>
+                    <Input
+                      id="team-name"
+                      value={branding.name}
+                      onChange={(e) => setBranding({ ...branding, name: e.target.value })}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="company-name">Company name</Label>
+                    <Input
+                      id="company-name"
+                      value={branding.companyName}
+                      onChange={(e) => setBranding({ ...branding, companyName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="logo-url">Logo URL</Label>
+                    <Input
+                      id="logo-url"
+                      value={branding.logoUrl}
+                      placeholder="https://…"
+                      onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accent">Accent color</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="accent"
+                        value={branding.accentColor}
+                        placeholder="#00193c"
+                        onChange={(e) => setBranding({ ...branding, accentColor: e.target.value })}
+                      />
+                      {branding.accentColor && (
+                        <span
+                          className="h-9 w-9 shrink-0 border-[1.5px] border-input"
+                          style={{ backgroundColor: branding.accentColor }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button onClick={handleSaveBranding} disabled={busy} className="mt-5 gap-2">
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Save className="h-4 w-4" aria-hidden="true" />
                   )}
-                </div>
-              </div>
-            </div>
-            {isOwner && (
-              <Button onClick={handleSaveBranding} disabled={busy} className="rounded-2xl">
-                {busy ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Save branding
-              </Button>
-            )}
-          </div>
-        </TabsContent>
+                  Save branding
+                </Button>
+              </PlanPanel>
+            </TabsContent>
 
-        {/* Lead pool (owner only) */}
-        {isOwner && (
-          <TabsContent value="leads">
-            <div className="rounded-2xl border border-border bg-card overflow-hidden">
-              {teamLeads === undefined ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="animate-spin text-primary w-6 h-6" />
-                </div>
-              ) : teamLeads.length === 0 ? (
-                <div className="py-12">
+            {/* Lead pool */}
+            <TabsContent value="leads" className="pt-2">
+              <PlanPanel heading="Lead pool">
+                {teamLeads === undefined ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="animate-spin text-primary w-6 h-6" aria-hidden="true" />
+                  </div>
+                ) : teamLeads.length === 0 ? (
                   <EmptyState
                     icon={Building2}
                     title="No team leads yet"
                     description="Leads captured by any team member appear here."
                   />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Inquirer</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teamLeads.map((l) => (
-                      <TableRow key={l.id}>
-                        <TableCell className="font-medium">{l.inquirerName}</TableCell>
-                        <TableCell className="text-muted-foreground">{l.inquirerContact}</TableCell>
-                        <TableCell className="text-muted-foreground">{l.ownerName}</TableCell>
-                        <TableCell className="capitalize">{l.status}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {new Date(l.createdAt).toLocaleDateString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
-          </TabsContent>
-        )}
-      </Tabs>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Inquirer</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>Member</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {teamLeads.map((l) => (
+                          <TableRow key={l.id}>
+                            <TableCell className="font-medium">{l.inquirerName}</TableCell>
+                            <TableCell className="text-muted-foreground">{l.inquirerContact}</TableCell>
+                            <TableCell className="text-muted-foreground">{l.ownerName}</TableCell>
+                            <TableCell className="capitalize">{l.status}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {new Date(l.createdAt).toLocaleDateString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </PlanPanel>
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
 
       <AlertDialog
         open={confirmRemoveMemberId !== null}
@@ -409,11 +412,113 @@ export default function TeamPage() {
                 if (memberId) run(() => removeMember(memberId), "Member removed");
               }}
             >
-              Remove Member
+              Remove member
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this team?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will lose access to the team&apos;s branding and lead pool immediately. You can be
+              invited back later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmLeave(false);
+                run(() => leaveTeam(), "You left the team");
+              }}
+            >
+              Leave team
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+export type MemberViewTeam = {
+  id: string;
+  name: string;
+  companyName: string | null;
+  ownerId: string;
+};
+
+export type MemberViewMember = {
+  userId: string;
+  name: string | null;
+  email: string | null;
+  role: "owner" | "member";
+};
+
+/**
+ * A member's read-only view: team name, owner, the roster, and the one
+ * action they actually have -- leaving. Owner-only tabs (invite, branding,
+ * lead pool) never render here.
+ */
+export function MemberView({
+  team,
+  members,
+  busy,
+  onLeave,
+}: {
+  team: MemberViewTeam;
+  members: MemberViewMember[];
+  busy: boolean;
+  onLeave: () => void;
+}) {
+  const owner = members.find((m) => m.role === "owner");
+
+  return (
+    <div className="space-y-6">
+      <PlanPanel heading="This team">
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground">Team</dt>
+            <dd className="text-sm font-semibold">{team.companyName || team.name}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground">Owner</dt>
+            <dd className="text-sm font-semibold">{owner?.name || owner?.email || "—"}</dd>
+          </div>
+        </dl>
+      </PlanPanel>
+
+      <PlanPanel heading="Members">
+        <div className="space-y-3">
+          {members.map((m) => (
+            <div
+              key={m.userId}
+              className="flex items-center justify-between gap-3 border-[1.5px] border-input p-4"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{m.name || "Unnamed"}</p>
+                <p className="truncate text-xs text-muted-foreground">{m.email}</p>
+              </div>
+              {m.role === "owner" ? (
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-primary">
+                  <Crown className="h-3.5 w-3.5" aria-hidden="true" />
+                  Owner
+                </span>
+              ) : (
+                <span className="shrink-0 text-xs text-muted-foreground">Member</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </PlanPanel>
+
+      <Button variant="outline" onClick={onLeave} disabled={busy} className="gap-2">
+        <LogOut className="h-4 w-4" aria-hidden="true" />
+        Leave team
+      </Button>
     </div>
   );
 }
