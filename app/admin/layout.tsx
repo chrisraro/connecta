@@ -116,7 +116,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <header className="md:hidden flex items-center justify-between p-4 border-b-[1.5px] border-input bg-background sticky top-0 z-40">
         <Link href="/admin" className="flex items-center gap-2.5">
           <ConnectaMark className="h-7 w-7 text-primary" />
-          <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+          <span className="text-[15px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
             {CONNECTA.name.toUpperCase()}
           </span>
           {/* Red is reserved for status; being in the staff console is one. */}
@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <SheetHeader className="p-6 border-b border-border space-y-0">
               <SheetTitle className="flex items-center gap-2.5">
                 <ConnectaMark className="h-7 w-7 text-primary" />
-                <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+                <span className="text-[15px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
                   {CONNECTA.name.toUpperCase()}
                 </span>
                 {/* Red is reserved for status; being in the staff console is one. */}
@@ -229,7 +229,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="sticky top-0 h-screen w-64 shrink-0 overflow-y-auto bg-background border-r-[1.5px] border-input hidden md:flex flex-col">
         <Link href="/admin" className="p-6 flex items-center gap-2.5">
           <ConnectaMark className="h-7 w-7 text-primary" />
-          <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+          <span className="text-[15px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
             {CONNECTA.name.toUpperCase()}
           </span>
           {/* Red is reserved for status; being in the staff console is one. */}

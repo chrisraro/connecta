@@ -51,7 +51,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
                 aria-label={`${CONNECTA.name} home`}
               >
                 <ConnectaMark className="h-7 w-7 text-primary" />
-                <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+                <span className="text-[15px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
                   {CONNECTA.name.toUpperCase()}
                 </span>
               </Link>

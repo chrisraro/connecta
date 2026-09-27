@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
-import { getOrCreateLeadVisitorId } from "@/lib/offline-leads";
 import { ProfileData } from "@/types/profile";
 import { ProfileImage } from "@/components/templates/ProfileImage";
 import { formatCatalogPrice } from "@/lib/payment";

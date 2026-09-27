@@ -14,3 +14,9 @@ export function csvCell(value: unknown): string {
 export function toCsv(rows: readonly (readonly unknown[])[]): string {
   return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
 }
+
+/** e.g. "connecta-ph-leads-2026-09-27.csv": the product name as a slug. */
+export function leadsExportFilename(brandName: string, isoDate: string): string {
+  const slug = brandName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `${slug}-leads-${isoDate}.csv`;
+}

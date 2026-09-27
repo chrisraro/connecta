@@ -50,7 +50,7 @@ export function LandingPage() {
         <nav aria-label="Main" className="mx-auto flex h-16 max-w-[1180px] items-center justify-between gap-3 px-4 lg:px-14">
           <Link href="/" className="flex items-center gap-2">
             <ConnectaMark className="h-7 w-7" style={{ color: "var(--sv-line)" }} />
-            <span className={`${survey.expanded} hidden text-[15px] font-bold tracking-[0.1em] min-[420px]:inline`}>{CONNECTA.name.toUpperCase()}</span>
+            <span className={`${survey.expanded} hidden whitespace-nowrap text-[15px] font-bold tracking-[0.1em] min-[480px]:inline`}>{CONNECTA.name.toUpperCase()}</span>
           </Link>
           <div className="hidden items-center gap-6 text-[15px] font-medium md:flex">
             <a href="#how" className={survey.link}>{t.nav.how}</a>

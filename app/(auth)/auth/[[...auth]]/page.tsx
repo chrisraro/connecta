@@ -87,7 +87,7 @@ async function AuthContent({
           aria-label={`${CONNECTA.name} home`}
         >
           <ConnectaMark className="h-9 w-9 text-primary" />
-          <span className="text-[19px] font-bold tracking-[0.1em] [font-stretch:125%]">
+          <span className="text-[19px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
             {CONNECTA.name.toUpperCase()}
           </span>
         </Link>

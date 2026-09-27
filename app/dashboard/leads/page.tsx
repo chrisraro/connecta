@@ -32,7 +32,7 @@ import Link from "next/link";
 import { CONNECTA } from "@/lib/brand";
 import { useMyProfiles } from "@/hooks/useProfiles";
 import { newestProfileId } from "@/lib/builderEntry";
-import { toCsv } from "@/lib/csv";
+import { leadsExportFilename, toCsv } from "@/lib/csv";
 
 export default function LeadsPage() {
   const { user } = useAuth();
@@ -125,7 +125,7 @@ export default function LeadsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${CONNECTA.name.toLowerCase()}-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = leadsExportFilename(CONNECTA.name, new Date().toISOString().slice(0, 10));
     a.click();
     URL.revokeObjectURL(url);
   };

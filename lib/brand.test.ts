@@ -27,7 +27,22 @@ test("meetsAA is more permissive for large text", () => {
 });
 
 test("CONNECTA brand constant carries the product name", () => {
-  expect(CONNECTA.name).toBe("Connecta");
+  // Final name confirmed by the owner on 2026-09-27.
+  expect(CONNECTA.name).toBe("Connecta PH");
+});
+
+test("the web app manifest uses the same name", () => {
+  const manifest = JSON.parse(readFileSync(join(process.cwd(), "public/manifest.json"), "utf8"));
+  expect(manifest.name).toBe(CONNECTA.name);
+  expect(manifest.short_name).toBe(CONNECTA.name);
+});
+
+test("CONNECTA names the operator the legal pages cite", () => {
+  expect(CONNECTA.operator).toEqual({
+    legalName: "Christian F. Raro",
+    address: "Naga City, Camarines Sur, Philippines",
+    venue: "Naga City",
+  });
 });
 
 test("CONNECTA brand constant carries the tagline", () => {
@@ -48,10 +63,12 @@ test("buildConnecta derives the domain from a NEXT_PUBLIC_APP_URL that has no pr
   expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "app.example.com/" }).domain).toBe("app.example.com");
 });
 
-test("buildConnecta defaults supportEmail to support@<domain>", () => {
+test("buildConnecta defaults supportEmail to the real inbox, whatever the domain", () => {
+  // The owner's inbox (2026-09-27): support, privacy requests and the DPO.
   expect(buildConnecta({ NEXT_PUBLIC_APP_URL: "https://app.example.com" }).supportEmail).toBe(
-    "support@app.example.com",
+    "connectaphnfc@gmail.com",
   );
+  expect(buildConnecta({}).supportEmail).toBe("connectaphnfc@gmail.com");
 });
 
 test("buildConnecta lets SUPPORT_EMAIL override the support inbox independently of the domain", () => {

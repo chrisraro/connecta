@@ -185,7 +185,7 @@ export function MiniProfile({ persona, saveLabel, form = 0 }: { persona: DemoPer
       </section>
       <p className="mt-6 flex items-center justify-center gap-1.5 text-[9.5px]" style={{ color: "var(--sv-soft)" }}>
         {t.poweredBy} <ConnectaMark className="h-3 w-3" style={{ color: "var(--sv-line)" }} />
-        <span className={`${survey.expanded} font-bold tracking-[0.08em]`} style={{ color: "var(--sv-ink)" }}>{CONNECTA.name.toUpperCase()}</span>
+        <span className={`${survey.expanded} whitespace-nowrap font-bold tracking-[0.08em]`} style={{ color: "var(--sv-ink)" }}>{CONNECTA.name.toUpperCase()}</span>
       </p>
       <div className="h-24" aria-hidden="true" />
      </div>

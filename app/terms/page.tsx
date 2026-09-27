@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CONNECTA } from "@/lib/brand";
-import { LegalPage, Section, Callout, Placeholder } from "@/components/legal/LegalPage";
+import { LegalPage, Section } from "@/components/legal/LegalPage";
 
-const LAST_UPDATED = "July 31, 2026";
+const LAST_UPDATED = "September 27, 2026";
 
 export function generateMetadata(): Metadata {
   return {
     title: `Terms of Service | ${CONNECTA.name}`,
-    description: `The terms governing use of ${CONNECTA.name}'s NFC digital business card service — draft pending legal review.`,
+    description: `The terms for using ${CONNECTA.name}: accounts, plans, card orders and refunds, leads, and your responsibilities.`,
   };
 }
 
@@ -18,47 +18,49 @@ const TOC = [
   { id: "acceptable-use", label: "Acceptable use" },
   { id: "your-content", label: "Your content" },
   { id: "public-profiles", label: "Public profiles" },
-  { id: "plans-and-limits", label: "Plans & limits" },
-  { id: "billing", label: "Billing & subscriptions" },
-  { id: "physical-cards", label: "Physical card orders" },
+  { id: "cards", label: "Cards and links" },
+  { id: "plans", label: "Plans and payment" },
+  { id: "orders", label: "Card orders, returns and refunds" },
   { id: "leads", label: "Leads you collect" },
-  { id: "termination", label: "Termination" },
+  { id: "termination", label: "Closing your account" },
   { id: "disclaimers", label: "Disclaimers" },
   { id: "liability", label: "Limitation of liability" },
-  { id: "governing-law", label: "Governing law" },
+  { id: "governing-law", label: "Governing law and disputes" },
   { id: "changes", label: "Changes to these terms" },
   { id: "contact", label: "Contact" },
 ];
 
 export default function TermsOfServicePage() {
+  const email = CONNECTA.supportEmail;
+  const mail = <a href={`mailto:${email}`}>{email}</a>;
+
   return (
     <LegalPage title="Terms of Service" lastUpdated={LAST_UPDATED} toc={TOC}>
       <Section id="overview" heading="Overview">
         <p>
-          {`These Terms of Service ("Terms") govern your use of ${CONNECTA.name} ("we," "us"), a service for creating digital business card profiles, ordering NFC business cards linked to those profiles, and collecting inquiries ("leads") from people who view your profile or tap your card. By creating an account, purchasing a card, or using the service, you agree to these Terms.`}
+          These Terms govern your use of {CONNECTA.name}, a service for creating digital business
+          card profiles, linking them to NFC and QR cards, and receiving inquiries
+          (&quot;leads&quot;) from the people you share them with. {CONNECTA.name} is operated by{" "}
+          <strong>{CONNECTA.operator.legalName}</strong>, doing business as {CONNECTA.name},{" "}
+          {CONNECTA.operator.address} (&quot;we,&quot; &quot;us&quot;).
         </p>
         <p>
-          {CONNECTA.name} is operated by <Placeholder>[COMPANY LEGAL NAME]</Placeholder>,{" "}
-          <Placeholder>[REGISTERED ADDRESS]</Placeholder>. See also our{" "}
-          <Link href="/privacy">Privacy Policy</Link>, which describes what personal data we collect
-          and how.
+          By creating an account, ordering a card or using the service, you agree to these Terms
+          and to our <Link href="/privacy">Privacy Policy</Link>. If you use {CONNECTA.name} for a
+          business, you confirm you are authorized to accept these Terms for it.
         </p>
       </Section>
 
       <Section id="accounts" heading="Accounts">
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            You must sign in through our authentication provider (Clerk) to create profiles, view
-            leads, or manage orders tied to an account.
+            You can sign up with an email and password, or with Google where that option is
+            offered. You must be at least 18, or otherwise legally able to enter into a contract.
           </li>
+          <li>Give accurate information and keep it up to date.</li>
           <li>
-            You are responsible for the accuracy of information you provide and for keeping your
-            login credentials secure.
-          </li>
-          <li>
-            You must be legally capable of entering a contract to create an account; {CONNECTA.name}{" "}
-            is not directed at children (see our{" "}
-            <Link href="/privacy#children">Privacy Policy</Link>).
+            Keep your sign-in details secure. You are responsible for activity on your account;
+            tell us at {mail} if you think someone else has accessed it.
           </li>
         </ul>
       </Section>
@@ -67,204 +69,180 @@ export default function TermsOfServicePage() {
         <p>You agree not to use {CONNECTA.name} to:</p>
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            Publish content that is unlawful, fraudulent, defamatory, or infringes someone
-            else&apos;s intellectual property or privacy rights.
+            publish anything unlawful, fraudulent, defamatory or obscene, or that infringes
+            someone else&apos;s intellectual property or privacy;
           </li>
+          <li>impersonate a person, business or organization you do not represent;</li>
           <li>
-            Impersonate a person, business, or organization you are not authorized to represent.
+            send spam through the contact form, or try to get around its rate limits or other
+            protections;
           </li>
+          <li>access another person&apos;s account, profile or leads without permission; or</li>
           <li>
-            Use the public lead-capture form to submit spam, or attempt to circumvent its rate
-            limiting or abuse protections.
-          </li>
-          <li>
-            Attempt to gain unauthorized access to another user&apos;s account, profile, or leads.
-          </li>
-          <li>
-            Use leads collected through your profile for any purpose beyond what the inquirer
-            reasonably expected when they submitted the form, or in violation of applicable
-            data-privacy law.
+            use leads for anything the person did not reasonably expect when they contacted you,
+            or in breach of data privacy law.
           </li>
         </ul>
-        <p>We may suspend or terminate accounts that violate this section.</p>
+        <p>We may remove content or suspend accounts that break these rules.</p>
       </Section>
 
       <Section id="your-content" heading="Your content">
         <p>
-          You own the content you upload to your profile (photos, biography, testimonials, project
-          descriptions, and similar). By uploading content, you grant {CONNECTA.name} a worldwide,
-          non-exclusive, royalty-free licence to host, store, reproduce, and publicly display that
-          content solely as necessary to operate the service — that is, to render your public
-          profile page and its link-preview (OpenGraph) metadata. This licence ends when you delete
-          the content or your account, except where a copy must be retained for a legitimate purpose
-          described in our Privacy Policy (e.g. order records, audit logs).
+          You own what you put on your profile. You give us a non-exclusive, royalty-free licence
+          to host, store, copy and display it only as needed to run the service: to show your
+          profile, its link previews and your card. The licence ends when you delete the content
+          or your account, except for copies we must keep as described in our Privacy Policy.
         </p>
         <p>
-          You are responsible for having the rights to any content you upload, including photos of
-          other people and any testimonials you publish on their behalf.
+          You are responsible for having the right to publish everything you upload, including
+          photos of other people and testimonials.
         </p>
       </Section>
 
       <Section id="public-profiles" heading="Public profiles">
         <p>
-          A published {CONNECTA.name} profile is publicly accessible to anyone with its link, and is
-          intentionally rendered with link-preview metadata so it displays correctly when shared. Do
-          not put confidential information on a public profile.
+          A published profile can be seen by anyone with its link or card, and may appear in
+          link previews and search results. Don&apos;t publish anything confidential.
         </p>
       </Section>
 
-      <Section id="plans-and-limits" heading="Plans & limits">
-        <p>{CONNECTA.name} offers three plans, each with enforced limits:</p>
+      <Section id="cards" heading="Cards and links">
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            <strong>Free</strong> — 1 profile, 1 active NFC card, 2 templates, up to 100 viewable
-            leads, {CONNECTA.name} branding shown on your profile.
+            Each card opens the {CONNECTA.name} profile it is linked to. You can change which
+            profile it opens from your dashboard.
           </li>
           <li>
-            <strong>Pro</strong> — unlimited profiles and cards, all templates, branding removed,
-            lead export, full analytics.
+            A card works for as long as it is linked to an active account and the service is
+            running. If you delete your account, your cards return to unassigned stock and stop
+            opening your profile.
           </li>
           <li>
-            <strong>Business</strong> — everything in Pro, plus a shared team workspace with 5
-            seats, a team-wide lead pool, and white-label profiles.
+            Tell us if a card is lost so we can stop it opening your profile.
           </li>
         </ul>
-        <p>
-          Plan limits and pricing are enforced server-side and may be updated from time to time; the
-          current limits and pricing are shown on the pricing page and in your billing dashboard.
-        </p>
       </Section>
 
-      <Section id="billing" heading="Billing & subscriptions">
+      <Section id="plans" heading="Plans and payment">
         <p>
-          Paid plans (Pro and Business) are billed as <strong>prepaid 30-day periods</strong>. There
-          is no automatic recurring charge, and no online checkout: we do not store or process
-          payment details at all. To start or keep a paid plan active, you contact us and we arrange
-          payment and activation with you directly.
-        </p>
-        <p>
-          If your plan expires without renewal, you get a <strong>3-day grace period</strong> during
-          which your paid features keep working. If you have not renewed by the end of the grace
-          period, your account is automatically downgraded to the Free plan and Free-plan limits
-          apply (for example, only your most recent 100 leads remain viewable — no data is deleted,
-          it is simply capped from view until you upgrade again).
-        </p>
-        <p>
-          Renewing extends your access from whichever is later — the current time or your existing
-          expiry — so renewing early never costs you days you already paid for.
-        </p>
-        <p>
-          All prices are in Philippine Pesos (PHP). {CONNECTA.name} does not collect or store card
-          or e-wallet credentials.
-        </p>
-      </Section>
-
-      <Section id="physical-cards" heading="Physical card orders">
-        <p>
-          You may purchase a physical NFC card linked to your digital profile. The following applies
-          to physical orders:
+          {CONNECTA.name} has a free plan and paid plans. What each includes and what it costs are
+          shown on our pricing page and in your billing page when you subscribe; those details
+          form part of these Terms. Prices are in Philippine pesos.
         </p>
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            Orders can be placed as a guest (with an email for order updates) or while signed in.
+            Paid plans are prepaid for a period of 30 days (or longer where offered). There is no
+            automatic recurring charge: we arrange payment and activation with you directly, and
+            we do not collect or store card or e-wallet credentials.
           </li>
           <li>
-            You are responsible for providing an accurate shipping address. We are not responsible
-            for delays or non-delivery caused by an incorrect address.
+            If a paid plan is not renewed, its features stay on for a 3-day grace period, then
+            the account moves to the free plan and its limits apply. Your data is not deleted;
+            anything over the free limits is hidden until you upgrade again.
           </li>
           <li>
-            Order status moves through stages (pending, processing, shipped, delivered) that you can
-            see in your order history.{" "}
-            <Callout>
-              <strong>Honest gap:</strong> {CONNECTA.name} does not currently integrate with a
-              courier&apos;s tracking system — there is no live tracking number or carrier hand-off
-              event. &quot;Shipped&quot; reflects a status update made on our side, not a real-time
-              courier feed.
-            </Callout>
+            Renewing early adds to your current period, so you never lose days you have paid for.
           </li>
           <li>
-            <strong>Returns and refunds</strong> are handled manually on a case-by-case basis by
-            contacting <a href={`mailto:${CONNECTA.supportEmail}`}>{CONNECTA.supportEmail}</a> —
-            there is currently no self-service return or refund flow. Specific timeframes and
-            conditions for returns/refunds have not been formally published yet:{" "}
-            <Placeholder>[RETURN/REFUND WINDOW AND CONDITIONS]</Placeholder>.
+            We may change plans or prices. Changes apply from your next period, and we will tell
+            you before they do.
+          </li>
+        </ul>
+      </Section>
+
+      <Section id="orders" heading="Card orders, returns and refunds">
+        <ul className="list-disc space-y-2 pl-5">
+          <li>
+            Card orders are confirmed by us after you place them. Delivery times are estimates.
+            Give an accurate delivery address; we are not responsible for delays or loss caused by
+            a wrong one.
+          </li>
+          <li>
+            <strong>Defective or wrong cards:</strong> if your card doesn&apos;t work or isn&apos;t
+            what you ordered, tell us within <strong>7 days</strong> of delivery at {mail}, with
+            your order details and a photo. We will replace it or refund you, whichever you
+            prefer.
+          </li>
+          <li>
+            <strong>Change of mind:</strong> cards are printed and encoded for you, so we
+            don&apos;t accept returns or give refunds for change of mind.
+          </li>
+          <li>
+            Nothing here limits your rights under the Consumer Act of the Philippines (RA 7394)
+            or other laws that cannot be waived.
           </li>
         </ul>
       </Section>
 
       <Section id="leads" heading="Leads you collect">
         <p>
-          When someone submits an inquiry through your public profile, you become the personal
-          information controller for that person&apos;s data (see our{" "}
-          <Link href="/privacy#lead-data">Privacy Policy</Link> for what that means under RA 10173).
-          You are responsible for handling that data lawfully — including responding to legitimate
-          requests from the inquirer to access, correct, or delete the data they gave you.
+          When someone sends you their details through your profile, you become the personal
+          information controller for that data under the Data Privacy Act (RA 10173); we process
+          it for you (see our <Link href="/privacy#lead-data">Privacy Policy</Link>). You must use
+          it lawfully, keep it secure, and honor the person&apos;s requests to access, correct or
+          delete it.
         </p>
       </Section>
 
-      <Section id="termination" heading="Termination">
+      <Section id="termination" heading="Closing your account">
         <p>
-          You may stop using {CONNECTA.name} at any time. A signed-in user can request deletion of
-          their account and associated personal data (see our{" "}
-          <Link href="/privacy#your-rights">Privacy Policy</Link>) — physical cards you own are
-          returned to unassigned inventory rather than destroyed, and certain records (order history
-          required for accounting, and audit logs) are retained as described there.
+          You can stop using {CONNECTA.name} at any time and delete your account from{" "}
+          <strong>Settings → Delete account</strong>. This permanently erases your account,
+          profiles and leads. Records we are required to keep, such as order and payment records,
+          are retained as described in our Privacy Policy. Prepaid plan periods are not refunded
+          when you close your account, unless the law requires it.
         </p>
         <p>
-          We may suspend or terminate your account if you violate these Terms, engage in fraudulent
-          or abusive behavior, or if required by law.
+          We may suspend or close an account that breaks these Terms, is used for fraud or abuse,
+          or where the law requires it. Where we can, we will tell you why and give you a chance
+          to respond or export your data first.
         </p>
       </Section>
 
       <Section id="disclaimers" heading="Disclaimers">
         <p>
-          {CONNECTA.name} is provided &quot;as is&quot; and &quot;as available.&quot; To the fullest
-          extent permitted by law, we disclaim all warranties, express or implied, including
-          merchantability, fitness for a particular purpose, and non-infringement. We do not
-          guarantee the service will be uninterrupted, error-free, or secure against all possible
-          attacks; see our <Link href="/privacy#security">Privacy Policy</Link> for the security
-          measures actually in place.
+          We work to keep {CONNECTA.name} available and secure, but it is provided &quot;as
+          is&quot; and &quot;as available.&quot; To the extent the law allows, we make no
+          warranties beyond those in these Terms, and we don&apos;t guarantee the service will
+          always be uninterrupted or error-free.
         </p>
       </Section>
 
       <Section id="liability" heading="Limitation of liability">
         <p>
-          To the fullest extent permitted under Philippine law, {CONNECTA.name} and its officers,
-          employees, and affiliates will not be liable for any indirect, incidental, special,
-          consequential, or punitive damages, or any loss of profits, revenue, data, or goodwill,
-          arising from your use of the service. Where liability cannot be excluded, our total
-          liability to you for any claim arising from these Terms or the service is limited to the
-          amount you paid to {CONNECTA.name} in the 12 months preceding the claim.
+          To the extent Philippine law allows, we are not liable for indirect, incidental or
+          consequential losses, or for lost profits, revenue, data or goodwill, arising from your
+          use of {CONNECTA.name}. Our total liability for any claim is limited to the amount you
+          paid us in the 12 months before the claim.
         </p>
         <p>
-          Nothing in these Terms limits liability that cannot be limited under Philippine law,
-          including liability for gross negligence, willful misconduct, or death or personal injury
-          caused by our negligence.
+          Nothing in these Terms limits liability that cannot be limited by law, including for
+          fraud, gross negligence or willful misconduct.
         </p>
       </Section>
 
-      <Section id="governing-law" heading="Governing law">
+      <Section id="governing-law" heading="Governing law and disputes">
         <p>
-          These Terms are governed by the laws of the <strong>Republic of the Philippines</strong>,
-          without regard to conflict-of-law principles. Any dispute arising from these Terms or the
-          service will be subject to the exclusive jurisdiction of the proper courts of{" "}
-          <Placeholder>[VENUE CITY]</Placeholder>, Philippines, unless applicable law requires
-          otherwise.
+          These Terms are governed by the laws of the Republic of the Philippines. Please contact
+          us first so we can try to resolve any problem informally. Any dispute that can&apos;t be
+          resolved that way will be brought before the proper courts of{" "}
+          {CONNECTA.operator.venue}, Philippines, unless the law gives you the right to another
+          venue.
         </p>
       </Section>
 
       <Section id="changes" heading="Changes to these terms">
         <p>
-          We may update these Terms as the product changes. Material changes will update the
-          &quot;Last updated&quot; date at the top of this page. Continued use of {CONNECTA.name}{" "}
-          after an update constitutes acceptance of the revised Terms.
+          We may update these Terms as the service changes. We will update the date at the top
+          and, for material changes, tell account holders by email or in the app before they take
+          effect. Continuing to use {CONNECTA.name} after that means you accept the updated Terms.
         </p>
       </Section>
 
       <Section id="contact" heading="Contact">
         <p>
-          Questions about these Terms: email{" "}
-          <a href={`mailto:${CONNECTA.supportEmail}`}>{CONNECTA.supportEmail}</a>.
+          {CONNECTA.operator.legalName}, doing business as {CONNECTA.name},{" "}
+          {CONNECTA.operator.address}. Email: {mail}.
         </p>
       </Section>
     </LegalPage>

@@ -243,7 +243,7 @@ function DashboardSidebar({ className }: { className?: string }) {
     >
       <Link href="/dashboard" className="p-6 flex items-center gap-2.5">
         <ConnectaMark className="h-7 w-7 text-primary" />
-        <span className="text-[15px] font-bold tracking-[0.1em] [font-stretch:125%]">
+        <span className="text-[15px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
           {CONNECTA.name.toUpperCase()}
         </span>
       </Link>

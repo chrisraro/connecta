@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { csvCell, toCsv } from "./csv";
+import { csvCell, leadsExportFilename, toCsv } from "./csv";
 
 // B11 (backlog 2026-09-25): lead export wrote visitor-supplied text straight
 // into cells. A value starting with = + - @ (or a tab / carriage return) runs
@@ -28,4 +28,8 @@ describe("csvCell", () => {
 
 test("toCsv joins cells with commas and rows with CRLF", () => {
   expect(toCsv([["a", "b"], ["=1", "c"]])).toBe(`"a","b"\r\n"'=1","c"`);
+});
+
+test("the export filename is a slug of the product name, with no spaces", () => {
+  expect(leadsExportFilename("Acme Cards PH", "2026-09-27")).toBe("acme-cards-ph-leads-2026-09-27.csv");
 });
