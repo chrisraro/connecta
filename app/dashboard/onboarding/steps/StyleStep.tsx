@@ -22,7 +22,9 @@ export function StyleStep({
   return (
     <div className="flex-1 space-y-4 pt-4">
       <p className="text-sm text-muted-foreground">Choose a profile style. You can change this later.</p>
-      <div className="grid grid-cols-3 gap-3">
+      {/* Two columns until sm:, as in the builder's sheet picker: three put
+          each tile near 72px on a 320px phone and cut the names short. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {TEMPLATES.map((template) => {
           const sheet = sheetFor(template.id);
           const locked = isTemplateLocked(template.id, allowedTemplateIds);

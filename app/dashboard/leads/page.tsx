@@ -335,8 +335,11 @@ export default function LeadsPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button className="flex-1" onClick={() => handleFollowUpClick(lead)}>
+              {/* Reply plus up to four 36px icon actions is wider than a lead
+                  card on a phone under 400px: Reply takes its own line there
+                  and the icons wrap beneath it. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Button className="flex-1 basis-full min-[400px]:basis-0" onClick={() => handleFollowUpClick(lead)}>
                   <Mail className="w-4 h-4 mr-2" aria-hidden="true" />
                   Reply
                 </Button>

@@ -306,14 +306,14 @@ function MobileBottomNav() {
               key={item.url}
               href={item.url}
               aria-current={isActive ? "page" : undefined}
-              className="relative flex-1 group"
+              className="relative min-w-0 flex-1 group"
             >
               <div
                 className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <item.icon className="h-6 w-6" strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
                 <span
-                  className={`text-[10px] leading-none font-bold tracking-wide transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}
+                  className={`max-w-full truncate px-0.5 text-[10px] leading-none font-bold tracking-wide transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}
                 >
                   {item.title}
                 </span>

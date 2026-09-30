@@ -435,13 +435,13 @@ export default function AdminFactoryPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {selectedIds.size > 0 && (
             <Button
               variant="destructive"
               onClick={handleDeleteSelected}
               disabled={isDeleting}
-              className="h-12 px-6"
+              className="min-h-12 px-6"
             >
               {isDeleting ? (
                 <Loader2 className="animate-spin w-4 h-4 mr-2" />
@@ -460,8 +460,8 @@ export default function AdminFactoryPage() {
             aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
             className={
               isScanning
-                ? "border-[1.5px] border-input bg-transparent text-foreground hover:bg-accent h-12 px-6"
-                : "h-12 px-8"
+                ? "border-[1.5px] border-input bg-transparent text-foreground hover:bg-accent min-h-12 px-6"
+                : "min-h-12 px-8"
             }
           >
             {isScanning ? (

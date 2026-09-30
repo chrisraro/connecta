@@ -46,6 +46,9 @@ export function InspectorPanel({ isOpen, onClose, title, children, onSave }: Ins
       typeof window !== "undefined" &&
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // On desktop the panel sits in the page flow below the section list. Its
+    // lg:scroll-mt-[4.5rem] (the builder's sticky header height) keeps this
+    // scroll from parking the title and Done/Close under that header.
     panelRef.current?.scrollIntoView({
       block: "nearest",
       behavior: prefersReducedMotion ? "auto" : "smooth",
@@ -60,7 +63,7 @@ export function InspectorPanel({ isOpen, onClose, title, children, onSave }: Ins
       role="dialog"
       aria-label={title}
       className="fixed inset-x-0 bottom-0 z-[60] flex max-h-[70dvh] flex-col border border-border bg-background motion-safe:animate-in motion-safe:slide-in-from-bottom motion-safe:duration-200
-                lg:static lg:z-auto lg:max-h-none lg:h-full  lg:border lg:motion-safe:animate-none"
+                lg:static lg:z-auto lg:mx-4 lg:max-h-none lg:h-full lg:scroll-mt-[4.5rem] lg:border lg:motion-safe:animate-none"
       style={{ boxShadow: "var(--e-overlay)" }}
     >
       <div className="flex items-center justify-between gap-3 p-4 border-b border-border bg-background">

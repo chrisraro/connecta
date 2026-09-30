@@ -1,7 +1,13 @@
 /* Survey Plan world: the public profile sheet.
    Colours arrive as --sv-* custom properties set per sheet (sheet.ts). */
 
+/* The sheet is a size container: the profile lays itself out by the width it
+   is given, not the window's. The public page fills the window, so nothing
+   changes there, but the builder's preview frame is phone-width inside a
+   desktop window, and viewport breakpoints (lg:) forced the two-column desktop
+   plan into it. SurveyProfile uses @5xl: (64rem, the old lg) instead. */
 .sheet {
+  container-type: inline-size;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -67,9 +73,9 @@
   scroll-snap-align: start;
 }
 
-/* On a desktop the page becomes one plan sheet: a double neatline around the
-   drawing. */
-@media (min-width: 1024px) {
+/* On a desktop-width sheet the page becomes one plan sheet: a double
+   neatline around the drawing. */
+@container (min-width: 64rem) {
   .neatline {
     border: 2px solid var(--sv-line);
     outline: 1px solid color-mix(in srgb, var(--sv-line) 55%, transparent);

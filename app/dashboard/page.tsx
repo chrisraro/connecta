@@ -115,7 +115,7 @@ export default function DashboardPage() {
           <div className="flex w-full shrink-0 items-center gap-2 md:w-auto">
             <Button
               onClick={() => setShowDigitalCardModal(true)}
-              className="min-h-11 flex-1 gap-2 md:flex-initial"
+              className="min-h-11 min-w-0 flex-1 shrink gap-2 md:flex-initial"
             >
               <QrCode className="size-4" aria-hidden="true" />
               Show card
@@ -124,7 +124,7 @@ export default function DashboardPage() {
             <Button
               onClick={() => setShowDigitalCardModal(true)}
               variant="outline"
-              className="min-h-11 gap-1.5"
+              className="min-h-11 min-w-0 flex-1 shrink gap-1.5 md:flex-initial"
             >
               <Download className="size-4" aria-hidden="true" />
               Save image
@@ -262,7 +262,7 @@ export default function DashboardPage() {
             {profiles.slice(0, 4).map((profile) => (
               <div
                 key={profile.id}
-                className="group bg-background border-[1.5px] border-input p-4 hover:bg-accent/40 transition-colors flex items-center gap-4 relative overflow-hidden"
+                className="group bg-background border-[1.5px] border-input p-4 hover:bg-accent/40 transition-colors flex flex-wrap items-center gap-x-4 gap-y-2 relative overflow-hidden"
               >
                 <div className="w-14 h-14 overflow-hidden border-[1.5px] border-input bg-muted shrink-0">
                   <ProfileImage
@@ -272,11 +272,15 @@ export default function DashboardPage() {
                     className="w-full h-full"
                   />
                 </div>
-                <div className="flex-1 min-w-0">
+                {/* min-w-[8rem]: when the card can't give the name that much
+                    room beside three 44px actions (phones, and each half of
+                    the two-up grid beside the sidebar), the actions wrap onto
+                    their own line instead of crushing it to a few pixels. */}
+                <div className="flex-1 min-w-[8rem]">
                   <h3 className="font-bold text-sm truncate">
                     {profile.name}
                   </h3>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
                     {/* The stored template id picks a sheet colourway. */}
                     <span className="border border-input px-1.5 py-0.5 text-[11px] font-bold capitalize">
                       {sheetFor(layoutConfigOf(profile).themeId).id}
@@ -287,7 +291,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="ml-auto flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -445,7 +449,7 @@ function StatCard({
       <h3 className="mb-2 pr-7 text-[13px] font-semibold text-muted-foreground">
         {label}
       </h3>
-      <div className={`text-4xl font-bold [font-stretch:125%] ${color}`}>{value}</div>
+      <div className={`break-all text-3xl font-bold [font-stretch:125%] sm:text-4xl ${color}`}>{value}</div>
     </div>
   );
 }

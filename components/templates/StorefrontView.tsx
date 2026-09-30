@@ -142,11 +142,15 @@ export function StorefrontView({ data }: StorefrontViewProps) {
     { id: "services", label: "Services", count: serviceItems.length },
   ];
 
+  // Breakpoints here are container queries (@min-[40rem]: = sm, @5xl: = lg)
+  // against the nearest size container: the profile sheet on the public page,
+  // the phone-width frame in the builder preview. Viewport breakpoints put the
+  // desktop layout into that frame. Dialogs portal out, so they keep sm:.
   return (
-    <main className="mx-auto w-full max-w-[560px] flex-1 px-4 pb-16 lg:max-w-[900px] lg:px-14 lg:pb-14 lg:pt-10">
+    <main className="mx-auto w-full max-w-[560px] flex-1 px-4 pb-16 @5xl:max-w-[900px] @5xl:px-14 @5xl:pb-14 @5xl:pt-10">
       {/* ─── Business header ────────────────────────────────────────── */}
       <div className="mt-6 border-[1.5px] p-5" style={{ borderColor: "var(--sv-line)" }}>
-        <div className="flex flex-col items-start gap-4 sm:flex-row">
+        <div className="flex flex-col items-start gap-4 @min-[40rem]:flex-row">
           <div
             className={`${styles.duotone} h-20 w-20 shrink-0 border-[1.5px]`}
             style={{ borderColor: "var(--sv-line)" }}
@@ -160,7 +164,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
           </div>
 
           <div className="min-w-0 flex-1">
-            <h1 className={`${styles.expanded} text-2xl font-bold leading-tight`}>
+            <h1 className={`${styles.expanded} text-2xl font-bold leading-tight break-words`}>
               {agent.company || agent.fullName}
             </h1>
             <p className="mt-1 text-[15px] leading-relaxed" style={{ color: "var(--sv-soft)" }}>
@@ -182,11 +186,11 @@ export function StorefrontView({ data }: StorefrontViewProps) {
                 {agent.email && (
                   <a
                     href={`mailto:${agent.email}`}
-                    className={`${styles.cell} flex items-center gap-1.5 border-[1.5px] px-3 py-1.5 text-[13px] font-semibold`}
+                    className={`${styles.cell} flex min-w-0 max-w-full items-center gap-1.5 border-[1.5px] px-3 py-1.5 text-[13px] font-semibold`}
                     style={{ borderColor: "var(--sv-line)" }}
                   >
-                    <Mail className="h-3.5 w-3.5" aria-hidden="true" />
-                    {agent.email}
+                    <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span className="min-w-0 break-all">{agent.email}</span>
                   </a>
                 )}
                 {agent.website && (
@@ -210,9 +214,9 @@ export function StorefrontView({ data }: StorefrontViewProps) {
       </div>
 
       {/* ─── Filters ─────────────────────────────────────────────────── */}
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-col gap-3 @min-[40rem]:flex-row @min-[40rem]:items-center @min-[40rem]:justify-between">
         <div
-          className="flex w-full overflow-x-auto border-[1.5px] sm:w-auto"
+          className="flex w-full overflow-x-auto border-[1.5px] @min-[40rem]:w-auto"
           style={{ borderColor: "var(--sv-line)" }}
         >
           {categories.map((c, i) => (
@@ -221,7 +225,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
               type="button"
               onClick={() => setActiveCategory(c.id)}
               aria-pressed={activeCategory === c.id}
-              className={`${styles.cell} flex-1 whitespace-nowrap px-4 py-2.5 text-[13px] font-semibold sm:flex-initial ${
+              className={`${styles.cell} flex-1 whitespace-nowrap px-4 py-2.5 text-[13px] font-semibold @min-[40rem]:flex-initial ${
                 i > 0 ? "border-l-[1.5px]" : ""
               }`}
               style={{
@@ -235,7 +239,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
           ))}
         </div>
 
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full @min-[40rem]:w-64">
           <Search
             className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
             style={{ color: "var(--sv-soft)" }}
@@ -249,8 +253,10 @@ export function StorefrontView({ data }: StorefrontViewProps) {
             placeholder="Search catalog…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`${styles.field} pl-9`}
-            style={{ minHeight: "44px" }}
+            className={styles.field}
+            // Inline, not pl-9: .field's padding shorthand outranks Tailwind
+            // utilities, which left the icon sitting on the placeholder.
+            style={{ minHeight: "44px", paddingLeft: "2.25rem" }}
           />
         </div>
       </div>
@@ -268,7 +274,7 @@ export function StorefrontView({ data }: StorefrontViewProps) {
           </p>
         </div>
       ) : (
-        <ul className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-8 grid grid-cols-1 gap-6 @min-[40rem]:grid-cols-2 @5xl:grid-cols-3">
           {filteredItems.map((item, index) => (
             <li key={index} className="border-[1.5px]" style={{ borderColor: "var(--sv-line)" }}>
               <button

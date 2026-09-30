@@ -97,14 +97,14 @@ function ToastNotification({
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm mb-1">{message}</p>
               <div className="flex flex-wrap gap-2 mt-2">
-                <Button size="sm" className="h-8 text-xs flex-1 sm:flex-none" onClick={onViewCart}>
+                <Button size="sm" className="text-xs flex-1 sm:flex-none" onClick={onViewCart}>
                   <ShoppingBag className="w-3 h-3 mr-1" />
                   View selection
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 text-xs flex-1 sm:flex-none"
+                  className="text-xs flex-1 sm:flex-none"
                   onClick={onDismiss}
                 >
                   Continue Shopping

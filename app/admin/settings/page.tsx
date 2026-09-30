@@ -288,7 +288,7 @@ export default function AdminSettingsPage() {
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <div>
               <dt className="font-medium text-foreground">Lead emails</dt>
-              <dd className="text-muted-foreground mt-1">
+              <dd className="text-muted-foreground mt-1 break-words [&_code]:break-all">
                 Resend, via <code>RESEND_API_KEY</code> and <code>RESEND_FROM_EMAIL</code> in the
                 Vercel environment.
               </dd>

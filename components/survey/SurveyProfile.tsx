@@ -73,7 +73,7 @@ const LOT_OUTLINE = "M14 0.75 H86 L99.25 14 V106 L86 119.25 H14 L0.75 106 V14 Z"
 
 function Portrait({ agent }: { agent: ProfileInfo }) {
   return (
-    <div className="pt-6 lg:pt-0">
+    <div className="pt-6 @5xl:pt-0">
       <div className="relative mx-auto w-full max-w-[420px]" style={{ aspectRatio: "100 / 120" }}>
         <div className={`absolute inset-0 ${styles.lotClip} ${agent.avatarUrl ? styles.duotone : ""}`}>
           {agent.avatarUrl ? (
@@ -632,21 +632,21 @@ export function SurveyProfile({
 
   return (
     <main
-      className={`${styles.neatline} mx-auto w-full max-w-[560px] flex-1 px-4 pb-16 lg:mb-6 lg:mt-10 lg:max-w-[1180px] lg:px-14 lg:pb-14 lg:pt-14`}
+      className={`${styles.neatline} mx-auto w-full max-w-[560px] flex-1 px-4 pb-16 @5xl:mb-6 @5xl:mt-10 @5xl:max-w-[1180px] @5xl:px-14 @5xl:pb-14 @5xl:pt-14`}
     >
-      <div className="lg:grid lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:gap-x-16">
+      <div className="@5xl:grid @5xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)] @5xl:gap-x-16">
         <div>
           <Portrait agent={agent} />
           <TitleBlock agent={agent} t={t} headingLevel={headingLevel} hasContact={hasContact} onShowQr={onShowQr} />
           <LinkRows agent={agent} t={t} />
-          {hasContact && <LotPlan className="hidden lg:block">{lots.Contact()}</LotPlan>}
+          {hasContact && <LotPlan className="hidden @5xl:block">{lots.Contact()}</LotPlan>}
         </div>
 
-        <LotPlan className="min-w-0 lg:mt-3 lg:max-w-[640px]">
+        <LotPlan className="min-w-0 @5xl:mt-3 @5xl:max-w-[640px]">
           {order.map((id) => {
             const render = lots[id];
             if (!render) return null;
-            if (id === "Contact") return <div key={id} className="lg:hidden">{render()}</div>;
+            if (id === "Contact") return <div key={id} className="@5xl:hidden">{render()}</div>;
             const lot = render();
             if (lot) return <div key={id}>{lot}</div>;
             return showEmpty && headings[id] ? <UnsurveyedLot key={id} heading={headings[id]} t={t} /> : null;
@@ -661,10 +661,10 @@ export function SurveyProfile({
 
 export function SurveyFooter({ sheet, t }: { sheet: Sheet; t: ProfileCopy }) {
   return (
-    <footer className="mx-auto w-full max-w-[560px] px-4 pb-10 lg:max-w-[1180px] lg:px-0">
+    <footer className="mx-auto w-full max-w-[560px] px-4 pb-10 @5xl:max-w-[1180px] @5xl:px-0">
       <Link
         href="/"
-        className={`${styles.cell} flex min-h-12 items-center justify-center gap-2 border-t-[1.5px] pt-4 text-[13px] lg:border-t-0`}
+        className={`${styles.cell} flex min-h-12 items-center justify-center gap-2 border-t-[1.5px] pt-4 text-[13px] @5xl:border-t-0`}
         style={{ borderColor: "var(--sv-line)", color: "var(--sv-soft)" }}
       >
         <span>{t.poweredBy}</span>
