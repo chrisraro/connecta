@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { GENERIC_ERROR_MESSAGE } from "@/lib/errors";
+import { inviteEmailData } from "@/lib/inviteEmail";
 
 /**
  * Team invites (owner decision, 2026-09-27): consent, not silent membership.
@@ -77,12 +78,31 @@ export async function POST(request: NextRequest) {
   // exists in team_invites: the owner can still share the join instructions
   // by hand, and the pending row is exactly what lets a re-invite attempt
   // later see DUPLICATE_INVITE instead of silently doubling up.
+  //
+  // The template (supabase/templates/invite.html) names the inviter and the
+  // team, so the email reads as a known person's request rather than an
+  // anonymous "you have been invited". Both reads go through the caller's
+  // own session: teams_select_member and users_select_own_or_admin already
+  // let an owner read their own rows. A failed read only loses the names,
+  // never the email.
+  const [{ data: team }, { data: inviter }] = await Promise.all([
+    supabase.from("teams").select("name, company_name").eq("owner_id", user.id).maybeSingle(),
+    supabase.from("users").select("name").eq("id", user.id).maybeSingle(),
+  ]);
+  const emailData = inviteEmailData({
+    inviterName: inviter?.name,
+    inviterEmail: user.email,
+    teamName: team?.name,
+    companyName: team?.company_name,
+  });
+
   let emailSent = true;
   let warning: string | undefined;
   try {
     const admin = createServiceClient();
     const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${request.nextUrl.origin}/auth/callback`,
+      data: emailData,
     });
     if (inviteError) {
       emailSent = false;

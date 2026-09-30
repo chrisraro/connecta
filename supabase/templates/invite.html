@@ -1,0 +1,88 @@
+<!--
+  Supabase Auth -> Emails -> Templates -> "Invite user".
+  Paste everything below this comment into the Message body field.
+  Subject: You're invited to join {{ .Data.team_name }} on Connecta PH
+
+  Filled in by /api/team/invite via inviteUserByEmail(email, { data }):
+    .Data.inviter_name  the team owner's name (or email)
+    .Data.team_name     the company name, else the team name
+  See lib/inviteEmail.ts. Supabase escapes both.
+
+  Why it looks like this (deliverability, see SETUP.md 1.4):
+    - one link, one destination; the fallback URL shows the same link
+    - no images, no tracking pixels, no URL shorteners
+    - says who sent it, why the recipient got it, and what to do if unexpected
+    - a real sender identity and postal address in the footer
+    - a hidden preview line, so the inbox snippet isn't "Connecta PH Connecta PH..."
+  Keep every {{ ... }} on one line (this folder is in .prettierignore for that).
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light only" />
+    <title>You're invited to join {{ .Data.team_name }} on Connecta PH</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#EEF1F4;">
+    <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#EEF1F4;">
+      {{ .Data.inviter_name }} invited you to share digital business cards and leads with {{ .Data.team_name }}.
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EEF1F4;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+            <tr>
+              <td style="padding:0 0 16px 4px;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#2B3F8F;">
+                Connecta PH
+              </td>
+            </tr>
+            <tr>
+              <td style="background-color:#FFFFFF;border:1px solid #D6DCE5;border-radius:8px;padding:32px;font-family:Arial,Helvetica,sans-serif;color:#12161F;">
+                <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;font-weight:bold;color:#12161F;">
+                  Join {{ .Data.team_name }} on Connecta PH
+                </h1>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.5;">
+                  Hi,
+                </p>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.5;">
+                  {{ .Data.inviter_name }} invited you to join <strong>{{ .Data.team_name }}</strong> on Connecta PH,
+                  where the team shares NFC business cards, digital profiles and the leads they bring in.
+                </p>
+                <p style="margin:0 0 24px;font-size:16px;line-height:1.5;">
+                  Accept the invite to set a password and open your account.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="border-radius:6px;background-color:#2B3F8F;">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:12px 24px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#FFFFFF;text-decoration:none;border-radius:6px;">
+                        Accept invite
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:24px 0 8px;font-size:14px;line-height:1.5;color:#4A5468;">
+                  If the button doesn't work, copy this link into your browser:
+                </p>
+                <p style="margin:0 0 24px;font-size:13px;line-height:1.5;word-break:break-all;">
+                  <a href="{{ .ConfirmationURL }}" style="color:#2B3F8F;">{{ .ConfirmationURL }}</a>
+                </p>
+                <p style="margin:0;font-size:14px;line-height:1.5;color:#4A5468;">
+                  For your security the link works once and expires. If it has expired, ask {{ .Data.inviter_name }}
+                  to send a new invite. If you weren't expecting this, you can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#4A5468;">
+                You received this because {{ .Data.inviter_name }} entered {{ .Email }} as a teammate on Connecta PH.
+                Questions? Write to connectaphnfc@gmail.com.<br />
+                Connecta PH &middot; Naga City, Camarines Sur, Philippines
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
