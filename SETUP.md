@@ -73,6 +73,50 @@ Set up a custom SMTP server. Either works:
 Once custom SMTP is on, Supabase starts at **30 emails per hour**. Raise it
 under Authentication → Rate Limits if a demo will have many sign-ups at once.
 
+#### Keeping auth email out of spam
+
+Spam placement is mostly decided by the **sender**, not the wording. In order
+of impact:
+
+1. **Never use Supabase's built-in sender** for real users. It sends from a
+   shared Supabase domain that neither Gmail nor Outlook associates with
+   Connecta PH.
+2. **Send from a domain you own, authenticated.** With Resend: add the domain,
+   then publish the **SPF** (`TXT`) and **DKIM** (`TXT`/`CNAME`) records
+   Resend shows, and wait until both read _Verified_. Add a **DMARC** record
+   too; start with `v=DMARC1; p=none; rua=mailto:<your inbox>` on
+   `_dmarc.<domain>` and tighten to `p=quarantine` once reports look clean.
+   Gmail and Yahoo reject or junk bulk senders without all three.
+3. **Sender email and name must match that domain**, e.g. sender email
+   `team@<domain>`, sender name `Connecta PH`. A `From:` on a domain the SMTP
+   server can't sign for fails DMARC and lands in spam or bounces.
+4. **Gmail SMTP (demo only)** is signed by Google, so it passes checks, but a
+   personal Gmail sending account-invite mail to strangers is still a weak
+   signal. Expect some spam placement until a domain is verified.
+
+Check a real message: open it in Gmail → ⋮ → **Show original**. SPF, DKIM and
+DMARC should all say `PASS`. [mail-tester.com](https://www.mail-tester.com)
+scores a single send the same way.
+
+#### Authentication → Emails → Templates → Invite user
+
+Team invites to a brand-new address go out as Supabase's **Invite user**
+email (`app/api/team/invite/route.ts`). The default template says only "You
+have been invited", with no inviter and no team, which reads like phishing.
+Replace it:
+
+| Field        | Value                                                                       |
+| ------------ | --------------------------------------------------------------------------- |
+| Subject      | `You're invited to join {{ .Data.team_name }} on Connecta PH`               |
+| Message body | everything in `supabase/templates/invite.html` after the first HTML comment |
+
+The route fills `{{ .Data.inviter_name }}` and `{{ .Data.team_name }}` for
+every invite (`lib/inviteEmail.ts`). The invite link lasts as long as
+Authentication → Sign In / Providers → Email → **Email OTP Expiration**
+(default one hour). Invitees often open mail later than that. Raising it
+also lengthens confirmation and password-reset links, so weigh that before
+changing it.
+
 ### 1.5 Authentication → URL Configuration
 
 | Setting       | Value                                                                                 |

@@ -11,3 +11,6 @@ package-lock.json
 
 # Next.js ambient types
 next-env.d.ts
+
+# Pasted into the Supabase dashboard; Prettier breaks {{ .Go }} placeholders across lines
+supabase/templates

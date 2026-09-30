@@ -25,10 +25,10 @@ describe("toUserMessage", () => {
   test("shows a deliberate raise verbatim -- it was written for a person", () => {
     const err = pgError({
       code: "P0001",
-      message: "Upgrade to Pro to activate more than one card.",
+      message: "Upgrade to Lead tools to activate more than one card.",
       details: "PLAN_LIMIT",
     });
-    expect(toUserMessage(err)).toBe("Upgrade to Pro to activate more than one card.");
+    expect(toUserMessage(err)).toBe("Upgrade to Lead tools to activate more than one card.");
   });
 
   // The raw text is "duplicate key value violates unique constraint
