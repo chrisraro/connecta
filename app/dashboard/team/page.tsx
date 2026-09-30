@@ -482,11 +482,11 @@ export function MemberView({
         <dl className="grid gap-4 sm:grid-cols-2">
           <div>
             <dt className="text-xs font-medium text-muted-foreground">Team</dt>
-            <dd className="text-sm font-semibold">{team.companyName || team.name}</dd>
+            <dd className="text-sm font-semibold break-words">{team.companyName || team.name}</dd>
           </div>
           <div>
             <dt className="text-xs font-medium text-muted-foreground">Owner</dt>
-            <dd className="text-sm font-semibold">{owner?.name || owner?.email || "—"}</dd>
+            <dd className="text-sm font-semibold break-all">{owner?.name || owner?.email || "—"}</dd>
           </div>
         </dl>
       </PlanPanel>

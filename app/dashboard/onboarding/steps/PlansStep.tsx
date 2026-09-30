@@ -31,7 +31,7 @@ export function PlansStep() {
           return (
             <div key={p} className="flex flex-col border-[1.5px] border-input p-4">
               <h3 className="text-sm font-bold">{limits.name}</h3>
-              <p className="mt-1 font-mono text-lg font-medium">
+              <p className="mt-1 flex flex-wrap items-baseline font-mono text-lg font-medium">
                 {price ? (
                   <>
                     {formatPeso(price.prelaunch)}

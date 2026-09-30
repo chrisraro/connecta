@@ -104,17 +104,27 @@ export function UpgradeGate({
   // "overlay": the feature stays visible (dimmed, inert) with the CTA
   // layered on top — nothing about it silently disappears for a free user.
   return (
-    <div className={cn("relative overflow-hidden rounded-xl", className)}>
+    // A size container: overlays sit on tiles as small as ~110px (the sheet
+    // and card-skin pickers on a phone), where the reason sentence and a full
+    // CTA don't fit and were clipped by overflow-hidden. Below 11rem the
+    // reason is left to the CTA's aria-label and the CTA tightens its padding.
+    <div className={cn("@container relative overflow-hidden rounded-xl", className)}>
       <div aria-hidden="true" className="pointer-events-none opacity-40 grayscale">
         {children}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/85 p-3 text-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/85 p-2 text-center @[11rem]:p-3">
         <span className="inline-flex items-center gap-1.5 bg-muted px-2.5 py-1 text-[12px] font-bold text-muted-foreground">
           <Lock className="h-3 w-3" aria-hidden="true" />
           Lead tools
         </span>
-        <p className="max-w-[16rem] text-xs font-medium text-foreground">{reason}</p>
-        <GetProCta label={ctaLabel} />
+        <p className="hidden max-w-[16rem] text-xs font-medium text-foreground @[11rem]:block">
+          {reason}
+        </p>
+        <GetProCta
+          label={ctaLabel}
+          ariaLabel={`${reason} — ${ctaLabel}`}
+          className="max-w-full shrink justify-center px-2.5 text-center @[11rem]:px-4"
+        />
       </div>
     </div>
   );

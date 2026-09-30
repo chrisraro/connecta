@@ -198,7 +198,7 @@ export default function BillingPage() {
               </ul>
               <PlanUpgradeButton
                 label={isCurrent ? `Renew ${limits.name}` : `Upgrade to ${limits.name}`}
-                className="mt-auto flex h-12 w-full items-center justify-center rounded-none text-[15px] font-bold"
+                className="mt-auto flex min-h-12 w-full items-center justify-center rounded-none text-[15px] font-bold"
               />
             </div>
           );
