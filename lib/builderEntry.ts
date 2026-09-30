@@ -4,7 +4,8 @@
  *
  * The free plan's `maxProfiles: 1` means a user who already has a profile
  * can never successfully create a second one through `createProfile` — it
- * throws "Upgrade to Pro for unlimited profiles." (convex/profiles.ts).
+ * throws "Upgrade to Lead tools to create more than one profile."
+ * (enforce_profile_plan_limit).
  * Landing that user on the builder's blank "Create Profile" form anyway
  * sets up a doomed Save with no warning until they click it (Task 12 —
  * this is exactly how onboarding's own "Go to Profile Builder" hand-off

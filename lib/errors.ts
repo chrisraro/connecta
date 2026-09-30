@@ -11,7 +11,7 @@
  * What replaces the old ConvexError channel is `details`. Server code raises
  *
  *     raise exception using errcode = 'P0001',
- *       message = 'Upgrade to Pro to activate more than one card.',
+ *       message = 'Upgrade to Lead tools to activate more than one card.',
  *       detail  = 'PLAN_LIMIT';
  *
  * so `message` is the sentence to show a person and `details` is the stable
