@@ -309,8 +309,8 @@ function SortableBlockItem({ block, onToggle }: { block: Block; onToggle: (id: s
       >
         <GripVertical className="w-4 h-4" />
       </div>
-      <Icon className="w-4 h-4 text-muted-foreground" />
-      <span className="flex-1 text-sm font-medium text-foreground">{block.label}</span>
+      <Icon className="w-4 h-4 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 break-words text-sm font-medium text-foreground">{block.label}</span>
       <Switch
         checked={block.isEnabled}
         onCheckedChange={() => onToggle(block.id)}
@@ -345,7 +345,7 @@ function TemplateSelector({
                 widths (measured: button scrollWidth 100 vs clientWidth 72).
                 Two columns give 114px at 320px, which fits the longest
                 name; `truncate` keeps a future longer one from clipping. */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {TEMPLATES.map((template) => {
           // The stored template id selects a sheet colourway of the one
           // Survey Plan profile (components/survey/sheet.ts).
@@ -1289,7 +1289,7 @@ function BuilderContent() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background border-b border-border px-4 py-3">
-        <div className="mx-auto flex w-full max-w-lg items-center justify-between lg:max-w-6xl">
+        <div className="mx-auto flex w-full max-w-lg items-center justify-between xl:max-w-6xl">
           <button
             onClick={() => {
               if (isDirty()) {
@@ -1349,9 +1349,14 @@ function BuilderContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="mx-auto w-full max-w-lg pb-8 lg:max-w-6xl lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-8 lg:items-start">
+      {/* Side by side from xl:, not lg:. The dashboard sidebar already takes
+          288px at lg:, and a 420px preview beside the controls left them about
+          170px wide at 1024px: truncated sheet names, overlapping profile-type
+          buttons, Edit links outside their rows, and a sideways-scrolling page.
+          Between lg: and xl: the builder stays one centred column. */}
+      <div className="mx-auto w-full max-w-lg pb-8 xl:max-w-6xl xl:grid xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] xl:gap-8 xl:items-start">
         {/* Preview column — stays visible & in view while the controls
-                  column (rendered alongside it at lg:) scrolls independently.
+                  column (rendered alongside it at xl:) scrolls independently.
                   Plain CSS `position: sticky`. An earlier version of this hand
                   -rolled the same behavior with a scroll/resize listener and a
                   `position: fixed` toggle because sticky appeared to be inert
@@ -1365,12 +1370,12 @@ function BuilderContent() {
                   Removing that class restored plain sticky (Task 2 review,
                   Critical #1/#2, Important #3/#6 — ~40 lines of scroll-JS,
                   a spacer div, and a `pinnedGeometry` re-render on every
-                  scroll frame all went away with it). `lg:top-[4.5rem]`
+                  scroll frame all went away with it). `xl:top-[4.5rem]`
                   matches the rendered height of the header directly above
                   (measured, not guessed — see task-2-fixes-report.md). */}
-        <div className="lg:sticky lg:top-[4.5rem]">
+        <div className="xl:sticky xl:top-[4.5rem]">
           {/* Preview Switcher */}
-          <div className="px-4 pt-4 pb-2 lg:px-0">
+          <div className="px-4 pt-4 pb-2 xl:px-0">
             <div className="flex bg-muted p-1 rounded-xl gap-1">
               <button
                 type="button"
@@ -1409,12 +1414,12 @@ function BuilderContent() {
           </div>
 
           {/* Phone Preview */}
-          <div className="p-4 lg:px-0">
+          <div className="p-4 xl:px-0">
             <div
               className="bg-gray-900 p-3"
               style={{ boxShadow: "var(--e-overlay)" }}
             >
-              <div className="overflow-hidden bg-white max-h-[70dvh] overflow-y-auto lg:max-h-[calc(100dvh-13rem)]">
+              <div className="overflow-hidden bg-white max-h-[70dvh] overflow-y-auto xl:max-h-[calc(100dvh-13rem)]">
                 {previewMode === "card" ? (
                   <div className="bg-background p-4 flex flex-col justify-center min-h-[360px] items-center space-y-4">
                     <div role="group" aria-label="Card orientation" className="flex w-full max-w-[420px] border-[1.5px] border-input bg-background">
@@ -1482,7 +1487,10 @@ function BuilderContent() {
                     </div>
                   </div>
                 ) : previewMode === "storefront" ? (
-                  <div className="min-h-[400px]">
+                  // The same sheet wrapper as the portfolio preview (and the
+                  // public page): the --sv-* colours StorefrontView draws with,
+                  // and a size container so it lays out by this frame's width.
+                  <div className={surveyStyles.sheet} style={sheetVars(sheetFor(selectedTemplate))}>
                     <StorefrontView
                       data={{
                         ownerId: user?.id || "",
@@ -1603,13 +1611,15 @@ function BuilderContent() {
                       return (
                         <div
                           key={block.id}
-                          className="flex items-center gap-3 p-4 bg-card rounded-xl border border-border"
+                          className="flex items-center gap-3 p-3 sm:p-4 bg-card rounded-xl border border-border"
                         >
-                          <Icon className="w-5 h-5 text-muted-foreground" />
-                          <span className="flex-1 font-medium text-sm text-foreground">
+                          <Icon className="w-5 h-5 shrink-0 text-muted-foreground" />
+                          {/* min-w-0 + break-words: "Recommendations" beside the
+                              badge and Edit is wider than a 320px phone row. */}
+                          <span className="min-w-0 flex-1 break-words font-medium text-sm text-foreground">
                             {block.label}
                           </span>
-                          <div className="flex items-center gap-2">
+                          <div className="flex shrink-0 items-center gap-2">
                             {block.isEnabled ? (
                               <span className="text-xs text-primary bg-primary/10 px-2 py-1">
                                 Visible
