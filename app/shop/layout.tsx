@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingCart, ChevronRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { SITE_CONTAINER, SiteFooter, SiteHeader } from "@/components/marketing/SiteChrome";
+import { SiteFooter, SiteHeader } from "@/components/marketing/SiteChrome";
+import { SITE_CONTAINER } from "@/components/marketing/siteLayout";
 import survey from "@/components/survey/survey.module.css";
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {

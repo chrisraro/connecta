@@ -11,6 +11,7 @@ import { SHEETS } from "@/components/survey/sheet";
 import { sheetVars } from "@/components/survey/SurveyProfile";
 import survey from "@/components/survey/survey.module.css";
 import { LANDING_COPY as t } from "@/components/landing/copy";
+import { SITE_CONTAINER } from "./siteLayout";
 
 /**
  * The one header and footer of the public site: the homepage, the shop and
@@ -18,12 +19,6 @@ import { LANDING_COPY as t } from "@/components/landing/copy";
  * themselves, so they look the same whatever page hosts them; the public
  * routes are light-only (components/ThemeProvider.tsx).
  */
-
-/** Same measure as the homepage sections. */
-export const SITE_CONTAINER = "mx-auto w-full max-w-[1180px] px-4 lg:px-14";
-
-/** Page titles, matching the homepage section headings. */
-export const PAGE_TITLE = `${survey.expanded} text-[clamp(28px,4.4vw,48px)] font-bold leading-[1.05]`;
 
 const whiteprint = sheetVars(SHEETS.whiteprint);
 

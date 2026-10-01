@@ -1,4 +1,5 @@
-import { PAGE_TITLE, SITE_CONTAINER, SiteFooter, SiteHeader } from "@/components/marketing/SiteChrome";
+import { SiteFooter, SiteHeader } from "@/components/marketing/SiteChrome";
+import { PAGE_TITLE, SITE_CONTAINER } from "@/components/marketing/siteLayout";
 
 /**
  * Shared shell for /privacy and /terms.

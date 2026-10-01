@@ -1,6 +1,6 @@
 "use client";
 
-import { PAGE_TITLE } from "@/components/marketing/SiteChrome";
+import { PAGE_TITLE } from "@/components/marketing/siteLayout";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";

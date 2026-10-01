@@ -1,6 +1,6 @@
 "use client";
 
-import { PAGE_TITLE } from "@/components/marketing/SiteChrome";
+import { PAGE_TITLE } from "@/components/marketing/siteLayout";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/contexts/CartContext";

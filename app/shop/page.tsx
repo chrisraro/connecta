@@ -1,6 +1,6 @@
 "use client";
 
-import { PAGE_TITLE } from "@/components/marketing/SiteChrome";
+import { PAGE_TITLE } from "@/components/marketing/siteLayout";
 import { useState } from "react";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
