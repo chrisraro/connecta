@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 /**
  * The three sheets of the Survey Plan world.
  *
@@ -74,4 +76,19 @@ const SHEET_BY_TEMPLATE: Record<string, SheetId> = {
 
 export function sheetFor(templateId: string | undefined): Sheet {
   return SHEETS[SHEET_BY_TEMPLATE[templateId ?? ""] ?? "whiteprint"];
+}
+
+/** The sheet's colours as the --sv-* custom properties survey.module.css reads. */
+export function sheetVars(sheet: Sheet): CSSProperties {
+  return {
+    "--sv-ground": sheet.ground,
+    "--sv-ink": sheet.ink,
+    "--sv-soft": sheet.soft,
+    "--sv-line": sheet.line,
+    "--sv-mark": sheet.mark,
+    "--sv-mark-text": sheet.markText,
+    "--sv-action-bg": sheet.actionBg,
+    "--sv-action-ink": sheet.actionInk,
+    "--sv-duotone": sheet.duotone,
+  } as CSSProperties;
 }

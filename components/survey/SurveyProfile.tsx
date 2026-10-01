@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { useId, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -29,19 +29,8 @@ import styles from "./survey.module.css";
 /* ─── Sheet plumbing ─────────────────────────────────────────────────────── */
 
 /** The sheet's colours as custom properties, set once on the page root. */
-export function sheetVars(sheet: Sheet): CSSProperties {
-  return {
-    "--sv-ground": sheet.ground,
-    "--sv-ink": sheet.ink,
-    "--sv-soft": sheet.soft,
-    "--sv-line": sheet.line,
-    "--sv-mark": sheet.mark,
-    "--sv-mark-text": sheet.markText,
-    "--sv-action-bg": sheet.actionBg,
-    "--sv-action-ink": sheet.actionInk,
-    "--sv-duotone": sheet.duotone,
-  } as CSSProperties;
-}
+// Lives in ./sheet (a plain module) so server components can call it too.
+export { sheetVars } from "./sheet";
 
 export const surveyStyles = styles;
 
@@ -207,6 +196,7 @@ function TitleBlock({
         {hasContact && (
           <a
             href="#leave-details"
+            onClick={scrollToLeadForm}
             className={`${styles.cell} ${styles.semiExpanded} flex h-14 w-full items-center justify-center border-t-[1.5px] text-[17px] font-bold`}
             style={{ borderColor: "var(--sv-line)" }}
           >
@@ -263,13 +253,15 @@ function LinkRows({ agent, t }: { agent: ProfileInfo; t: ProfileCopy }) {
  * heading sits on the line the way a lot label sits on a survey plan.
  */
 function Lot({ id, heading, children }: { id: string; heading: string; children: ReactNode }) {
-  const headingId = `lot-${id}`;
+  // useId: the contact lot renders twice (desktop column and phone flow), so
+  // a fixed id would repeat.
+  const headingId = `lot-${id}-${useId()}`;
   return (
     <section
       aria-labelledby={headingId}
-      className="relative border-t-[1.5px] px-4 pb-7 pt-8"
+      className="relative scroll-mt-16 border-t-[1.5px] px-4 pb-7 pt-8"
       style={{ borderColor: "var(--sv-line)" }}
-      id={id === "contact" ? "leave-details" : undefined}
+      data-lead-anchor={id === "contact" ? "" : undefined}
     >
       <h2
         id={headingId}
@@ -655,6 +647,22 @@ export function SurveyProfile({
       </div>
     </main>
   );
+}
+
+/**
+ * "Send my details": the lead form is drawn twice (desktop column, phone
+ * flow) with CSS showing one, so a plain #fragment can land on the hidden
+ * copy. Scroll to the copy that is laid out and put the cursor in it.
+ */
+function scrollToLeadForm(e: MouseEvent<HTMLAnchorElement>) {
+  const target = [...document.querySelectorAll<HTMLElement>("[data-lead-anchor]")].find(
+    (el) => el.getClientRects().length > 0,
+  );
+  if (!target) return;
+  e.preventDefault();
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  target.querySelector<HTMLElement>("input, textarea")?.focus({ preventScroll: true });
 }
 
 /* ─── Footer ─────────────────────────────────────────────────────────────── */

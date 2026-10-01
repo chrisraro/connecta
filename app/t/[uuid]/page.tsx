@@ -12,6 +12,8 @@ import { profilePath } from "@/lib/profileUrl";
 import { toUserMessage } from "@/lib/errors";
 import { isPlanLimitError } from "@/lib/plans";
 import { UpgradeGate } from "@/components/billing/UpgradeGate";
+import { PublicNotice } from "@/components/marketing/PublicNotice";
+import { PRIMARY_CTA } from "@/components/marketing/siteLayout";
 
 /**
  * Where a physical tag lands.
@@ -141,31 +143,32 @@ export default function TapRedirectPage({ params }: { params: Promise<{ uuid: st
 
   if (errorMessage) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-6 text-center">
-        <div className="w-16 h-16 border-[1.5px] border-destructive flex items-center justify-center mb-6 text-destructive">
-          <Smartphone className="w-8 h-8" aria-hidden="true" />
-        </div>
-        <h1 className="text-2xl font-bold mb-2">Card not ready</h1>
-        {claimFailed && claimFailedLocked ? (
+      <PublicNotice
+        mark={
+          <div
+            className="flex h-16 w-16 items-center justify-center border-[1.5px]"
+            style={{ borderColor: "var(--sv-mark)", color: "var(--sv-mark-text)" }}
+          >
+            <Smartphone className="h-8 w-8" aria-hidden="true" />
+          </div>
+        }
+        title="Card not ready"
+        actions={
           // The upgrade CTA already carries the message, so the plain
           // paragraph is skipped to avoid showing it twice.
-          <div className="w-full max-w-xs mb-8">
-            <UpgradeGate locked reason={claimFailed} variant="banner" />
-          </div>
-        ) : (
-          <>
-            <p className="text-muted-foreground max-w-xs mb-8">{errorMessage}</p>
-            <div className="flex flex-col gap-3 w-full max-w-xs">
-              <Link
-                href="/"
-                className="w-full bg-primary text-primary-foreground font-bold py-3 hover:bg-primary/90 transition-colors text-center"
-              >
-                Go to the homepage
-              </Link>
+          claimFailed && claimFailedLocked ? (
+            <div className="w-full max-w-sm text-left">
+              <UpgradeGate locked reason={claimFailed} variant="banner" />
             </div>
-          </>
-        )}
-      </div>
+          ) : (
+            <Link href="/" className={PRIMARY_CTA}>
+              Go to the homepage
+            </Link>
+          )
+        }
+      >
+        {claimFailed && claimFailedLocked ? null : errorMessage}
+      </PublicNotice>
     );
   }
 

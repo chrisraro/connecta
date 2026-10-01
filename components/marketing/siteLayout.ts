@@ -12,3 +12,7 @@ export const SITE_CONTAINER = "mx-auto w-full max-w-[1180px] px-4 lg:px-14";
 
 /** Page titles, matching the homepage section headings. */
 export const PAGE_TITLE = `${survey.expanded} text-[clamp(28px,4.4vw,48px)] font-bold leading-[1.05]`;
+
+/** The homepage's call-to-action buttons. Pair SECONDARY_CTA with borderColor var(--sv-line). */
+export const PRIMARY_CTA = `${survey.primary} ${survey.semiExpanded} flex h-14 items-center justify-center gap-2 px-7 text-[17px] font-bold`;
+export const SECONDARY_CTA = `${survey.cell} ${survey.semiExpanded} flex h-14 items-center justify-center gap-2 border-[1.5px] px-7 text-[17px] font-bold`;

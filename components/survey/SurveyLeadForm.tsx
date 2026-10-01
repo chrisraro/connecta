@@ -174,7 +174,7 @@ export function SurveyLeadForm({
         type="submit"
         disabled={status === "sending" || !consent}
         aria-describedby={status === "error" ? ids.status : undefined}
-        className={`${styles.primary} ${styles.semiExpanded} flex h-14 w-full items-center justify-center gap-2 text-[16px] font-bold`}
+        className={`${styles.primary} ${styles.semiExpanded} flex h-14 w-full items-center justify-center gap-2 text-[17px] font-bold`}
       >
         {status === "sending" ? (
           <>
