@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/dashboard/PageHeader";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,11 +86,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Account Settings</h1>
-        <p className="text-muted-foreground">Manage your personal information.</p>
-      </div>
+    <div className="max-w-2xl space-y-8">
+      <PageHeader title="Settings" description="Manage your account and personal information." />
 
       <div className="border-[1.5px] border-input bg-background p-8 space-y-6">
         <div className="space-y-2">

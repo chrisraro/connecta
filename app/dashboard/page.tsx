@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/dashboard/PageHeader";
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -73,14 +74,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-1 [font-stretch:112%]">
-          Welcome{appUser?.name ? `, ${appUser.name.split(" ")[0]}` : " back"}
-        </h1>
-        <p className="text-muted-foreground">
-          Manage your portfolio, share via NFC &amp; QR, and capture leads.
-        </p>
-      </div>
+      <PageHeader
+        title={`Welcome${appUser?.name ? `, ${appUser.name.split(" ")[0]}` : " back"}`}
+        description="Manage your profiles, share by NFC and QR, and follow up on leads."
+      />
 
       {/* ─── Pending team invites ──────────────────────────────────── */}
       <InviteBanner />

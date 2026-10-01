@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader } from "@/components/dashboard/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { accountName } from "@/lib/accountName";
@@ -182,11 +183,8 @@ export default function LeadsPage() {
 
   if (leads === undefined) {
     return (
-      <div className="space-y-6">
-        <div className="hidden md:block">
-          <h1 className="text-3xl font-bold tracking-tight">Leads &amp; Inquiries</h1>
-          <p className="text-muted-foreground">Manage and follow up with potential clients.</p>
-        </div>
+      <div className="space-y-8">
+        <PageHeader title="Leads" description="Manage and follow up with potential clients." />
         <div className="space-y-4">
           {[0, 1, 2].map((i) => (
             <Skeleton key={i} className="h-48" />
@@ -197,49 +195,48 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div className="hidden md:block">
-          <h1 className="text-3xl font-bold tracking-tight">Leads &amp; Inquiries</h1>
-          <p className="text-muted-foreground">Manage and follow up with potential clients.</p>
-        </div>
-
-        <div className="flex w-full items-center gap-2 md:w-auto">
-          <div className="relative w-full md:max-w-xs">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <label htmlFor="lead-search" className="sr-only">
-              Search leads
-            </label>
-            <Input
-              id="lead-search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search leads..."
-              className="pl-10"
-            />
+    <div className="space-y-8">
+      <PageHeader
+        title="Leads"
+        description="Manage and follow up with potential clients."
+        actions={
+          <div className="flex w-full items-center gap-2 md:w-auto">
+            <div className="relative w-full md:max-w-xs">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <label htmlFor="lead-search" className="sr-only">
+                Search leads
+              </label>
+              <Input
+                id="lead-search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search leads..."
+                className="pl-10"
+              />
+            </div>
+            {leads.length > 0 && (
+              // CSV export used to just vanish for free users
+              // (canExport === false) with no explanation — now it
+              // stays visible as a locked CTA via the shared
+              // gating component instead of disappearing.
+              <UpgradeGate locked={!canExport} reason="CSV export is a Lead tools feature." variant="inline">
+                <Button
+                  variant="outline"
+                  onClick={handleExportCsv}
+                  className="shrink-0"
+                  aria-label="Export leads as CSV"
+                >
+                  <Download className="h-4 w-4 md:mr-2" aria-hidden="true" />
+                  <span className="hidden md:inline">Export CSV</span>
+                </Button>
+              </UpgradeGate>
+            )}
           </div>
-          {leads.length > 0 && (
-            // CSV export used to just vanish for free users
-            // (canExport === false) with no explanation — now it
-            // stays visible as a locked CTA via the shared
-            // gating component instead of disappearing.
-            <UpgradeGate locked={!canExport} reason="CSV export is a Lead tools feature." variant="inline">
-              <Button
-                variant="outline"
-                onClick={handleExportCsv}
-                className="shrink-0"
-                aria-label="Export leads as CSV"
-              >
-                <Download className="h-4 w-4 md:mr-2" aria-hidden="true" />
-                <span className="hidden md:inline">Export CSV</span>
-              </Button>
-            </UpgradeGate>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {/* Chips UI */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">

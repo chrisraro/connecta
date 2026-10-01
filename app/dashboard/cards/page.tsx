@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   useMyCards,
@@ -182,94 +183,89 @@ export default function CardsPage() {
 
   if (!isLoaded || cardsPending || !myCards) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
-      </div>
+      <PageLoading />
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">My NFC Cards</h1>
-          <p className="text-muted-foreground">
-            Manage and link your physical {CONNECTA.name} cards to your profiles.
-          </p>
-        </div>
+    <div className="space-y-8 pb-20">
+      <PageHeader
+        title="NFC cards"
+        description={`Manage and link your physical ${CONNECTA.name} cards to your profiles.`}
+        actions={
+          <Dialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4" />
+                Activate new card
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Activate your card</DialogTitle>
+                <DialogDescription>
+                  Enter the 6-character activation code found on your card or its packaging.
+                </DialogDescription>
+              </DialogHeader>
 
-        <Dialog open={showActivationDialog} onOpenChange={setShowActivationDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4" />
-              Activate new card
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Activate your card</DialogTitle>
-              <DialogDescription>
-                Enter the 6-character activation code found on your card or its packaging.
-              </DialogDescription>
-            </DialogHeader>
-
-            {isSuccess ? (
-              <div className="py-10 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 border-[1.5px] border-input flex items-center justify-center text-primary mb-4">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-bold text-foreground">Card activated</h3>
-                <p className="text-muted-foreground">Your card is now ready to be linked.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleActivate} className="space-y-6 py-4">
-                <div className="space-y-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[13px] font-semibold text-muted-foreground">
-                      Activation code
-                    </label>
-                    <Input
-                      placeholder="e.g. AB12CD"
-                      value={activationCode}
-                      onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
-                      className="text-center text-lg font-semibold tracking-[0.3em] uppercase"
-                      maxLength={6}
-                      autoFocus
-                    />
+              {isSuccess ? (
+                <div className="py-10 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 border-[1.5px] border-input flex items-center justify-center text-primary mb-4">
+                    <CheckCircle2 className="w-8 h-8" />
                   </div>
-
-                  {activationError && activationLocked && (
-                    <UpgradeGate locked reason={activationError} variant="banner" />
-                  )}
-                  {activationError && !activationLocked && (
-                    <div className="flex items-center gap-2 border-[1.5px] border-destructive p-3 text-sm text-destructive">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      {activationError}
-                    </div>
-                  )}
-
-                  <div className="space-y-3 border-[1.5px] border-dashed border-input p-4">
-                    <div className="flex items-center justify-center gap-2 text-center">
-                      <QrCode className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                      <p className="text-[13px] text-muted-foreground">
-                        No code handy? Scan the QR printed on your card instead.
-                      </p>
-                    </div>
-                    <QrClaimScanner onResult={handleScanResult} disabled={isActivating} />
-                  </div>
+                  <h3 className="text-xl font-bold text-foreground">Card activated</h3>
+                  <p className="text-muted-foreground">Your card is now ready to be linked.</p>
                 </div>
-                <Button type="submit" className="w-full" disabled={isActivating || activationCode.length < 6}>
-                  {isActivating ? <Loader2 className="animate-spin w-4 h-4" /> : null}
-                  Activate card
-                </Button>
-              </form>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
+              ) : (
+                <form onSubmit={handleActivate} className="space-y-6 py-4">
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[13px] font-semibold text-muted-foreground">
+                        Activation code
+                      </label>
+                      <Input
+                        placeholder="e.g. AB12CD"
+                        value={activationCode}
+                        onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
+                        className="text-center text-lg font-semibold tracking-[0.3em] uppercase"
+                        maxLength={6}
+                        autoFocus
+                      />
+                    </div>
+
+                    {activationError && activationLocked && (
+                      <UpgradeGate locked reason={activationError} variant="banner" />
+                    )}
+                    {activationError && !activationLocked && (
+                      <div className="flex items-center gap-2 border-[1.5px] border-destructive p-3 text-sm text-destructive">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        {activationError}
+                      </div>
+                    )}
+
+                    <div className="space-y-3 border-[1.5px] border-dashed border-input p-4">
+                      <div className="flex items-center justify-center gap-2 text-center">
+                        <QrCode className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                        <p className="text-[13px] text-muted-foreground">
+                          No code handy? Scan the QR printed on your card instead.
+                        </p>
+                      </div>
+                      <QrClaimScanner onResult={handleScanResult} disabled={isActivating} />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isActivating || activationCode.length < 6}>
+                    {isActivating ? <Loader2 className="animate-spin w-4 h-4" /> : null}
+                    Activate card
+                  </Button>
+                </form>
+              )}
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {notice && (
-        <div role="status" className="mb-6 flex items-start gap-3 border-[1.5px] border-input bg-background p-4">
+        <div role="status" className="flex items-start gap-3 border-[1.5px] border-input bg-background p-4">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
           <div className="flex-1 text-sm">
             <p className="font-bold">Card activated</p>

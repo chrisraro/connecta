@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMyPlan } from "@/hooks/useCurrentUser";
 import { useMyProfiles, useDeleteProfile } from "@/hooks/useProfiles";
@@ -24,7 +25,6 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
 import { DigitalCardModal } from "@/components/ui/DigitalCardModal";
@@ -67,9 +67,7 @@ export default function ProfilesPage() {
 
   if (profiles === undefined || myPlan === undefined) {
     return (
-      <div className="flex justify-center p-12 text-zinc-500">
-        <Loader2 className="animate-spin" />
-      </div>
+      <PageLoading />
     );
   }
 
@@ -113,49 +111,38 @@ export default function ProfilesPage() {
     : profiles;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div className="flex justify-between items-center w-full md:w-auto">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">My Profiles</h1>
-            <p className="text-muted-foreground text-sm">Manage your digital business cards.</p>
-          </div>
-          {/* Mobile Create Button. When a profile already exists,
-                        link straight to editing it — routing to the bare
-                        no-id builder here used to send an at-limit
-                        free-plan user into a "Create Profile" form that
-                        could never save (Task 12). */}
-          <Link href={createProfileHref} className="md:hidden">
-            <Button size="icon">
-              <Plus className="w-5 h-5" />
+    <div className="space-y-8">
+      {/* "Create new" links straight to editing when a profile already
+          exists: the bare no-id builder used to send an at-limit free-plan
+          user into a "Create Profile" form that could never save (Task 12). */}
+      <PageHeader
+        title="Profiles"
+        description="Manage your digital business cards."
+        actions={
+          <div className="flex w-full items-center gap-2 md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <label htmlFor="profile-search" className="sr-only">
+                Search profiles
+              </label>
+              <Input
+                id="profile-search"
+                type="search"
+                placeholder="Search profiles"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button asChild className="shrink-0">
+              <Link href={createProfileHref}>
+                <Plus className="w-4 h-4" aria-hidden="true" />
+                Create new
+              </Link>
             </Button>
-          </Link>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <label htmlFor="profile-search" className="sr-only">
-              Search profiles
-            </label>
-            <Input
-              id="profile-search"
-              type="search"
-              placeholder="Search profiles"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-10 h-12 md:h-10"
-            />
           </div>
-
-          <Link href={createProfileHref} className="hidden md:block">
-            <Button>
-              <Plus className="w-4 h-4" />
-              Create new
-            </Button>
-          </Link>
-        </div>
-      </div>
+        }
+      />
 
       {profiles.length === 0 ? (
         <EmptyState

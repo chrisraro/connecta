@@ -1,15 +1,12 @@
 "use client";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { MOBILE_NAV } from "@/lib/dashboardNav";
+import { DASHBOARD_SECTIONS, MOBILE_NAV, dashboardSectionTitle } from "@/lib/dashboardNav";
 import { useCurrentUser, useIsAdmin } from "@/hooks/useCurrentUser";
 import { useEffect, useState } from "react";
 import { UserMenu } from "@/components/auth/UserMenu";
 import {
-  LayoutDashboard,
-  Users,
   CreditCard,
-  Settings,
   SmartphoneNfc,
   MessageSquare,
   ListChecks,
@@ -17,7 +14,6 @@ import {
   LayoutTemplate,
   ChevronRight,
   Loader2,
-  Building2,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -223,15 +219,9 @@ function DashboardSidebar({ className }: { className?: string }) {
   const isOnboardingIncomplete = Boolean(appUser) && !appUser!.onboarding_completed;
 
   const menuItems = [
-    { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
-    { title: "My Profiles", url: "/dashboard/profiles", icon: Users },
-    { title: "Leads", url: "/dashboard/leads", icon: MessageSquare },
-    { title: "NFC Cards", url: "/dashboard/cards", icon: SmartphoneNfc },
-    { title: "Team", url: "/dashboard/team", icon: Building2 },
-    { title: "Billings", url: "/dashboard/billing", icon: CreditCard },
-    { title: "Settings", url: "/dashboard/settings", icon: Settings },
+    ...DASHBOARD_SECTIONS,
     {
-      title: "Profile Setup",
+      title: "Profile setup",
       url: "/dashboard/onboarding",
       icon: ListChecks,
       badge: isOnboardingIncomplete,
@@ -328,18 +318,7 @@ function MobileBottomNav() {
 
 function MobileHeader() {
   const pathname = usePathname();
-  const getPageTitle = () => {
-    if (pathname === "/dashboard") return "Overview";
-    if (pathname.startsWith("/dashboard/profiles")) return "Profiles";
-    if (pathname.startsWith("/dashboard/leads")) return "Inquiries";
-    if (pathname.startsWith("/dashboard/cards")) return "My Cards";
-    if (pathname.startsWith("/dashboard/team")) return "Team";
-    if (pathname.startsWith("/dashboard/billing")) return "Billing";
-    if (pathname.startsWith("/dashboard/settings")) return "Settings";
-    if (pathname.startsWith("/dashboard/builder")) return "Profile Builder";
-    if (pathname.startsWith("/dashboard/onboarding")) return "Profile Setup";
-    return CONNECTA.name;
-  };
+  const getPageTitle = () => dashboardSectionTitle(pathname) ?? CONNECTA.name;
 
   return (
     <header className="md:hidden sticky top-0 z-40 w-full px-6 py-4 flex items-center justify-between bg-background border-b-[1.5px] border-input">

@@ -1,10 +1,11 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useMyPlan } from "@/hooks/useCurrentUser";
 import { usePlanPricing } from "@/hooks/useSettings";
-import { Check, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Check, ShieldCheck, AlertTriangle } from "lucide-react";
 import { DEFAULT_PLAN_PRICING, PLAN_LIMITS, type PlanId } from "@/lib/plans";
 import { PRICING, type BillingCycle } from "@/lib/pricing";
 import { PlanUpgradeButton } from "@/components/billing/PlanUpgradeButton";
@@ -61,9 +62,7 @@ export default function BillingPage() {
 
   if (myPlan === undefined || !user) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
-      </div>
+      <PageLoading />
     );
   }
 
@@ -71,12 +70,10 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Billing &amp; plans</h1>
-        <p className="text-muted-foreground">
-          Prepaid plans. Renew anytime — time stacks on what you have left.
-        </p>
-      </div>
+      <PageHeader
+        title="Billing"
+        description="Prepaid plans. Renew anytime — time stacks on what you have left."
+      />
 
       {/* Current plan */}
       <div className="border-[1.5px] border-input p-6">

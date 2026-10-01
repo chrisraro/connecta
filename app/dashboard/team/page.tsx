@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import {
   useMyTeam,
   useTeamLeads,
@@ -92,19 +93,14 @@ export default function TeamPage() {
 
   if (gate === "loading") {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" aria-hidden="true" />
-      </div>
+      <PageLoading />
     );
   }
 
   if (gate === "upgrade") {
     return (
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold [font-stretch:112%]">Team</h1>
-          <p className="text-muted-foreground">Collaborate with your team under one brand.</p>
-        </div>
+        <PageHeader title="Team" description="Collaborate with your team under one brand." />
         <InviteBanner />
         <EmptyState
           icon={Building2}
@@ -162,12 +158,10 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold [font-stretch:112%]">{team.name}</h1>
-        <p className="text-muted-foreground">
-          {seatUsage.used} of {seatUsage.total} seats used
-        </p>
-      </div>
+      <PageHeader
+        title="Team"
+        description={`${team.name} · ${seatUsage.used} of ${seatUsage.total} seats used`}
+      />
 
       <InviteBanner />
 
