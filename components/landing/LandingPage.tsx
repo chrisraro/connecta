@@ -11,6 +11,7 @@ import { CARD_SKINS } from "@/lib/cardSkins";
 import { LANDING_COPY as t } from "./copy";
 import { TapStory } from "./TapStory";
 import { Pricing } from "./Pricing";
+import { Roadmap } from "./Roadmap";
 import { CardFace } from "./Phone";
 import styles from "./landing.module.css";
 
@@ -92,6 +93,8 @@ export function LandingPage() {
         </section>
 
         <Pricing t={t} />
+
+        <Roadmap t={t} />
 
         <section className="mx-auto max-w-[1180px] px-4 py-24 lg:px-14">
           <div className="border-[1.5px] px-6 py-14 text-center" style={{ borderColor: "var(--sv-line)" }}>

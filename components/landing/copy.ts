@@ -1,6 +1,6 @@
 /** Homepage copy. English only (Filipino removed 2026-10-01). */
 export const LANDING_COPY = {
-  nav: { how: "How it works", demo: "Demo", pricing: "Pricing", shop: "Shop", signIn: "Sign in", start: "Start free", dashboard: "Dashboard" },
+  nav: { how: "How it works", demo: "Demo", pricing: "Pricing", roadmap: "Roadmap", shop: "Shop", signIn: "Sign in", start: "Start free", dashboard: "Dashboard" },
   heroTitle: "One tap. They have your number. You have theirs.",
   heroSub: "An NFC card that opens your profile on any phone, with no app to install, and sends every enquiry straight back to you. Built for Naga first.",
   ctaFree: "Create your free profile",
@@ -48,6 +48,34 @@ export const LANDING_COPY = {
     card: { name: "NFC card", tagline: "Your card and profile", items: ["Free profile, forever", "NFC tap and QR on every card", "Save contact in one tap", "Leads from your profile"] },
     lead: { name: "Lead tools", tagline: "For one person", items: ["Unlimited leads", "Follow-up reminders", "Export your leads", "Profile analytics"] },
     team: { name: "Teams", tagline: "Up to 5 people", items: ["Everything in Lead tools", "Shared team branding", "One team lead pool", "Up to 5 seats"] },
+  },
+  roadmap: {
+    title: "What's coming",
+    sub: "Planned, not available yet. We'll announce each one when it ships.",
+    planned: "Planned",
+    groups: [
+      {
+        name: "Design & Customization",
+        items: [
+          { name: "Digital profile & card templates", body: "A larger library of ready-made themes and layouts for your profile and card." },
+        ],
+      },
+      {
+        name: "Platform & Automations",
+        items: [
+          { name: "Marketing & CRM integrations", body: "Send your leads straight into your CRM, email and SMS workflows." },
+          { name: "Event management suite", body: "An event dashboard with attendee check-in and guest tracking." },
+        ],
+      },
+      {
+        name: "NFC Hardware Expansion",
+        items: [
+          { name: "Review tap standees", body: "A counter standee that asks customers for a Google review with one tap." },
+          { name: "Traffic & storefront standees", body: "One tap opens your website, menu or shop page." },
+          { name: "Event access standees", body: "NFC checkpoints for attendee check-in and ticketing." },
+        ],
+      },
+    ],
   },
   orderCard: "Order a card",
   finalTitle: "Your next client is one tap away.",

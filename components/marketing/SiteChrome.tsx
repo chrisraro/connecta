@@ -11,7 +11,7 @@ import { SHEETS } from "@/components/survey/sheet";
 import { sheetVars } from "@/components/survey/SurveyProfile";
 import survey from "@/components/survey/survey.module.css";
 import { LANDING_COPY as t } from "@/components/landing/copy";
-import { SITE_CONTAINER } from "./siteLayout";
+import { NAV_LINKS, SITE_CONTAINER } from "./siteLayout";
 
 /**
  * The one header and footer of the public site: the homepage, the shop and
@@ -21,13 +21,6 @@ import { SITE_CONTAINER } from "./siteLayout";
  */
 
 const whiteprint = sheetVars(SHEETS.whiteprint);
-
-const NAV_LINKS = [
-  { href: "/#how", label: t.nav.how },
-  { href: "/#demo", label: t.nav.demo },
-  { href: "/#pricing", label: t.nav.pricing },
-  { href: "/shop", label: t.nav.shop },
-];
 
 export function SiteHeader({ actions }: { actions?: ReactNode }) {
   const pathname = usePathname() ?? "/";
