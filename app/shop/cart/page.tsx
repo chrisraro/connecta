@@ -1,5 +1,6 @@
 "use client";
 
+import { PAGE_TITLE } from "@/components/marketing/SiteChrome";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/contexts/CartContext";
@@ -112,7 +113,7 @@ export default function CartPage() {
     return (
       <div className="text-center py-16">
         <ShoppingCart className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Your List is Empty</h1>
+        <h1 className={`${PAGE_TITLE} mb-3`}>Your List is Empty</h1>
         <p className="text-muted-foreground mb-6">
           Add the cards you&apos;re interested in and we&apos;ll take it from there.
         </p>
@@ -130,7 +131,7 @@ export default function CartPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Your Selection</h1>
+          <h1 className={PAGE_TITLE}>Your Selection</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             {itemCount} item{itemCount !== 1 ? "s" : ""} ready to inquire about
           </p>

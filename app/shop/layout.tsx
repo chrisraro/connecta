@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ConnectaMark } from "@/components/brand/ConnectaMark";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, ChevronRight, User } from "lucide-react";
+import { ShoppingCart, ChevronRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { CONNECTA } from "@/lib/brand";
+import { SITE_CONTAINER, SiteFooter, SiteHeader } from "@/components/marketing/SiteChrome";
+import survey from "@/components/survey/survey.module.css";
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -38,159 +35,55 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Shop Header */}
-      <header className="sticky top-0 z-50 bg-background border-b-[1.5px] border-input">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo & Navigation */}
-            <div className="flex items-center gap-6">
-              <Link
-                href="/"
-                className="flex min-h-11 items-center gap-2.5"
-                aria-label={`${CONNECTA.name} home`}
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader
+        actions={
+          <Link
+            href="/shop/cart"
+            className={`${survey.cell} relative flex size-11 items-center justify-center`}
+            aria-label={`Your selection, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+          >
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+            {itemCount > 0 && (
+              <span
+                className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center px-1 text-xs font-bold"
+                style={{ backgroundColor: "var(--sv-action-bg)", color: "var(--sv-action-ink)" }}
               >
-                <ConnectaMark className="h-7 w-7 text-primary" />
-                {/* The mark, the wordmark and three 44px actions don't fit a
-                    320px header: the wordmark steps down, then hides (the link
-                    keeps its aria-label). */}
-                <span className="hidden text-[13px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%] min-[360px]:inline min-[400px]:text-[15px]">
-                  {CONNECTA.name.toUpperCase()}
-                </span>
-              </Link>
-
-              <nav className="hidden md:flex items-center gap-1" aria-label="Shop">
-                <Link
-                  href="/shop"
-                  className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Shop
-                </Link>
-              </nav>
-            </div>
-
-            {/* Account + Cart */}
-            <div className="flex items-center gap-1">
-              <ThemeToggle />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-11"
-                aria-label="Your account"
-                asChild
-              >
-                <Link href="/dashboard">
-                  <User className="w-5 h-5" aria-hidden="true" />
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative size-11"
-                aria-label={`Your selection, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
-                asChild
-              >
-                <Link href="/shop/cart">
-                  <ShoppingCart className="w-5 h-5" aria-hidden="true" />
-                  {itemCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-primary text-primary-foreground">
-                      {itemCount}
-                    </Badge>
-                  )}
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+                {itemCount}
+              </span>
+            )}
+          </Link>
+        }
+      />
 
       {/* Breadcrumbs */}
       {breadcrumbs.length > 1 && (
         <div className="border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
-              {breadcrumbs.map((crumb, index) => (
-                <div key={crumb.href} className="flex items-center gap-2">
-                  {index > 0 && (
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                  )}
-                  {index === breadcrumbs.length - 1 ? (
-                    <span className="text-foreground font-medium" aria-current="page">
-                      {crumb.label}
-                    </span>
-                  ) : (
-                    <Link
-                      href={crumb.href}
-                      className="inline-flex min-h-11 min-w-11 items-center text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {crumb.label}
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </nav>
-          </div>
+          <nav className={`${SITE_CONTAINER} flex items-center gap-2 text-sm`} aria-label="Breadcrumb">
+            {breadcrumbs.map((crumb, index) => (
+              <div key={crumb.href} className="flex items-center gap-2">
+                {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+                {index === breadcrumbs.length - 1 ? (
+                  <span className="font-medium text-foreground" aria-current="page">
+                    {crumb.label}
+                  </span>
+                ) : (
+                  <Link
+                    href={crumb.href}
+                    className="inline-flex min-h-11 min-w-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {crumb.label}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </nav>
         </div>
       )}
 
-      {/* Trust strip */}
-      <div className="border-b border-border">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground sm:px-6 lg:px-8">
-          <span>Ships nationwide PH</span>
-          <span aria-hidden="true" className="hidden sm:inline">
-            &bull;
-          </span>
-          <span>Every order arranged personally</span>
-        </div>
-      </div>
+      <main className={`${SITE_CONTAINER} py-10`}>{children}</main>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</main>
-
-      {/* Footer */}
-      <footer className="border-t border-border mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="font-bold mb-2">About {CONNECTA.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                NFC business cards, shipped in the Philippines.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-bold mb-2">Shop</h3>
-              <div className="-my-1">
-                <Link
-                  href="/shop"
-                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  All products
-                </Link>
-                <Link
-                  href="/shop/cart"
-                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Your selection
-                </Link>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-bold mb-2">Support</h3>
-              <div className="-my-1">
-                <a
-                  href={`mailto:${CONNECTA.supportEmail}`}
-                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Contact us
-                </a>
-              </div>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} {CONNECTA.name}. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

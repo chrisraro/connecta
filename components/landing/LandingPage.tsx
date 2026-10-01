@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { SignedIn, SignedOut } from "@/components/auth/AuthGate";
-import { ConnectaMark } from "@/components/brand/ConnectaMark";
-import { CONNECTA, publicHost } from "@/lib/brand";
+import { SignedOut } from "@/components/auth/AuthGate";
+import { CONNECTA } from "@/lib/brand";
 import { SHEETS } from "@/components/survey/sheet";
+import { SiteFooter, SiteHeader } from "@/components/marketing/SiteChrome";
 import { sheetVars } from "@/components/survey/SurveyProfile";
 import survey from "@/components/survey/survey.module.css";
 import { CARD_SKINS } from "@/lib/cardSkins";
@@ -20,35 +20,7 @@ export function LandingPage() {
 
   return (
     <div className={survey.sheet} style={sheetVars(sheet)}>
-      <header className="sticky top-0 z-30 border-b-[1.5px]" style={{ backgroundColor: "var(--sv-ground)", borderColor: "var(--sv-line)" }}>
-        <nav aria-label="Main" className="mx-auto flex h-16 max-w-[1180px] items-center justify-between gap-3 px-4 lg:px-14">
-          <Link href="/" className="flex items-center gap-2">
-            <ConnectaMark className="h-7 w-7" style={{ color: "var(--sv-line)" }} />
-            <span className={`${survey.expanded} hidden whitespace-nowrap text-[15px] font-bold tracking-[0.1em] min-[480px]:inline`}>{CONNECTA.name.toUpperCase()}</span>
-          </Link>
-          <div className="hidden items-center gap-6 text-[15px] font-medium md:flex">
-            <a href="#how" className={survey.link}>{t.nav.how}</a>
-            <a href="#demo" className={survey.link}>{t.nav.demo}</a>
-            <a href="#pricing" className={survey.link}>{t.nav.pricing}</a>
-            <Link href="/shop" className={survey.link}>{t.nav.shop}</Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <SignedOut>
-              <Link href="/auth" className={`${survey.link} hidden px-2 text-[14px] font-medium md:inline`}>
-                {t.nav.signIn}
-              </Link>
-              <Link href="/auth?mode=signup" className={`${survey.primary} flex h-11 items-center px-4 text-[14px] font-bold`}>
-                {t.nav.start}
-              </Link>
-            </SignedOut>
-            <SignedIn>
-              <Link href="/dashboard" className={`${survey.primary} flex h-11 items-center px-4 text-[14px] font-bold`}>
-                {t.nav.dashboard}
-              </Link>
-            </SignedIn>
-          </div>
-        </nav>
-      </header>
+      <SiteHeader />
 
       <main>
         <TapStory
@@ -139,22 +111,7 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t-[1.5px]" style={{ borderColor: "var(--sv-line)" }}>
-        <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-4 px-4 py-8 text-[14px] lg:px-14">
-          <p className="flex items-center gap-2">
-            <ConnectaMark className="h-5 w-5" style={{ color: "var(--sv-line)" }} />
-            <span style={{ color: "var(--sv-soft)" }}>{t.footerLine}</span>
-          </p>
-          <div className="flex gap-5" style={{ color: "var(--sv-soft)" }}>
-            <Link href="/privacy" className={survey.link}>{t.privacy}</Link>
-            <Link href="/terms" className={survey.link}>{t.terms}</Link>
-            {/* Shown only once a real public domain is configured (not localhost or the placeholder). */}
-            {publicHost(CONNECTA) === CONNECTA.domain && (
-              <a href={`mailto:${CONNECTA.supportEmail}`} className={survey.link}>{CONNECTA.supportEmail}</a>
-            )}
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

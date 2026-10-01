@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { isLightOnlyRoute } from "@/lib/lightOnlyRoutes";
 
 export function ThemeProvider({
   children,
@@ -15,8 +17,10 @@ export function ThemeProvider({
   // between server and client, which next-themes already marks with
   // suppressHydrationWarning.
   const scriptProps = typeof window === "undefined" ? undefined : { type: "application/json" };
+  // The public site is light-only; elsewhere the user's choice stands.
+  const forcedTheme = isLightOnlyRoute(usePathname()) ? "light" : undefined;
   return (
-    <NextThemesProvider scriptProps={scriptProps} {...props}>
+    <NextThemesProvider scriptProps={scriptProps} forcedTheme={forcedTheme} {...props}>
       {children}
     </NextThemesProvider>
   );

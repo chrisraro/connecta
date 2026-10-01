@@ -1,7 +1,4 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { ConnectaMark } from "@/components/brand/ConnectaMark";
-import { CONNECTA } from "@/lib/brand";
+import { PAGE_TITLE, SITE_CONTAINER, SiteFooter, SiteHeader } from "@/components/marketing/SiteChrome";
 
 /**
  * Shared shell for /privacy and /terms.
@@ -24,35 +21,13 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b-[1.5px] border-input bg-background">
-        <nav
-          aria-label="Primary"
-          className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6"
-        >
-          <Link
-            href="/"
-            className="flex shrink-0 items-center gap-2.5"
-          >
-            <ConnectaMark className="h-7 w-7 text-primary" />
-            <span className="text-[15px] font-bold whitespace-nowrap tracking-[0.1em] [font-stretch:125%]">
-              {CONNECTA.name.toUpperCase()}
-            </span>
-          </Link>
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            Back home
-          </Link>
-        </nav>
-      </header>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <SiteHeader />
 
-      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+      <main className={`${SITE_CONTAINER} py-12 sm:py-16`}>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,68ch)_16rem] lg:gap-16">
           <div>
-            <h1 className="text-3xl font-bold [font-stretch:112%] sm:text-4xl">
+            <h1 className={PAGE_TITLE}>
               {title}
             </h1>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -88,11 +63,7 @@ export function LegalPage({
         </div>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-muted-foreground sm:px-6">
-          &copy; {new Date().getFullYear()} {CONNECTA.name}. All rights reserved.
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

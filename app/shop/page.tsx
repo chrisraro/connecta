@@ -1,5 +1,6 @@
 "use client";
 
+import { PAGE_TITLE } from "@/components/marketing/SiteChrome";
 import { useState } from "react";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
@@ -207,8 +208,10 @@ export default function ShopPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Shop</h1>
-        <p className="text-muted-foreground mt-1">NFC business cards, shipped in the Philippines.</p>
+        <h1 className={PAGE_TITLE}>Shop</h1>
+        <p className="mt-3 max-w-[56ch] text-[17px] text-muted-foreground">
+          NFC business cards, shipped nationwide in the Philippines. Every order is arranged personally.
+        </p>
       </div>
 
       {/* Search & Filters Bar */}

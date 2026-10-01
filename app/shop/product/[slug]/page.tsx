@@ -1,5 +1,6 @@
 "use client";
 
+import { PAGE_TITLE } from "@/components/marketing/SiteChrome";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -80,7 +81,7 @@ export default function ProductPage() {
   if (!product) {
     return (
       <div className="text-center py-16">
-        <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
+        <h1 className={`${PAGE_TITLE} mb-4`}>Product Not Found</h1>
         <p className="text-muted-foreground mb-6">
           The product you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
@@ -200,7 +201,7 @@ export default function ProductPage() {
         <div className="space-y-6">
           {/* Title & Price */}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">{product.name}</h1>
+            <h1 className={`${PAGE_TITLE} mb-3`} style={{ textWrap: "balance" }}>{product.name}</h1>
 
             <div className="flex items-center gap-3">
               <span className="text-2xl sm:text-3xl font-bold text-primary">
