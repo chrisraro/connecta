@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut } from "@/components/auth/AuthGate";
@@ -26,9 +27,32 @@ export const PAGE_TITLE = `${survey.expanded} text-[clamp(28px,4.4vw,48px)] font
 
 const whiteprint = sheetVars(SHEETS.whiteprint);
 
+const NAV_LINKS = [
+  { href: "/#how", label: t.nav.how },
+  { href: "/#demo", label: t.nav.demo },
+  { href: "/#pricing", label: t.nav.pricing },
+  { href: "/shop", label: t.nav.shop },
+];
+
 export function SiteHeader({ actions }: { actions?: ReactNode }) {
   const pathname = usePathname() ?? "/";
   const inShop = pathname.startsWith("/shop");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  // Escape closes the phone menu and hands focus back to its button.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setMenuOpen(false);
+      menuButton.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
+  const current = (href: string) => (href === "/shop" && inShop ? "page" : undefined);
 
   return (
     <header
@@ -43,17 +67,17 @@ export function SiteHeader({ actions }: { actions?: ReactNode }) {
           </span>
         </Link>
         <div className="hidden items-center gap-6 text-[15px] font-medium md:flex">
-          <Link href="/#how" className={survey.link}>{t.nav.how}</Link>
-          <Link href="/#demo" className={survey.link}>{t.nav.demo}</Link>
-          <Link href="/#pricing" className={survey.link}>{t.nav.pricing}</Link>
-          <Link
-            href="/shop"
-            className={survey.link}
-            aria-current={inShop ? "page" : undefined}
-            style={inShop ? { textDecorationThickness: "2px" } : undefined}
-          >
-            {t.nav.shop}
-          </Link>
+          {NAV_LINKS.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={survey.link}
+              aria-current={current(l.href)}
+              style={current(l.href) ? { textDecorationThickness: "2px" } : undefined}
+            >
+              {l.label}
+            </Link>
+          ))}
         </div>
         <div className="flex items-center gap-2">
           {actions}
@@ -70,8 +94,57 @@ export function SiteHeader({ actions }: { actions?: ReactNode }) {
               {t.nav.dashboard}
             </Link>
           </SignedIn>
+          <button
+            ref={menuButton}
+            type="button"
+            className={`${survey.cell} flex size-11 items-center justify-center border-[1.5px] md:hidden`}
+            style={{ borderColor: "var(--sv-line)" }}
+            aria-expanded={menuOpen}
+            aria-controls="site-menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            {menuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+          </button>
         </div>
       </nav>
+
+      {/* Phone menu: the same links as the desktop nav, one 48px row each. */}
+      {menuOpen && (
+        <div
+          id="site-menu"
+          className="absolute inset-x-0 top-full border-b-[1.5px] md:hidden"
+          style={{ backgroundColor: "var(--sv-ground)", borderColor: "var(--sv-line)" }}
+        >
+          <ul className={`${SITE_CONTAINER} py-2`}>
+            {NAV_LINKS.map((l) => (
+              <li key={l.href} className={`border-b last:border-b-0 ${survey.rule}`}>
+                <Link
+                  href={l.href}
+                  onClick={() => setMenuOpen(false)}
+                  aria-current={current(l.href)}
+                  className={`${survey.cell} flex min-h-12 items-center text-[17px] font-semibold`}
+                  style={current(l.href) ? { color: "var(--sv-line)" } : undefined}
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+            <SignedOut>
+              <li>
+                <Link
+                  href="/auth"
+                  onClick={() => setMenuOpen(false)}
+                  className={`${survey.cell} flex min-h-12 items-center text-[17px] font-semibold`}
+                  style={{ color: "var(--sv-soft)" }}
+                >
+                  {t.nav.signIn}
+                </Link>
+              </li>
+            </SignedOut>
+          </ul>
+        </div>
+      )}
     </header>
   );
 }
