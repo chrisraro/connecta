@@ -1,5 +1,6 @@
 "use client";
 
+import { CardSkinPicker, SheetPicker } from "@/components/profile-builder/StylePickers";
 import { useState, useEffect, useRef, useCallback, useId, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -11,8 +12,7 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import { agentInfoOf, layoutConfigOf, jsonArrayOf, onboardingDataOf } from "@/lib/db/profile";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
-import { isCardSkinLocked, isPlanLimitError, isTemplateLocked } from "@/lib/plans";
-import { UpgradeGate } from "@/components/billing/UpgradeGate";
+import { isPlanLimitError } from "@/lib/plans";
 import {
   DndContext,
   closestCenter,
@@ -71,7 +71,7 @@ import {
 
 // Templates
 import { SurveyProfile, sheetVars, surveyStyles } from "@/components/survey/SurveyProfile";
-import { sheetFor } from "@/components/survey/sheet";
+import { SHEETS, sheetFor } from "@/components/survey/sheet";
 import { PROFILE_COPY } from "@/components/survey/copy";
 import { TEMPLATES, getTemplateMeta } from "@/components/templates/registry";
 import {
@@ -95,7 +95,6 @@ import { deriveBuilderProfileFields, getBlocksForProfileType } from "@/lib/profi
 import { hasUnsavedChanges } from "@/lib/hasUnsavedChanges";
 import { resolveBuilderEntryRedirect, shouldPrefillCreateForm } from "@/lib/builderEntry";
 import { DEFAULT_DIGITAL_CARD } from "@/lib/digitalCard";
-import { CARD_SKINS } from "@/lib/cardSkins";
 
 // --- Types & Defaults ---
 
@@ -121,19 +120,19 @@ type Block = {
 };
 
 const INITIAL_BLOCKS: Block[] = [
-  { id: "Hero", label: "Hero Section", icon: User, isEnabled: true },
+  { id: "Hero", label: "Hero section", icon: User, isEnabled: true },
   { id: "About", label: "About", icon: User, isEnabled: true },
   { id: "Certification", label: "Certification", icon: Briefcase, isEnabled: false },
   { id: "Education", label: "Education", icon: GraduationCap, isEnabled: false },
-  { id: "TechStack", label: "Tech Stack", icon: Code, isEnabled: false },
+  { id: "TechStack", label: "Tech stack", icon: Code, isEnabled: false },
   { id: "Services", label: "Services", icon: Briefcase, isEnabled: false },
   { id: "Experience", label: "Experience", icon: Briefcase, isEnabled: false },
   { id: "Projects", label: "Projects", icon: FolderOpen, isEnabled: true },
-  { id: "Products", label: "Store / Business Listing", icon: ShoppingBag, isEnabled: false },
-  { id: "Properties", label: "Property Listing", icon: Building2, isEnabled: false },
+  { id: "Products", label: "Store / business listing", icon: ShoppingBag, isEnabled: false },
+  { id: "Properties", label: "Property listing", icon: Building2, isEnabled: false },
   { id: "Testimonials", label: "Recommendations", icon: Quote, isEnabled: false },
   { id: "Gallery", label: "Gallery", icon: ImageIcon, isEnabled: false },
-  { id: "Contact", label: "Contact Form", icon: User, isEnabled: true },
+  { id: "Contact", label: "Contact form", icon: User, isEnabled: true },
 ];
 
 // --- Gallery Uploader Component ---
@@ -228,7 +227,7 @@ function GalleryUploader({
             />
             <button
               aria-label={`Remove gallery image ${i + 1}`}
-              className="absolute -top-1 -right-1 flex size-11 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
+              className="absolute -top-1 -right-1 flex size-11 items-center justify-center bg-destructive text-destructive-foreground"
               onClick={() => onRemove(i)}
             >
               <X className="w-3.5 h-3.5" />
@@ -269,7 +268,7 @@ function GalleryUploader({
             ) : (
               <>
                 <Plus className="w-5 h-5 text-muted-foreground" />
-                <span className="text-[12px] text-muted-foreground">Add Photo</span>
+                <span className="text-[13px] text-muted-foreground">Add photo</span>
               </>
             )}
           </button>
@@ -336,71 +335,13 @@ function TemplateSelector({
 }) {
   return (
     <div className="space-y-3">
-      <Label className="text-sm font-semibold text-foreground">Sheet</Label>
-      {/* Two columns until `sm:`. Three columns put each card at 72px
-                at 320px (95px at 390px); minus the label's own `p-3` that
-                leaves 48-71px for the name, and "Architectural" needs 76px.
-                The name has no truncation, so it overflowed and the card's
-                `overflow-hidden` cut it to "Architec" at all three phone
-                widths (measured: button scrollWidth 100 vs clientWidth 72).
-                Two columns give 114px at 320px, which fits the longest
-                name; `truncate` keeps a future longer one from clipping. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {TEMPLATES.map((template) => {
-          // The stored template id selects a sheet colourway of the one
-          // Survey Plan profile (components/survey/sheet.ts).
-          const sheet = sheetFor(template.id);
-          const locked = isTemplateLocked(template.id, allowedTemplateIds);
-          const tile = (
-            <button
-              type="button"
-              onClick={() => !locked && onSelect(template.id)}
-              disabled={locked}
-              aria-disabled={locked}
-              aria-pressed={selectedTemplate === template.id}
-              className={`relative flex w-full flex-col overflow-hidden border-[1.5px] text-left transition-colors ${
-                selectedTemplate === template.id
-                  ? "border-input outline-2 outline-offset-2 outline-ring"
-                  : locked
-                    ? "border-border cursor-default"
-                    : "border-border hover:border-input"
-              }`}
-            >
-              {/* The sheet itself: its ground, drafting grid, a lot in its
-                  line colour and the red point of beginning. */}
-              <span
-                aria-hidden="true"
-                className="relative block aspect-[4/3]"
-                style={{ backgroundColor: sheet.ground }}
-              >
-                <svg viewBox="0 0 60 45" className="absolute inset-0 h-full w-full">
-                  <path d="M14 10 H40 L48 18 V35 H14 Z" fill="none" stroke={sheet.line} strokeWidth="1.5" />
-                  <circle cx="44" cy="31" r="2" fill={sheet.mark} />
-                </svg>
-              </span>
-              <span className="block border-t-[1.5px] border-inherit bg-background px-2.5 py-2">
-                <span className="block truncate text-sm font-bold capitalize">{sheet.id}</span>
-              </span>
-            </button>
-          );
-          // Every free user still SEES every template (nothing
-          // vanishes) — Lead tools/Teams-only ones render dimmed under a
-          // lock badge + "Get Lead tools" CTA via the one shared gating
-          // component, instead of clicking through to a raw
-          // "Upgrade to Lead tools" error at save time.
-          return (
-            <UpgradeGate
-              key={template.id}
-              locked={locked}
-              reason="This sheet is available on Lead tools & Teams."
-              variant="overlay"
-              className=""
-            >
-              {tile}
-            </UpgradeGate>
-          );
-        })}
-      </div>
+      <Label className="text-sm font-semibold text-foreground">Profile style</Label>
+      <SheetPicker
+        selected={selectedTemplate}
+        allowedTemplateIds={allowedTemplateIds}
+        onSelect={onSelect}
+        upgradeCta
+      />
     </div>
   );
 }
@@ -434,21 +375,21 @@ const TECH_STACK_FIELDS: FieldDef<TechStackDisplayItem>[] = [
 
 type ExperienceItem = NonNullable<ProfileInfo["experience"]>[number];
 const EXPERIENCE_FIELDS: FieldDef<ExperienceItem>[] = [
-  { key: "title", label: "Job Title", placeholder: "Job Title", required: true },
+  { key: "title", label: "Job title", placeholder: "Job title", required: true },
   { key: "company", label: "Company", placeholder: "Company", required: true },
   { key: "period", label: "Period", placeholder: "e.g., 2020 - Present" },
   { key: "description", label: "Description", placeholder: "Description", type: "textarea" },
 ];
 
 const INLINE_PROJECT_FIELDS: FieldDef<InlineProject>[] = [
-  { key: "title", label: "Project Title", placeholder: "Project Title", required: true },
+  { key: "title", label: "Project title", placeholder: "Project title", required: true },
   { key: "description", label: "Description", placeholder: "Short description", type: "textarea" },
   { key: "category", label: "Category", placeholder: "e.g., web-design" },
   { key: "link", label: "External URL", placeholder: "External URL (optional)", type: "url" },
 ];
 
 const PRODUCT_FIELDS: FieldDef<ProductItem>[] = [
-  { key: "title", label: "Product Title", placeholder: "Product Title", required: true },
+  { key: "title", label: "Product title", placeholder: "Product title", required: true },
   {
     key: "description",
     label: "Description",
@@ -461,7 +402,7 @@ const PRODUCT_FIELDS: FieldDef<ProductItem>[] = [
 ];
 
 const PROPERTY_LISTING_FIELDS: FieldDef<PropertyListingItem>[] = [
-  { key: "title", label: "Property Title", placeholder: "Property Title", required: true },
+  { key: "title", label: "Property title", placeholder: "Property title", required: true },
   {
     key: "description",
     label: "Description",
@@ -477,7 +418,7 @@ const PROPERTY_LISTING_FIELDS: FieldDef<PropertyListingItem>[] = [
 type TestimonialItem = NonNullable<ProfileInfo["testimonials"]>[number];
 const TESTIMONIAL_FIELDS: FieldDef<TestimonialItem>[] = [
   { key: "quote", label: "Quote", placeholder: "Quote", type: "textarea", required: true },
-  { key: "author", label: "Author Name", placeholder: "Author Name", required: true },
+  { key: "author", label: "Author name", placeholder: "Author name", required: true },
   { key: "role", label: "Role/Title", placeholder: "Role/Title" },
 ];
 
@@ -1299,7 +1240,7 @@ function BuilderContent() {
               router.back();
             }}
             aria-label="Back"
-            className="flex size-11 -ml-2 items-center justify-center hover:bg-muted rounded-full text-foreground"
+            className="flex size-11 -ml-2 items-center justify-center hover:bg-muted text-foreground"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -1314,7 +1255,7 @@ function BuilderContent() {
                         to h2 (see headingLevel prop below), keeps this page
                         correct — exactly one h1 — independent of the shell. */}
           <h1 className="font-semibold text-foreground">
-            {editingId ? "Edit Profile" : "Create Profile"}
+            {editingId ? "Edit profile" : "Create profile"}
           </h1>
           <Button
             size="sm"
@@ -1416,8 +1357,9 @@ function BuilderContent() {
           {/* Phone Preview */}
           <div className="p-4 xl:px-0">
             <div
-              className="bg-gray-900 p-3"
-              style={{ boxShadow: "var(--e-overlay)" }}
+              // The phone bezel, in the plan's drafting ink in both themes.
+              className="p-3"
+              style={{ backgroundColor: SHEETS.graphite.ground }}
             >
               <div className="overflow-hidden bg-white max-h-[70dvh] overflow-y-auto xl:max-h-[calc(100dvh-13rem)]">
                 {previewMode === "card" ? (
@@ -1655,7 +1597,7 @@ function BuilderContent() {
               <InspectorPanel
                 isOpen={activeModal === "Hero"}
                 onClose={() => setActiveModal(null)}
-                title="Hero Section"
+                title="Hero section"
               >
                 <div className="space-y-4">
                   <div>
@@ -1688,16 +1630,16 @@ function BuilderContent() {
                       id={`${uid}-company`}
                       value={agentInfo.company}
                       onChange={(e) => setAgentInfo({ ...agentInfo, company: e.target.value })}
-                      placeholder="Company Name"
+                      placeholder="Company name"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm">Profile Picture</Label>
+                    <Label className="text-sm">Profile picture</Label>
                     <ImageUploader
                       value={agentInfo.avatarUrl || ""}
                       onChange={(val) => setAgentInfo({ ...agentInfo, avatarUrl: val })}
                       onRemove={() => setAgentInfo({ ...agentInfo, avatarUrl: "" })}
-                      placeholder="Upload Photo"
+                      placeholder="Upload photo"
                     />
                   </div>
                   <div>
@@ -1804,7 +1746,7 @@ function BuilderContent() {
                     />
                   </div>
                   <div>
-                    <Label className="text-sm">Social Links</Label>
+                    <Label className="text-sm">Social links</Label>
                     <div className="space-y-2 mt-2">
                       {agentInfo.socialLinks?.map((link, idx) => (
                         <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
@@ -1885,7 +1827,7 @@ function BuilderContent() {
               <InspectorPanel
                 isOpen={activeModal === "About"}
                 onClose={() => setActiveModal(null)}
-                title="About Section"
+                title="About section"
               >
                 <div className="space-y-4">
                   <div>
@@ -2017,7 +1959,7 @@ function BuilderContent() {
                   onChange={setEducation}
                   itemLabel="education entry"
                   onAdd={addEducation}
-                  addLabel="Add Education"
+                  addLabel="Add education"
                   emptyHint="No education entries yet."
                 >
                   <Input
@@ -2044,7 +1986,7 @@ function BuilderContent() {
               <InspectorPanel
                 isOpen={activeModal === "TechStack"}
                 onClose={() => setActiveModal(null)}
-                title="Tech Stack"
+                title="Tech stack"
               >
                 <EditableList<TechStackDisplayItem>
                   items={techStack.map((stack) => ({
@@ -2065,7 +2007,7 @@ function BuilderContent() {
                   }
                   itemLabel="tech stack category"
                   onAdd={addTechStack}
-                  addLabel="Add Category"
+                  addLabel="Add category"
                   emptyHint="No tech stack categories yet."
                 >
                   <Input
@@ -2094,12 +2036,12 @@ function BuilderContent() {
                   onChange={setExperience}
                   itemLabel="experience entry"
                   onAdd={addExperience}
-                  addLabel="Add Experience"
+                  addLabel="Add experience"
                   emptyHint="No experience entries yet."
                 >
                   <Input
-                    aria-label="Job Title"
-                    placeholder="Job Title"
+                    aria-label="Job title"
+                    placeholder="Job title"
                     value={newExperience.title}
                     onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })}
                   />
@@ -2141,13 +2083,13 @@ function BuilderContent() {
                   onChange={setInlineProjects}
                   itemLabel="project"
                   onAdd={addInlineProject}
-                  addLabel="Add Project"
+                  addLabel="Add project"
                   emptyHint="No projects yet."
                 >
-                  <Label className="text-xs text-muted-foreground">Add New Project</Label>
+                  <Label className="text-xs text-muted-foreground">Add new project</Label>
                   <Input
-                    aria-label="Project Title"
-                    placeholder="Project Title"
+                    aria-label="Project title"
+                    placeholder="Project title"
                     value={newInlineProject.title}
                     onChange={(e) =>
                       setNewInlineProject({ ...newInlineProject, title: e.target.value })
@@ -2170,7 +2112,7 @@ function BuilderContent() {
                     }
                     className="min-h-11 lg:min-h-0 w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
                   >
-                    <option value="">Select Category</option>
+                    <option value="">Select category</option>
                     {Object.entries(PROJECT_CATEGORY_LABELS).map(([key, label]) => (
                       <option key={key} value={key}>
                         {label}
@@ -2192,7 +2134,7 @@ function BuilderContent() {
               <InspectorPanel
                 isOpen={activeModal === "Products"}
                 onClose={() => setActiveModal(null)}
-                title="Store / Business Listing"
+                title="Store / business listing"
               >
                 <EditableList<ProductItem>
                   items={products}
@@ -2200,13 +2142,13 @@ function BuilderContent() {
                   onChange={setProducts}
                   itemLabel="product"
                   onAdd={addProduct}
-                  addLabel="Add Product"
+                  addLabel="Add product"
                   emptyHint="No products yet."
                 >
-                  <Label className="text-xs text-muted-foreground">Add New Product / Listing</Label>
+                  <Label className="text-xs text-muted-foreground">Add new product / listing</Label>
                   <Input
-                    aria-label="Product Title"
-                    placeholder="Product Title"
+                    aria-label="Product title"
+                    placeholder="Product title"
                     value={newProduct.title}
                     onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
                   />
@@ -2237,7 +2179,7 @@ function BuilderContent() {
               <InspectorPanel
                 isOpen={activeModal === "Properties"}
                 onClose={() => setActiveModal(null)}
-                title="Property Listing"
+                title="Property listing"
               >
                 <EditableList<PropertyListingItem>
                   items={propertyListings}
@@ -2245,13 +2187,13 @@ function BuilderContent() {
                   onChange={setPropertyListings}
                   itemLabel="property"
                   onAdd={addPropertyListing}
-                  addLabel="Add Property"
+                  addLabel="Add property"
                   emptyHint="No properties yet."
                 >
-                  <Label className="text-xs text-muted-foreground">Add New Property</Label>
+                  <Label className="text-xs text-muted-foreground">Add new property</Label>
                   <Input
-                    aria-label="Property Title"
-                    placeholder="Property Title"
+                    aria-label="Property title"
+                    placeholder="Property title"
                     value={newPropertyListing.title}
                     onChange={(e) =>
                       setNewPropertyListing({ ...newPropertyListing, title: e.target.value })
@@ -2290,8 +2232,8 @@ function BuilderContent() {
                     }
                     className="min-h-11 lg:min-h-0 w-full h-10 rounded-lg border border-border bg-background px-3 text-sm"
                   >
-                    <option value="for-sale">For Sale</option>
-                    <option value="for-rent">For Rent</option>
+                    <option value="for-sale">For sale</option>
+                    <option value="for-rent">For rent</option>
                     <option value="sold">Sold</option>
                   </select>
                   <Input
@@ -2316,7 +2258,7 @@ function BuilderContent() {
                   onChange={setTestimonials}
                   itemLabel="recommendation"
                   onAdd={addTestimonial}
-                  addLabel="Add Recommendation"
+                  addLabel="Add recommendation"
                   emptyHint="No recommendations yet."
                 >
                   <textarea
@@ -2329,8 +2271,8 @@ function BuilderContent() {
                     }
                   />
                   <Input
-                    aria-label="Author Name"
-                    placeholder="Author Name"
+                    aria-label="Author name"
+                    placeholder="Author name"
                     value={newTestimonial.author}
                     onChange={(e) =>
                       setNewTestimonial({ ...newTestimonial, author: e.target.value })
@@ -2514,86 +2456,28 @@ function BuilderContent() {
               actively worked against. */}
           {previewMode === "card" && (
             <div className="px-4 py-4 border-t border-border">
-              <Label className="text-sm font-semibold text-foreground mb-1 block">Card Skin</Label>
+              <Label className="text-sm font-semibold text-foreground mb-1 block">Card skin</Label>
               <p className="text-[13px] text-muted-foreground mb-3">
                 Pick the look for your digital card and printed front.
               </p>
-              <div className="grid grid-cols-2 gap-3">
-                {CARD_SKINS.map((skin) => {
-                  // Confirmed 2026-09-24: the default skin is free; the rest
-                  // are subscription-only, on the digital card too.
-                  const locked = isCardSkinLocked(
-                    skin.id,
-                    myPlan?.limits.allowedCardSkins ?? null,
-                  );
-                  const selected = digitalCard.skin === skin.id;
-                  const tile = (
-                    <button
-                      type="button"
-                      onClick={() => !locked && setDigitalCard({ ...digitalCard, skin: skin.id })}
-                      disabled={locked}
-                      aria-disabled={locked}
-                      aria-pressed={selected}
-                      className={`w-full border-[1.5px] p-2.5 text-left transition-colors ${
-                        selected
-                          ? "border-input outline-2 outline-offset-2 outline-ring"
-                          : locked
-                            ? "border-border cursor-default"
-                            : "border-border hover:border-input"
-                      }`}
-                    >
-                      {/* A miniature card front: the skin's ground, its
-                          drawn lot and the mark's point of beginning. */}
-                      <span
-                        aria-hidden="true"
-                        className="relative mb-2 block aspect-[85.6/54] overflow-hidden rounded-[6px]"
-                        style={{ background: skin.swatch }}
-                      >
-                        <svg viewBox="0 0 86 54" className="absolute inset-0 h-full w-full">
-                          <path
-                            d="M4 4 H78 L82 8 V50 H4 Z"
-                            fill="none"
-                            stroke={skin.lineColor}
-                            strokeOpacity="0.45"
-                            strokeWidth="0.8"
-                          />
-                          <path
-                            d="M17 12 L14.5 9.5 H11 L8.5 12 V15.5 L11 18 H14.5 L17 15.5"
-                            fill="none"
-                            stroke={skin.lineColor}
-                            strokeWidth="1.2"
-                          />
-                          <circle cx="18.4" cy="13.8" r="0.9" fill={skin.dotColor} />
-                        </svg>
-                      </span>
-                      <span className="block text-sm font-bold text-foreground">{skin.label}</span>
-                      <span className="block text-[12px] text-muted-foreground">{skin.intent}</span>
-                    </button>
-                  );
-                  return (
-                    <UpgradeGate
-                      key={skin.id}
-                      locked={locked}
-                      reason="This skin is available on Lead tools & Teams."
-                      variant="overlay"
-                    >
-                      {tile}
-                    </UpgradeGate>
-                  );
-                })}
-              </div>
+              <CardSkinPicker
+                selected={digitalCard.skin}
+                allowedSkins={myPlan?.limits.allowedCardSkins ?? null}
+                onSelect={(skin) => setDigitalCard({ ...digitalCard, skin })}
+                upgradeCta
+              />
             </div>
           )}
 
           {/* Business Storefront & Offered Services Settings */}
-          <div className="px-4 py-4 border-t border-border bg-card/40 rounded-2xl my-4 mx-4">
+          <div className="px-4 py-4 border-t border-border">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <Label className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Store className="w-4 h-4 text-[var(--connecta-mark-text)]" />
-                  Public Storefront &amp; Offered Services Page
+                  <Store className="w-4 h-4 text-primary" aria-hidden="true" />
+                  Public storefront &amp; services page
                 </Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[13px] text-muted-foreground mt-0.5">
                   Enable a dedicated business storefront view for visitors to browse products &amp;
                   services.
                 </p>
@@ -2601,7 +2485,7 @@ function BuilderContent() {
               <Switch
                 checked={showStorefront}
                 onCheckedChange={setShowStorefront}
-                aria-label="Enable Public Storefront"
+                aria-label="Enable public storefront"
               />
             </div>
           </div>
