@@ -8,6 +8,8 @@ import {
   toPlanId,
 } from "./plans";
 import { PRICING } from "./pricing";
+import { TEMPLATE_IDS } from "@/components/templates/theme";
+import { CARD_SKINS } from "./cardSkins";
 
 describe("isPlanLimitError", () => {
   /**
@@ -183,5 +185,26 @@ describe("toPlanId", () => {
 
   test("anything else is Free", () => {
     for (const v of [null, undefined, "", "enterprise", 3]) expect(toPlanId(v)).toBe("free");
+  });
+});
+
+describe("picker order", () => {
+  /**
+   * The builder lists sheets and card skins in their source order. Free ones
+   * come first so a free account sees what it can use before the locked,
+   * subscription-only ones (owner request 2026-10-01).
+   */
+  test("free sheets come before paid sheets", () => {
+    const free = PLAN_LIMITS.free.allowedTemplateIds;
+    const locked = TEMPLATE_IDS.map((id) => isTemplateLocked(id, free));
+    expect(locked).toEqual([...locked].sort((a, b) => Number(a) - Number(b)));
+    expect(locked[0]).toBe(false);
+  });
+
+  test("free card skins come before paid card skins", () => {
+    const free = PLAN_LIMITS.free.allowedCardSkins;
+    const locked = CARD_SKINS.map((s) => isCardSkinLocked(s.id, free));
+    expect(locked).toEqual([...locked].sort((a, b) => Number(a) - Number(b)));
+    expect(locked[0]).toBe(false);
   });
 });

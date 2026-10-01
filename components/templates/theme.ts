@@ -1,6 +1,7 @@
 import { meetsAA, relativeLuminance, mixHex } from "@/lib/brand";
 
-export const TEMPLATE_IDS = ["editorial", "kinetic", "architectural"] as const;
+// Picker order: free sheets first (lib/plans.ts FREE_TEMPLATE_IDS), then paid.
+export const TEMPLATE_IDS = ["editorial", "architectural", "kinetic"] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
 /** How a template composes space — this is what makes templates distinct.

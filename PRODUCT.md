@@ -56,7 +56,7 @@ All four edges are wanted, in this order (confirmed 2026-09-24):
   Which limits move from Free to paid is **(open)**.
 - **Payments:** no gateway is live. Plan changes are set by an admin. Adding online payments (GCash/Maya) is **(open)**.
 - **Stack:** Next.js 16 + Supabase (Auth, Postgres with RLS, Storage) + Resend, deployed on a `*.vercel.app` URL. A `.ph` domain is planned but not purchased.
-- **Language (confirmed 2026-09-24):** a **full bilingual toggle** on the marketing site. The current code is English only. Research found every competitor marketing in English only. The second language is **Filipino** (confirmed 2026-09-24). The toggle is **EN | FIL**. Bikol-Naga is not in scope. The **EN | FIL toggle lives on the marketing site** (confirmed 2026-09-24); public profiles carry no language toggle and show the owner's content as typed, with English interface copy. Filipino marketing copy will need review by a native speaker **(open)** before launch. Every layout must survive longer Filipino strings.
+- **Language (revised 2026-10-01):** English only. The EN | FIL marketing toggle and the Filipino copy were removed by the owner on 2026-10-01. Public profiles show the owner's content as typed, with English interface copy.
 - **Surface order (confirmed 2026-09-24):** the new identity is proven first on the **public profile** (the tap moment). Then comes the marketing site, which must include:
   - **(a)** a dedicated, pitch-perfect **product demo** section or page;
   - **(b)** an animated section, scroll-driven or autoplaying, that dramatises why an NFC tap beats the old way of connecting: cards tapping and revealing the profile or portfolio.

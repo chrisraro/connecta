@@ -36,6 +36,8 @@ export interface CardSkin {
  * (lib/plans.ts allowedCardSkins). Portrait versions and more skins and
  * colourways are planned; see PRODUCT.md. Every skin renders in both the
  * landscape and portrait orientation (components/ui/digital-business-card.tsx).
+ *
+ * Order is the picker order: free skins first, then paid (lib/plans.test.ts).
  */
 export const CARD_SKINS: CardSkin[] = [
   {

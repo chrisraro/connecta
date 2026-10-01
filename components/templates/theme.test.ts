@@ -3,7 +3,7 @@ import { TEMPLATE_THEMES, resolveTheme, TEMPLATE_IDS } from "./theme";
 import { meetsAA } from "@/lib/brand";
 
 test("exports exactly three templates", () => {
-  expect(TEMPLATE_IDS).toEqual(["editorial", "kinetic", "architectural"]);
+  expect(TEMPLATE_IDS).toEqual(["editorial", "architectural", "kinetic"]);
 });
 
 test("every template's default body text clears WCAG AA on its own background", () => {

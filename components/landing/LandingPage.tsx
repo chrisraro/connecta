@@ -7,41 +7,15 @@ import { CONNECTA, publicHost } from "@/lib/brand";
 import { SHEETS } from "@/components/survey/sheet";
 import { sheetVars } from "@/components/survey/SurveyProfile";
 import survey from "@/components/survey/survey.module.css";
-import { useLandingLang, type Lang } from "./copy";
+import { CARD_SKINS } from "@/lib/cardSkins";
+import { LANDING_COPY as t } from "./copy";
 import { TapStory } from "./TapStory";
 import { Pricing } from "./Pricing";
 import { CardFace } from "./Phone";
 import styles from "./landing.module.css";
 
-const SKINS = [
-  { id: "charcoal", label: "Charcoal" },
-  { id: "scarlet", label: "Scarlet" },
-  { id: "crimson", label: "Crimson" },
-  { id: "gradient", label: "Plan Blue" },
-] as const;
-
-function LangToggle({ lang, setLang, label }: { lang: Lang; setLang: (l: Lang) => void; label: string }) {
-  return (
-    <div role="group" aria-label={label} className="flex border-[1.5px]" style={{ borderColor: "var(--sv-line)" }}>
-      {(["en", "fil"] as const).map((l) => (
-        <button
-          key={l}
-          type="button"
-          aria-pressed={lang === l}
-          onClick={() => setLang(l)}
-          className={`${survey.cell} flex h-11 min-w-11 items-center justify-center px-3 text-[13px] font-bold tracking-[0.06em]`}
-          style={lang === l ? { backgroundColor: "var(--sv-line)", color: "var(--sv-ground)" } : undefined}
-        >
-          {l.toUpperCase()}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /** The marketing homepage in the Survey Plan world (whiteprint sheet). */
 export function LandingPage() {
-  const { lang, setLang, t } = useLandingLang();
   const sheet = SHEETS.whiteprint;
 
   return (
@@ -59,7 +33,6 @@ export function LandingPage() {
             <Link href="/shop" className={survey.link}>{t.nav.shop}</Link>
           </div>
           <div className="flex items-center gap-2">
-            <LangToggle lang={lang} setLang={setLang} label={t.language} />
             <SignedOut>
               <Link href="/auth" className={`${survey.link} hidden px-2 text-[14px] font-medium md:inline`}>
                 {t.nav.signIn}
@@ -137,7 +110,7 @@ export function LandingPage() {
             <span className={`${styles.price} line-through`}>₱888</span>.
           </p>
           <ul className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
-            {SKINS.map((s) => (
+            {CARD_SKINS.map((s) => (
               <li key={s.id}>
                 <CardFace skin={s.id} className="w-full" />
                 <p className="mt-3 text-[16px] font-bold">{s.label}</p>
