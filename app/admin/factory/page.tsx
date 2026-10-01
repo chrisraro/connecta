@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useAdminCards, useRegisterCard, useDeleteCards } from "@/hooks/useAdmin";
 import {
@@ -394,14 +395,12 @@ export default function AdminFactoryPage() {
 
   if (!isLoaded || cardsPending || !cardsList) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
-      </div>
+      <PageLoading />
     );
   }
 
   return (
-    <div className="pb-20">
+    <div className="pb-20 space-y-8">
       {/* Print specific CSS */}
       <style jsx global>{`
         @media print {
@@ -424,60 +423,56 @@ export default function AdminFactoryPage() {
         }
       `}</style>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 text-foreground">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <SmartphoneNfc className="text-primary w-8 h-8" />
-            NFC Factory
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Scan physical cards to register them and generate activation QR codes.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {selectedIds.size > 0 && (
-            <Button
-              variant="destructive"
-              onClick={handleDeleteSelected}
-              disabled={isDeleting}
-              className="min-h-12 px-6"
-            >
-              {isDeleting ? (
-                <Loader2 className="animate-spin w-4 h-4 mr-2" />
-              ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
+      <PageHeader
+        title="NFC factory"
+        description="Scan physical cards to register them and generate activation QR codes."
+        actions={
+          <>
+            <div className="flex flex-wrap items-center gap-3">
+              {selectedIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting}
+                  className="min-h-12 px-6"
+                >
+                  {isDeleting ? (
+                    <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                  ) : (
+                    <Trash2 className="w-4 h-4 mr-2" />
+                  )}
+                  Delete Selected ({selectedIds.size})
+                </Button>
               )}
-              Delete Selected ({selectedIds.size})
-            </Button>
-          )}
-          <Button
-            onClick={isScanning ? stopScanning : startScanning}
-            disabled={!isScanning && !nfcHost}
-            title={
-              !isScanning && !nfcHost ? "No NFC host configured — see the notice below." : undefined
-            }
-            aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
-            className={
-              isScanning
-                ? "border-[1.5px] border-input bg-transparent text-foreground hover:bg-accent min-h-12 px-6"
-                : "min-h-12 px-8"
-            }
-          >
-            {isScanning ? (
-              <>
-                <Loader2 className="animate-spin w-5 h-5 mr-2" />
-                Cancel Scanning...
-              </>
-            ) : (
-              <>
-                <Zap className="w-5 h-5 mr-2" />
-                Scan NFC Card
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+              <Button
+                onClick={isScanning ? stopScanning : startScanning}
+                disabled={!isScanning && !nfcHost}
+                title={
+                  !isScanning && !nfcHost ? "No NFC host configured — see the notice below." : undefined
+                }
+                aria-describedby={!nfcHost ? "nfc-host-warning" : undefined}
+                className={
+                  isScanning
+                    ? "border-[1.5px] border-input bg-transparent text-foreground hover:bg-accent min-h-12 px-6"
+                    : "min-h-12 px-8"
+                }
+              >
+                {isScanning ? (
+                  <>
+                    <Loader2 className="animate-spin w-5 h-5 mr-2" />
+                    Cancel Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5 mr-2" />
+                    Scan NFC Card
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
+        }
+      />
 
       {nfcHost && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
@@ -523,7 +518,7 @@ export default function AdminFactoryPage() {
             <div className="w-8 h-8 border-[1.5px] border-input flex items-center justify-center mb-3">
               <span className="text-primary font-bold font-mono">1</span>
             </div>
-            <h4 className="font-bold text-foreground text-sm mb-2">Register Card</h4>
+            <h4 className="font-bold text-foreground text-sm mb-2">Register card</h4>
             <p className="text-xs text-muted-foreground">
               Scan or manually register cards. They start as &quot;inventory&quot; status.
             </p>
@@ -780,7 +775,7 @@ export default function AdminFactoryPage() {
                               size="icon"
                               className="h-8 w-8 text-foreground hover:text-destructive hover:bg-destructive/10"
                               onClick={() => handleDeleteSingle(card.id)}
-                              title="Delete Card"
+                              title="Delete card"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

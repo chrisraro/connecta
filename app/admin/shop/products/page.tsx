@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Search, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Search } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -95,27 +96,27 @@ export default function AdminProductsPage() {
 
   if (!isLoaded || products === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <PageLoading />
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground mt-1">Manage your product catalog</p>
-        </div>
-        <Link href="/admin/shop/products/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Products"
+        description="Manage your product catalog"
+        actions={
+          <>
+            <Button asChild>
+              <Link href="/admin/shop/products/new">
+                <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+                Add product
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       {/* Filters: search full width on phones, the two selects share a row */}
       <div className="grid grid-cols-2 gap-3 md:flex md:gap-4">

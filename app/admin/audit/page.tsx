@@ -1,8 +1,9 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Shield, Download, Search } from "lucide-react";
+import { Shield, Download, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,9 +26,7 @@ export default function AdminAuditPage() {
 
   if (!isLoaded || auditLogs === undefined) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
-      </div>
+      <PageLoading />
     );
   }
 
@@ -88,18 +87,18 @@ export default function AdminAuditPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>
-          <p className="text-muted-foreground mt-1">
-            Security events and platform activity tracking
-          </p>
-        </div>
-        <Button variant="outline" onClick={exportLogs} disabled={!filtered.length}>
-          <Download className="w-4 h-4 mr-2" />
-          Export logs
-        </Button>
-      </div>
+      <PageHeader
+        title="Audit log"
+        description="Security events and platform activity tracking"
+        actions={
+          <>
+            <Button variant="outline" onClick={exportLogs} disabled={!filtered.length}>
+              <Download className="w-4 h-4 mr-2" />
+              Export logs
+            </Button>
+          </>
+        }
+      />
 
       {/* Search */}
       <div className="relative max-w-md">

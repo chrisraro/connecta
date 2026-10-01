@@ -95,8 +95,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems: NavItem[] = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/users", label: "User Management", icon: Users },
-    { href: "/admin/factory", label: "NFC Factory", icon: SmartphoneNfc },
+    { href: "/admin/users", label: "Users", icon: Users },
+    { href: "/admin/factory", label: "NFC factory", icon: SmartphoneNfc },
     {
       label: "Shop",
       icon: ShoppingCart,
@@ -106,7 +106,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { href: "/admin/shop/inventory", label: "Inventory", icon: TrendingUp },
       ],
     },
-    { href: "/admin/audit", label: "Audit Logs", icon: FileText },
+    { href: "/admin/audit", label: "Audit log", icon: FileText },
     { href: "/admin/settings", label: "Settings", icon: Settings },
   ];
 

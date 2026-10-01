@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { Loader2, ShieldCheck, User, MoreHorizontal } from "lucide-react";
 import {
   Table,
@@ -81,9 +82,7 @@ export default function AdminUsersPage() {
 
   if (!isLoaded || !usersList || !grants) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
-      </div>
+      <PageLoading />
     );
   }
 
@@ -133,23 +132,23 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">User Management</h1>
-          {/* api.admin.getAllUsers caps at ADMIN_USER_LIST_CAP (500, convex/admin.ts) */}
-          {usersList.length >= 500 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Showing first {usersList.length} users (list is capped)
-            </p>
-          )}
-        </div>
-        {isSuperadmin && (
-          <Badge variant="outline" className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1">
-            <ShieldCheck className="w-3 h-3" /> {adminRoleLabel("superadmin")}
-          </Badge>
-        )}
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Users"
+        // api.admin.getAllUsers caps at ADMIN_USER_LIST_CAP (500, convex/admin.ts)
+        description={
+          usersList.length >= 500 ? `Showing the first ${usersList.length} users (the list is capped)` : undefined
+        }
+        actions={
+          <>
+            {isSuperadmin && (
+              <Badge variant="outline" className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1">
+                <ShieldCheck className="w-3 h-3" /> {adminRoleLabel("superadmin")}
+              </Badge>
+            )}
+          </>
+        }
+      />
 
       <div className="border-[1.5px] border-input bg-card">
         <Table>
@@ -226,11 +225,11 @@ export default function AdminUsersPage() {
                             // Stored plan says paid, but it is served as Free.
                             // Saying "until <past date>" would contradict what
                             // the customer actually gets.
-                            <span className="mt-1 text-[10px] text-[var(--connecta-mark-text)]">
+                            <span className="mt-1 text-[13px] text-[var(--connecta-mark-text)]">
                               lapsed {new Date(u.plan_expires_at).toLocaleDateString()} · on Free
                             </span>
                           ) : (
-                            <span className="mt-1 text-[10px] text-muted-foreground">
+                            <span className="mt-1 text-[13px] text-muted-foreground">
                               until {new Date(u.plan_expires_at).toLocaleDateString()}
                             </span>
                           ))}

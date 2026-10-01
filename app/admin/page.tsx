@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useAdminStats, useAdminGrants } from "@/hooks/useAdmin";
@@ -7,7 +8,6 @@ import {
   Users,
   CreditCard,
   Activity,
-  Loader2,
   Warehouse,
   ChevronRight,
   Shield,
@@ -30,24 +30,24 @@ export default function AdminDashboardPage() {
 
   if (!isLoaded || !stats) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
-      </div>
+      <PageLoading />
     );
   }
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Welcome back, {appUser?.name || user?.email}</p>
-        </div>
-        <Badge variant="outline" className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1">
-          <Shield className="w-3 h-3" />
-          {adminRoleLabel(myRole)}
-        </Badge>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description={<>Welcome back, {appUser?.name || user?.email}</>}
+        actions={
+          <>
+            <Badge variant="outline" className="bg-transparent text-[var(--connecta-mark-text)] border-[var(--connecta-mark)] gap-1">
+              <Shield className="w-3 h-3" />
+              {adminRoleLabel(myRole)}
+            </Badge>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-[1.5px] border-[1.5px] border-input bg-input sm:grid-cols-3 lg:grid-cols-6">
         <StatCell label="Total users" value={stats.totalUsers} icon={Users} />

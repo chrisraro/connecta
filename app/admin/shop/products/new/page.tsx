@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -150,25 +151,21 @@ export default function NewProductPage() {
 
   if (!userLoaded || categories === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <PageLoading />
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/admin/shop/products">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold">Add New Product</h1>
-          <p className="text-muted-foreground mt-1">Create a new product for your shop</p>
-        </div>
+      <div className="space-y-8">
+        <Button variant="ghost" size="sm" className="-ml-3" asChild>
+          <Link href="/admin/shop/products">
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+            Products
+          </Link>
+        </Button>
+        <PageHeader title="New product" description="Create a new product for your shop" />
       </div>
 
       {/* Form */}
@@ -177,11 +174,11 @@ export default function NewProductPage() {
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>Basic information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Product Name *</Label>
+                <Label>Product name *</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) =>
@@ -258,7 +255,7 @@ export default function NewProductPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Base Price (₱) *</Label>
+                <Label>Base price (₱) *</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -272,7 +269,7 @@ export default function NewProductPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Compare At Price (₱)</Label>
+                <Label>Compare at price (₱)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -289,7 +286,7 @@ export default function NewProductPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Cost Price (₱)</Label>
+                <Label>Cost price (₱)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -311,7 +308,7 @@ export default function NewProductPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Inventory Count *</Label>
+                <Label>Inventory count *</Label>
                 <Input
                   type="number"
                   min="0"
@@ -324,7 +321,7 @@ export default function NewProductPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Low Stock Threshold</Label>
+                <Label>Low stock threshold</Label>
                 <Input
                   type="number"
                   min="0"
@@ -345,7 +342,7 @@ export default function NewProductPage() {
                     setFormData({ ...formData, track_inventory: checked })
                   }
                 />
-                <Label>Track Inventory</Label>
+                <Label>Track inventory</Label>
               </div>
             </CardContent>
           </Card>
@@ -373,7 +370,7 @@ export default function NewProductPage() {
                 {formData.images.length < 10 && (
                   <ImageUploader
                     onChange={(storageId) => addImage(storageId)}
-                    placeholder="Add Product Image"
+                    placeholder="Add product image"
                   />
                 )}
               </div>
@@ -432,7 +429,7 @@ export default function NewProductPage() {
           {/* Shipping & Options */}
           <Card>
             <CardHeader>
-              <CardTitle>Shipping & Options</CardTitle>
+              <CardTitle>Shipping & options</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
@@ -442,7 +439,7 @@ export default function NewProductPage() {
                     setFormData({ ...formData, shipping_required: checked })
                   }
                 />
-                <Label>Requires Shipping</Label>
+                <Label>Requires shipping</Label>
               </div>
 
               <div className="flex items-center space-x-2">

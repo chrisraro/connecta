@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -197,35 +198,31 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   if (isLoading || !product) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <PageLoading />
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/shop/products">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold">Edit Product</h1>
-          <p className="text-muted-foreground mt-1">Update product details</p>
-        </div>
+      <div className="space-y-8">
+        <Button variant="ghost" size="sm" className="-ml-3" asChild>
+          <Link href="/admin/shop/products">
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+            Products
+          </Link>
+        </Button>
+        <PageHeader title="Edit product" description="Update product details" />
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>Basic information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Product Name *</Label>
+                <Label>Product name *</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) =>
@@ -301,7 +298,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Base Price (₱) *</Label>
+                <Label>Base price (₱) *</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -315,7 +312,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               </div>
 
               <div className="space-y-2">
-                <Label>Compare At Price (₱)</Label>
+                <Label>Compare at price (₱)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -332,7 +329,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               </div>
 
               <div className="space-y-2">
-                <Label>Cost Price (₱)</Label>
+                <Label>Cost price (₱)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -353,7 +350,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Inventory Count *</Label>
+                <Label>Inventory count *</Label>
                 <Input
                   type="number"
                   min="0"
@@ -366,7 +363,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               </div>
 
               <div className="space-y-2">
-                <Label>Low Stock Threshold</Label>
+                <Label>Low stock threshold</Label>
                 <Input
                   type="number"
                   min="0"
@@ -387,7 +384,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     setFormData({ ...formData, track_inventory: checked })
                   }
                 />
-                <Label>Track Inventory</Label>
+                <Label>Track inventory</Label>
               </div>
             </CardContent>
           </Card>
@@ -414,7 +411,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 {formData.images.length < 10 && (
                   <ImageUploader
                     onChange={(storageId) => addImage(storageId)}
-                    placeholder="Add Product Image"
+                    placeholder="Add product image"
                   />
                 )}
               </div>
@@ -471,7 +468,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
           <Card>
             <CardHeader>
-              <CardTitle>Shipping & Options</CardTitle>
+              <CardTitle>Shipping & options</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
@@ -481,7 +478,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     setFormData({ ...formData, shipping_required: checked })
                   }
                 />
-                <Label>Requires Shipping</Label>
+                <Label>Requires shipping</Label>
               </div>
 
               <div className="flex items-center space-x-2">

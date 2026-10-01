@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit, Trash2, Loader2, FolderTree } from "lucide-react";
+import { Plus, Edit, Trash2, FolderTree } from "lucide-react";
 import {
   useAdminCategories,
   useCreateCategory,
@@ -138,106 +139,106 @@ export default function CategoriesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <PageLoading />
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Categories</h1>
-          <p className="text-muted-foreground mt-1">Manage product categories and hierarchy</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingId ? "Edit" : "Add"} category</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      name: e.target.value,
-                      slug: generateSlug(e.target.value),
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Slug</Label>
-                <Input
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Input
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Parent category (optional)</Label>
-                <select
-                  value={formData.parent_id || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, parent_id: e.target.value || undefined })
-                  }
-                  className="w-full border-[1.5px] border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">None (Top Level)</option>
-                  {categories?.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label>Sort order</Label>
-                <Input
-                  type="number"
-                  value={formData.sort_order}
-                  onChange={(e) =>
-                    setFormData({ ...formData, sort_order: parseInt(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label>Active</Label>
-              </div>
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1">
-                  {editingId ? "Update" : "Create"} category
+    <div className="space-y-8">
+      <PageHeader
+        title="Categories"
+        description="Manage product categories and hierarchy"
+        actions={
+          <>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add category
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingId ? "Edit" : "Add"} category</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Name</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          name: e.target.value,
+                          slug: generateSlug(e.target.value),
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Slug</Label>
+                    <Input
+                      value={formData.slug}
+                      onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Input
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Parent category (optional)</Label>
+                    <select
+                      value={formData.parent_id || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, parent_id: e.target.value || undefined })
+                      }
+                      className="w-full border-[1.5px] border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">None (Top Level)</option>
+                      {categories?.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sort order</Label>
+                    <Input
+                      type="number"
+                      value={formData.sort_order}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sort_order: parseInt(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={formData.is_active}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                    />
+                    <Label>Active</Label>
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button type="submit" className="flex-1">
+                      {editingId ? "Update" : "Create"} category
+                    </Button>
+                    <Button type="button" variant="outline" onClick={resetForm}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
 
       <Card>
         <CardHeader>

@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, AlertTriangle, Download, Plus, Package } from "lucide-react";
+import { AlertTriangle, Download, Plus, Package } from "lucide-react";
 import {
   useAdminProducts,
   useUpdateProduct,
@@ -85,24 +86,24 @@ export default function InventoryPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <PageLoading />
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
-          <p className="text-muted-foreground mt-1">Monitor stock levels and manage restocking</p>
-        </div>
-        <Button onClick={exportToCSV} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Export CSV
-        </Button>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Inventory"
+        description="Monitor stock levels and manage restocking"
+        actions={
+          <>
+            <Button onClick={exportToCSV} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+          </>
+        }
+      />
 
       {lowStockProducts && lowStockProducts.length > 0 && (
         <Alert className="border-destructive text-foreground">
@@ -129,9 +130,9 @@ export default function InventoryPage() {
                 <TableRow className="border-border">
                   <TableHead className="text-muted-foreground">Product</TableHead>
                   <TableHead className="text-muted-foreground">SKU</TableHead>
-                  <TableHead className="text-muted-foreground">Current Stock</TableHead>
+                  <TableHead className="text-muted-foreground">Current stock</TableHead>
                   <TableHead className="text-muted-foreground">Threshold</TableHead>
-                  <TableHead className="text-muted-foreground">Restock Qty</TableHead>
+                  <TableHead className="text-muted-foreground">Restock qty</TableHead>
                   <TableHead className="text-muted-foreground text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -196,7 +197,7 @@ export default function InventoryPage() {
               <TableRow className="border-border">
                 <TableHead className="text-muted-foreground">Product</TableHead>
                 <TableHead className="text-muted-foreground">SKU</TableHead>
-                <TableHead className="text-muted-foreground">Current Stock</TableHead>
+                <TableHead className="text-muted-foreground">Current stock</TableHead>
                 <TableHead className="text-muted-foreground">Threshold</TableHead>
                 <TableHead className="text-muted-foreground">Status</TableHead>
                 <TableHead className="text-muted-foreground">Tracking</TableHead>

@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHeader, PageLoading } from "@/components/dashboard/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,9 +77,7 @@ export default function AdminSettingsPage() {
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="animate-spin text-primary w-8 h-8" />
-      </div>
+      <PageLoading />
     );
   }
 
@@ -102,10 +101,10 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Platform Settings</h1>
-        <p className="text-muted-foreground mt-1">Configure system preferences and integrations</p>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Configure system preferences and integrations"
+      />
 
       <Card>
         <CardHeader>
