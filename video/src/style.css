@@ -1,0 +1,12 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=JetBrains+Mono:wght@400;600&display=block");
+@import "../../app/globals.css";
+@source "../../components";
+@source "./";
+
+/* next/font variables, which the site's components read, defined here instead. */
+:root {
+  --font-survey: "Archivo";
+  --font-survey-mono: "JetBrains Mono";
+  --font-body: "Archivo";
+  --font-display: "Archivo";
+}

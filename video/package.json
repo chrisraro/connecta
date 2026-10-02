@@ -1,0 +1,25 @@
+{
+  "name": "connecta-showcase-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Showcase out/connecta-showcase-9x16.mp4 --codec=h264",
+    "probe": "node scripts/probe.mjs out/connecta-showcase-9x16.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.532",
+    "@remotion/tailwind-v4": "4.0.532",
+    "remotion": "4.0.532",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "lucide-react": "^0.563.0",
+    "qrcode.react": "^4.2.0",
+    "tailwindcss": "^4",
+    "tw-animate-css": "^1"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}

@@ -74,3 +74,7 @@ SENTINEL_TEST.txt
 
 # Supabase CLI local state (project ref + cached CLI version, machine-local)
 supabase/.temp/
+
+# Remotion showcase video
+/video/node_modules/
+/video/out/
