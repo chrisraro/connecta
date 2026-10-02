@@ -11,16 +11,17 @@
   "dependencies": {
     "@remotion/cli": "4.0.532",
     "@remotion/tailwind-v4": "4.0.532",
-    "remotion": "4.0.532",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
     "lucide-react": "^0.563.0",
     "qrcode.react": "^4.2.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.532",
     "tailwindcss": "^4",
     "tw-animate-css": "^1"
   },
   "devDependencies": {
     "@types/react": "^19",
+    "kokoro-js": "1.2.1",
     "typescript": "^5"
   }
 }

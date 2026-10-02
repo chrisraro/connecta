@@ -78,3 +78,6 @@ supabase/.temp/
 # Remotion showcase video
 /video/node_modules/
 /video/out/
+
+# Kokoro TTS model cache (video/scripts/voice.mjs)
+/video/.cache/
