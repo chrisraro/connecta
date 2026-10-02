@@ -5,6 +5,7 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts Showcase out/connecta-showcase-9x16.mp4 --codec=h264",
+    "compose": "node scripts/compose.mjs",
     "probe": "node scripts/probe.mjs out/connecta-showcase-9x16.mp4"
   },
   "dependencies": {

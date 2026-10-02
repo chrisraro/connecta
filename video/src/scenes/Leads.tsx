@@ -5,12 +5,13 @@ import { LANDING_COPY } from "@/components/landing/copy";
 import { sheetVars, SHEETS } from "@/components/survey/sheet";
 import { linesFor } from "../copy";
 import { progress } from "../motion";
+import { LEADS_BANNER_AT } from "../timeline";
 import { CameraPush } from "../fx/CameraPush";
 import { KineticCaption } from "../fx/KineticCaption";
 import { Tilt3D } from "../fx/Tilt3D";
 import type { Pose } from "../fx/pose";
 
-const BANNER_AT = 105; // absolute 585, on the 15-frame grid
+const BANNER_AT = LEADS_BANNER_AT; // absolute 585, on the 15-frame grid
 // The notification leans back from its top edge and drops flat: it settles, it does not bounce.
 const BANNER_FROM: Pose = { rx: -16, ry: 0, z: -30, x: 0, y: -80 };
 const BANNER_REST: Pose = { rx: 0, ry: 0, z: 0, x: 0, y: 0 };

@@ -23,3 +23,6 @@ export function beat(id: BeatId): { from: number; frames: number } {
   if (!b) throw new Error(`unknown beat ${id}`);
   return { from: b.from, frames: b.frames };
 }
+
+/** Scene-relative frame the "New lead" banner starts (Leads scene); absolute 585, on the 15-frame beat grid. */
+export const LEADS_BANNER_AT = 105;
