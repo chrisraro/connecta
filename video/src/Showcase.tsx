@@ -1,5 +1,5 @@
-import { Tap } from "./scenes/Tap";
+import { Leads } from "./scenes/Leads";
 
 export function Showcase() {
-  return <Tap />;
+  return <Leads />;
 }
