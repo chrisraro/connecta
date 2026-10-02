@@ -8,7 +8,7 @@ export function LotDraw({ at, length = 30, size, color }: { at: number; length?:
   const p = progress(useCurrentFrame(), at, length);
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
-      <path d={LOT} fill="none" stroke={color} strokeWidth={1.5} pathLength={1} strokeDasharray={1} strokeDashoffset={1 - p} vectorEffect="non-scaling-stroke" />
+      <path d={LOT} fill="none" stroke={color} strokeWidth={(1.5 * 100) / size} pathLength={1} strokeDasharray={1} strokeDashoffset={1 - p} />
     </svg>
   );
 }
