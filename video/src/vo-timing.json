@@ -1,0 +1,38 @@
+[
+  {
+    "id": "vo-1-hook",
+    "file": "vo/vo-1-hook.mp3",
+    "scene": "hook",
+    "frames": 52
+  },
+  {
+    "id": "vo-2-tap",
+    "file": "vo/vo-2-tap.mp3",
+    "scene": "tap",
+    "frames": 72
+  },
+  {
+    "id": "vo-3-profile",
+    "file": "vo/vo-3-profile.mp3",
+    "scene": "profile",
+    "frames": 214
+  },
+  {
+    "id": "vo-4-leads",
+    "file": "vo/vo-4-leads.mp3",
+    "scene": "leads",
+    "frames": 98
+  },
+  {
+    "id": "vo-5-cards",
+    "file": "vo/vo-5-cards.mp3",
+    "scene": "personas",
+    "frames": 115
+  },
+  {
+    "id": "vo-6-cta",
+    "file": "vo/vo-6-cta.mp3",
+    "scene": "cta",
+    "frames": 118
+  }
+]

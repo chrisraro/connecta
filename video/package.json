@@ -6,7 +6,8 @@
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts Showcase out/connecta-showcase-9x16.mp4 --codec=h264",
     "compose": "node scripts/compose.mjs",
-    "probe": "node scripts/probe.mjs out/connecta-showcase-9x16.mp4"
+    "probe": "node scripts/probe.mjs out/connecta-showcase-9x16.mp4",
+    "vo": "node scripts/voice.mjs af_heart out/vo 1.0 && node scripts/vo-encode.mjs out/vo"
   },
   "dependencies": {
     "@remotion/cli": "4.0.532",
