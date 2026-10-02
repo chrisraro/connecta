@@ -51,6 +51,8 @@ function lowpass(buf, a, passes = 1) {
   }
 }
 
+const FADE_OUT = Math.round(0.008 * SR);
+
 /** Adds a mono voice to the stereo bus; pan -1..1 (equal-power). */
 function voice(bus, t0, dur, pan, fn) {
   const n0 = Math.floor(t0 * SR);
@@ -58,7 +60,8 @@ function voice(bus, t0, dur, pan, fn) {
   const gl = Math.cos(((pan + 1) * Math.PI) / 4);
   const gr = Math.sin(((pan + 1) * Math.PI) / 4);
   for (let n = Math.max(0, n0); n < n1; n++) {
-    const s = fn((n - n0) / SR);
+    // 8 ms linear end fade so no note is cut off mid-wave (a click).
+    const s = fn((n - n0) / SR) * Math.min(1, (n1 - n) / FADE_OUT);
     bus.l[n] += s * gl;
     bus.r[n] += s * gr;
   }

@@ -15,7 +15,7 @@ export function Hook() {
     <AbsoluteFill style={{ background: "#12161F" }}>
       <CameraPush frames={90}>
         <AbsoluteFill style={{ padding: 96, justifyContent: "space-between" }}>
-          <div>{linesFor("hook").map((l) => <KineticCaption key={l.text} line={l} ink="#EEF1F4" size={88} />)}</div>
+          <div style={{ height: 180 }}>{linesFor("hook").map((l) => <KineticCaption key={l.text} line={l} ink="#EEF1F4" size={88} />)}</div>
           {/* A plain paper card. A fictional placeholder name and a dummy number. */}
           <Tilt3D from={CARD_FROM} to={REST} start={0} style={{ alignSelf: "center", width: 620 }}>
             <CardMaterial at={20} edge="#D7D7CF" radius={8}>

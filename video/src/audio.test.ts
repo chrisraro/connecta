@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BPM, CUES, FRAMES_PER_BEAT, SFX_PREROLL } from "./audio";
+import { BPM, CUES, FRAMES_PER_BEAT, RISER_FRAMES, SFX_PREROLL } from "./audio";
 import { BEATS, FPS, LEADS_BANNER_AT, TOTAL_FRAMES, beat } from "./timeline";
 import { TAP } from "./fx/tap";
 
@@ -37,7 +37,7 @@ describe("audio cues", () => {
   });
   it("ends the riser on the CTA cut", () => {
     expect(at("riser").length).toBe(1);
-    expect(at("riser")[0]).toBeLessThan(beat("cta").from);
+    expect(at("riser")[0] + RISER_FRAMES).toBe(beat("cta").from);
   });
   it("never mounts an effect before frame 0", () => {
     for (const c of CUES) expect(c.frame - SFX_PREROLL[c.sfx]).toBeGreaterThanOrEqual(0);

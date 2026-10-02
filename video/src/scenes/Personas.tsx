@@ -43,10 +43,11 @@ function PersonaCard({ index, last }: { index: number; last: boolean }) {
           <p style={{ fontFamily: "Archivo", fontSize: 44, fontWeight: 700, color: INK, margin: 0, opacity: label }}>{cardSkin(skin).label}</p>
         </div>
       </Tilt3D>
-      {/* The real size of a business card, drawn once on the first card: a dimension line over its top edge. */}
+      {/* The real size of a business card, drawn once on the first card: 54 mm across the top edge, then 85.6 mm down its long side. */}
       {index === 0 && (
         <div style={{ position: "absolute", inset: 0, opacity: 1 - progress(frame, 66, 9) }}>
-          <Annotation x1={160} y1={366} x2={920} y2={366} label="85.6 × 54 mm" at={14} color={LINE} />
+          <Annotation x1={160} y1={366} x2={920} y2={366} label="54 mm" at={14} color={LINE} />
+          <Annotation x1={112} y1={400} x2={112} y2={1605} label="85.6 mm" at={30} color={LINE} labelPos={{ x: 140, y: 1652 }} />
         </div>
       )}
     </AbsoluteFill>
