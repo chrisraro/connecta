@@ -20,12 +20,18 @@ export const DEMO_PHOTOS = {
 };
 
 /**
- * Portraits of the four demo personas: generated images of people who do not
- * exist, hosted in public/marketing/. A persona without one shows the
- * product's own no-photo placeholder.
+ * Portraits of the four demo personas: flat illustrations drawn in-house
+ * (one ink, a few tones), hosted in public/marketing/portraits/. The personas
+ * are fictional and no real person is depicted. A persona without one shows
+ * the product's own no-photo placeholder.
  */
 export type DemoPersonaId = "broker" | "designer" | "shop" | "student";
-export const DEMO_PORTRAITS: Partial<Record<DemoPersonaId, string>> = {};
+export const DEMO_PORTRAITS: Partial<Record<DemoPersonaId, string>> = {
+  broker: "/marketing/portraits/broker.svg",
+  designer: "/marketing/portraits/designer.svg",
+  shop: "/marketing/portraits/shop.svg",
+  student: "/marketing/portraits/student.svg",
+};
 
 /**
  * A single, credible demo persona used everywhere the marketing surface
