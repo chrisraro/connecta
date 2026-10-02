@@ -8,7 +8,7 @@ export function Hook() {
   const away = progress(frame, 45, 30);
   return (
     <AbsoluteFill style={{ background: "#12161F", padding: 96, justifyContent: "space-between" }}>
-      <div>{linesFor("hook").map((l) => <Caption key={l.text} line={l} ink="#EEF1F4" />)}</div>
+      <div>{linesFor("hook").map((l) => <Caption key={l.text} line={l} ink="#EEF1F4" size={88} />)}</div>
       {/* A plain paper card, sliding off frame. A fictional placeholder name and a dummy number. */}
       <div style={{ alignSelf: "center", width: 620, aspectRatio: "85.6 / 54", background: "#FAFAF7", borderRadius: 8, padding: 40, transform: `translateX(${away * 1100}px) rotate(${away * 12}deg)`, boxShadow: "0 0 0 1px rgb(0 0 0 / 0.12), 0 14px 30px -12px rgb(0 0 0 / 0.5)" }}>
         <p style={{ fontFamily: "Georgia, serif", fontSize: 40, color: "#222", margin: 0 }}>Juan Dela Cruz</p>

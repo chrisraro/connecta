@@ -28,7 +28,7 @@ export function Personas() {
           </Sequence>
         );
       })}
-      <AbsoluteFill style={{ padding: 96, justifyContent: "flex-start" }}>{linesFor("personas").map((l) => <Caption key={l.text} line={l} ink="#12161F" size={84} />)}</AbsoluteFill>
+      <AbsoluteFill style={{ padding: 96, justifyContent: "flex-start" }}>{linesFor("personas").map((l) => <Caption key={l.text} line={l} ink="#12161F" size={88} />)}</AbsoluteFill>
     </AbsoluteFill>
   );
 }

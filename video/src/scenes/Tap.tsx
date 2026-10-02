@@ -1,7 +1,7 @@
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { CardFace, MiniProfile, PhoneFrame } from "@/components/landing/Phone";
 import { HomeScreen } from "@/components/landing/Ios";
-import { PERSONAS } from "@/components/landing/IndustryDemo";
+import { VIDEO_REALTOR } from "../personas";
 import { sheetVars, SHEETS } from "@/components/survey/sheet";
 import { Caption } from "../Caption";
 import { linesFor } from "../copy";
@@ -15,14 +15,14 @@ export function Tap() {
   const open = progress(frame, 48, 18); // profile slides over the home screen
   return (
     <AbsoluteFill style={{ background: "#EEF1F4", padding: 96, gap: 64 }}>
-      <div style={{ height: 120 }}>{linesFor("tap").map((l) => <Caption key={l.text} line={l} ink="#12161F" />)}</div>
+      <div style={{ height: 220 }}>{linesFor("tap").map((l) => <Caption key={l.text} line={l} ink="#12161F" size={88} />)}</div>
       <div style={{ position: "relative", width: 888, height: 1300 }}>
         {/* The phone is drawn at its natural 300 px and scaled up to fill the frame. */}
         <div style={{ position: "absolute", left: 159, top: 0, transformOrigin: "top left", transform: "scale(1.9)" }}>
           <PhoneFrame className="relative">
             <div style={{ position: "absolute", inset: 0 }}><HomeScreen /></div>
             <div style={{ position: "absolute", inset: 0, ...sheetVars(SHEETS.whiteprint), transform: `translateY(${(1 - open) * 100}%)`, backgroundColor: "var(--sv-ground)" }}>
-              <MiniProfile persona={PERSONAS.realtor} saveLabel="Save contact" />
+              <MiniProfile persona={VIDEO_REALTOR} saveLabel="Save contact" />
             </div>
           </PhoneFrame>
         </div>
