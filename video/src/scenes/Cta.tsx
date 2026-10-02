@@ -9,7 +9,8 @@ export function Cta() {
   return (
     <AbsoluteFill style={{ background: "#2B3F8F", padding: 96, justifyContent: "center", gap: 56 }}>
       <div style={{ position: "relative", width: 220, height: 220 }}>
-        <LotDraw at={0} length={30} size={220} color="#EEF1F4" />
+        {/* Arrives already drawn: the match cut carries the lot in from the personas card. */}
+        <LotDraw at={-30} length={30} size={220} color="#EEF1F4" />
         <div style={{ position: "absolute", right: 18, bottom: 18 }}><PointSnap at={30} size={32} /></div>
       </div>
       <Caption line={title} ink="#F4F6FA" size={104} />

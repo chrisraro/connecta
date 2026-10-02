@@ -17,7 +17,7 @@ const LINE = "#B4C1F2"; // the line colour, lifted to read on the dark home scre
 const REST: Pose = { rx: 0, ry: 0, z: 0, x: 0, y: 0 };
 // The phone tips in slightly and settles flat; the card drops in from above, tilted back, and lands behind the phone's top edge.
 const PHONE_FROM: Pose = { rx: 9, ry: -7, z: -60, x: 0, y: 40 };
-const CARD_FROM: Pose = { rx: 22, ry: 10, z: 60, x: 150, y: -300 };
+const CARD_FROM: Pose = { rx: 22, ry: 10, z: 60, x: 110, y: -220 }; // already in frame at the cut, so the match-cut lot can meet it
 const CARD_START = 8; // settles by frame 53, holds ~7 frames before contact
 const RING_DIAMETER = 420;
 const RINGS = [0, 5, 10]; // frames after contact each ring starts
