@@ -1,7 +1,8 @@
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { BEATS, TOTAL_FRAMES } from "./timeline";
+import { BEATS, FPS, TOTAL_FRAMES } from "./timeline";
 import { DUCK_GAIN, DUCK_RAMP, VO_LINES, duckAt } from "./voiceover";
 
 const publicDir = path.resolve(__dirname, "../public");
@@ -32,6 +33,16 @@ test("every voiceover file is served from video/public", () => {
   for (const line of VO_LINES) expect(existsSync(path.join(publicDir, line.file)), line.file).toBe(true);
 });
 
+/** Measured duration of an audio file in seconds, from ffprobe. */
+const probeSeconds = (file: string) =>
+  Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]).toString().trim());
+
+test("each line's frame count is the real duration of its MP3", () => {
+  for (const line of VO_LINES) {
+    expect(line.frames, line.file).toBe(Math.ceil(probeSeconds(path.join(publicDir, line.file)) * FPS));
+  }
+});
+
 test("duckAt is 1 outside speech, the duck gain inside, with smooth ramps", () => {
   const first = VO_LINES[0];
   expect(duckAt(0)).toBe(1);
@@ -60,4 +71,16 @@ test("duckAt never leaves [DUCK_GAIN, 1]", () => {
     expect(g).toBeGreaterThanOrEqual(DUCK_GAIN - 1e-9);
     expect(g).toBeLessThanOrEqual(1);
   }
+});
+
+test("the closest pair of lines: the mid-gap gain stays in range and the ramps are monotone", () => {
+  const pairs = VO_LINES.slice(1).map((l, i) => ({ end: VO_LINES[i].from + VO_LINES[i].frames, next: l.from }));
+  const { end, next } = pairs.reduce((a, b) => (b.next - b.end < a.next - a.end ? b : a));
+  const mid = (end + next) / 2;
+  expect(duckAt(mid)).toBeGreaterThanOrEqual(DUCK_GAIN);
+  expect(duckAt(mid)).toBeLessThanOrEqual(1);
+  const gains = Array.from({ length: next - end + 2 * DUCK_RAMP + 1 }, (_, i) => duckAt(end - DUCK_RAMP + i));
+  const mi = Math.floor(gains.length / 2);
+  for (let i = 1; i < mi; i++) expect(gains[i], `rising at ${i}`).toBeGreaterThanOrEqual(gains[i - 1] - 1e-9);
+  for (let i = mi + 1; i < gains.length; i++) expect(gains[i], `falling at ${i}`).toBeLessThanOrEqual(gains[i - 1] + 1e-9);
 });
