@@ -1,6 +1,6 @@
 "use client";
 
-import { DEMO_PHOTOS } from "@/components/marketing/demoProfile";
+import { DEMO_PORTRAITS } from "@/components/marketing/demoProfile";
 import survey from "@/components/survey/survey.module.css";
 import type { LandingCopy } from "./copy";
 import type { DemoPersona } from "./Phone";
@@ -13,26 +13,28 @@ export const PERSONAS: Record<Industry, DemoPersona> = {
     name: "Andrea Villanueva",
     title: "Licensed Real Estate Broker",
     company: "Villanueva Realty · Naga City",
-    photo: DEMO_PHOTOS.broker,
+    photo: DEMO_PORTRAITS.broker,
     rows: ["3-bedroom house and lot · ₱4,850,000", "Two-storey family home · ₱7,200,000", "Bungalow for rent · ₱18,000 / month"],
   },
   shop: {
     name: "Rosa Dela Cruz",
     title: "Owner, Dela Cruz Bakeshop",
     company: "Naga City",
+    photo: DEMO_PORTRAITS.shop,
     rows: ["Pan de sal (10 pcs) · ₱60", "Ensaymada · ₱35", "Custom cakes · made to order"],
   },
   pro: {
     name: "Nicole Bautista",
     title: "Interior Designer & Creative Director",
     company: "Nicole Bautista Design Co.",
-    photo: DEMO_PHOTOS.designer,
+    photo: DEMO_PORTRAITS.designer,
     rows: ["Interior design", "Space planning", "Styling & staging"],
   },
   student: {
     name: "Paolo Santos",
     title: "BS Information Technology",
     company: "Class of 2027",
+    photo: DEMO_PORTRAITS.student,
     rows: ["Web development", "UI design", "Internship-ready"],
   },
 };

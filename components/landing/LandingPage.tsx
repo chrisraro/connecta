@@ -7,12 +7,11 @@ import { SHEETS } from "@/components/survey/sheet";
 import { SiteFooter, SiteHeader } from "@/components/marketing/SiteChrome";
 import { sheetVars } from "@/components/survey/SurveyProfile";
 import survey from "@/components/survey/survey.module.css";
-import { CARD_SKINS } from "@/lib/cardSkins";
 import { LANDING_COPY as t } from "./copy";
 import { TapStory } from "./TapStory";
 import { Pricing } from "./Pricing";
 import { Roadmap } from "./Roadmap";
-import { CardFace } from "./Phone";
+import { SkinShowcase } from "./SkinShowcase";
 import styles from "./landing.module.css";
 
 /** The marketing homepage in the Survey Plan world (whiteprint sheet). */
@@ -82,14 +81,7 @@ export function LandingPage() {
             {t.from} <span className={`${styles.price} font-medium`} style={{ color: "var(--sv-ink)" }}>₱799</span>{" "}
             <span className={`${styles.price} line-through`}>₱888</span>.
           </p>
-          <ul className="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
-            {CARD_SKINS.map((s) => (
-              <li key={s.id}>
-                <CardFace skin={s.id} className="w-full" />
-                <p className="mt-3 text-[16px] font-bold">{s.label}</p>
-              </li>
-            ))}
-          </ul>
+          <SkinShowcase />
         </section>
 
         <Pricing t={t} />

@@ -58,7 +58,7 @@ export function TapStory({ t, intro }: { t: LandingCopy; intro: ReactNode }) {
           <div className={`${styles.phoneStage} relative h-[292px] w-[184px] [--mini-zoom:0.6] [clip-path:inset(-100%_-100%_0_-100%)] lg:h-auto lg:[clip-path:none]`}>
             {/* The card meets the back of the phone near the top, where the NFC reader sits. */}
             <div aria-hidden="true" className={`${styles.card} ${cardClass} pointer-events-none absolute -left-[26%] -top-[7%] w-[80%]`}>
-              <CardFace skin="charcoal" className="w-full" />
+              <CardFace skin="charcoal" className="w-full" realistic />
             </div>
             <PhoneFrame className="relative">
               <div className={`${styles.homeLayer} ${opened ? styles.homeAway : ""} absolute inset-0`} aria-hidden={opened}>

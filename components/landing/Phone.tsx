@@ -9,6 +9,7 @@ import { ProfileImage } from "@/components/templates/ProfileImage";
 import survey from "@/components/survey/survey.module.css";
 import { cardSkin, type CardSkinId } from "@/lib/cardSkins";
 import styles from "./landing.module.css";
+import { CARD_MOCK_STYLE } from "./CardMock";
 
 export type DemoPersona = {
   name: string;
@@ -194,12 +195,24 @@ export function MiniProfile({ persona, saveLabel, form = 0 }: { persona: DemoPer
 }
 
 /** The physical card, drawn in its skin colours. */
-export function CardFace({ skin: id, className = "" }: { skin: CardSkinId; className?: string }) {
+export function CardFace({
+  skin: id,
+  className = "",
+  realistic = false,
+}: {
+  skin: CardSkinId;
+  className?: string;
+  /** Marketing mockups: draw the card's edge and shadow (components/landing/CardMock.tsx). */
+  realistic?: boolean;
+}) {
   // Colours come from the one skin registry the builder and digital card use.
   const skin = cardSkin(id);
   const lot = skin.split?.line ?? skin.lineColor;
   return (
-    <div className={`relative overflow-hidden rounded-[12px] ${className}`} style={{ aspectRatio: "85.6 / 54", background: skin.swatch }}>
+    <div
+      className={`relative overflow-hidden rounded-[12px] ${className}`}
+      style={{ aspectRatio: "85.6 / 54", background: skin.swatch, ...(realistic ? CARD_MOCK_STYLE : {}) }}
+    >
       <svg viewBox="0 0 400 252" className="absolute inset-0 h-full w-full" aria-hidden="true">
         <path d="M262 44 H342 L362 64 V160 L342 180 H262 L242 160 V64 Z" fill="none" stroke={lot} strokeOpacity="0.6" strokeWidth="2" />
         <g transform="translate(26 26) scale(0.6)">

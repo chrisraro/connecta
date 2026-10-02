@@ -2,26 +2,30 @@ import { ProfileData } from "@/types/profile";
 import { TEMPLATE_THEMES, TemplateId } from "@/components/templates/theme";
 
 /**
- * Stock photos for the synthetic demo personas, all from Unsplash (free for
- * commercial use under the Unsplash License, no attribution required). The
- * people and places shown are not customers; every demo surface labels itself
- * as sample content.
- *   designer — unsplash.com/photos/RIt88XBR3G0
- *   broker   — unsplash.com/photos/QGr6H7pri-Q
- *   house1   — unsplash.com/photos/d0fXvDIP7xU
- *   house2   — unsplash.com/photos/qkJCW-BFylA
- *   house3   — unsplash.com/photos/1SXaajjGzrw
+ * Property photos for the demo listings, from Unsplash (free for commercial
+ * use under the Unsplash License, no attribution required). They show
+ * houses only: Unsplash Terms s.5 leaves recognisable people outside the
+ * licence, so no Unsplash photo of a person is used (2026-10-02).
+ *   house1 — unsplash.com/photos/d0fXvDIP7xU
+ *   house2 — unsplash.com/photos/qkJCW-BFylA
+ *   house3 — unsplash.com/photos/1SXaajjGzrw
  */
 const unsplash = (id: string, w: number) =>
   `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 
 export const DEMO_PHOTOS = {
-  designer: unsplash("photo-1581065178047-8ee15951ede6", 900),
-  broker: unsplash("photo-1604904612715-47bf9d9bc670", 900),
   house1: unsplash("photo-1784091473955-f66695d19b58", 1000),
   house2: unsplash("photo-1759860002233-ef26089ed4ab", 1000),
   house3: unsplash("photo-1650712939442-e5c27652258c", 1000),
 };
+
+/**
+ * Portraits of the four demo personas: generated images of people who do not
+ * exist, hosted in public/marketing/. A persona without one shows the
+ * product's own no-photo placeholder.
+ */
+export type DemoPersonaId = "broker" | "designer" | "shop" | "student";
+export const DEMO_PORTRAITS: Partial<Record<DemoPersonaId, string>> = {};
 
 /**
  * A single, credible demo persona used everywhere the marketing surface
@@ -47,7 +51,7 @@ export function buildDemoProfile(templateId: TemplateId): ProfileData {
       phone: "+63 917 555 0142",
       email: "hello@nicolebautistadesign.ph",
       website: "nicolebautistadesign.ph",
-      avatarUrl: DEMO_PHOTOS.designer,
+      avatarUrl: DEMO_PORTRAITS.designer,
       about:
         "Interior designer crafting warm, livable spaces across Metro Manila — from condo makeovers to boutique hospitality projects. Fifteen years turning empty rooms into homes clients actually want to live in.",
       services: ["Interior Design", "Space Planning", "Styling & Staging", "Renovation Consulting"],
@@ -106,7 +110,7 @@ export function buildDemoBrokerProfile(templateId: TemplateId): ProfileData {
       company: "Villanueva Realty · Naga City",
       phone: "+63 917 555 0188",
       email: "andrea@villanuevarealty.example",
-      avatarUrl: DEMO_PHOTOS.broker,
+      avatarUrl: DEMO_PORTRAITS.broker,
       about:
         "I help families buy, sell and rent homes across Naga City and Metro Naga: house-and-lot, lot-only and rentals. Tell me what you're looking for and I'll send you what fits.",
       services: ["House & lot sales", "Lot-only sales", "Rentals", "Property valuation"],
