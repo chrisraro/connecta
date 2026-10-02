@@ -32,6 +32,8 @@ interface DigitalBusinessCardProps {
   config?: Partial<DigitalCardConfig>;
   /** A view of the same card, not a saved setting. */
   orientation?: CardOrientation;
+  /** Encode this instead of the profile URL (marketing video, where the page origin is not the site). */
+  qrValue?: string;
 }
 
 // The page origin is only known in the browser. Reading it through
@@ -59,7 +61,7 @@ const LOT_CLIP = "polygon(0 0, 76% 0, 100% 24%, 100% 100%, 0 100%)";
 export function DigitalBusinessCard(props: DigitalBusinessCardProps) {
   const skin = cardSkin(props.config?.skin);
   const host = useSyncExternalStore(noSubscribe, getOrigin, getServerOrigin);
-  const qrUrl = props.profileId ? profileUrl(host, { id: props.profileId, slug: props.profileSlug }) : host;
+  const qrUrl = props.qrValue ?? (props.profileId ? profileUrl(host, { id: props.profileId, slug: props.profileSlug }) : host);
   // useId returns ids like ":r1:"; strip the colons so url(#…) references
   // also survive html-to-image's clone for the PNG export.
   const clip = `dc${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
