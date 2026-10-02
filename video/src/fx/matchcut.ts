@@ -1,4 +1,5 @@
 import { BEATS, type BeatId } from "../timeline";
+import { progress } from "../motion";
 
 /** A rectangle in frame px (1080 x 1920); `c` overrides the lot's chamfer when the act draws its own lot. */
 export type Rect = { x: number; y: number; w: number; h: number; c?: number };
@@ -31,8 +32,19 @@ const COLORS: Record<BeatId, { before: string; after: string }> = {
 };
 
 const outset = (r: Rect, d: number): Rect => ({ x: r.x - d, y: r.y - d, w: r.w + 2 * d, h: r.h + 2 * d });
-/** A rect scaled about the frame centre, as CameraPush does. */
-const pushed = (r: Rect, k: number): Rect => ({ x: 540 + (r.x - 540) * k, y: 960 + (r.y - 960) * k, w: r.w * k, h: r.h * k });
+/** Camera push scale (CameraPush: 1 -> 1.05 over the whole beat, ease-out cubic) at a frame of a beat's scene. */
+export function pushScale(id: BeatId, sceneFrame: number): number {
+  const frames = BEATS.find((b) => b.id === id)!.frames;
+  return 1 + 0.05 * progress(sceneFrame, 0, frames);
+}
+/** Scene frames at which each end of a cut is measured: the middle of the hold on each side of the morph. */
+const IN_AT = MATCH / 2 + HOLD_IN / 2;
+const outAt = (id: BeatId) => BEATS.find((b) => b.id === id)!.frames - MATCH / 2 - HOLD_OUT / 2;
+/** A rect as the camera push leaves it: scaled about the frame centre (540, 960), chamfer included. */
+const pushed = (r: Rect, k: number): Rect => ({ x: 540 + (r.x - 540) * k, y: 960 + (r.y - 960) * k, w: r.w * k, h: r.h * k, ...(r.c === undefined ? {} : { c: r.c * k }) });
+/** An act's key shape on screen when its lot is held coming in (`inRect`) or going out (`outRect`), push applied. */
+const inRect = (id: BeatId, r: Rect): Rect => pushed(r, pushScale(id, IN_AT));
+const outRect = (id: BeatId, r: Rect): Rect => pushed(r, pushScale(id, outAt(id)));
 
 // Every shape is outset so the line sits on the ground beside the object, not on its edge.
 // The shared phone stage sits at (96, 380) in the frame (96 padding + 220 caption + 64 gap); the phone body is 578 x 1210 at stage x 159.
@@ -44,17 +56,20 @@ const PROFILE_LOT: Rect = { x: 60, y: 320, w: 960, h: 960, c: 240 };
 const PAPER_CARD: Rect = { x: 230, y: 806, w: 620, h: 391 };
 const NEW_LEAD_BANNER: Rect = { x: 225, y: 400, w: 630, h: 161 };
 const PERSONA_CARD: Rect = { x: 160, y: 400, w: 760, h: 1205 };
-const CTA_LOT: Rect = { x: 100.4, y: 854, w: 211.2, h: 211.2 }; // LotDraw 220 px at (96, 850), path inset 2%
+const CTA_LOT: Rect = { x: 100.4, y: 654.4, w: 211.2, h: 211.2 }; // LotDraw 220 px at (96, 650), path inset 2%
 
-/** Each act's key shape when it starts (`in`) and when it ends (`out`). */
+/**
+ * Each act's key shape when it starts (`in`) and when it ends (`out`). The bare shapes above are measured at rest; every scene
+ * runs a CameraPush, so each is scaled by the push at the frame the lot is held there (about the frame centre).
+ */
 export const CUT_RECTS: Record<BeatId, { in: Rect; out: Rect }> = {
-  hook: { in: outset(PAPER_CARD, 10), out: outset(PAPER_CARD, 10) },
-  // Tap ends with the camera pushed 5%; its loose 24 px line tightens to a snug 6 px around the same phone in Profile.
-  tap: { in: outset(PHONE_TILTED, 10), out: outset(pushed(PHONE_BODY, 1.05), 24) },
-  profile: { in: outset(PHONE_BODY, 6), out: PROFILE_LOT },
-  leads: { in: outset(PHONE_BODY, 10), out: outset(NEW_LEAD_BANNER, 10) },
-  personas: { in: outset(PERSONA_CARD, 10), out: outset(PERSONA_CARD, 10) },
-  cta: { in: CTA_LOT, out: CTA_LOT },
+  hook: { in: outset(inRect("hook", PAPER_CARD), 10), out: outset(outRect("hook", PAPER_CARD), 10) },
+  // Tap's in rect was measured on the still at frame 97, which already carries its push. Its loose 24 px line tightens to a snug 6 px around the same phone in Profile.
+  tap: { in: outset(PHONE_TILTED, 10), out: outset(outRect("tap", PHONE_BODY), 24) },
+  profile: { in: outset(inRect("profile", PHONE_BODY), 6), out: outRect("profile", PROFILE_LOT) },
+  leads: { in: outset(inRect("leads", PHONE_BODY), 10), out: outset(outRect("leads", NEW_LEAD_BANNER), 10) },
+  personas: { in: outset(inRect("personas", PERSONA_CARD), 10), out: outset(outRect("personas", PERSONA_CARD), 10) },
+  cta: { in: inRect("cta", CTA_LOT), out: outRect("cta", CTA_LOT) },
 };
 
 /** One cut per act boundary: the frame the scenes switch, and the acts either side. */

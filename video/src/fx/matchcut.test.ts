@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CUT_RECTS, CUTS, FADE, HOLD_IN, HOLD_OUT, MATCH, RAMP, STROKE, lotPath, matchAt, windowOf, type Rect } from "./matchcut";
+import { CUT_RECTS, CUTS, FADE, HOLD_IN, HOLD_OUT, MATCH, RAMP, STROKE, lotPath, matchAt, pushScale, windowOf, type Rect } from "./matchcut";
 import { BEATS, type BeatId } from "../timeline";
 
 const W = 1080;
@@ -29,6 +29,23 @@ describe("match cut rects", () => {
     const i = CUT_RECTS.profile.in;
     expect(o.w).toBeGreaterThan(i.w + 20);
     expect(o.h).toBeGreaterThan(i.h + 20);
+  });
+});
+
+describe("camera push on the rects", () => {
+  it("scales 1.00 at the scene start to 1.05 at its end, never backwards", () => {
+    for (const b of BEATS) {
+      expect(pushScale(b.id, 0)).toBe(1);
+      expect(pushScale(b.id, b.frames)).toBeCloseTo(1.05, 10);
+      for (let f = 1; f <= b.frames; f++) expect(pushScale(b.id, f)).toBeGreaterThanOrEqual(pushScale(b.id, f - 1));
+    }
+  });
+  it("makes each act's out rect the pushed shape: hook's paper card grows about the frame centre", () => {
+    const o = CUT_RECTS.hook.out;
+    // paper card 230 806 620 391, pushed ~1.05 and outset 10 each side
+    expect(o.w).toBeGreaterThan(620 * 1.049 + 19);
+    expect(o.w).toBeLessThan(620 * 1.0501 + 21);
+    expect(o.x + o.w / 2).toBeCloseTo(540 + (540 - 540) * 1.05, 0); // still centred on the frame axis
   });
 });
 
