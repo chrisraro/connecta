@@ -2,6 +2,7 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { CardFace, MiniProfile, PhoneFrame } from "@/components/landing/Phone";
 import { HomeScreen } from "@/components/landing/Ios";
 import { PERSONAS } from "@/components/landing/IndustryDemo";
+import { sheetVars, SHEETS } from "@/components/survey/sheet";
 import { Caption } from "../Caption";
 import { linesFor } from "../copy";
 import { progress } from "../motion";
@@ -20,7 +21,7 @@ export function Tap() {
         <div style={{ position: "absolute", left: 159, top: 0, transformOrigin: "top left", transform: "scale(1.9)" }}>
           <PhoneFrame className="relative">
             <div style={{ position: "absolute", inset: 0 }}><HomeScreen /></div>
-            <div style={{ position: "absolute", inset: 0, transform: `translateY(${(1 - open) * 100}%)`, background: "#EEF1F4" }}>
+            <div style={{ position: "absolute", inset: 0, ...sheetVars(SHEETS.whiteprint), transform: `translateY(${(1 - open) * 100}%)`, backgroundColor: "var(--sv-ground)" }}>
               <MiniProfile persona={PERSONAS.realtor} saveLabel="Save contact" />
             </div>
           </PhoneFrame>

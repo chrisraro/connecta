@@ -2,6 +2,7 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { MiniProfile, PhoneFrame, type FormPhase } from "@/components/landing/Phone";
 import { PERSONAS } from "@/components/landing/IndustryDemo";
 import { LANDING_COPY } from "@/components/landing/copy";
+import { sheetVars, SHEETS } from "@/components/survey/sheet";
 import { Caption } from "../Caption";
 import { linesFor } from "../copy";
 import { progress } from "../motion";
@@ -17,7 +18,7 @@ export function Leads() {
       <div style={{ position: "relative", width: 888, height: 1300 }}>
         <div style={{ position: "absolute", left: 159, top: 0, transformOrigin: "top left", transform: "scale(1.9)" }}>
           <PhoneFrame className="relative">
-            <div style={{ position: "absolute", inset: 0, overflow: "hidden", background: "#EEF1F4" }}>
+            <div style={{ position: "absolute", inset: 0, overflow: "hidden", ...sheetVars(SHEETS.whiteprint), backgroundColor: "var(--sv-ground)" }}>
               <MiniProfile persona={PERSONAS.realtor} saveLabel="Save contact" form={form} />
             </div>
           </PhoneFrame>

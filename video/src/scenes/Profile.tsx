@@ -1,6 +1,7 @@
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { MiniProfile, PhoneFrame } from "@/components/landing/Phone";
 import { PERSONAS } from "@/components/landing/IndustryDemo";
+import { sheetVars, SHEETS } from "@/components/survey/sheet";
 import { Caption } from "../Caption";
 import { linesFor } from "../copy";
 import { progress } from "../motion";
@@ -18,7 +19,7 @@ export function Profile() {
         <div style={{ position: "absolute", left: -56, top: -80 }}><LotDraw at={10} length={70} size={1000} color="#2B3F8F" /></div>
         <div style={{ position: "absolute", left: 159, top: 0, transformOrigin: "top left", transform: "scale(1.9)" }}>
           <PhoneFrame className="relative">
-            <div style={{ position: "absolute", inset: 0, overflow: "hidden", background: "#EEF1F4" }}>
+            <div style={{ position: "absolute", inset: 0, overflow: "hidden", ...sheetVars(SHEETS.whiteprint), backgroundColor: "var(--sv-ground)" }}>
               <div style={{ transform: `translateY(${-scroll * 45}%)` }}>
                 <MiniProfile persona={PERSONAS.realtor} saveLabel="Save contact" />
               </div>
