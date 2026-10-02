@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { CUT_RECTS, CUTS, MATCH, lotPath, matchAt, type Rect } from "./matchcut";
-import { BEATS } from "../timeline";
+import { CUT_RECTS, CUTS, FADE, HOLD_IN, HOLD_OUT, MATCH, RAMP, STROKE, lotPath, matchAt, windowOf, type Rect } from "./matchcut";
+import { BEATS, type BeatId } from "../timeline";
 
 const W = 1080;
 const H = 1920;
 const inside = (r: Rect) => r.x >= 0 && r.y >= 0 && r.w > 0 && r.h > 0 && r.x + r.w <= W && r.y + r.h <= H;
+
+const GROUND: Record<BeatId, string> = { hook: "#12161F", tap: "#EEF1F4", profile: "#EEF1F4", leads: "#12161F", personas: "#EEF1F4", cta: "#2B3F8F" };
+const lum = (hex: string) => {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const contrast = (a: string, b: string) => {
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
 
 describe("match cut rects", () => {
   it("gives every beat an in and out rect inside the 1080 x 1920 frame", () => {
@@ -14,24 +24,47 @@ describe("match cut rects", () => {
       expect(inside(CUT_RECTS[b.id].out), `${b.id} out`).toBe(true);
     }
   });
+  it("carries something across the phone-to-phone cut: out is looser than in", () => {
+    const o = CUT_RECTS.tap.out;
+    const i = CUT_RECTS.profile.in;
+    expect(o.w).toBeGreaterThan(i.w + 20);
+    expect(o.h).toBeGreaterThan(i.h + 20);
+  });
 });
 
 describe("match cut timing", () => {
+  it("draws a 3 px line", () => {
+    expect(STROKE).toBe(3);
+  });
   it("morphs for at least 9 frames (300 ms)", () => {
     expect(MATCH).toBeGreaterThanOrEqual(9);
+  });
+  it("ramps in over 3, holds ~5 either side of the morph, fades over 4", () => {
+    expect(RAMP).toBe(3);
+    expect(HOLD_OUT).toBeGreaterThanOrEqual(5);
+    expect(HOLD_IN).toBeGreaterThanOrEqual(5);
+    expect(FADE).toBe(4);
   });
   it("has one cut per act boundary, on the beat starts", () => {
     expect(CUTS.map((c) => c.at)).toEqual(BEATS.slice(1).map((b) => b.from));
   });
-  it("keeps morph windows from overlapping each other", () => {
+  it("keeps whole windows from overlapping each other", () => {
     for (let i = 1; i < CUTS.length; i++) {
-      expect(CUTS[i].at - MATCH / 2).toBeGreaterThanOrEqual(CUTS[i - 1].at + MATCH / 2);
+      expect(windowOf(CUTS[i]).start).toBeGreaterThan(windowOf(CUTS[i - 1]).end);
     }
   });
   it("keeps each window inside both of its acts", () => {
     for (let i = 1; i < BEATS.length; i++) {
-      expect(BEATS[i].from - MATCH / 2).toBeGreaterThanOrEqual(BEATS[i - 1].from);
-      expect(BEATS[i].from + MATCH / 2).toBeLessThanOrEqual(BEATS[i].from + BEATS[i].frames);
+      const w = windowOf(CUTS[i - 1]);
+      expect(w.start).toBeGreaterThanOrEqual(BEATS[i - 1].from);
+      expect(w.end).toBeLessThanOrEqual(BEATS[i].from + BEATS[i].frames);
+    }
+  });
+  it("puts the cut at the midpoint of the morph", () => {
+    for (const c of CUTS) {
+      const w = windowOf(c);
+      expect(w.morphStart + MATCH / 2).toBe(c.at);
+      expect(w.morphEnd - MATCH / 2).toBe(c.at);
     }
   });
 });
@@ -39,18 +72,27 @@ describe("match cut timing", () => {
 describe("matchAt", () => {
   it("draws nothing outside a window", () => {
     expect(matchAt(0)).toBeNull();
-    expect(matchAt(CUTS[0].at - MATCH / 2 - 1)).toBeNull();
-    expect(matchAt(CUTS[0].at + MATCH / 2 + 1)).toBeNull();
+    expect(matchAt(windowOf(CUTS[0]).start - 1)).toBeNull();
+    expect(matchAt(windowOf(CUTS[0]).end + 1)).toBeNull();
     expect(matchAt(1079)).toBeNull();
   });
-  it("starts on the outgoing act's out rect and ends on the incoming act's in rect", () => {
-    for (let i = 0; i < CUTS.length; i++) {
-      const c = CUTS[i];
-      const s = matchAt(c.at - MATCH / 2 + 1e-6)!;
-      const e = matchAt(c.at + MATCH / 2 - 1e-6)!;
-      for (const k of ["x", "y", "w", "h"] as const) {
-        expect(s.rect[k]).toBeCloseTo(CUT_RECTS[c.from].out[k], 1);
-        expect(e.rect[k]).toBeCloseTo(CUT_RECTS[c.to].in[k], 1);
+  it("holds the outgoing act's out rect at full strength before the morph", () => {
+    for (const c of CUTS) {
+      const w = windowOf(c);
+      for (let f = w.morphStart - HOLD_OUT; f <= w.morphStart; f += 1) {
+        const m = matchAt(f)!;
+        expect(m.opacity, `${c.at} @ ${f}`).toBe(1);
+        for (const k of ["x", "y", "w", "h"] as const) expect(m.rect[k]).toBeCloseTo(CUT_RECTS[c.from].out[k], 5);
+      }
+    }
+  });
+  it("holds the incoming act's in rect at full strength after the morph", () => {
+    for (const c of CUTS) {
+      const w = windowOf(c);
+      for (let f = w.morphEnd; f <= w.morphEnd + HOLD_IN; f += 1) {
+        const m = matchAt(f)!;
+        expect(m.opacity, `${c.at} @ ${f}`).toBe(1);
+        for (const k of ["x", "y", "w", "h"] as const) expect(m.rect[k]).toBeCloseTo(CUT_RECTS[c.to].in[k], 5);
       }
     }
   });
@@ -62,41 +104,42 @@ describe("matchAt", () => {
       expect(m.rect.x).toBeCloseTo((a.x + b.x) / 2, 5);
       expect(m.rect.w).toBeCloseTo((a.w + b.w) / 2, 5);
       expect(m.rect.h).toBeCloseTo((a.h + b.h) / 2, 5);
+      expect(m.opacity).toBe(1);
     }
   });
   it("moves monotonically from one shape to the other (no overshoot)", () => {
     for (const c of CUTS) {
       const a = CUT_RECTS[c.from].out;
       const b = CUT_RECTS[c.to].in;
+      const w = windowOf(c);
       let prev = a.w;
-      for (let f = c.at - 7; f <= c.at + 7; f++) {
-        const w = matchAt(f)!.rect.w;
-        const lo = Math.min(a.w, b.w);
-        const hi = Math.max(a.w, b.w);
-        expect(w).toBeGreaterThanOrEqual(lo - 1e-9);
-        expect(w).toBeLessThanOrEqual(hi + 1e-9);
-        if (b.w >= a.w) expect(w).toBeGreaterThanOrEqual(prev - 1e-9);
-        else expect(w).toBeLessThanOrEqual(prev + 1e-9);
-        prev = w;
+      for (let f = w.morphStart; f <= w.morphEnd; f += 0.5) {
+        const cur = matchAt(f)!.rect.w;
+        expect(cur).toBeGreaterThanOrEqual(Math.min(a.w, b.w) - 1e-9);
+        expect(cur).toBeLessThanOrEqual(Math.max(a.w, b.w) + 1e-9);
+        if (b.w >= a.w) expect(cur).toBeGreaterThanOrEqual(prev - 1e-9);
+        else expect(cur).toBeLessThanOrEqual(prev + 1e-9);
+        prev = cur;
       }
     }
   });
-  it("is fully visible on the cut frame and has faded out by the end of the window", () => {
+  it("ramps in from nothing and fades back to nothing at the window ends", () => {
     for (const c of CUTS) {
-      expect(matchAt(c.at)!.opacity).toBe(1);
-      expect(matchAt(c.at + 3)!.opacity).toBe(1);
-      expect(matchAt(c.at + MATCH / 2 - 1e-6)!.opacity).toBeLessThan(0.01);
-      expect(matchAt(c.at - MATCH / 2 + 1e-6)!.opacity).toBeLessThan(0.5);
+      const w = windowOf(c);
+      expect(matchAt(w.start)!.opacity).toBe(0);
+      expect(matchAt(w.start + RAMP)!.opacity).toBe(1);
+      expect(matchAt(w.end)!.opacity).toBe(0);
+      expect(matchAt(w.end - FADE)!.opacity).toBe(1);
+      expect(matchAt(w.start + RAMP / 2)!.opacity).toBeCloseTo(0.5, 5);
     }
   });
-  it("uses the line colour of the ground it sits on: out ground before the cut, in ground from it", () => {
-    const dark = "#EEF1F4";
-    const light = "#2B3F8F";
-    expect(matchAt(90 - 1)!.color).toBe(dark); // hook (graphite) -> tap
-    expect(matchAt(90)!.color).toBe(light); // tap (whiteprint)
-    expect(matchAt(480 - 1)!.color).toBe(light); // profile -> leads
-    expect(matchAt(480)!.color).toBe(dark); // leads (graphite)
-    expect(matchAt(900)!.color).toBe(dark); // cta (blue)
+  it("gives every cut a line colour with at least 3:1 against the ground under it, before and after the cut", () => {
+    for (const c of CUTS) {
+      const before = matchAt(c.at - 1)!.color;
+      const after = matchAt(c.at)!.color;
+      expect(contrast(before, GROUND[c.from]), `${c.from} before`).toBeGreaterThanOrEqual(3);
+      expect(contrast(after, GROUND[c.to]), `${c.to} after`).toBeGreaterThanOrEqual(3);
+    }
   });
 });
 
@@ -107,7 +150,6 @@ describe("lotPath", () => {
     // path: M x0 y0 H hx L lx ly V vy H x0 Z
     const [x0, y0, hx, lx, ly] = nums(wide);
     expect([x0, y0]).toEqual([0, 0]);
-    // the cut: horizontal run equals vertical drop, from the top edge
     expect(lx - hx).toBeCloseTo(ly - y0, 5);
     expect(lx - hx).toBeLessThanOrEqual(50);
     expect(lx).toBe(400);
