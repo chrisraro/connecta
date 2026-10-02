@@ -13,7 +13,7 @@ export function KineticCaption({ line, ink, size = 96 }: { line: Line; ink: stri
   const words = line.text.trim().split(/\s+/);
   const stagger = words.length > 1 ? Math.min(4, Math.floor((ALL_IN - RISE) / (words.length - 1))) : 4;
   const starts = wordStarts(line.text, line.at, stagger);
-  const outP = progress(frame, line.at + line.hold - EXIT, EXIT);
+  const outP = line.stay ? 0 : progress(frame, line.at + line.hold - EXIT, EXIT);
   if (frame < line.at || outP === 1) return null;
   return (
     <p aria-label={line.text} style={{ color: ink, fontFamily: "Archivo", fontVariationSettings: '"wdth" 125', fontWeight: 700, fontSize: size, lineHeight: 1.02, letterSpacing: "-0.015em", maxWidth: 900, margin: 0, display: "flex", flexWrap: "wrap", columnGap: "0.26em" }}>

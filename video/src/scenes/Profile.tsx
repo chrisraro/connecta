@@ -11,7 +11,7 @@ import { KineticCaption } from "../fx/KineticCaption";
 import { TAP } from "../fx/tap";
 
 const NFC_AT = 24; // the pointer draws just after the first caption starts
-const NFC_END = 810; // stage x where the leader ends, just past the phone's right edge (737) and clear of the lot's cut corner
+const NFC_END = 765; // stage x where the leader ends, just past the phone's right edge (737) and clear of the lot's cut corner
 
 export function Profile() {
   const frame = useCurrentFrame();
@@ -37,7 +37,7 @@ export function Profile() {
             </div>
             {/* NFC: the reader sits at the top back of the phone, where the card tapped. A leader runs from that spot out past the phone's edge, where its label sits on the open ground. */}
             <div style={{ position: "absolute", inset: 0, opacity: nfc, pointerEvents: "none" }}>
-              <Annotation x1={TAP.contact.x} y1={TAP.contact.y} x2={NFC_END} y2={TAP.contact.y} label="NFC" labelPos={{ x: NFC_END - 20, y: TAP.contact.y + 32 }} at={NFC_AT} color="#2B3F8F" />
+              <Annotation x1={TAP.contact.x} y1={TAP.contact.y} x2={NFC_END} y2={TAP.contact.y} label="NFC" labelPos={{ x: NFC_END + 35, y: TAP.contact.y + 46 }} at={NFC_AT} color="#2B3F8F" />
             </div>
           </div>
         </AbsoluteFill>

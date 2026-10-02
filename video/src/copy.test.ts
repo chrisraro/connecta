@@ -19,3 +19,11 @@ test("the CTA names the free profile and the site, and nothing quotes a price or
   expect(cta).toContain("connectaph.vercel.app");
   expect(LINES.map((l) => l.text).join(" ")).not.toMatch(/₱|\d+\s*(users|customers)/i);
 });
+
+test("the closing CTA lines stay on screen to the last frame of the video", () => {
+  const cta = LINES.filter((l) => l.beat === "cta");
+  for (const l of cta) {
+    expect(l.stay, l.text).toBe(true);
+    expect(l.at + l.hold, l.text).toBe(beat("cta").frames);
+  }
+});

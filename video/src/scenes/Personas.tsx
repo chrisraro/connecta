@@ -45,8 +45,8 @@ function PersonaCard({ index, last }: { index: number; last: boolean }) {
       </Tilt3D>
       {/* The real size of a business card, drawn once on the first card: a dimension line over its top edge. */}
       {index === 0 && (
-        <div style={{ position: "absolute", inset: 0, opacity: 1 - progress(frame, 48, 9) }}>
-          <Annotation x1={160} y1={366} x2={920} y2={366} label="85.6 × 54 mm" at={26} color={LINE} />
+        <div style={{ position: "absolute", inset: 0, opacity: 1 - progress(frame, 66, 9) }}>
+          <Annotation x1={160} y1={366} x2={920} y2={366} label="85.6 × 54 mm" at={14} color={LINE} />
         </div>
       )}
     </AbsoluteFill>
